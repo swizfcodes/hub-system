@@ -1,0 +1,138 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+
+/* ═══ GLOBAL RESETS ═══ */
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Montserrat', -apple-system, sans-serif;
+  background-color: #0A0908;
+  color: #F0EAE0;
+  margin: 0;
+  padding: 0;
+}
+
+/* CRITICAL BRAND RULE:
+   Gold (#C9A86C) is used SPARINGLY as an accent — not as a fill colour.
+   Black and cream do the heavy lifting.
+   Never use white (#FFFFFF) as a background. */
+
+/* ═══ SCROLLBAR (dark theme) ═══ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1814;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6A6560;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9E9891;
+}
+
+/* ═══ SELECTION ═══ */
+
+::selection {
+  background: rgba(201, 168, 108, 0.25);
+  color: #F0EAE0;
+}
+
+/* ═══ FOCUS RING (accessible, on-brand) ═══ */
+
+:focus-visible {
+  outline: 2px solid #C9A86C;
+  outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════
+   ORIKA CUSTOM ANIMATIONS & SPECIFICS
+══════════════════════════════════════════ */
+
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(201, 168, 108, 0.15); }
+  50% { transform: scale(1.04); box-shadow: 0 0 80px rgba(201, 168, 108, 0.3); }
+}
+
+@keyframes splash-text-in {
+  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+@keyframes app-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.animate-splash-pulse {
+  animation: splash-pulse 2s ease-in-out infinite;
+}
+
+.animate-splash-text {
+  opacity: 0;
+  animation: splash-text-in 0.8s 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-app-in {
+  animation: app-in 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-shake {
+  animation: shake 0.4s ease;
+}
+
+/* Custom hiding scrollbar for video carousel */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Left panel complex background */
+.bg-panel-left {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(201,168,108,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(201,168,108,0.03) 0%, transparent 50%),
+    #0A0908;
+}
+
+/* Shimmer effect for buttons */
+.btn-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left 0.6s;
+}
+.login-btn:hover .btn-shimmer {
+  left: 100%;
+}

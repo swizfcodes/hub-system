@@ -14,7 +14,7 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
-    "@socket.io/redis-adapter": "^8.2.1",
+    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.4",
