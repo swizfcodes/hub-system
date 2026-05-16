@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { query, param } = require("express-validator");
+const { query, param, body } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service = require("./reports.service");
@@ -181,5 +181,103 @@ async function handle(req, res, family) {
   });
   return res.send(output);
 }
+
+// ─── SAVED REPORTS ───────────────────────────────────────────
+//   GET    /reports/saved          — list (own + shared)
+//   GET    /reports/saved/:id      — one
+//   POST   /reports/saved          — save a configuration
+//   PATCH  /reports/saved/:id      — edit (owner only)
+//   DELETE /reports/saved/:id      — delete (owner only)
+
+router.get("/saved", can("reports", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.listSavedReports(req.business, req.user));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get(
+  "/saved/:id",
+  param("id").isUUID(),
+  validate,
+  can("reports", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.getSavedReport(req.business, req.params.id, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/saved",
+  body("report_name").isString().notEmpty(),
+  body("report_type").isString().notEmpty(),
+  body("filters").optional().isObject(),
+  body("columns").optional().isArray(),
+  body("sort_config").optional().isObject(),
+  body("is_shared").optional().isBoolean(),
+  body("schedule").optional().isObject(),
+  validate,
+  can("reports", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await service.createSavedReport(req.business, req.body, req.user),
+        );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.patch(
+  "/saved/:id",
+  param("id").isUUID(),
+  body("report_name").optional().isString(),
+  body("filters").optional().isObject(),
+  body("columns").optional().isArray(),
+  body("sort_config").optional().isObject(),
+  body("is_shared").optional().isBoolean(),
+  body("schedule").optional().isObject(),
+  validate,
+  can("reports", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.updateSavedReport(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.delete(
+  "/saved/:id",
+  param("id").isUUID(),
+  validate,
+  can("reports", "delete"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.deleteSavedReport(req.business, req.params.id, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 module.exports = router;

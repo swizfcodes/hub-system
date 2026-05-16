@@ -111,6 +111,7 @@ router.post(
   "/purchase-orders/:id/receive",
   param("id").isUUID(),
   body("lines").isArray({ min: 1 }),
+  body("receiving_location_id").optional().isUUID(),
   validate,
   can("purchasing", "edit"),
   async (req, res, next) => {

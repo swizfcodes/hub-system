@@ -69,6 +69,11 @@ router.use("/tasks", protect, require("../shared/tasks/tasks.routes"));
 // ── Protected — business modules (require business context) ─
 router.use("/crm", protect, require("../modules/crm/crm.routes"));
 router.use("/sales", protect, require("../modules/sales/sales.routes"));
+router.use(
+  "/discounts",
+  protect,
+  require("../modules/discounts/discounts.routes"),
+);
 router.use("/pos", protect, require("../modules/pos/pos.routes"));
 router.use(
   "/invoicing",

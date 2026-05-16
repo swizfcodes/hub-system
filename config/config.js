@@ -3,7 +3,7 @@
 require("dotenv").config({
   path:
     process.env.NODE_ENV === "production"
-      ? ".env.production"
+      ? ".env"
       : process.env.NODE_ENV === "staging"
         ? ".env.staging"
         : ".env.local",
@@ -37,10 +37,7 @@ const config = {
     database: process.env.PG_DATABASE,
     user: process.env.PG_USER,
     password: process.env.PG_PASSWORD,
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: true }
-        : false,
+    ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
     pool: {
       max: parseInt(process.env.PG_POOL_MAX || "20"),
       min: 2,

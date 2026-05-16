@@ -15,6 +15,47 @@ router.get("/terminals", can("pos", "view"), async (req, res, next) => {
   }
 });
 
+router.post(
+  "/terminals",
+  body("name").isString().notEmpty(),
+  body("location_id").isUUID(),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.createTerminal(req.business, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.patch(
+  "/terminals/:id",
+  param("id").isUUID(),
+  body("name").optional().isString(),
+  body("location_id").optional().isUUID(),
+  body("is_active").optional().isBoolean(),
+  validate,
+  can("pos", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.updateTerminal(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─── SESSIONS ──────────────────────────────────────────────
 
 router.post(

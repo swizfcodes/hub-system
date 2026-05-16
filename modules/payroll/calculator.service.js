@@ -41,7 +41,27 @@ async function calculatePayslip(
   );
   if (!profile) throw new Error(`Staff profile ${profileId} not found`);
 
-  const basicSalary = parseFloat(profile.base_salary);
+  // Use contract_gross — the COALESCE of the active staff_contracts
+  // row's gross_salary and the profile's base_salary. The query goes
+  // to the trouble of resolving the active contract; reading
+  // profile.base_salary directly (the previous bug) ignored it, so a
+  // staff member whose pay was set via a contract would be paid their
+  // stale base_salary instead.
+  const basicSalary = parseFloat(profile.contract_gross);
+
+  // Guard against a missing/zero salary. Without this, a staff member
+  // added with no contract and base_salary = 0 would be issued a ₦0
+  // payslip with no error — the payroll run would total up with a
+  // silent zero member. Promoting it to a thrown error means
+  // payroll.service.initiateRun's per-staff catch logs
+  // "Payslip calculation failed for profile X" so it's visible.
+  if (!basicSalary || basicSalary <= 0) {
+    throw new Error(
+      `No salary configured for staff profile ${profileId} ` +
+        `(${profile.display_name || "unknown"}). Add a contract or set ` +
+        `base_salary before running payroll.`,
+    );
+  }
 
   // Standard allowances — ratios come from payroll config so each
   // business can override without code change.

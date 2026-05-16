@@ -1,6 +1,7 @@
 "use strict";
 
 const { withBusinessContext } = require("../../config/db");
+const auditService = require("../../shared/audit/audit.service");
 const repo = require("./dashboards.repository");
 
 function getPeriodDates(query) {
@@ -144,6 +145,121 @@ async function getOverview(business, query, user) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// DASHBOARD CONFIGS
+//
+// Per-user saved dashboard layouts. A user may keep several named
+// dashboards (e.g. "Daily ops", "Finance deep-dive"); one is the
+// default that loads first. All operations are scoped to the
+// calling user — a user only sees and edits their own dashboards.
+// ─────────────────────────────────────────────────────────────
+
+async function listDashboardConfigs(business, user) {
+  return withBusinessContext(business, async (client) => {
+    const data = await repo.listDashboardConfigs(client, user.user_id);
+    return { data };
+  });
+}
+
+async function getDashboardConfig(business, configId, user) {
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.findDashboardConfigById(client, configId);
+    if (!row || row.user_id !== user.user_id) {
+      throw Object.assign(new Error("Dashboard config not found"), {
+        status: 404,
+      });
+    }
+    return row;
+  });
+}
+
+async function createDashboardConfig(business, data, user) {
+  if (!data.dashboard_name || !data.dashboard_name.trim()) {
+    throw Object.assign(new Error("dashboard_name is required"), {
+      status: 400,
+    });
+  }
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.insertDashboardConfig(client, {
+      userId: user.user_id,
+      dashboardName: data.dashboard_name.trim(),
+      layout: data.layout,
+      widgets: data.widgets,
+      isDefault: data.is_default,
+    });
+    // If this one is marked default, demote the user's other defaults.
+    if (data.is_default) {
+      await repo.clearOtherDefaults(client, user.user_id, row.config_id);
+    }
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "dashboards",
+      action: "create",
+      table: "dashboard_configs",
+      recordId: row.config_id,
+      after: row,
+    });
+    return row;
+  });
+}
+
+async function updateDashboardConfig(business, configId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const before = await repo.findDashboardConfigById(client, configId);
+    if (!before || before.user_id !== user.user_id) {
+      throw Object.assign(new Error("Dashboard config not found"), {
+        status: 404,
+      });
+    }
+    const row = await repo.updateDashboardConfig(client, configId, {
+      dashboardName: data.dashboard_name ? data.dashboard_name.trim() : null,
+      layout: data.layout,
+      widgets: data.widgets,
+      isDefault: data.is_default,
+    });
+    if (data.is_default) {
+      await repo.clearOtherDefaults(client, user.user_id, configId);
+    }
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "dashboards",
+      action: "edit",
+      table: "dashboard_configs",
+      recordId: configId,
+      before,
+      after: row,
+    });
+    return row;
+  });
+}
+
+async function deleteDashboardConfig(business, configId, user) {
+  return withBusinessContext(business, async (client) => {
+    const before = await repo.findDashboardConfigById(client, configId);
+    if (!before || before.user_id !== user.user_id) {
+      throw Object.assign(new Error("Dashboard config not found"), {
+        status: 404,
+      });
+    }
+    await repo.deleteDashboardConfig(client, configId);
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "dashboards",
+      action: "delete",
+      table: "dashboard_configs",
+      recordId: configId,
+      before,
+    });
+    return { deleted: true };
+  });
+}
+
 module.exports = {
   getSalesDashboard,
   getFinanceDashboard,
@@ -152,4 +268,10 @@ module.exports = {
   getRetailPartnerDashboard,
   getLogisticsDashboard,
   getOverview,
+  // dashboard configs
+  listDashboardConfigs,
+  getDashboardConfig,
+  createDashboardConfig,
+  updateDashboardConfig,
+  deleteDashboardConfig,
 };

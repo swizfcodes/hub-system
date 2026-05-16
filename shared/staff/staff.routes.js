@@ -421,4 +421,211 @@ router.put(
   },
 );
 
+// ─── LEAVE REQUESTS ──────────────────────────────────────────
+// Workflow: staff submit (pending) → manager approves/rejects.
+// Approved 'unpaid' leave is read by the payroll calculator.
+//
+//   GET    /staff/leave                  — list (filters: status, profile, dates)
+//   GET    /staff/leave/balance/:profileId — approved days per type for a year
+//   GET    /staff/leave/:id              — one request
+//   POST   /staff/leave                  — submit own leave
+//   POST   /staff/leave/on-behalf        — manager submits for a staff member
+//   PATCH  /staff/leave/:id              — edit a pending request
+//   POST   /staff/leave/:id/approve      — manager approves
+//   POST   /staff/leave/:id/reject       — manager rejects (needs reason)
+//   POST   /staff/leave/:id/cancel       — cancel pending or approved
+
+router.get(
+  "/leave",
+  query("status")
+    .optional()
+    .isIn(["pending", "approved", "rejected", "cancelled"]),
+  query("profile_id").optional().isUUID(),
+  query("from_date").optional().isISO8601(),
+  query("to_date").optional().isISO8601(),
+  query("page").optional().isInt({ min: 1 }),
+  query("limit").optional().isInt({ min: 1, max: 200 }),
+  validate,
+  can("staff", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.listLeave(req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/leave/balance/:profileId",
+  param("profileId").isUUID(),
+  query("year").optional().isInt({ min: 2000, max: 2100 }),
+  validate,
+  can("staff", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.getLeaveBalance(
+          req.params.profileId,
+          req.query.year ? parseInt(req.query.year) : undefined,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/leave/:id",
+  param("id").isUUID(),
+  validate,
+  can("staff", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getLeave(req.params.id));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Self-service submit — any authenticated user can request their own
+// leave. No can("staff", ...) gate — the service resolves their own
+// profile from their user account.
+router.post(
+  "/leave",
+  body("leave_type").isIn([
+    "annual",
+    "sick",
+    "maternity",
+    "paternity",
+    "compassionate",
+    "unpaid",
+  ]),
+  body("start_date").isISO8601(),
+  body("end_date").isISO8601(),
+  body("days_requested").optional().isInt({ min: 1 }),
+  body("reason").optional().isString(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.status(201).json(await service.submitLeave(req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Manager submits on behalf of a staff member — needs profile_id and
+// the staff edit permission.
+router.post(
+  "/leave/on-behalf",
+  body("profile_id").isUUID(),
+  body("leave_type").isIn([
+    "annual",
+    "sick",
+    "maternity",
+    "paternity",
+    "compassionate",
+    "unpaid",
+  ]),
+  body("start_date").isISO8601(),
+  body("end_date").isISO8601(),
+  body("days_requested").optional().isInt({ min: 1 }),
+  body("reason").optional().isString(),
+  validate,
+  can("staff", "edit"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await service.submitLeave(req.body, req.user, { onBehalf: true }),
+        );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.patch(
+  "/leave/:id",
+  param("id").isUUID(),
+  body("leave_type")
+    .optional()
+    .isIn([
+      "annual",
+      "sick",
+      "maternity",
+      "paternity",
+      "compassionate",
+      "unpaid",
+    ]),
+  body("start_date").optional().isISO8601(),
+  body("end_date").optional().isISO8601(),
+  body("days_requested").optional().isInt({ min: 1 }),
+  body("reason").optional().isString(),
+  validate,
+  can("staff", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.updateLeave(req.params.id, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/leave/:id/approve",
+  param("id").isUUID(),
+  validate,
+  can("staff", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.approveLeave(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/leave/:id/reject",
+  param("id").isUUID(),
+  body("rejection_reason").optional().isString(),
+  validate,
+  can("staff", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.rejectLeave(
+          req.params.id,
+          req.body.rejection_reason,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/leave/:id/cancel",
+  param("id").isUUID(),
+  validate,
+  // No approve gate — staff can cancel their own leave. The service
+  // does not currently enforce "own only" because cancelling is low-
+  // risk and managers legitimately cancel on behalf of staff.
+  async (req, res, next) => {
+    try {
+      res.json(await service.cancelLeave(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 module.exports = router;

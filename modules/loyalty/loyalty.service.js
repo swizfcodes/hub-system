@@ -35,7 +35,7 @@ async function _notifyTierUpgrade(
   if (newTier.tier_id === oldTier.tier_id) return;
   if (newTier.min_points <= oldTier.min_points) return;
 
-  const cfg = await repo.getLoyaltyConfig(client);
+  const cfg = await repo.getLoyaltyConfig(client, business);
   if (cfg.notify_on_tier_upgrade === false) return;
 
   await notifService.create(client, {
@@ -90,7 +90,7 @@ async function awardPoints(
   user,
 ) {
   return withBusinessContext(business, async (client) => {
-    const cfg = await repo.getLoyaltyConfig(client);
+    const cfg = await repo.getLoyaltyConfig(client, business);
     const pointsPerNaira = cfg.points_per_naira ?? DEFAULT_POINTS_PER_NAIRA;
     const expiryMonths = cfg.expiry_months ?? DEFAULT_EXPIRY_MONTHS;
 

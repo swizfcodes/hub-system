@@ -70,4 +70,71 @@ async function markAllRead(userId, business) {
   );
 }
 
-module.exports = { create, list, markRead, markAllRead };
+// ─────────────────────────────────────────────────────────────
+// NOTIFICATION PREFERENCES
+//
+// Per-user, per-type channel toggles. A user controls which channels
+// (in-app, email, WhatsApp, SMS, push) they receive each notification
+// type on. Lives in the shared schema — preferences are user-level,
+// not business-level. All operations are scoped to the calling user.
+// ─────────────────────────────────────────────────────────────
+
+async function listPreferences(user) {
+  return withSharedContext(async (client) => {
+    const data = await repo.listPreferences(client, user.user_id);
+    return { data };
+  });
+}
+
+/**
+ * Set (upsert) a preference for one notification type. The body need
+ * only contain the channels being changed — omitted channels keep
+ * their current value (or the column default if the row is new).
+ */
+async function setPreference(user, data) {
+  if (!data.notification_type || !data.notification_type.trim()) {
+    throw Object.assign(new Error("notification_type is required"), {
+      status: 400,
+    });
+  }
+  return withSharedContext(async (client) => {
+    return repo.upsertPreference(client, {
+      userId: user.user_id,
+      notificationType: data.notification_type.trim(),
+      inApp: data.in_app,
+      emailEnabled: data.email_enabled,
+      whatsappEnabled: data.whatsapp_enabled,
+      smsEnabled: data.sms_enabled,
+      pushEnabled: data.push_enabled,
+    });
+  });
+}
+
+async function deletePreference(user, notificationType) {
+  return withSharedContext(async (client) => {
+    const removed = await repo.deletePreference(
+      client,
+      user.user_id,
+      notificationType,
+    );
+    if (!removed) {
+      throw Object.assign(
+        new Error("No preference set for that notification type"),
+        { status: 404 },
+      );
+    }
+    // Deleting a preference reverts that type to system defaults.
+    return { deleted: true };
+  });
+}
+
+module.exports = {
+  create,
+  list,
+  markRead,
+  markAllRead,
+  // preferences
+  listPreferences,
+  setPreference,
+  deletePreference,
+};

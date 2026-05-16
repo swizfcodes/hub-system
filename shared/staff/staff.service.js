@@ -727,6 +727,439 @@ function generateTempPassword() {
   return result;
 }
 
+// ─────────────────────────────────────────────────────────────
+// LEAVE REQUESTS
+//
+// Workflow: staff submit (pending) → manager approves or rejects.
+// Approved 'unpaid' leave is read by the payroll calculator to
+// deduct absent days, so this is not just an HR nicety — it feeds
+// the payslip math.
+//
+// Leave lives in the shared schema (shared.leave_requests) because
+// staff are shared across businesses. All functions use
+// withSharedContext like the rest of the staff module.
+// ─────────────────────────────────────────────────────────────
+
+const LEAVE_TYPES = [
+  "annual",
+  "sick",
+  "maternity",
+  "paternity",
+  "compassionate",
+  "unpaid",
+];
+
+/**
+ * Count calendar days inclusive of both endpoints. Kept simple —
+ * does NOT exclude weekends/holidays. If the business wants working-
+ * day counts only, the caller can pass days_requested explicitly and
+ * this is skipped (see submitLeave).
+ */
+function inclusiveDayCount(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const ms = end.getTime() - start.getTime();
+  return Math.floor(ms / (1000 * 60 * 60 * 24)) + 1;
+}
+
+async function listLeave(query = {}) {
+  return withSharedContext(async (client) => {
+    const data = await repo.listLeaveRequests(client, {
+      profileId: query.profile_id,
+      status: query.status,
+      fromDate: query.from_date,
+      toDate: query.to_date,
+      limit: query.limit ? parseInt(query.limit) : 100,
+      offset: query.page
+        ? (parseInt(query.page) - 1) * (parseInt(query.limit) || 100)
+        : 0,
+    });
+    return { data };
+  });
+}
+
+async function getLeave(leaveId) {
+  return withSharedContext(async (client) => {
+    const row = await repo.findLeaveRequestById(client, leaveId);
+    if (!row) {
+      throw Object.assign(new Error("Leave request not found"), {
+        status: 404,
+      });
+    }
+    return row;
+  });
+}
+
+/**
+ * Submit a leave request. If the caller is a staff member submitting
+ * their own leave, profileId is resolved from their user account.
+ * Managers may submit on behalf of another staff member by passing
+ * profile_id explicitly.
+ */
+async function submitLeave(data, user, { onBehalf = false } = {}) {
+  if (!LEAVE_TYPES.includes(data.leave_type)) {
+    throw Object.assign(
+      new Error(`leave_type must be one of: ${LEAVE_TYPES.join(", ")}`),
+      { status: 400 },
+    );
+  }
+  if (!data.start_date || !data.end_date) {
+    throw Object.assign(new Error("start_date and end_date are required"), {
+      status: 400,
+    });
+  }
+  if (new Date(data.end_date) < new Date(data.start_date)) {
+    throw Object.assign(new Error("end_date cannot be before start_date"), {
+      status: 400,
+    });
+  }
+
+  return withSharedContext(async (client) => {
+    // Resolve whose leave this is.
+    let profileId = data.profile_id;
+    if (!onBehalf || !profileId) {
+      profileId = await repo.resolveProfileIdForUser(client, user.user_id);
+      if (!profileId) {
+        throw Object.assign(
+          new Error(
+            "Your user account is not linked to a staff profile — " +
+              "cannot submit leave. Ask an admin to link your profile.",
+          ),
+          { status: 400 },
+        );
+      }
+    }
+
+    // Reject overlapping requests so a staff member can't double-book.
+    const overlaps = await repo.findOverlappingLeave(client, {
+      profileId,
+      startDate: data.start_date,
+      endDate: data.end_date,
+    });
+    if (overlaps.length > 0) {
+      throw Object.assign(
+        new Error(
+          `This overlaps an existing ${overlaps[0].status} leave request ` +
+            `(${overlaps[0].start_date} to ${overlaps[0].end_date})`,
+        ),
+        { status: 409 },
+      );
+    }
+
+    // days_requested: trust an explicit value (working-day count from
+    // the UI) if provided, else fall back to inclusive calendar days.
+    const daysRequested =
+      data.days_requested != null
+        ? parseInt(data.days_requested)
+        : inclusiveDayCount(data.start_date, data.end_date);
+    if (daysRequested <= 0) {
+      throw Object.assign(new Error("days_requested must be positive"), {
+        status: 400,
+      });
+    }
+
+    const row = await repo.insertLeaveRequest(client, {
+      profileId,
+      leaveType: data.leave_type,
+      startDate: data.start_date,
+      endDate: data.end_date,
+      daysRequested,
+      reason: data.reason,
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business: "*",
+      module: "staff",
+      action: "create",
+      table: "shared.leave_requests",
+      recordId: row.leave_id,
+      after: row,
+    });
+
+    // Notify the staff member's manager that a request awaits approval.
+    // Best-effort — a notification failure must not fail the submission.
+    try {
+      const {
+        rows: [mgr],
+      } = await client.query(
+        `SELECT u.user_id
+         FROM shared.staff_profiles sp
+         JOIN shared.staff_profiles mgr ON mgr.profile_id = sp.manager_profile_id
+         JOIN shared.users u ON u.staff_profile_id = mgr.profile_id
+         WHERE sp.profile_id = $1`,
+        [profileId],
+      );
+      if (mgr) {
+        await notifService.create(client, {
+          userId: mgr.user_id,
+          business: "*",
+          type: "system",
+          title: "Leave request awaiting approval",
+          body: `${row.staff_name || "A staff member"} requested ${daysRequested} day(s) of ${data.leave_type} leave.`,
+          referenceType: "leave_request",
+          referenceId: row.leave_id,
+        });
+      }
+    } catch (err) {
+      logger.warn(`[staff] leave manager-notify failed: ${err.message}`);
+    }
+
+    return row;
+  });
+}
+
+async function updateLeave(leaveId, data, user) {
+  return withSharedContext(async (client) => {
+    const before = await repo.findLeaveRequestById(client, leaveId);
+    if (!before) {
+      throw Object.assign(new Error("Leave request not found"), {
+        status: 404,
+      });
+    }
+    if (before.status !== "pending") {
+      throw Object.assign(
+        new Error(
+          `Cannot edit a ${before.status} leave request — only pending ` +
+            `requests can be changed.`,
+        ),
+        { status: 400 },
+      );
+    }
+    if (data.leave_type && !LEAVE_TYPES.includes(data.leave_type)) {
+      throw Object.assign(
+        new Error(`leave_type must be one of: ${LEAVE_TYPES.join(", ")}`),
+        { status: 400 },
+      );
+    }
+
+    const startDate = data.start_date || before.start_date;
+    const endDate = data.end_date || before.end_date;
+    if (new Date(endDate) < new Date(startDate)) {
+      throw Object.assign(new Error("end_date cannot be before start_date"), {
+        status: 400,
+      });
+    }
+
+    // Re-check overlap if the dates changed.
+    if (data.start_date || data.end_date) {
+      const overlaps = await repo.findOverlappingLeave(client, {
+        profileId: before.profile_id,
+        startDate,
+        endDate,
+        excludeLeaveId: leaveId,
+      });
+      if (overlaps.length > 0) {
+        throw Object.assign(
+          new Error("Updated dates overlap another leave request"),
+          { status: 409 },
+        );
+      }
+    }
+
+    const daysRequested =
+      data.days_requested != null
+        ? parseInt(data.days_requested)
+        : data.start_date || data.end_date
+          ? inclusiveDayCount(startDate, endDate)
+          : null;
+
+    const row = await repo.updateLeaveRequest(client, leaveId, {
+      leaveType: data.leave_type,
+      startDate: data.start_date,
+      endDate: data.end_date,
+      daysRequested,
+      reason: data.reason,
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business: "*",
+      module: "staff",
+      action: "edit",
+      table: "shared.leave_requests",
+      recordId: leaveId,
+      before,
+      after: row,
+    });
+
+    return row;
+  });
+}
+
+async function approveLeave(leaveId, user) {
+  return withSharedContext(async (client) => {
+    const before = await repo.findLeaveRequestById(client, leaveId);
+    if (!before) {
+      throw Object.assign(new Error("Leave request not found"), {
+        status: 404,
+      });
+    }
+    if (before.status !== "pending") {
+      throw Object.assign(
+        new Error(`Leave request is already ${before.status}`),
+        { status: 400 },
+      );
+    }
+    const row = await repo.setLeaveStatus(client, leaveId, {
+      status: "approved",
+      approvedBy: user.user_id,
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "manager",
+      business: "*",
+      module: "staff",
+      action: "approve",
+      table: "shared.leave_requests",
+      recordId: leaveId,
+      before,
+      after: row,
+    });
+
+    // Tell the staff member their leave was approved.
+    try {
+      const {
+        rows: [u],
+      } = await client.query(
+        `SELECT user_id FROM shared.users WHERE staff_profile_id = $1`,
+        [before.profile_id],
+      );
+      if (u) {
+        await notifService.create(client, {
+          userId: u.user_id,
+          business: "*",
+          type: "system",
+          title: "Leave request approved",
+          body: `Your ${before.leave_type} leave (${before.start_date} to ${before.end_date}) was approved.`,
+          referenceType: "leave_request",
+          referenceId: leaveId,
+        });
+      }
+    } catch (err) {
+      logger.warn(`[staff] leave approve-notify failed: ${err.message}`);
+    }
+
+    return row;
+  });
+}
+
+async function rejectLeave(leaveId, rejectionReason, user) {
+  return withSharedContext(async (client) => {
+    const before = await repo.findLeaveRequestById(client, leaveId);
+    if (!before) {
+      throw Object.assign(new Error("Leave request not found"), {
+        status: 404,
+      });
+    }
+    if (before.status !== "pending") {
+      throw Object.assign(
+        new Error(`Leave request is already ${before.status}`),
+        { status: 400 },
+      );
+    }
+    const row = await repo.setLeaveStatus(client, leaveId, {
+      status: "rejected",
+      approvedBy: user.user_id,
+      rejectionReason: rejectionReason || "No reason given",
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "manager",
+      business: "*",
+      module: "staff",
+      action: "edit",
+      table: "shared.leave_requests",
+      recordId: leaveId,
+      before,
+      after: row,
+    });
+
+    try {
+      const {
+        rows: [u],
+      } = await client.query(
+        `SELECT user_id FROM shared.users WHERE staff_profile_id = $1`,
+        [before.profile_id],
+      );
+      if (u) {
+        await notifService.create(client, {
+          userId: u.user_id,
+          business: "*",
+          type: "system",
+          title: "Leave request rejected",
+          body: `Your ${before.leave_type} leave was rejected: ${row.rejection_reason}`,
+          referenceType: "leave_request",
+          referenceId: leaveId,
+        });
+      }
+    } catch (err) {
+      logger.warn(`[staff] leave reject-notify failed: ${err.message}`);
+    }
+
+    return row;
+  });
+}
+
+/**
+ * Cancel a leave request. A staff member can cancel their own
+ * pending OR approved leave (plans change). Managers can cancel
+ * anyone's.
+ */
+async function cancelLeave(leaveId, user) {
+  return withSharedContext(async (client) => {
+    const before = await repo.findLeaveRequestById(client, leaveId);
+    if (!before) {
+      throw Object.assign(new Error("Leave request not found"), {
+        status: 404,
+      });
+    }
+    if (before.status === "cancelled" || before.status === "rejected") {
+      throw Object.assign(
+        new Error(`Leave request is already ${before.status}`),
+        { status: 400 },
+      );
+    }
+    const row = await repo.setLeaveStatus(client, leaveId, {
+      status: "cancelled",
+      approvedBy: before.approved_by,
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business: "*",
+      module: "staff",
+      action: "edit",
+      table: "shared.leave_requests",
+      recordId: leaveId,
+      before,
+      after: row,
+    });
+
+    return row;
+  });
+}
+
+async function getLeaveBalance(profileId, year) {
+  return withSharedContext(async (client) => {
+    const rows = await repo.getLeaveBalanceSummary(
+      client,
+      profileId,
+      year || new Date().getFullYear(),
+    );
+    return {
+      profile_id: profileId,
+      year: year || new Date().getFullYear(),
+      summary: rows,
+    };
+  });
+}
+
 module.exports = {
   // profile CRUD
   listStaff,
@@ -753,4 +1186,13 @@ module.exports = {
   listUserRoles,
   grantRole,
   revokeRole,
+  // leave requests
+  listLeave,
+  getLeave,
+  submitLeave,
+  updateLeave,
+  approveLeave,
+  rejectLeave,
+  cancelLeave,
+  getLeaveBalance,
 };

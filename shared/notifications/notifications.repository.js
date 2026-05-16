@@ -63,4 +63,99 @@ async function markAllRead(client, { userId, business }) {
   );
 }
 
-module.exports = { insert, list, countUnread, markRead, markAllRead };
+// ── NOTIFICATION PREFERENCES ─────────────────────────────────
+// Per-user, per-notification-type channel toggles. shared schema —
+// a user's preferences are the same across businesses.
+
+async function listPreferences(client, userId) {
+  const { rows } = await client.query(
+    `SELECT pref_id, user_id, notification_type, in_app, email_enabled,
+            whatsapp_enabled, sms_enabled, push_enabled, updated_at
+     FROM shared.notification_preferences
+     WHERE user_id = $1
+     ORDER BY notification_type`,
+    [userId],
+  );
+  return rows;
+}
+
+async function findPreference(client, userId, notificationType) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM shared.notification_preferences
+     WHERE user_id = $1 AND notification_type = $2`,
+    [userId, notificationType],
+  );
+  return row || null;
+}
+
+/**
+ * Upsert a preference row. (user_id, notification_type) is the natural
+ * key — one row per user per type. Channels not supplied keep their
+ * column default on insert, or their existing value on update.
+ */
+async function upsertPreference(
+  client,
+  {
+    userId,
+    notificationType,
+    inApp,
+    emailEnabled,
+    whatsappEnabled,
+    smsEnabled,
+    pushEnabled,
+  },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO shared.notification_preferences
+       (user_id, notification_type, in_app, email_enabled,
+        whatsapp_enabled, sms_enabled, push_enabled)
+     VALUES ($1, $2,
+             COALESCE($3, true), COALESCE($4, true),
+             COALESCE($5, false), COALESCE($6, false), COALESCE($7, true))
+     ON CONFLICT (user_id, notification_type)
+     DO UPDATE SET
+       in_app           = COALESCE($3, shared.notification_preferences.in_app),
+       email_enabled    = COALESCE($4, shared.notification_preferences.email_enabled),
+       whatsapp_enabled = COALESCE($5, shared.notification_preferences.whatsapp_enabled),
+       sms_enabled      = COALESCE($6, shared.notification_preferences.sms_enabled),
+       push_enabled     = COALESCE($7, shared.notification_preferences.push_enabled),
+       updated_at       = now()
+     RETURNING *`,
+    [
+      userId,
+      notificationType,
+      inApp ?? null,
+      emailEnabled ?? null,
+      whatsappEnabled ?? null,
+      smsEnabled ?? null,
+      pushEnabled ?? null,
+    ],
+  );
+  return row;
+}
+
+async function deletePreference(client, userId, notificationType) {
+  const { rowCount } = await client.query(
+    `DELETE FROM shared.notification_preferences
+     WHERE user_id = $1 AND notification_type = $2`,
+    [userId, notificationType],
+  );
+  return rowCount > 0;
+}
+
+module.exports = {
+  insert,
+  list,
+  countUnread,
+  markRead,
+  markAllRead,
+  // preferences
+  listPreferences,
+  findPreference,
+  upsertPreference,
+  deletePreference,
+};

@@ -12,7 +12,7 @@
 //   4. Runs each migrations/template/*.sql.template against the new schema
 //      (substituting {{BUSINESS}} → the business_key)
 //   5. Inserts the business_config row
-//   6. Seeds 12 document_numbering rows for the new business
+//   6. Seeds 14 document_numbering rows for the new business
 //   7. Refreshes the in-memory businesses cache
 //
 // Usage:
@@ -69,6 +69,7 @@ const DOCUMENT_TYPES = [
   { type: "invoice", suffix: "INV" },
   { type: "purchase_order", suffix: "PO" },
   { type: "quotation", suffix: "QT" },
+  { type: "sales_order", suffix: "SO" },
   { type: "delivery", suffix: "DN" },
   { type: "payslip", suffix: "PS" },
   { type: "credit_note", suffix: "CN" },
@@ -77,6 +78,7 @@ const DOCUMENT_TYPES = [
   { type: "rfq", suffix: "RFQ" },
   { type: "transfer", suffix: "TRF" },
   { type: "expense", suffix: "EXP" },
+  { type: "supplier", suffix: "SUP" },
   { type: "payroll_run", suffix: "PR" },
 ];
 
@@ -225,6 +227,29 @@ async function bootstrap(opts) {
          DO UPDATE SET
           prefix = EXCLUDED.prefix`,
         [opts.key, dt.type, `${opts.prefix}-${dt.suffix}`],
+      );
+    }
+
+    // Seed the CURRENT month's fiscal period. The generateFiscalPeriods
+    // cron only ever creates NEXT month — so without this a freshly
+    // provisioned business has no period for the month it's created in,
+    // and the very first journal posting (journalService.postEntry
+    // stamps the active fiscal period) would fail until month-end.
+    logger.info(`[bootstrap:${opts.key}] Seeding current fiscal period`);
+    {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth() + 1;
+      const periodName =
+        now.toLocaleString("en-GB", { month: "long" }) + ` ${y}`;
+      const startDate = `${y}-${String(m).padStart(2, "0")}-01`;
+      const endDate = new Date(y, m, 0).toISOString().split("T")[0];
+      await client.query(
+        `INSERT INTO ${opts.key}.fiscal_periods
+           (name, period_type, start_date, end_date)
+         VALUES ($1, 'month', $2, $3)
+         ON CONFLICT (period_type, start_date) DO NOTHING`,
+        [periodName, startDate, endDate],
       );
     }
 

@@ -65,7 +65,8 @@ async function getTierById(client, tierId) {
 // ── CONFIG ───────────────────────────────────────────────────
 
 /**
- * Fetches the loyalty_settings jsonb object from shared.business_config.
+ * Fetches the loyalty_settings jsonb object from shared.business_config
+ * FOR THE GIVEN BUSINESS.
  *
  * Returns the parsed object, e.g.:
  *   {
@@ -77,13 +78,20 @@ async function getTierById(client, tierId) {
  *
  * On any error (column not yet migrated, no row, etc.) returns {} so
  * the caller can fall back to its own hardcoded defaults without crashing.
+ *
+ * NOTE: the previous version used `LIMIT 1` with no WHERE clause — it
+ * returned whichever business_config row the planner happened to
+ * return first, so in a two-business install jewelry's config could
+ * leak into diffusers' loyalty math. The business_key filter fixes that.
  */
-async function getLoyaltyConfig(client) {
+async function getLoyaltyConfig(client, business) {
   try {
     const { rows } = await client.query(
       `SELECT loyalty_settings
        FROM shared.business_config
+       WHERE business_key = $1
        LIMIT 1`,
+      [business],
     );
     return rows[0]?.loyalty_settings ?? {};
   } catch {
