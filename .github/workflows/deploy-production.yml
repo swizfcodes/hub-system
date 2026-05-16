@@ -1,8 +1,8 @@
-name: Deploy — Production
+name: Deploy Production
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   test:
@@ -43,7 +43,7 @@ jobs:
             cd /var/www/hub-system
 
             echo "--- Pulling latest code"
-            git pull origin main
+            git pull origin master
 
             echo "--- Installing dependencies"
             npm install --omit=dev
