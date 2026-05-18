@@ -13,18 +13,14 @@ const crypto = require("crypto");
 
 // ── Config ────────────────────────────────────────────────
 // Copy .env.example to .env and fill in your values
-const envFile = `.env.${process.env.NODE_ENV}`;
-
-require("dotenv").config({
-  path: envFile,
-});
+require("dotenv").config();
 
 const DB_CONFIG = {
   host: process.env.PG_HOST || "localhost",
-  port: parseInt(process.env.PG_PORT),
-  database: process.env.PG_DATABASE,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
+  port: parseInt(process.env.PG_PORT || "5432"),
+  database: process.env.PG_DATABASE || "hub_db",
+  user: process.env.PG_USER || "postgres",
+  password: process.env.PG_PASSWORD || "",
 };
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "migrations");

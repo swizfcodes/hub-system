@@ -11,6 +11,14 @@ const protect = [verifyToken, setBusinessContext];
 // ── Public ────────────────────────────────────────────────
 router.use("/auth", loginRateLimiter, require("../shared/auth/auth.routes"));
 
+// ── Storefront (Orika Living) ─────────────────────────────
+// Public store API — no auth (CORS-gated in app.js). Storefront
+// product/scent/order management is done from the ERP itself
+// (catalogue + the store admin views), so there is no separate
+// store-admin route surface — web sales flow through the ERP's
+// own accounting + stock path.
+router.use("/store", require("../modules/store/store.public.routes"));
+
 // ── Webhooks (public but signature-verified internally) ───
 router.use(
   "/webhooks/paystack",

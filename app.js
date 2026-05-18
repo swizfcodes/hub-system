@@ -18,7 +18,20 @@ const app = express();
 app.use(helmet());
 app.use(cors({ origin: config.app.allowedOrigins, credentials: true }));
 app.use(compression());
-app.use(express.json({ limit: "10mb" }));
+// Webhook routes need the raw request body for HMAC signature
+// verification (Paystack, etc.). express.json() would consume the
+// stream and replace req.body with a parsed object, breaking the
+// signature check — so skip JSON parsing for any /webhooks/* path
+// and for the storefront's Paystack webhook. Those routers apply
+// their own express.raw() internally.
+const RAW_BODY_PATHS = [
+  /^\/api\/webhooks\//,
+  /^\/api\/store\/paystack\/webhook$/,
+];
+app.use((req, res, next) => {
+  if (RAW_BODY_PATHS.some((re) => re.test(req.path))) return next();
+  return express.json({ limit: "10mb" })(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 

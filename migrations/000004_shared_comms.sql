@@ -80,6 +80,7 @@ CREATE INDEX idx_message_channels_business ON shared.message_channels (business)
 
 -- ── channel_members ───────────────────────────────────────
 CREATE TABLE shared.channel_members (
+  member_id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   channel_id            UUID        NOT NULL REFERENCES shared.message_channels (channel_id) ON DELETE CASCADE,
   user_id               UUID        REFERENCES shared.users (user_id) ON DELETE CASCADE,
   contact_id            UUID        REFERENCES shared.contacts (contact_id) ON DELETE CASCADE,
@@ -87,13 +88,16 @@ CREATE TABLE shared.channel_members (
                         CHECK (role IN ('member','admin')),
   joined_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_read_at          TIMESTAMPTZ,
-  PRIMARY KEY (channel_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::uuid),
-                           COALESCE(contact_id, '00000000-0000-0000-0000-000000000000'::uuid)),
   CONSTRAINT member_user_or_contact CHECK (
     (user_id IS NOT NULL AND contact_id IS NULL) OR
     (user_id IS NULL AND contact_id IS NOT NULL)
   )
 );
+
+CREATE UNIQUE INDEX idx_channel_members_unique_user
+  ON shared.channel_members (channel_id, user_id) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_channel_members_unique_contact
+  ON shared.channel_members (channel_id, contact_id) WHERE contact_id IS NOT NULL;
 
 CREATE INDEX idx_channel_members_user    ON shared.channel_members (user_id)    WHERE user_id IS NOT NULL;
 CREATE INDEX idx_channel_members_contact ON shared.channel_members (contact_id) WHERE contact_id IS NOT NULL;

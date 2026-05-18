@@ -73,6 +73,27 @@ async function withSharedContext(callback) {
   }
 }
 
+// ── Store context ─────────────────────────────────────────
+// Sets search_path to the `store` schema for the Orika Living
+// storefront. The storefront is single-tenant (diffusers brand),
+// so there's no business key — just a fixed schema, like
+// withSharedContext but pointed at `store`.
+async function withStoreContext(callback) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL search_path TO store, public");
+    const result = await callback(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // ── Document sequence — atomic increment ──────────────────
 // Always use this to get the next document number.
 // SELECT FOR UPDATE prevents duplicate numbers under concurrency.
@@ -108,6 +129,7 @@ module.exports = {
   pool,
   withBusinessContext,
   withSharedContext,
+  withStoreContext,
   nextDocumentNumber,
   shutdown,
   healthCheck,
