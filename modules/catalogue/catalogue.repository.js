@@ -639,6 +639,98 @@ async function barcodeExists(client, barcodeValue) {
   return !!row;
 }
 
+// ── STORE PRODUCTS (web presentation layer) ──────────────────
+// Option A: a diffusers product can also have a storefront listing.
+// store.products holds the web-only fields and links back to
+// diffusers.products via product_id. These functions are called
+// from the catalogue service when a diffusers product is created
+// or edited with a `web` block.
+//
+// IMPORTANT: the catalogue service runs under
+// withBusinessContext('diffusers'), so the search_path is
+// `diffusers, shared, public`. store.products is therefore
+// referenced with an explicit `store.` qualification — Postgres
+// honours a schema-qualified name regardless of search_path.
+
+async function findStoreProductByProductId(client, productId) {
+  const {
+    rows: [row],
+  } = await client.query(`SELECT * FROM store.products WHERE product_id = $1`, [
+    productId,
+  ]);
+  return row || null;
+}
+
+async function findStoreProductBySlug(client, slug) {
+  const {
+    rows: [row],
+  } = await client.query(`SELECT * FROM store.products WHERE slug = $1`, [
+    slug,
+  ]);
+  return row || null;
+}
+
+async function insertStoreProduct(client, p) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO store.products
+       (product_id, slug, scent_family, format, size_ml,
+        images, web_description, top_notes, heart_notes, base_notes,
+        is_published)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     RETURNING *`,
+    [
+      p.productId,
+      p.slug,
+      p.scentFamily,
+      p.format,
+      p.sizeMl,
+      p.images || [],
+      p.webDescription || null,
+      p.topNotes || [],
+      p.heartNotes || [],
+      p.baseNotes || [],
+      p.isPublished !== false,
+    ],
+  );
+  return row;
+}
+
+async function updateStoreProductByProductId(client, productId, p) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE store.products SET
+       slug            = COALESCE($2,  slug),
+       scent_family    = COALESCE($3,  scent_family),
+       format          = COALESCE($4,  format),
+       size_ml         = COALESCE($5,  size_ml),
+       images          = COALESCE($6,  images),
+       web_description = COALESCE($7,  web_description),
+       top_notes       = COALESCE($8,  top_notes),
+       heart_notes     = COALESCE($9,  heart_notes),
+       base_notes      = COALESCE($10, base_notes),
+       is_published    = COALESCE($11, is_published)
+     WHERE product_id = $1
+     RETURNING *`,
+    [
+      productId,
+      p.slug ?? null,
+      p.scentFamily ?? null,
+      p.format ?? null,
+      p.sizeMl ?? null,
+      p.images ?? null,
+      p.webDescription ?? null,
+      p.topNotes ?? null,
+      p.heartNotes ?? null,
+      p.baseNotes ?? null,
+      p.isPublished ?? null,
+    ],
+  );
+  return row || null;
+}
+
 module.exports = {
   // categories
   listCategories,
@@ -647,6 +739,11 @@ module.exports = {
   updateCategory,
   countProductsInCategory,
   softDeleteCategory,
+  // store products (web layer)
+  findStoreProductByProductId,
+  findStoreProductBySlug,
+  insertStoreProduct,
+  updateStoreProductByProductId,
   // products
   listProducts,
   findProductById,

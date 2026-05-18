@@ -11,7 +11,7 @@ async function getCurrentStock(client, { locationId, search, belowReorder }) {
      LEFT JOIN (
        SELECT
          product_id,
-         SUM(quantity * direction) AS current_qty,
+         SUM(location_qty) AS current_qty,
          json_object_agg(location_id::TEXT, location_qty) AS location_breakdown
        FROM (
          SELECT product_id,
