@@ -73,13 +73,38 @@ jobs:
             pm2 save
 
             echo "--- Health check"
-            sleep 3
-            # The backend listens on 7000 in this project. Anchor the
-            # grep to a line that STARTS with PORT= so SMTP_PORT and
-            # similar can't match; fall back to 7000, not 3000 (3000 is
-            # the Vite DEV port — nothing runs there in production).
-            PORT=$(grep '^PORT=' /var/www/hub-system/.env | cut -d '=' -f2 | tr -d ' ')
-            curl -sf http://localhost:${PORT:-7000}/health \
-              || (echo "Health check FAILED" && exit 1)
+            # Resolve the port from .env. head -1 guards against a
+            # stray duplicate PORT= line; tr strips spaces and quotes
+            # so PORT = "7000" still parses. Falls back to 7000.
+            PORT=$(grep -E '^PORT=' /var/www/hub-system/.env | head -1 \
+                   | cut -d '=' -f2 | tr -d ' "')
+            PORT=${PORT:-7000}
+            echo "Health-checking http://localhost:$PORT/health"
+
+            # Retry for ~30s — pm2 reload returns before the app has
+            # finished booting, so a single curl can race the startup
+            # and report a false failure. Ten attempts, 3s apart.
+            HEALTHY=0
+            for i in $(seq 1 10); do
+              if curl -sf "http://localhost:$PORT/health" > /dev/null; then
+                echo "Health check passed on attempt $i ✓"
+                HEALTHY=1
+                break
+              fi
+              echo "  attempt $i/10 — not ready, waiting 3s..."
+              sleep 3
+            done
+
+            if [ "$HEALTHY" -ne 1 ]; then
+              echo "Health check FAILED after ~30s"
+              # Dump the app's own logs into the deploy output so the
+              # crash reason is visible right here in the Actions log,
+              # instead of needing a separate SSH session to find it.
+              echo "--- pm2 status ---"
+              pm2 list || true
+              echo "--- last 40 log lines ---"
+              pm2 logs hub-api --lines 40 --nostream || true
+              exit 1
+            fi
 
             echo "Production deploy complete ✓"

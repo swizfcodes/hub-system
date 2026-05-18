@@ -1,6 +1,6 @@
 "use strict";
 
-require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: ".env" });
 
 const bcrypt = require("bcrypt");
 const readline = require("readline");

@@ -1,0 +1,145 @@
+import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Star, Pencil, Hash, ArrowUpRight, Calendar, User, Banknote, Percent } from 'lucide-react';
+import { Card } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { Modal } from '@components/ui/Modal';
+import { Input } from '@components/ui/Input';
+import { ProbabilityBar } from '../shared/ProbabilityBar';
+import { StagePill } from '../shared/StagePill';
+import { fmtMoney, fmtDate } from '@lib/format';
+import { updateDeal, moveDealStage } from '@services/crm/deals';
+import { getPipeline } from '@services/crm/pipeline';
+import { showToast } from '@hooks/useToast';
+import { errMsg } from '@services/api';
+import type { Deal } from '@typedefs/crm';
+import { ContactAvatar } from '@components/contacts/shared/ContactAvatar';
+import { QuickActions } from '@components/contacts/shared/QuickActions';
+import { cn } from '@lib/cn';
+
+interface Props { deal: Deal }
+
+export function DealSidebar({ deal }: Props) {
+  const qc = useQueryClient();
+  const [editingValue, setEditingValue] = useState(false);
+
+  const { data: pipeline } = useQuery({ queryKey: ['crm', 'pipeline'], queryFn: () => getPipeline() });
+
+
+  const move = useMutation({
+    mutationFn: (stage: string) => moveDealStage(deal.deal_id, stage),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['crm'] }); showToast.success('Stage updated'); },
+    onError: (e) => showToast.error('Could not move', errMsg(e)),
+  });
+
+  return (
+    <aside className="lg:sticky lg:top-24 self-start space-y-3 lg:max-w-[340px]">
+      {/* Contact card */}
+      <Card className="p-4">
+        <Link to={`/contacts/${deal.contact_id}`} className="flex items-center gap-3 group">
+          <ContactAvatar contact={{ display_name: deal.contact_name ?? '?', contact_type: ['customer'] }} size="md" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-sm text-orika-cream truncate group-hover:text-orika-gold transition-colors">{deal.contact_name}</span>
+              {deal.priority_level === 'vip' && <Star className="w-3 h-3 fill-orika-gold text-orika-gold" />}
+            </div>
+            <span className="text-[0.65rem] text-orika-smoke">Open contact <ArrowUpRight className="inline w-2.5 h-2.5" /></span>
+          </div>
+        </Link>
+        <div className="mt-3 pt-3 border-t border-orika-graphite/70">
+          <QuickActions contact={{ primary_phone: deal.primary_phone ?? '', whatsapp_number: deal.whatsapp_number, email: deal.email }} size="sm" />
+        </div>
+      </Card>
+
+      {/* Stage card */}
+      <Card className="p-4">
+        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-2">Stage</div>
+        <div className="flex flex-wrap gap-1.5">
+          {(pipeline?.pipeline ?? []).map((s) => {
+            const active = s.stage_key === deal.stage;
+            return (
+              <button
+                key={s.stage_key}
+                onClick={() => !active && move.mutate(s.stage_key)}
+                disabled={move.isPending}
+                className={cn(
+                  'transition-all',
+                  active && 'ring-2 ring-offset-2 ring-offset-orika-charcoal rounded-full',
+                )}
+                style={active ? { boxShadow: `0 0 0 2px ${s.colour}` } : {}}
+              >
+                <StagePill stageKey={s.stage_key} label={s.stage_label} colour={s.colour} />
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Value card */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">Value</div>
+          <button onClick={() => setEditingValue(true)} className="text-orika-smoke hover:text-orika-gold transition-colors" aria-label="Edit"><Pencil className="w-3 h-3" /></button>
+        </div>
+        <div className="text-2xl font-display text-orika-gold tabular-nums">{fmtMoney(deal.expected_value, 'NGN')}</div>
+        <ProbabilityBar probability={deal.probability ?? 50} showLabel className="mt-3" />
+      </Card>
+
+      {/* Key fields */}
+      <Card className="p-4">
+        <div className="space-y-2.5 text-xs">
+          <Row icon={<Calendar className="w-3 h-3" />}   label="Expected close" value={deal.expected_close_date ? fmtDate(deal.expected_close_date) : '—'} />
+          <Row icon={<User className="w-3 h-3" />}       label="Owner"          value={deal.assigned_to_email ?? 'Unassigned'} />
+          <Row icon={<Hash className="w-3 h-3" />}       label="Source"         value={deal.source ?? '—'} mono />
+          <Row icon={<Banknote className="w-3 h-3" />}   label="Created"        value={fmtDate(deal.created_at)} />
+          {deal.won_at  && <Row icon={<Percent className="w-3 h-3" />} label="Won"    value={fmtDate(deal.won_at)} className="text-living-sage" />}
+          {deal.lost_at && <Row icon={<Percent className="w-3 h-3" />} label="Lost"   value={`${fmtDate(deal.lost_at)}${deal.lost_reason ? ` — ${deal.lost_reason}` : ''}`} className="text-state-danger" />}
+        </div>
+      </Card>
+
+      <EditValueModal open={editingValue} onClose={() => setEditingValue(false)} deal={deal} />
+    </aside>
+  );
+}
+
+function Row({ icon, label, value, mono, className }: { icon: React.ReactNode; label: string; value: string; mono?: boolean; className?: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="text-orika-smoke shrink-0 mt-0.5">{icon}</span>
+      <span className="text-orika-smoke shrink-0 w-24">{label}</span>
+      <span className={cn('flex-1 min-w-0 truncate', mono && 'font-mono', className ?? 'text-orika-cream')}>{value}</span>
+    </div>
+  );
+}
+
+function EditValueModal({ open, onClose, deal }: { open: boolean; onClose: () => void; deal: Deal }) {
+  const qc = useQueryClient();
+  const [value, setValue]       = useState<number | ''>(deal.expected_value ?? '');
+  const [probability, setProb]  = useState(deal.probability ?? 50);
+  const [closeDate, setClose]   = useState(deal.expected_close_date?.slice(0, 10) ?? '');
+
+  const mutation = useMutation({
+    mutationFn: () => updateDeal(deal.deal_id, {
+      expected_value: value === '' ? undefined : Number(value),
+      probability,
+      expected_close_date: closeDate || undefined,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['crm'] }); showToast.success('Saved'); onClose(); },
+    onError: (e) => showToast.error('Could not save', errMsg(e)),
+  });
+
+  return (
+    <Modal open={open} onClose={onClose} surface="light" size="sm" title="Edit deal value"
+      footer={<>
+        <Button variant="outline-light" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" loading={mutation.isPending} onClick={() => mutation.mutate()}>Save</Button>
+      </>}>
+      <div className="space-y-4">
+        <Input type="number" step="0.01" label="Expected value (NGN)" value={value} onChange={(e) => setValue(e.target.value === '' ? '' : Number(e.target.value))} />
+        <Input type="number" min={0} max={100} label="Probability (%)" value={probability} onChange={(e) => setProb(Number(e.target.value))} />
+        <Input type="date" label="Expected close date" value={closeDate} onChange={(e) => setClose(e.target.value)} />
+      </div>
+    </Modal>
+  );
+}

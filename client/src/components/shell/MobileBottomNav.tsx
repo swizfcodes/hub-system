@@ -1,0 +1,113 @@
+import { NavLink, useLocation } from 'react-router-dom';
+import { LayoutGrid } from 'lucide-react';
+import { HUB_MODULES, SETTINGS_SUBMODULES } from '@lib/constants/modules';
+import { cn } from '@lib/cn';
+
+/**
+ * Mobile bottom navigation. The icons shown are CALCULATED PER PAGE
+ * (Tom's spec): the route declares which modules matter most for the
+ * current context, and the bottom nav renders them. We fall back to a
+ * sensible default if a page doesn't declare its own set.
+ *
+ * Rules:
+ *  - On /settings/* we show the 4 most-used settings sub-modules + a back-to-Hub icon
+ *  - On the Hub home we hide the bottom nav (the page IS the launcher)
+ *  - Everywhere else we show: Dashboard, CRM, Sales, Stock, App Menu
+ */
+
+interface BottomItem {
+  key: string;
+  label: string;
+  route: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+function bottomItemsForRoute(pathname: string): BottomItem[] | null {
+  if (pathname === '/' || pathname === '/hub') return null;
+
+  if (pathname.startsWith('/settings')) {
+    const picks = ['business-setup', 'bank-accounts', 'custom-fields', 'permissions'];
+    const items: BottomItem[] = picks
+      .map((k) => SETTINGS_SUBMODULES.find((m) => m.key === k))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
+    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+    return items;
+  }
+
+  // On Contacts module: show shortcuts to the most-used sibling modules
+  if (pathname.startsWith('/contacts')) {
+    const picks = ['contacts', 'crm', 'messaging', 'tasks'];
+    const items: BottomItem[] = picks
+      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
+    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+    return items;
+  }
+
+  // On Procurement / Catalogue: surface the procure-to-pay siblings
+  if (pathname.startsWith('/procurement') || pathname.startsWith('/catalogue')) {
+    const picks = ['catalogue', 'purchasing', 'stock', 'contacts'];
+    const items: BottomItem[] = picks
+      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
+    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+    return items;
+  }
+
+  // On CRM: surface sales-adjacent quick jumps + calendar
+  if (pathname.startsWith('/crm')) {
+    const picks = ['crm', 'contacts', 'calendar', 'sales'];
+    const items: BottomItem[] = picks
+      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
+    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+    return items;
+  }
+
+  // Default mobile bottom nav
+  const picks = ['dashboard', 'crm', 'sales', 'stock'];
+  const items: BottomItem[] = picks
+    .map((k) => HUB_MODULES.find((m) => m.key === k))
+    .filter((m): m is NonNullable<typeof m> => !!m)
+    .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
+  items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+  return items;
+}
+
+export function MobileBottomNav() {
+  const { pathname } = useLocation();
+  const items = bottomItemsForRoute(pathname);
+
+  if (!items) return null;
+
+  return (
+    <nav
+      className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-orika-charcoal/95 backdrop-blur-md border-t border-orika-graphite pb-safe"
+      aria-label="Bottom navigation"
+    >
+      <div className="grid grid-cols-5">
+        {items.map((it) => {
+          const Icon = it.icon;
+          const active = it.route === '/' ? pathname === '/' : pathname.startsWith(it.route);
+          return (
+            <NavLink
+              key={it.key}
+              to={it.route}
+              className={cn(
+                'flex flex-col items-center gap-1 py-2.5 transition-colors',
+                active ? 'text-orika-gold' : 'text-orika-smoke hover:text-orika-cream',
+              )}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[0.6rem] font-semibold tracking-wide uppercase">{it.label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

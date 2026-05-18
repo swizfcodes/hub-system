@@ -1,0 +1,132 @@
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { ArrowLeft, FileQuestion, Sparkles, Send, Trophy, ArrowUpRight } from 'lucide-react';
+import { Topbar } from '@components/shell/Topbar';
+import { Breadcrumbs } from '@components/ui/Breadcrumbs';
+import { Skeleton } from '@components/ui/Skeleton';
+import { Button } from '@components/ui/Button';
+import { Card } from '@components/ui/Card';
+import { Badge } from '@components/ui/Badge';
+import { EmptyState } from '@components/ui/EmptyState';
+import { listRFQs, listQuotesForRFQ } from '@services/purchasing/rfqs';
+import { listSuppliers } from '@services/purchasing/suppliers';
+import { fmtDate, fmtRelative, fmtMoney } from '@lib/format';
+import { scoreQuotes } from '@lib/quoteScoring';
+import type { Supplier } from '@typedefs/purchasing';
+import { showToast } from '@hooks/useToast';
+
+export default function RFQDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [showTokens, setShowTokens] = useState(false);
+
+  // Backend doesn't have GET /rfqs/:id — we look up via list + filter.
+  const { data: rfqList, isLoading } = useQuery({ queryKey: ['purchasing', 'rfqs', 'all'], queryFn: () => listRFQs({ limit: 200 }) });
+  const rfq = rfqList?.data.find((r) => r.rfq_id === id);
+
+  const { data: quotes = [] } = useQuery({ queryKey: ['purchasing', 'rfq-quotes', id], queryFn: () => listQuotesForRFQ(id!), enabled: !!id });
+  const { data: suppliersResp } = useQuery({ queryKey: ['purchasing', 'suppliers'], queryFn: () => listSuppliers({ limit: 200 }) });
+
+  const suppliersById: Record<string, Supplier> = useMemo(() => {
+    const m: Record<string, Supplier> = {};
+    for (const s of suppliersResp?.data ?? []) m[s.supplier_id] = s;
+    return m;
+  }, [suppliersResp]);
+
+  const scored = useMemo(() => scoreQuotes(quotes, suppliersById), [quotes, suppliersById]);
+
+  return (
+    <>
+      <Topbar title={rfq?.title || 'RFQ'} subtitle={rfq?.rfq_number} />
+      <div className="px-4 sm:px-8 py-6 sm:py-8 max-w-6xl mx-auto">
+        <div className="mb-5 flex items-center justify-between gap-3 flex-wrap">
+          <Breadcrumbs items={[{ label: 'Hub', to: '/' }, { label: 'Procurement', to: '/procurement' }, { label: 'RFQs', to: '/procurement/rfqs' }, { label: rfq?.title ?? '…' }]} />
+          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="w-4 h-4" />} onClick={() => navigate('/procurement/rfqs')}>Back</Button>
+        </div>
+
+        {isLoading || !rfq ? (
+          <div className="space-y-3"><Skeleton className="h-44" /><Skeleton className="h-64" /></div>
+        ) : (
+          <>
+            <Card className="p-5 sm:p-6 mb-6">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="text-[0.6rem] text-orika-smoke font-mono">{rfq.rfq_number}</div>
+                  <h1 className="font-display text-3xl text-orika-cream mt-1">{rfq.title}</h1>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <Badge tone={rfq.status === 'sent' ? 'gold' : rfq.status === 'responses_received' ? 'sage' : 'neutral'} size="sm" dot>{rfq.status.replace('_', ' ')}</Badge>
+                    {rfq.response_deadline && <Badge tone="rose" size="sm">Deadline {fmtDate(rfq.response_deadline)}</Badge>}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {rfq.status === 'draft' && <Button variant="gold" leftIcon={<Send className="w-4 h-4" />}>Send to suppliers</Button>}
+                  <Button variant="secondary" onClick={() => setShowTokens((v) => !v)}>{showTokens ? 'Hide' : 'Show'} portal links</Button>
+                </div>
+              </div>
+              {rfq.notes && <p className="mt-4 text-sm text-orika-cloud">{rfq.notes}</p>}
+            </Card>
+
+            {/* Portal token preview (Q4) */}
+            {showTokens && (
+              <Card className="p-4 mb-6 bg-orika-gold/[0.04] border-orika-gold/30">
+                <div className="flex items-start gap-2 text-sm">
+                  <Sparkles className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-orika-cream">Each invited supplier receives a unique tokenised URL like:</p>
+                    <code className="block mt-2 px-3 py-2 bg-orika-black/40 rounded-lg font-mono text-xs text-orika-gold">https://hub.orika.com/rfq/&lt;token&gt;</code>
+                    <p className="text-xs text-orika-smoke mt-2">
+                      <strong>Backend pending:</strong> token generation and the public submission endpoint aren't wired yet.
+                      For now, send suppliers the RFQ details over email and enter their responses manually
+                      <em> (when the manual-entry route lands)</em>. See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code>.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Quotes (with best-value scoring) */}
+            <section>
+              <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2"><Trophy className="w-3.5 h-3.5" /> Supplier responses · {scored.length}</h3>
+              {scored.length === 0 ? (
+                <EmptyState icon={<FileQuestion className="w-6 h-6" />} title="Waiting for responses" description="Suppliers will submit their quotes via the portal URLs. The system will rank them by best value as they come in." />
+              ) : (
+                <div className="space-y-2">
+                  {scored.map((q) => {
+                    const sup = suppliersById[q.supplier_id];
+                    return (
+                      <Card key={q.quote_id} className={`p-4 ${q.is_recommended ? 'border-orika-gold/40 bg-orika-gold/[0.04]' : ''}`}>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {q.is_recommended && <Trophy className="w-4 h-4 text-orika-gold shrink-0" />}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Link to={`/procurement/suppliers/${q.supplier_id}`} className="text-sm font-medium text-orika-cream hover:text-orika-gold truncate">{sup?.display_name ?? q.supplier_name}</Link>
+                                {q.is_recommended && <Badge tone="gold" size="xs">Best value</Badge>}
+                              </div>
+                              <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                                Score {((q.weighted_score ?? 0) * 100).toFixed(0)}/100 · {fmtRelative(q.created_at)}
+                                {q.lead_time_days && ` · ${q.lead_time_days}d lead`}
+                                {q.valid_until && ` · valid until ${fmtDate(q.valid_until)}`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-mono text-lg text-orika-gold">{fmtMoney(q.unit_price, q.currency)}</span>
+                            <Button variant="gold" size="sm" leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />} onClick={() => { showToast.info('Coming soon', 'Convert-to-PO endpoint pending — see PROCUREMENT_PATCH_NOTES.'); }}>
+                              Generate PO
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
