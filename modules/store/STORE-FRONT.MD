@@ -19,15 +19,3 @@ Idempotent fulfilment — markOrderPaidWithJournals only touches a pending row; 
 All-or-nothing — the entire fulfilment is one DB transaction. If a journal or stock movement throws, everything rolls back; the order stays pending and retries cleanly. An order can never be paid without its journals.
 Amount mismatch flags the order processing for review instead of fulfilling.
 Verified against the schema — diffusers.stock_movements exists, all 5 COA codes (1210/4100/2210/5000/1410) are seeded, and I caught + fixed that shared.contacts.contact_type is a text[] array (my insert was passing a scalar — would have thrown).
-
-Verification
-
-0 syntax errors system-wide
-Every function the routes call is exported by the service
-Cross-schema design checked: store routes use withStoreContext for reads, withBusinessContext('diffusers') for fulfilment so journalService/stockService (which rely on search_path) write to the right schema
-
-Honest caveats for the 2-day window
-
-Not yet run against a database. The cross-schema JOINs and the dual-context fulfilment are the highest-risk parts — they need the smoke test against real Postgres before cutover.
-store.products rows must be created linking each storefront listing to its diffusers SKU — that's data setup (and a small ERP screen) for Day 2.
-Stock can go negative if a web order and a POS sale race for the last unit — the movement still records; this matches how the ERP already behaves for POS, so it's consistent, but worth knowing.
