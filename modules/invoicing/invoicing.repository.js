@@ -188,21 +188,139 @@ async function setVoided(client, invoiceId) {
   return inv || null;
 }
 
+// ── CREDIT NOTES ─────────────────────────────────────────────
+// A credit note is issued against an invoice — a refund/return
+// document. Lifecycle: draft → issued → applied | refunded.
+
+async function listCreditNotes(
+  client,
+  { invoiceId, status, limit = 50, offset = 0 },
+) {
+  const params = [];
+  const where = [];
+  if (invoiceId) {
+    params.push(invoiceId);
+    where.push(`cn.invoice_id = $${params.length}`);
+  }
+  if (status) {
+    params.push(status);
+    where.push(`cn.status = $${params.length}`);
+  }
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  params.push(limit, offset);
+  const { rows } = await client.query(
+    `SELECT cn.credit_note_id, cn.credit_note_number, cn.invoice_id,
+            cn.contact_id, cn.reason, cn.total_amount, cn.status,
+            cn.issued_at, cn.created_at, cn.updated_at,
+            c.display_name AS contact_name,
+            i.invoice_number
+     FROM credit_notes cn
+     JOIN shared.contacts c ON c.contact_id = cn.contact_id
+     JOIN invoices i ON i.invoice_id = cn.invoice_id
+     ${whereClause}
+     ORDER BY cn.created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+  return rows;
+}
+
+async function findCreditNoteById(client, creditNoteId) {
+  const {
+    rows: [cn],
+  } = await client.query(
+    `SELECT cn.*, c.display_name AS contact_name, i.invoice_number
+     FROM credit_notes cn
+     JOIN shared.contacts c ON c.contact_id = cn.contact_id
+     JOIN invoices i ON i.invoice_id = cn.invoice_id
+     WHERE cn.credit_note_id = $1`,
+    [creditNoteId],
+  );
+  if (!cn) return null;
+  const { rows: lines } = await client.query(
+    `SELECT line_id, product_id, description, quantity, unit_price, line_total
+     FROM credit_note_lines
+     WHERE credit_note_id = $1`,
+    [creditNoteId],
+  );
+  return { ...cn, lines };
+}
+
+async function insertCreditNote(
+  client,
+  { creditNoteNumber, invoiceId, contactId, reason, totalAmount, createdBy },
+) {
+  const {
+    rows: [cn],
+  } = await client.query(
+    `INSERT INTO credit_notes
+       (credit_note_number, invoice_id, contact_id, reason, total_amount, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [
+      creditNoteNumber,
+      invoiceId,
+      contactId,
+      reason,
+      totalAmount || 0,
+      createdBy || null,
+    ],
+  );
+  return cn;
+}
+
+async function insertCreditNoteLine(
+  client,
+  { creditNoteId, productId, description, quantity, unitPrice, lineTotal },
+) {
+  const {
+    rows: [line],
+  } = await client.query(
+    `INSERT INTO credit_note_lines
+       (credit_note_id, product_id, description, quantity, unit_price, line_total)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [
+      creditNoteId,
+      productId || null,
+      description,
+      quantity,
+      unitPrice,
+      lineTotal,
+    ],
+  );
+  return line;
+}
+
+async function setCreditNoteStatus(client, creditNoteId, status) {
+  const {
+    rows: [cn],
+  } = await client.query(
+    `UPDATE credit_notes SET
+       status     = $2,
+       issued_at  = CASE WHEN $2 = 'issued' AND issued_at IS NULL
+                         THEN now() ELSE issued_at END,
+       updated_at = now()
+     WHERE credit_note_id = $1
+     RETURNING *`,
+    [creditNoteId, status],
+  );
+  return cn || null;
+}
+
 module.exports = {
   list,
   findById,
   insert,
   insertLine,
-  // NOTE: getARAccount, getRevenueAccount, getVATAccount,
-  // insertJournalEntry, and insertJournalLines were removed in
-  // May 14 polish. Invoice journals are now posted through
-  // accounting/journal.service.postEntry, which provides DR=CR
-  // balance validation, fiscal period auto-assignment, and
-  // consistent entry numbering. The COA codes (1310 / 4100 /
-  // 2210) are passed to journalService.getAccountId directly
-  // from invoicing.service.postInvoiceJournal.
   insertPayment,
   getInvoiceNumberAndContact,
   setSent,
   setVoided,
+  // credit notes
+  listCreditNotes,
+  findCreditNoteById,
+  insertCreditNote,
+  insertCreditNoteLine,
+  setCreditNoteStatus,
 };

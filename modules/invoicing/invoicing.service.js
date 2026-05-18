@@ -1,6 +1,7 @@
 "use strict";
 
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
+const { getVatRate } = require("../../config/businesses");
 const notifService = require("../../shared/notifications/notifications.service");
 const auditService = require("../../shared/audit/audit.service");
 const journalService = require("../accounting/journal.service");
@@ -44,10 +45,15 @@ async function create(business, data, user) {
 
     let subtotal = 0,
       vatTotal = 0;
+    // Per-line vat_rate is honoured if supplied (lets a VAT-exempt
+    // line pass vat_rate: 0); otherwise fall back to the business's
+    // configured rate rather than a hardcoded 7.5%.
+    const defaultVatRate = getVatRate(business);
     for (const line of data.lines) {
       const lineTotal =
         line.unit_price * line.quantity - (line.discount_amount || 0);
-      const vatAmt = lineTotal * (line.vat_rate || 0.075);
+      const rate = line.vat_rate != null ? line.vat_rate : defaultVatRate;
+      const vatAmt = lineTotal * rate;
       subtotal += lineTotal;
       vatTotal += vatAmt;
     }
@@ -72,7 +78,8 @@ async function create(business, data, user) {
     for (let i = 0; i < data.lines.length; i++) {
       const l = data.lines[i];
       const lineTotal = l.unit_price * l.quantity - (l.discount_amount || 0);
-      const vatAmt = lineTotal * (l.vat_rate || 0.075);
+      const rate = l.vat_rate != null ? l.vat_rate : defaultVatRate;
+      const vatAmt = lineTotal * rate;
       await repo.insertLine(client, {
         invoice_id: inv.invoice_id,
         product_id: l.product_id,
@@ -257,8 +264,17 @@ async function recordPayment(business, invoiceId, data, user) {
 
   if (contactId && data.is_confirmed !== false) {
     loyaltyService
-      .awardPoints(business, contactId, data.amount, "invoice_payment", payment.payment_id, user)
-      .catch((err) => logger.error("[loyalty] award failed after invoice payment", err));
+      .awardPoints(
+        business,
+        contactId,
+        data.amount,
+        "invoice_payment",
+        payment.payment_id,
+        user,
+      )
+      .catch((err) =>
+        logger.error("[loyalty] award failed after invoice payment", err),
+      );
   }
 
   return payment;
@@ -271,7 +287,25 @@ async function send(business, invoiceId, { channel = "email" }, user) {
 
   const pdf = await generatePDF(business, invoiceId);
 
-  if (channel === "email" && inv.email) {
+  // Guard before sending — don't mark an invoice 'sent' if the
+  // contact has no address for the channel.
+  if (channel === "email" && !inv.email) {
+    throw Object.assign(new Error("Contact has no email address on file"), {
+      status: 400,
+    });
+  }
+  if (channel === "whatsapp" && !inv.whatsapp_number) {
+    throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
+      status: 400,
+    });
+  }
+  if (channel !== "email" && channel !== "whatsapp") {
+    throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
+      status: 400,
+    });
+  }
+
+  if (channel === "email") {
     await sendWithAttachment({
       to: inv.email,
       subject: `Invoice ${inv.invoice_number}`,
@@ -279,13 +313,14 @@ async function send(business, invoiceId, { channel = "email" }, user) {
       filename: `${inv.invoice_number}.pdf`,
       pdfBuffer: pdf,
     });
-  } else if (channel === "whatsapp" && inv.whatsapp_number) {
+  } else if (channel === "whatsapp") {
     await whatsapp.sendMessage({
       to: inv.whatsapp_number,
       text: `Dear ${inv.contact_name}, your invoice ${inv.invoice_number} of ₦${Number(inv.total_amount).toLocaleString()} is due on ${inv.due_date}. Please make payment to our bank account.`,
     });
   }
 
+  // Mark sent only after a successful send.
   await withBusinessContext(business, async (client) =>
     repo.setSent(client, invoiceId),
   );
@@ -319,6 +354,228 @@ async function generatePDF(business, invoiceId) {
   return renderToPDF("invoices", inv);
 }
 
+// ─────────────────────────────────────────────────────────────
+// CREDIT NOTES
+//
+// A credit note reverses all or part of an invoice — the refund /
+// return document. Lifecycle: draft → issued → applied | refunded.
+//
+// Issuing a credit note posts a REVERSING journal:
+//   DR Sales Revenue   (net)      — income reduced
+//   DR VAT Payable     (vat)      — VAT liability reduced
+//     CR Accounts Receivable (total) — customer owes less
+// This is the mirror of postInvoiceJournal. Posted via the canonical
+// journalService.postEntry so it gets DR=CR validation and a fiscal
+// period stamp.
+// ─────────────────────────────────────────────────────────────
+
+async function listCreditNotes(business, query) {
+  return withBusinessContext(business, async (client) => {
+    const data = await repo.listCreditNotes(client, {
+      invoiceId: query.invoice_id,
+      status: query.status,
+      limit: query.limit ? parseInt(query.limit) : 50,
+      offset: query.page
+        ? (parseInt(query.page) - 1) * (parseInt(query.limit) || 50)
+        : 0,
+    });
+    return { data };
+  });
+}
+
+async function getCreditNote(business, creditNoteId) {
+  return withBusinessContext(business, async (client) => {
+    const cn = await repo.findCreditNoteById(client, creditNoteId);
+    if (!cn) {
+      throw Object.assign(new Error("Credit note not found"), { status: 404 });
+    }
+    return cn;
+  });
+}
+
+async function createCreditNote(business, data, user) {
+  if (!data.invoice_id) {
+    throw Object.assign(new Error("invoice_id is required"), { status: 400 });
+  }
+  if (!data.reason || !data.reason.trim()) {
+    throw Object.assign(new Error("reason is required"), { status: 400 });
+  }
+  if (!Array.isArray(data.lines) || data.lines.length === 0) {
+    throw Object.assign(new Error("At least one line is required"), {
+      status: 400,
+    });
+  }
+  return withBusinessContext(business, async (client) => {
+    const invoice = await repo.findById(client, data.invoice_id);
+    if (!invoice) {
+      throw Object.assign(new Error("Invoice not found"), { status: 404 });
+    }
+
+    let totalAmount = 0;
+    for (const l of data.lines) {
+      const lineTotal = l.unit_price * l.quantity;
+      totalAmount += lineTotal;
+    }
+    // A credit note cannot exceed the invoice it credits.
+    if (totalAmount > parseFloat(invoice.total_amount)) {
+      throw Object.assign(
+        new Error(
+          `Credit note total (${totalAmount}) exceeds invoice total ` +
+            `(${invoice.total_amount})`,
+        ),
+        { status: 400 },
+      );
+    }
+
+    const creditNoteNumber = await nextDocumentNumber(
+      client,
+      business,
+      "credit_note",
+    );
+    const cn = await repo.insertCreditNote(client, {
+      creditNoteNumber,
+      invoiceId: data.invoice_id,
+      contactId: invoice.contact_id,
+      reason: data.reason.trim(),
+      totalAmount,
+      createdBy: user.user_id,
+    });
+
+    for (const l of data.lines) {
+      await repo.insertCreditNoteLine(client, {
+        creditNoteId: cn.credit_note_id,
+        productId: l.product_id,
+        description: l.description || "Credit note line",
+        quantity: l.quantity,
+        unitPrice: l.unit_price,
+        lineTotal: l.unit_price * l.quantity,
+      });
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "invoicing",
+      action: "create",
+      table: "credit_notes",
+      recordId: cn.credit_note_id,
+      after: cn,
+    });
+
+    return repo.findCreditNoteById(client, cn.credit_note_id);
+  });
+}
+
+async function issueCreditNote(business, creditNoteId, user) {
+  return withBusinessContext(business, async (client) => {
+    const cn = await repo.findCreditNoteById(client, creditNoteId);
+    if (!cn) {
+      throw Object.assign(new Error("Credit note not found"), { status: 404 });
+    }
+    if (cn.status !== "draft") {
+      throw Object.assign(new Error(`Credit note is already ${cn.status}`), {
+        status: 400,
+      });
+    }
+
+    const updated = await repo.setCreditNoteStatus(
+      client,
+      creditNoteId,
+      "issued",
+    );
+
+    // Post the reversing journal. The VAT portion is backed out of the
+    // total at the business rate (the invoice charged VAT, so the
+    // credit reverses it).
+    const vatRate = getVatRate(business);
+    const total = parseFloat(cn.total_amount);
+    const net = parseFloat((total / (1 + vatRate)).toFixed(2));
+    const vat = parseFloat((total - net).toFixed(2));
+
+    const ar = await journalService.getAccountId(client, "1310");
+    const rev = await journalService.getAccountId(client, "4100");
+    const vatAcc = await journalService.getAccountId(client, "2210");
+
+    if (ar && rev) {
+      const lines = [
+        { account_id: rev, debit: net, credit: 0 },
+        { account_id: ar, debit: 0, credit: total },
+      ];
+      if (vatAcc && vat > 0) {
+        lines.splice(1, 0, { account_id: vatAcc, debit: vat, credit: 0 });
+      }
+      await journalService.postEntry(client, {
+        description: `Credit Note ${cn.credit_note_number} (Invoice ${cn.invoice_number})`,
+        referenceType: "credit_note",
+        referenceId: creditNoteId,
+        postedBy: user.user_id,
+        lines,
+      });
+    } else {
+      logger.warn(
+        `[invoicing] credit note ${cn.credit_note_number} issued without ` +
+          `journal — missing COA accounts`,
+      );
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "invoicing",
+      action: "edit",
+      table: "credit_notes",
+      recordId: creditNoteId,
+      before: { status: "draft" },
+      after: { status: "issued" },
+    });
+
+    return updated;
+  });
+}
+
+async function setCreditNoteApplied(business, creditNoteId, status, user) {
+  // Transition an issued credit note to 'applied' (offset against a
+  // future invoice) or 'refunded' (cash returned to the customer).
+  if (!["applied", "refunded"].includes(status)) {
+    throw Object.assign(new Error("status must be 'applied' or 'refunded'"), {
+      status: 400,
+    });
+  }
+  return withBusinessContext(business, async (client) => {
+    const cn = await repo.findCreditNoteById(client, creditNoteId);
+    if (!cn) {
+      throw Object.assign(new Error("Credit note not found"), { status: 404 });
+    }
+    if (cn.status !== "issued") {
+      throw Object.assign(
+        new Error(
+          `Only an issued credit note can be ${status} (currently ${cn.status})`,
+        ),
+        { status: 400 },
+      );
+    }
+    const updated = await repo.setCreditNoteStatus(
+      client,
+      creditNoteId,
+      status,
+    );
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "invoicing",
+      action: "edit",
+      table: "credit_notes",
+      recordId: creditNoteId,
+      before: { status: "issued" },
+      after: { status },
+    });
+    return updated;
+  });
+}
+
 module.exports = {
   list,
   getById,
@@ -327,4 +584,10 @@ module.exports = {
   send,
   voidInvoice,
   generatePDF,
+  // credit notes
+  listCreditNotes,
+  getCreditNote,
+  createCreditNote,
+  issueCreditNote,
+  setCreditNoteApplied,
 };

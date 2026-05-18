@@ -202,6 +202,223 @@ async function insertNote(
   return note;
 }
 
+// ── CUSTOMER PREFERENCES ─────────────────────────────────────
+// Per-business key/value store attached to a contact. Holds the
+// facts the sales team learns over time — ring sizes, metal
+// preferences, scent profiles, allergies, budget bands.
+
+async function listPreferences(client, contactId) {
+  const { rows } = await client.query(
+    `SELECT preference_id, contact_id, preference_key, preference_value,
+            notes, created_by, created_at, updated_at
+     FROM customer_preferences
+     WHERE contact_id = $1
+     ORDER BY preference_key`,
+    [contactId],
+  );
+  return rows;
+}
+
+async function findPreferenceById(client, preferenceId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM customer_preferences WHERE preference_id = $1`,
+    [preferenceId],
+  );
+  return row || null;
+}
+
+async function findPreferenceByKey(client, contactId, key) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM customer_preferences
+     WHERE contact_id = $1 AND preference_key = $2`,
+    [contactId, key],
+  );
+  return row || null;
+}
+
+async function insertPreference(
+  client,
+  { contactId, preferenceKey, preferenceValue, notes, createdBy },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO customer_preferences
+       (contact_id, preference_key, preference_value, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [
+      contactId,
+      preferenceKey,
+      preferenceValue,
+      notes || null,
+      createdBy || null,
+    ],
+  );
+  return row;
+}
+
+async function updatePreference(
+  client,
+  preferenceId,
+  { preferenceValue, notes },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE customer_preferences SET
+       preference_value = COALESCE($2, preference_value),
+       notes            = COALESCE($3, notes),
+       updated_at       = now()
+     WHERE preference_id = $1
+     RETURNING *`,
+    [preferenceId, preferenceValue ?? null, notes ?? null],
+  );
+  return row || null;
+}
+
+async function deletePreference(client, preferenceId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `DELETE FROM customer_preferences WHERE preference_id = $1
+     RETURNING preference_id, contact_id`,
+    [preferenceId],
+  );
+  return row || null;
+}
+
+// ── CUSTOMER MILESTONES ──────────────────────────────────────
+// Per-business dated events on a contact (birthday, anniversary).
+// The sendMilestoneReminders cron READS this table — this module
+// is the WRITE side it was always missing.
+
+async function listMilestones(client, contactId) {
+  const { rows } = await client.query(
+    `SELECT milestone_id, contact_id, milestone_type, milestone_date,
+            notes, created_by, created_at
+     FROM customer_milestones
+     WHERE contact_id = $1
+     ORDER BY milestone_date`,
+    [contactId],
+  );
+  return rows;
+}
+
+async function findMilestoneById(client, milestoneId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM customer_milestones WHERE milestone_id = $1`,
+    [milestoneId],
+  );
+  return row || null;
+}
+
+async function insertMilestone(
+  client,
+  { contactId, milestoneType, milestoneDate, notes, createdBy },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO customer_milestones
+       (contact_id, milestone_type, milestone_date, notes, created_by)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [contactId, milestoneType, milestoneDate, notes || null, createdBy || null],
+  );
+  return row;
+}
+
+async function updateMilestone(
+  client,
+  milestoneId,
+  { milestoneType, milestoneDate, notes },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE customer_milestones SET
+       milestone_type = COALESCE($2, milestone_type),
+       milestone_date = COALESCE($3, milestone_date),
+       notes          = COALESCE($4, notes)
+     WHERE milestone_id = $1
+     RETURNING *`,
+    [milestoneId, milestoneType ?? null, milestoneDate ?? null, notes ?? null],
+  );
+  return row || null;
+}
+
+async function deleteMilestone(client, milestoneId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `DELETE FROM customer_milestones WHERE milestone_id = $1
+     RETURNING milestone_id, contact_id`,
+    [milestoneId],
+  );
+  return row || null;
+}
+
+// ── CONTACT TAGS ─────────────────────────────────────────────
+// shared.contact_tags — lives in the shared schema with a business
+// column (a contact can be tagged differently per business).
+
+async function listTags(client, contactId, business) {
+  const { rows } = await client.query(
+    `SELECT tag_id, contact_id, tag_name, business, colour,
+            created_by, created_at
+     FROM shared.contact_tags
+     WHERE contact_id = $1 AND business = $2
+     ORDER BY tag_name`,
+    [contactId, business],
+  );
+  return rows;
+}
+
+async function findTagByName(client, contactId, business, tagName) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM shared.contact_tags
+     WHERE contact_id = $1 AND business = $2 AND lower(tag_name) = lower($3)`,
+    [contactId, business, tagName],
+  );
+  return row || null;
+}
+
+async function insertTag(
+  client,
+  { contactId, business, tagName, colour, createdBy },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO shared.contact_tags
+       (contact_id, business, tag_name, colour, created_by)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [contactId, business, tagName, colour || "#64748B", createdBy || null],
+  );
+  return row;
+}
+
+async function deleteTag(client, tagId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `DELETE FROM shared.contact_tags WHERE tag_id = $1
+     RETURNING tag_id, contact_id, tag_name`,
+    [tagId],
+  );
+  return row || null;
+}
+
 module.exports = {
   listDeals,
   insertDeal,
@@ -215,4 +432,22 @@ module.exports = {
   getNotes,
   getDealContactId,
   insertNote,
+  // preferences
+  listPreferences,
+  findPreferenceById,
+  findPreferenceByKey,
+  insertPreference,
+  updatePreference,
+  deletePreference,
+  // milestones
+  listMilestones,
+  findMilestoneById,
+  insertMilestone,
+  updateMilestone,
+  deleteMilestone,
+  // tags
+  listTags,
+  findTagByName,
+  insertTag,
+  deleteTag,
 };

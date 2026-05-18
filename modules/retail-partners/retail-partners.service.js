@@ -310,13 +310,29 @@ async function reportPartnerSale(business, data, user) {
       client,
       data.partner_id,
     );
+    // A partner only gets a stock_location lazily, on their first
+    // dispatch. If we're recording a SALE there must already have
+    // been a dispatch, so a null location here means inconsistent
+    // data. Fail with a clear message rather than letting
+    // recordMovement throw the generic "Outbound movements require a
+    // fromLocationId".
+    if (!partnerLocation) {
+      throw Object.assign(
+        new Error(
+          "This partner has no stock location — no goods were ever " +
+            "dispatched to them, so a sale cannot be reported. Check " +
+            "the consignment record.",
+        ),
+        { status: 409 },
+      );
+    }
     await movements.recordMovement(client, {
       business,
       productId: consignment.product_id,
       movementType: "consignment_sale",
       quantity: data.quantity_sold,
       direction: -1,
-      fromLocationId: partnerLocation?.location_id,
+      fromLocationId: partnerLocation.location_id,
       referenceType: "consignment_sale",
       referenceId: sale.sale_id,
       performedBy: user.user_id,

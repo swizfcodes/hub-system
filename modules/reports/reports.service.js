@@ -9,6 +9,7 @@ const financeReport = require("./finance.report");
 const stockReport = require("./stock.report");
 const payrollReport = require("./payroll.report");
 const deliveryReport = require("./delivery.report");
+const repo = require("./reports.repository");
 
 // ─────────────────────────────────────────────────────────────
 // REPORTS SERVICE — Module 17: Dashboards & Reports
@@ -367,8 +368,153 @@ function buildFilename(family, reportType, format) {
   return `${family}-${reportType}-${stamp}.${ext}`;
 }
 
+// ─────────────────────────────────────────────────────────────
+// SAVED REPORTS
+//
+// A saved report is a stored report configuration — type, filters,
+// columns, sort, optional schedule — that a user can re-run without
+// re-entering the parameters. is_shared makes it visible to the
+// whole business; otherwise it's private to the creator.
+//
+// Mutating endpoints enforce ownership: a user can only edit or
+// delete a report they created (shared reports are visible to all
+// but still owned by one person).
+// ─────────────────────────────────────────────────────────────
+
+async function listSavedReports(business, user) {
+  return withBusinessContext(business, async (client) => {
+    const data = await repo.listSavedReports(client, user.user_id);
+    return { data };
+  });
+}
+
+async function getSavedReport(business, reportId, user) {
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.findSavedReportById(client, reportId);
+    if (!row) {
+      throw Object.assign(new Error("Saved report not found"), {
+        status: 404,
+      });
+    }
+    // A private report is only visible to its creator.
+    if (!row.is_shared && row.created_by !== user.user_id) {
+      throw Object.assign(new Error("Saved report not found"), {
+        status: 404,
+      });
+    }
+    return row;
+  });
+}
+
+async function createSavedReport(business, data, user) {
+  if (!data.report_name || !data.report_name.trim()) {
+    throw Object.assign(new Error("report_name is required"), {
+      status: 400,
+    });
+  }
+  if (!data.report_type) {
+    throw Object.assign(new Error("report_type is required"), {
+      status: 400,
+    });
+  }
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.insertSavedReport(client, {
+      createdBy: user.user_id,
+      reportName: data.report_name.trim(),
+      reportType: data.report_type,
+      filters: data.filters,
+      columns: data.columns,
+      sortConfig: data.sort_config,
+      isShared: data.is_shared,
+      schedule: data.schedule,
+    });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "reports",
+      action: "create",
+      table: "saved_reports",
+      recordId: row.report_id,
+      after: row,
+    });
+    return row;
+  });
+}
+
+async function updateSavedReport(business, reportId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const before = await repo.findSavedReportById(client, reportId);
+    if (!before) {
+      throw Object.assign(new Error("Saved report not found"), {
+        status: 404,
+      });
+    }
+    if (before.created_by !== user.user_id) {
+      throw Object.assign(new Error("You can only edit a report you created"), {
+        status: 403,
+      });
+    }
+    const row = await repo.updateSavedReport(client, reportId, {
+      reportName: data.report_name ? data.report_name.trim() : null,
+      filters: data.filters,
+      columns: data.columns,
+      sortConfig: data.sort_config,
+      isShared: data.is_shared,
+      schedule: data.schedule,
+    });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "reports",
+      action: "edit",
+      table: "saved_reports",
+      recordId: reportId,
+      before,
+      after: row,
+    });
+    return row;
+  });
+}
+
+async function deleteSavedReport(business, reportId, user) {
+  return withBusinessContext(business, async (client) => {
+    const before = await repo.findSavedReportById(client, reportId);
+    if (!before) {
+      throw Object.assign(new Error("Saved report not found"), {
+        status: 404,
+      });
+    }
+    if (before.created_by !== user.user_id) {
+      throw Object.assign(
+        new Error("You can only delete a report you created"),
+        { status: 403 },
+      );
+    }
+    await repo.deleteSavedReport(client, reportId);
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "reports",
+      action: "delete",
+      table: "saved_reports",
+      recordId: reportId,
+      before,
+    });
+    return { deleted: true };
+  });
+}
+
 module.exports = {
   generate,
   REPORT_FAMILIES: Object.keys(REPORT_FAMILIES),
   SUPPORTED_FORMATS,
+  // saved reports
+  listSavedReports,
+  getSavedReport,
+  createSavedReport,
+  updateSavedReport,
+  deleteSavedReport,
 };

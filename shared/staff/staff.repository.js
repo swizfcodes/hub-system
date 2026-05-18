@@ -500,6 +500,190 @@ async function revokeRole(client, { userId, roleId, business }) {
   return result.rowCount > 0;
 }
 
+// ── LEAVE REQUESTS ───────────────────────────────────────────
+// shared.leave_requests — staff submit, managers approve/reject.
+// The payroll calculator reads approved 'unpaid' leave to deduct
+// absent days, so the data this module writes feeds payroll.
+
+async function resolveProfileIdForUser(client, userId) {
+  // The "my leave" endpoints need to turn the logged-in user into
+  // their staff profile_id. shared.users.staff_profile_id is that link.
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT staff_profile_id FROM shared.users WHERE user_id = $1`,
+    [userId],
+  );
+  return row?.staff_profile_id || null;
+}
+
+async function listLeaveRequests(
+  client,
+  { profileId, status, fromDate, toDate, limit = 100, offset = 0 } = {},
+) {
+  const params = [];
+  const where = [];
+  if (profileId) {
+    params.push(profileId);
+    where.push(`lr.profile_id = $${params.length}`);
+  }
+  if (status) {
+    params.push(status);
+    where.push(`lr.status = $${params.length}`);
+  }
+  if (fromDate) {
+    params.push(fromDate);
+    where.push(`lr.end_date >= $${params.length}`);
+  }
+  if (toDate) {
+    params.push(toDate);
+    where.push(`lr.start_date <= $${params.length}`);
+  }
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  params.push(limit, offset);
+
+  const { rows } = await client.query(
+    `SELECT lr.leave_id, lr.profile_id, lr.leave_type,
+            lr.start_date, lr.end_date, lr.days_requested,
+            lr.status, lr.approved_by, lr.approved_at,
+            lr.reason, lr.rejection_reason,
+            lr.created_at, lr.updated_at,
+            c.display_name AS staff_name
+     FROM shared.leave_requests lr
+     JOIN shared.staff_profiles sp ON sp.profile_id = lr.profile_id
+     JOIN shared.contacts c ON c.contact_id = sp.contact_id
+     ${whereClause}
+     ORDER BY lr.start_date DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+  return rows;
+}
+
+async function findLeaveRequestById(client, leaveId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT lr.*, c.display_name AS staff_name
+     FROM shared.leave_requests lr
+     JOIN shared.staff_profiles sp ON sp.profile_id = lr.profile_id
+     JOIN shared.contacts c ON c.contact_id = sp.contact_id
+     WHERE lr.leave_id = $1`,
+    [leaveId],
+  );
+  return row || null;
+}
+
+async function findOverlappingLeave(
+  client,
+  { profileId, startDate, endDate, excludeLeaveId = null },
+) {
+  // Block a staff member from booking two leave periods that overlap.
+  // Cancelled / rejected requests don't count as conflicts.
+  const params = [profileId, startDate, endDate];
+  let exclude = "";
+  if (excludeLeaveId) {
+    params.push(excludeLeaveId);
+    exclude = `AND leave_id != $${params.length}`;
+  }
+  const { rows } = await client.query(
+    `SELECT leave_id, start_date, end_date, status
+     FROM shared.leave_requests
+     WHERE profile_id = $1
+       AND status IN ('pending', 'approved')
+       AND start_date <= $3
+       AND end_date >= $2
+       ${exclude}`,
+    params,
+  );
+  return rows;
+}
+
+async function insertLeaveRequest(
+  client,
+  { profileId, leaveType, startDate, endDate, daysRequested, reason },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO shared.leave_requests
+       (profile_id, leave_type, start_date, end_date, days_requested, reason)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [profileId, leaveType, startDate, endDate, daysRequested, reason || null],
+  );
+  return row;
+}
+
+async function updateLeaveRequest(
+  client,
+  leaveId,
+  { leaveType, startDate, endDate, daysRequested, reason },
+) {
+  // Only the editable fields — status transitions go through the
+  // dedicated approve/reject/cancel functions below.
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE shared.leave_requests SET
+       leave_type     = COALESCE($2, leave_type),
+       start_date     = COALESCE($3, start_date),
+       end_date       = COALESCE($4, end_date),
+       days_requested = COALESCE($5, days_requested),
+       reason         = COALESCE($6, reason),
+       updated_at     = now()
+     WHERE leave_id = $1 AND status = 'pending'
+     RETURNING *`,
+    [
+      leaveId,
+      leaveType ?? null,
+      startDate ?? null,
+      endDate ?? null,
+      daysRequested ?? null,
+      reason ?? null,
+    ],
+  );
+  return row || null;
+}
+
+async function setLeaveStatus(
+  client,
+  leaveId,
+  { status, approvedBy, rejectionReason },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE shared.leave_requests SET
+       status           = $2,
+       approved_by      = $3,
+       approved_at      = CASE WHEN $2 IN ('approved','rejected')
+                               THEN now() ELSE approved_at END,
+       rejection_reason = $4,
+       updated_at       = now()
+     WHERE leave_id = $1
+     RETURNING *`,
+    [leaveId, status, approvedBy || null, rejectionReason || null],
+  );
+  return row || null;
+}
+
+async function getLeaveBalanceSummary(client, profileId, year) {
+  // Sum approved days per leave_type for a given year — feeds a
+  // simple "how much leave has this person taken" view.
+  const { rows } = await client.query(
+    `SELECT leave_type,
+            COALESCE(SUM(days_requested), 0)::int AS days_taken
+     FROM shared.leave_requests
+     WHERE profile_id = $1
+       AND status = 'approved'
+       AND EXTRACT(YEAR FROM start_date) = $2
+     GROUP BY leave_type`,
+    [profileId, year],
+  );
+  return rows;
+}
+
 module.exports = {
   // profiles
   listProfiles,
@@ -531,4 +715,13 @@ module.exports = {
   listUserRoles,
   grantRole,
   revokeRole,
+  // leave requests
+  resolveProfileIdForUser,
+  listLeaveRequests,
+  findLeaveRequestById,
+  findOverlappingLeave,
+  insertLeaveRequest,
+  updateLeaveRequest,
+  setLeaveStatus,
+  getLeaveBalanceSummary,
 };

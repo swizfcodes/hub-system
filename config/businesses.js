@@ -123,6 +123,22 @@ function getBusinessConfig(key) {
 }
 
 /**
+ * VAT rate for a business as a decimal (0.075 = 7.5%). Reads from the
+ * cached business_config. Falls back to the Nigerian standard 7.5%
+ * only if the business has no config row at all — which should never
+ * happen for an active business, but the fallback keeps a sale from
+ * throwing if the cache is somehow stale.
+ *
+ * Centralised here so sales, POS, and invoicing all compute VAT the
+ * same way instead of each hardcoding 0.075.
+ */
+function getVatRate(key) {
+  const cfg = cache.byKey.get(key);
+  const rate = cfg ? parseFloat(cfg.vat_rate) : NaN;
+  return Number.isFinite(rate) ? rate : 0.075;
+}
+
+/**
  * Cache health — diagnostics endpoint.
  */
 function getCacheStatus() {
@@ -165,6 +181,7 @@ module.exports = {
   getActiveBusinesses,
   isValidBusiness,
   getBusinessConfig,
+  getVatRate,
   // cache hooks
   addToCache,
   removeFromCache,

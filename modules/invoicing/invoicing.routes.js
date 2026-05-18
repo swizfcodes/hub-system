@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service = require("./invoicing.service");
@@ -128,6 +128,101 @@ router.get(
       res.send(pdfBuffer);
     } catch (err) {
       next(err);
+    }
+  },
+);
+
+// ─── CREDIT NOTES ────────────────────────────────────────────
+//   GET    /invoicing/credit-notes
+//   GET    /invoicing/credit-notes/:id
+//   POST   /invoicing/credit-notes
+//   POST   /invoicing/credit-notes/:id/issue
+//   POST   /invoicing/credit-notes/:id/status   ('applied' | 'refunded')
+
+router.get(
+  "/credit-notes",
+  query("invoice_id").optional().isUUID(),
+  query("status").optional().isIn(["draft", "issued", "applied", "refunded"]),
+  validate,
+  can("invoicing", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.listCreditNotes(req.business, req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/credit-notes/:id",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getCreditNote(req.business, req.params.id));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/credit-notes",
+  body("invoice_id").isUUID(),
+  body("reason").isString().notEmpty(),
+  body("lines").isArray({ min: 1 }),
+  body("lines.*.description").optional().isString(),
+  body("lines.*.quantity").isInt({ min: 1 }),
+  body("lines.*.unit_price").isFloat({ min: 0 }),
+  validate,
+  can("invoicing", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.createCreditNote(req.business, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/credit-notes/:id/issue",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.issueCreditNote(req.business, req.params.id, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/credit-notes/:id/status",
+  param("id").isUUID(),
+  body("status").isIn(["applied", "refunded"]),
+  validate,
+  can("invoicing", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.setCreditNoteApplied(
+          req.business,
+          req.params.id,
+          req.body.status,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
     }
   },
 );

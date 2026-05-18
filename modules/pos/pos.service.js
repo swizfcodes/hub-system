@@ -1,6 +1,7 @@
 "use strict";
 
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
+const { getVatRate } = require("../../config/businesses");
 const stockService = require("../stock/stock.service");
 const notifService = require("../../shared/notifications/notifications.service");
 const auditService = require("../../shared/audit/audit.service");
@@ -28,6 +29,94 @@ async function getTerminals(business) {
   return withBusinessContext(business, async (client) => {
     const rows = await repo.getTerminals(client);
     return { data: rows };
+  });
+}
+
+async function createTerminal(business, data, user) {
+  if (!data.name || !data.name.trim()) {
+    throw Object.assign(new Error("name is required"), { status: 400 });
+  }
+  if (!data.location_id) {
+    throw Object.assign(
+      new Error("location_id is required — a terminal belongs to a location"),
+      { status: 400 },
+    );
+  }
+  return withBusinessContext(business, async (client) => {
+    // Verify the location exists and is active before insert so a bad
+    // location_id returns a clean 400 instead of a raw FK violation.
+    const loc = await repo.findLocationForTerminal(client, data.location_id);
+    if (!loc) {
+      throw Object.assign(
+        new Error("location_id does not match an active stock location"),
+        { status: 400 },
+      );
+    }
+    const row = await repo.insertTerminal(client, {
+      name: data.name.trim(),
+      locationId: data.location_id,
+    });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "pos",
+      action: "create",
+      table: "pos_terminals",
+      recordId: row.terminal_id,
+      after: row,
+    });
+    return row;
+  });
+}
+
+async function updateTerminal(business, terminalId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const before = await repo.findTerminalById(client, terminalId);
+    if (!before) {
+      throw Object.assign(new Error("Terminal not found"), { status: 404 });
+    }
+    // If moving the terminal to a different location, validate it.
+    if (data.location_id && data.location_id !== before.location_id) {
+      const loc = await repo.findLocationForTerminal(client, data.location_id);
+      if (!loc) {
+        throw Object.assign(
+          new Error("location_id does not match an active stock location"),
+          { status: 400 },
+        );
+      }
+    }
+    // Block deactivating a terminal that has an open session — the
+    // cashier would be stranded mid-sale.
+    if (data.is_active === false) {
+      const hasOpen = await repo.terminalHasOpenSession(client, terminalId);
+      if (hasOpen) {
+        throw Object.assign(
+          new Error(
+            "Cannot deactivate a terminal with an open session. " +
+              "Close the session first.",
+          ),
+          { status: 409 },
+        );
+      }
+    }
+    const row = await repo.updateTerminal(client, terminalId, {
+      name: data.name ? data.name.trim() : null,
+      locationId: data.location_id,
+      isActive: data.is_active,
+    });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "pos",
+      action: "edit",
+      table: "pos_terminals",
+      recordId: terminalId,
+      before,
+      after: row,
+    });
+    return row;
   });
 }
 
@@ -201,11 +290,13 @@ async function createTransaction(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
+    // VAT rate from business_config (cached) — see config/businesses.
+    const vatRate = getVatRate(business);
     for (const l of data.lines) {
       const net = l.unit_price * l.quantity - (l.discount_amount || 0);
       discountTotal += l.discount_amount || 0;
       subtotal += net;
-      vatTotal += net * 0.075;
+      vatTotal += net * vatRate;
     }
     const totalAmount = subtotal + vatTotal;
     const totalPaid = data.payments.reduce(
@@ -232,7 +323,7 @@ async function createTransaction(business, data, user) {
     for (let i = 0; i < data.lines.length; i++) {
       const l = data.lines[i];
       const net = l.unit_price * l.quantity - (l.discount_amount || 0);
-      const vat = net * 0.075;
+      const vat = net * vatRate;
       await repo.insertTransactionLine(client, {
         transaction_id: tx.transaction_id,
         product_id: l.product_id,
@@ -317,8 +408,17 @@ async function createTransaction(business, data, user) {
 
   if (data.contact_id) {
     loyaltyService
-      .awardPoints(business, data.contact_id, result.total_amount, "pos_transaction", result.transaction_id, user)
-      .catch((err) => logger.error("[loyalty] award failed after POS transaction", err));
+      .awardPoints(
+        business,
+        data.contact_id,
+        result.total_amount,
+        "pos_transaction",
+        result.transaction_id,
+        user,
+      )
+      .catch((err) =>
+        logger.error("[loyalty] award failed after POS transaction", err),
+      );
   }
 
   return result;
@@ -416,11 +516,12 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
   // exactly what was posted to transaction_lines.
   let subtotal = 0;
   let vatTotal = 0;
+  const vatRate = getVatRate(business);
   for (const l of lines) {
     const net =
       parseFloat(l.unit_price) * parseInt(l.quantity) -
       parseFloat(l.discount_amount || 0);
-    const vat = parseFloat((net * 0.075).toFixed(2));
+    const vat = parseFloat((net * vatRate).toFixed(2));
     subtotal += net;
     vatTotal += vat;
   }
@@ -535,6 +636,8 @@ async function downloadReceiptPDF(business, transactionId) {
 
 module.exports = {
   getTerminals,
+  createTerminal,
+  updateTerminal,
   openSession,
   getSession,
   closeSession,

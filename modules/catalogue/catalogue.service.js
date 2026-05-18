@@ -156,12 +156,21 @@ async function getProduct(business, productId) {
     // Attach related collections so the UI's "product detail" screen
     // doesn't need to fan out into 4 separate calls. Cheap because
     // they're all small fetches keyed by product_id.
-    const [images, suppliers, barcodes] = await Promise.all([
+    const [images, suppliers, barcodes, storeProduct] = await Promise.all([
       repo.listProductImages(client, productId),
       repo.listProductSuppliers(client, productId),
       repo.listProductBarcodes(client, productId),
+      // The storefront face, if this product is published to the web.
+      // null for jewelry products and unpublished diffusers products.
+      repo.findStoreProductByProductId(client, productId),
     ]);
-    return { ...product, images, suppliers, barcodes };
+    return {
+      ...product,
+      images,
+      suppliers,
+      barcodes,
+      store_product: storeProduct,
+    };
   });
 }
 
@@ -187,11 +196,99 @@ function generateBarcodeValue(business, sku) {
   return `${bizPrefix}-${skuFrag || "PRD"}-${nano}`;
 }
 
+// ── STOREFRONT (web) PRODUCT FACE — Option A ─────────────────
+// A diffusers product can carry a `web` block. When present, the
+// same transaction that creates/updates the diffusers.products SKU
+// also creates/updates a store.products row (the web presentation
+// layer) linked by product_id. One upload → both faces.
+//
+// store.products holds price NOWHERE — the storefront resolves
+// price from diffusers.products.selling_price and stock from
+// stock_movements. So the web block is purely presentation:
+// slug, scent_family, format, size_ml, images, fragrance notes.
+
+const STORE_BUSINESS = "diffusers";
+const SCENT_FAMILIES = [
+  "Fresh & Marine",
+  "Citrus & Green",
+  "Oud & Floral",
+  "Spice & Amber",
+  "Woody & Deep",
+  "Floral & Musk",
+];
+const PRODUCT_FORMATS = [
+  "Grand Edition",
+  "Signature Edition",
+  "Curated Gift Set",
+  "Car Diffuser",
+];
+
+/**
+ * Validate a `web` block from a create/update request. Throws a
+ * 400 on any problem. `requireAll` is true for create (every
+ * mandatory web field must be present) and false for update
+ * (partial edits allowed).
+ */
+function validateWebBlock(business, web, { requireAll }) {
+  // The web block only makes sense for the storefront business.
+  // A `web` block on a jewelry product is a mistake — reject it
+  // rather than silently writing an orphan store.products row.
+  if (business !== STORE_BUSINESS) {
+    throw Object.assign(
+      new Error(
+        `A 'web' block is only valid for the ${STORE_BUSINESS} business — ` +
+          `'${business}' products have no storefront listing.`,
+      ),
+      { status: 400 },
+    );
+  }
+  if (requireAll) {
+    for (const f of ["slug", "scent_family", "format", "size_ml"]) {
+      if (web[f] === undefined || web[f] === null || web[f] === "") {
+        throw Object.assign(
+          new Error(`web.${f} is required to publish a product to the store`),
+          { status: 400 },
+        );
+      }
+    }
+  }
+  if (
+    web.scent_family !== undefined &&
+    !SCENT_FAMILIES.includes(web.scent_family)
+  ) {
+    throw Object.assign(
+      new Error(
+        `web.scent_family must be one of: ${SCENT_FAMILIES.join(", ")}`,
+      ),
+      { status: 400 },
+    );
+  }
+  if (web.format !== undefined && !PRODUCT_FORMATS.includes(web.format)) {
+    throw Object.assign(
+      new Error(`web.format must be one of: ${PRODUCT_FORMATS.join(", ")}`),
+      { status: 400 },
+    );
+  }
+  if (
+    web.size_ml !== undefined &&
+    (!Number.isInteger(web.size_ml) || web.size_ml <= 0)
+  ) {
+    throw Object.assign(new Error("web.size_ml must be a positive integer"), {
+      status: 400,
+    });
+  }
+}
+
 async function createProduct(business, data, user) {
   if (!data.sku || !data.name) {
     throw Object.assign(new Error("sku and name are required"), {
       status: 400,
     });
+  }
+  // If a web block is supplied, validate it up-front (all mandatory
+  // web fields required on create) before opening the transaction.
+  if (data.web) {
+    validateWebBlock(business, data.web, { requireAll: true });
   }
   return withBusinessContext(business, async (client) => {
     // SKU uniqueness — catch the duplicate before the DB does so we
@@ -256,6 +353,33 @@ async function createProduct(business, data, user) {
       isPrimary: true,
     });
 
+    // Option A: if a web block was supplied, create the storefront
+    // listing in the SAME transaction. The slug must be unique across
+    // store.products — check first for a friendly error.
+    let storeProduct = null;
+    if (data.web) {
+      const slugDupe = await repo.findStoreProductBySlug(client, data.web.slug);
+      if (slugDupe) {
+        throw Object.assign(
+          new Error(`Storefront slug "${data.web.slug}" is already in use`),
+          { status: 409 },
+        );
+      }
+      storeProduct = await repo.insertStoreProduct(client, {
+        productId: product.product_id,
+        slug: data.web.slug,
+        scentFamily: data.web.scent_family,
+        format: data.web.format,
+        sizeMl: data.web.size_ml,
+        images: data.web.images,
+        webDescription: data.web.web_description,
+        topNotes: data.web.top_notes,
+        heartNotes: data.web.heart_notes,
+        baseNotes: data.web.base_notes,
+        isPublished: data.web.is_published,
+      });
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name || "staff",
@@ -264,14 +388,26 @@ async function createProduct(business, data, user) {
       action: "create",
       table: "products",
       recordId: product.product_id,
-      after: { ...product, primary_barcode: barcode.barcode_value },
+      after: {
+        ...product,
+        primary_barcode: barcode.barcode_value,
+        published_to_store: !!storeProduct,
+      },
     });
 
-    return { ...product, primary_barcode: barcode };
+    return {
+      ...product,
+      primary_barcode: barcode,
+      store_product: storeProduct,
+    };
   });
 }
 
 async function updateProduct(business, productId, data, user) {
+  // Validate the web block (partial allowed on update) before the txn.
+  if (data.web) {
+    validateWebBlock(business, data.web, { requireAll: false });
+  }
   return withBusinessContext(business, async (client) => {
     const before = await repo.findProductById(client, productId);
     if (!before || before.is_deleted) {
@@ -292,6 +428,78 @@ async function updateProduct(business, productId, data, user) {
       reorderQuantity: data.reorder_quantity,
       isActive: data.is_active,
     });
+
+    // Option A: sync the storefront face. If the product already has
+    // a store.products row, update it. If it doesn't and a complete
+    // web block is supplied, create one (publishing an existing
+    // product to the store). A partial web block on an unpublished
+    // product is rejected — you can't half-publish.
+    let storeProduct = null;
+    if (data.web) {
+      const existing = await repo.findStoreProductByProductId(
+        client,
+        productId,
+      );
+      if (existing) {
+        // Slug change must stay unique.
+        if (data.web.slug && data.web.slug !== existing.slug) {
+          const slugDupe = await repo.findStoreProductBySlug(
+            client,
+            data.web.slug,
+          );
+          if (slugDupe) {
+            throw Object.assign(
+              new Error(`Storefront slug "${data.web.slug}" is already in use`),
+              { status: 409 },
+            );
+          }
+        }
+        storeProduct = await repo.updateStoreProductByProductId(
+          client,
+          productId,
+          {
+            slug: data.web.slug,
+            scentFamily: data.web.scent_family,
+            format: data.web.format,
+            sizeMl: data.web.size_ml,
+            images: data.web.images,
+            webDescription: data.web.web_description,
+            topNotes: data.web.top_notes,
+            heartNotes: data.web.heart_notes,
+            baseNotes: data.web.base_notes,
+            isPublished: data.web.is_published,
+          },
+        );
+      } else {
+        // No storefront row yet — this is a "publish to store" action.
+        // Require the full web block, same as create.
+        validateWebBlock(business, data.web, { requireAll: true });
+        const slugDupe = await repo.findStoreProductBySlug(
+          client,
+          data.web.slug,
+        );
+        if (slugDupe) {
+          throw Object.assign(
+            new Error(`Storefront slug "${data.web.slug}" is already in use`),
+            { status: 409 },
+          );
+        }
+        storeProduct = await repo.insertStoreProduct(client, {
+          productId,
+          slug: data.web.slug,
+          scentFamily: data.web.scent_family,
+          format: data.web.format,
+          sizeMl: data.web.size_ml,
+          images: data.web.images,
+          webDescription: data.web.web_description,
+          topNotes: data.web.top_notes,
+          heartNotes: data.web.heart_notes,
+          baseNotes: data.web.base_notes,
+          isPublished: data.web.is_published,
+        });
+      }
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name || "staff",
@@ -303,7 +511,7 @@ async function updateProduct(business, productId, data, user) {
       before,
       after: row,
     });
-    return row;
+    return { ...row, store_product: storeProduct };
   });
 }
 

@@ -1,6 +1,7 @@
 "use strict";
 
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
+const { getVatRate } = require("../../config/businesses");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail } = require("../../lib/email/sender");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
@@ -36,13 +37,16 @@ async function createQuotation(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
+    // VAT rate from business_config (cached) — not a hardcode, so a
+    // FIRS rate change or a per-business override is picked up.
+    const vatRate = getVatRate(business);
     for (const l of data.lines) {
       const lt = l.unit_price * l.quantity;
       const disc = l.discount_amount || (lt * (l.discount_pct || 0)) / 100;
       const net = lt - disc;
       subtotal += net;
       discountTotal += disc;
-      vatTotal += net * 0.075;
+      vatTotal += net * vatRate;
     }
 
     const q = await repo.insertQuotation(client, {
@@ -143,7 +147,27 @@ async function sendQuotation(
   const q = await getQuotation(business, quotationId);
   const pdf = await generateQuotationPDF(business, quotationId);
 
-  if (channel === "email" && q.email) {
+  // Guard BEFORE doing anything — if the contact has no address for
+  // the requested channel, fail loudly. The old code let execution
+  // fall through both branches, mark the quotation 'sent', and return
+  // success while the customer received nothing.
+  if (channel === "email" && !q.email) {
+    throw Object.assign(new Error("Contact has no email address on file"), {
+      status: 400,
+    });
+  }
+  if (channel === "whatsapp" && !q.whatsapp_number) {
+    throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
+      status: 400,
+    });
+  }
+  if (channel !== "email" && channel !== "whatsapp") {
+    throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
+      status: 400,
+    });
+  }
+
+  if (channel === "email") {
     await sendEmail({
       to: q.email,
       subject: `Quotation ${q.quotation_number}`,
@@ -156,13 +180,15 @@ async function sendQuotation(
         },
       ],
     });
-  } else if (channel === "whatsapp" && q.whatsapp_number) {
+  } else if (channel === "whatsapp") {
     await whatsapp.sendMessage({
       to: q.whatsapp_number,
       text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
     });
   }
 
+  // Only mark sent AFTER the send actually succeeded — if sendEmail
+  // or sendMessage threw, we never reach this line.
   await withBusinessContext(business, async (client) =>
     repo.setQuotationSent(client, quotationId),
   );

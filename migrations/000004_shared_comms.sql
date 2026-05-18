@@ -80,6 +80,7 @@ CREATE INDEX idx_message_channels_business ON shared.message_channels (business)
 
 -- ── channel_members ───────────────────────────────────────
 CREATE TABLE shared.channel_members (
+  member_id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   channel_id            UUID        NOT NULL REFERENCES shared.message_channels (channel_id) ON DELETE CASCADE,
   user_id               UUID        REFERENCES shared.users (user_id) ON DELETE CASCADE,
   contact_id            UUID        REFERENCES shared.contacts (contact_id) ON DELETE CASCADE,

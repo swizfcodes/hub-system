@@ -169,6 +169,22 @@ router.post(
   body("custom_fields").optional().isObject(),
   body("reorder_level").optional().isInt({ min: 0 }),
   body("reorder_quantity").optional().isInt({ min: 0 }),
+  // Optional storefront (web) block — Option A. When present, the
+  // product is also published to the store in the same request.
+  // Enum/required-field checks are enforced in the service; here we
+  // only shape-check. slug/scent_family/format are mandatory when a
+  // web block is sent on create — checked in the service layer.
+  body("web").optional().isObject(),
+  body("web.slug").optional().isString().notEmpty(),
+  body("web.scent_family").optional().isString(),
+  body("web.format").optional().isString(),
+  body("web.size_ml").optional().isInt({ min: 1 }),
+  body("web.images").optional().isArray(),
+  body("web.web_description").optional().isString(),
+  body("web.top_notes").optional().isArray(),
+  body("web.heart_notes").optional().isArray(),
+  body("web.base_notes").optional().isArray(),
+  body("web.is_published").optional().isBoolean(),
   validate,
   can("catalogue", "create"),
   async (req, res, next) => {
@@ -198,6 +214,20 @@ router.patch(
   body("reorder_level").optional().isInt({ min: 0 }),
   body("reorder_quantity").optional().isInt({ min: 0 }),
   body("is_active").optional().isBoolean(),
+  // Optional storefront (web) block — partial edits allowed on
+  // update. Sending a web block for a product not yet published
+  // publishes it (the service requires the full block in that case).
+  body("web").optional().isObject(),
+  body("web.slug").optional().isString().notEmpty(),
+  body("web.scent_family").optional().isString(),
+  body("web.format").optional().isString(),
+  body("web.size_ml").optional().isInt({ min: 1 }),
+  body("web.images").optional().isArray(),
+  body("web.web_description").optional().isString(),
+  body("web.top_notes").optional().isArray(),
+  body("web.heart_notes").optional().isArray(),
+  body("web.base_notes").optional().isArray(),
+  body("web.is_published").optional().isBoolean(),
   validate,
   can("catalogue", "edit"),
   async (req, res, next) => {

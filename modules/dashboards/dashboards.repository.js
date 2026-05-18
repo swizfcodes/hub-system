@@ -297,4 +297,104 @@ module.exports = {
   getOverviewDeliveries,
   getOverviewCRM,
   getUnreadNotifications,
+  // dashboard configs
+  listDashboardConfigs,
+  findDashboardConfigById,
+  insertDashboardConfig,
+  updateDashboardConfig,
+  clearOtherDefaults,
+  deleteDashboardConfig,
 };
+
+// ── DASHBOARD CONFIGS ────────────────────────────────────────
+// Per-user saved dashboard layouts. Each user can have several named
+// dashboards; one is flagged is_default and loads first.
+
+async function listDashboardConfigs(client, userId) {
+  const { rows } = await client.query(
+    `SELECT config_id, user_id, dashboard_name, layout, widgets,
+            is_default, created_at, updated_at
+     FROM dashboard_configs
+     WHERE user_id = $1
+     ORDER BY is_default DESC, dashboard_name`,
+    [userId],
+  );
+  return rows;
+}
+
+async function findDashboardConfigById(client, configId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM dashboard_configs WHERE config_id = $1`,
+    [configId],
+  );
+  return row || null;
+}
+
+async function insertDashboardConfig(
+  client,
+  { userId, dashboardName, layout, widgets, isDefault },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO dashboard_configs
+       (user_id, dashboard_name, layout, widgets, is_default)
+     VALUES ($1, $2, $3::jsonb, $4::jsonb, $5)
+     RETURNING *`,
+    [
+      userId,
+      dashboardName,
+      JSON.stringify(layout || []),
+      JSON.stringify(widgets || []),
+      !!isDefault,
+    ],
+  );
+  return row;
+}
+
+async function updateDashboardConfig(client, configId, fields) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE dashboard_configs SET
+       dashboard_name = COALESCE($2, dashboard_name),
+       layout         = COALESCE($3::jsonb, layout),
+       widgets        = COALESCE($4::jsonb, widgets),
+       is_default     = COALESCE($5, is_default),
+       updated_at     = now()
+     WHERE config_id = $1
+     RETURNING *`,
+    [
+      configId,
+      fields.dashboardName ?? null,
+      fields.layout ? JSON.stringify(fields.layout) : null,
+      fields.widgets ? JSON.stringify(fields.widgets) : null,
+      fields.isDefault ?? null,
+    ],
+  );
+  return row || null;
+}
+
+async function clearOtherDefaults(client, userId, exceptConfigId) {
+  // Only one default dashboard per user — demote any other defaults
+  // when one is promoted. Run in the same transaction.
+  await client.query(
+    `UPDATE dashboard_configs
+     SET is_default = false
+     WHERE user_id = $1 AND config_id != $2 AND is_default = true`,
+    [userId, exceptConfigId],
+  );
+}
+
+async function deleteDashboardConfig(client, configId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `DELETE FROM dashboard_configs WHERE config_id = $1
+     RETURNING config_id, user_id`,
+    [configId],
+  );
+  return row || null;
+}

@@ -20,8 +20,13 @@ async function listSuppliers(business, { page = 1, limit = 50, search } = {}) {
 
 async function createSupplier(business, data, user) {
   return withBusinessContext(business, async (client) => {
-    const n = await repo.getSupplierCount(client);
-    const code = `SUP-${String(n).padStart(4, "0")}`;
+    // Use the atomic document-numbering sequence rather than COUNT(*)+1.
+    // The old COUNT-based approach had a race: two concurrent createSupplier
+    // calls read the same count and produced the same SUP-000N code, and
+    // with no UNIQUE constraint on supplier_code both inserts succeeded —
+    // leaving two suppliers with an identical code. nextDocumentNumber
+    // locks the sequence row, so concurrent callers get distinct codes.
+    const code = await nextDocumentNumber(client, business, "supplier");
     return repo.insertSupplier(client, {
       contact_id: data.contact_id,
       code,
@@ -145,8 +150,41 @@ async function getPO(business, poId) {
   });
 }
 
-async function receiveGoods(business, poId, { lines, notes }, user) {
+async function receiveGoods(
+  business,
+  poId,
+  { lines, notes, receiving_location_id },
+  user,
+) {
   return withBusinessContext(business, async (client) => {
+    // Goods receipt is an INBOUND stock movement, so it needs a
+    // destination location. Use the explicitly-supplied location if
+    // the caller passed one, otherwise fall back to the first active
+    // warehouse. If neither exists, fail loudly — silently skipping
+    // the stock movement (the old behaviour after the movement-type
+    // bug) meant POs were marked received but stock never rose.
+    let receivingLocationId = receiving_location_id || null;
+    if (!receivingLocationId) {
+      const {
+        rows: [loc],
+      } = await client.query(
+        `SELECT location_id FROM stock_locations
+         WHERE location_type = 'warehouse' AND is_active = true
+         ORDER BY created_at
+         LIMIT 1`,
+      );
+      receivingLocationId = loc?.location_id || null;
+    }
+    if (!receivingLocationId) {
+      throw Object.assign(
+        new Error(
+          "No receiving location available. Pass receiving_location_id " +
+            "or create a warehouse location in the catalogue first.",
+        ),
+        { status: 400 },
+      );
+    }
+
     const receipt = await repo.insertGoodsReceipt(client, {
       poId,
       userId: user.user_id,
@@ -173,9 +211,14 @@ async function receiveGoods(business, poId, { lines, notes }, user) {
           await stockService.recordMovement(client, {
             business,
             productId: poLine.product_id,
-            movementType: "received",
+            // "received" is NOT a valid movement type — the correct
+            // enum value is "received_from_supplier". The old value
+            // failed validateMovementInput, so every goods receipt
+            // threw and stock never increased.
+            movementType: "received_from_supplier",
             quantity: l.quantity_accepted,
             direction: 1,
+            toLocationId: receivingLocationId,
             referenceType: "purchase_order",
             referenceId: poId,
             performedBy: user.user_id,

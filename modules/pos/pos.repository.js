@@ -14,6 +14,74 @@ async function getTerminals(client) {
   return rows;
 }
 
+async function findTerminalById(client, terminalId) {
+  const {
+    rows: [row],
+  } = await client.query(`SELECT * FROM pos_terminals WHERE terminal_id = $1`, [
+    terminalId,
+  ]);
+  return row || null;
+}
+
+async function findLocationForTerminal(client, locationId) {
+  // pos_terminals.location_id is NOT NULL with an FK — verify the
+  // location exists before insert so we return a friendly 400 rather
+  // than a raw FK violation.
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT location_id, name FROM stock_locations
+     WHERE location_id = $1 AND is_active = true`,
+    [locationId],
+  );
+  return row || null;
+}
+
+async function insertTerminal(client, { name, locationId }) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO pos_terminals (name, location_id)
+     VALUES ($1, $2)
+     RETURNING *`,
+    [name, locationId],
+  );
+  return row;
+}
+
+async function updateTerminal(
+  client,
+  terminalId,
+  { name, locationId, isActive },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE pos_terminals SET
+       name        = COALESCE($2, name),
+       location_id = COALESCE($3, location_id),
+       is_active   = COALESCE($4, is_active),
+       updated_at  = now()
+     WHERE terminal_id = $1
+     RETURNING *`,
+    [terminalId, name ?? null, locationId ?? null, isActive ?? null],
+  );
+  return row || null;
+}
+
+async function terminalHasOpenSession(client, terminalId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT EXISTS(
+       SELECT 1 FROM pos_sessions
+       WHERE terminal_id = $1 AND status = 'open'
+     ) AS has_open`,
+    [terminalId],
+  );
+  return row.has_open;
+}
+
 async function findOpenSession(client, terminalId) {
   const { rows } = await client.query(
     `SELECT session_id FROM pos_sessions WHERE terminal_id=$1 AND status='open'`,
@@ -304,6 +372,11 @@ async function getTransactionProductLines(client, transactionId) {
 
 module.exports = {
   getTerminals,
+  findTerminalById,
+  findLocationForTerminal,
+  insertTerminal,
+  updateTerminal,
+  terminalHasOpenSession,
   findOpenSession,
   insertSession,
   findSessionById,

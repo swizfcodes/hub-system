@@ -22,7 +22,8 @@ DECLARE
   v_modules  TEXT[] := ARRAY['crm','sales','pos','invoicing','accounting','stock',
                               'catalogue','purchasing','expenses','payroll','logistics',
                               'retail_partners','messaging','campaigns','social','loyalty',
-                              'calendar','tasks','dashboards','documents','staff','settings'];
+                              'discounts','reports','calendar','tasks','dashboards',
+                              'documents','staff','settings'];
   v_actions  TEXT[] := ARRAY['view','create','edit','delete','approve','export'];
   m TEXT;
   a TEXT;
@@ -43,7 +44,8 @@ DECLARE
   v_modules    TEXT[] := ARRAY['crm','sales','pos','invoicing','accounting','stock',
                                 'catalogue','purchasing','expenses','payroll','logistics',
                                 'retail_partners','messaging','campaigns','social','loyalty',
-                                'calendar','tasks','dashboards','documents','staff'];
+                                'discounts','reports','calendar','tasks','dashboards',
+                                'documents','staff'];
   v_actions    TEXT[] := ARRAY['view','create','edit','delete','approve','export'];
   m TEXT; a TEXT;
 BEGIN
@@ -163,6 +165,7 @@ INSERT INTO shared.document_numbering (business, document_type, prefix, next_num
   ('jewelry',   'invoice',      'JWL-INV',  1, 4),
   ('jewelry',   'purchase_order','JWL-PO',  1, 4),
   ('jewelry',   'quotation',    'JWL-QT',   1, 4),
+  ('jewelry',   'sales_order',  'JWL-SO',   1, 4),
   ('jewelry',   'delivery',     'JWL-DN',   1, 4),
   ('jewelry',   'payslip',      'JWL-PS',   1, 4),
   ('jewelry',   'credit_note',  'JWL-CN',   1, 4),
@@ -171,10 +174,12 @@ INSERT INTO shared.document_numbering (business, document_type, prefix, next_num
   ('jewelry',   'rfq',          'JWL-RFQ',  1, 4),
   ('jewelry',   'transfer',     'JWL-TRF',  1, 4),
   ('jewelry',   'expense',      'JWL-EXP',  1, 4),
+  ('jewelry',   'supplier',     'JWL-SUP',  1, 4),
   ('jewelry',   'payroll_run',  'JWL-PR',   1, 4),
   ('diffusers', 'invoice',      'DFS-INV',  1, 4),
   ('diffusers', 'purchase_order','DFS-PO',  1, 4),
   ('diffusers', 'quotation',    'DFS-QT',   1, 4),
+  ('diffusers', 'sales_order',  'DFS-SO',   1, 4),
   ('diffusers', 'delivery',     'DFS-DN',   1, 4),
   ('diffusers', 'payslip',      'DFS-PS',   1, 4),
   ('diffusers', 'credit_note',  'DFS-CN',   1, 4),
@@ -183,6 +188,7 @@ INSERT INTO shared.document_numbering (business, document_type, prefix, next_num
   ('diffusers', 'rfq',          'DFS-RFQ',  1, 4),
   ('diffusers', 'transfer',     'DFS-TRF',  1, 4),
   ('diffusers', 'expense',      'DFS-EXP',  1, 4),
+  ('diffusers', 'supplier',     'DFS-SUP',  1, 4),
   ('diffusers', 'payroll_run',  'DFS-PR',   1, 4);
 
 -- ── Tax rates (Nigerian) ──────────────────────────────────
