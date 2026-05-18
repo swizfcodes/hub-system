@@ -361,6 +361,6 @@ if (require.main === module) {
 // Ensure to update template files in templates/ if a template is added or remove shape changes (e.g. adding loyalty_settings) before running command.
 
 // For a new diffusers business, the command would be:
-//  node scripts/bootstrapBusiness.js --key diffusers --display-name "Hub Diffusers" --legal-name "Hub DIFFUSERS Ltd" --prefix DFS
+// node scripts/bootstrapBusiness.js --key diffusers --display-name "Hub Diffusers" --legal-name "Hub DIFFUSERS Ltd" --prefix DFS
 
 module.exports = { bootstrap, validateKey, validatePrefix };

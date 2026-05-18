@@ -18,7 +18,7 @@ const config = {
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || "7d",
     allowedOrigins: (
-      process.env.ALLOWED_ORIGINS || "http://localhost:3000"
+      process.env.ALLOWED_ORIGINS || "http://localhost:7000"
     ).split(","),
     // FALLBACK ONLY — the canonical active-business list is loaded
     // dynamically from shared.business_config at startup by

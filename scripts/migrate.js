@@ -23,7 +23,7 @@ const DB_CONFIG = {
   password: process.env.PG_PASSWORD || "",
 };
 
-const MIGRATIONS_DIR = path.join(__dirname, "migrations");
+const MIGRATIONS_DIR = path.join(process.cwd(), "migrations");
 
 // ── Helpers ───────────────────────────────────────────────
 function sha256(content) {
