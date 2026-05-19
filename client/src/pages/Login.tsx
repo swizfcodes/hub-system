@@ -124,7 +124,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const data = await login({ email, password });
-      storeToken(data.token, rememberMe);
+      storeToken(data.accessToken, rememberMe);
       storeUser(data.user);
       setUser(data.user as never);
       navigate('/');

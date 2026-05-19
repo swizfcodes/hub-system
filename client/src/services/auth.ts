@@ -7,7 +7,8 @@ const USER_KEY  = 'orika_user';
 export interface LoginPayload { email: string; password: string; }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
     user_id: string;
     role_id: string;

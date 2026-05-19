@@ -19,7 +19,7 @@ export function InviteSupplierModal({ open, onClose }: { open: boolean; onClose:
 
   const { data: businesses = [] } = useQuery({ queryKey: ['settings', 'businesses', 'active'], queryFn: () => listBusinesses(false) });
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<SupplierInviteValues>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<SupplierInviteValues>({
     resolver: zodResolver(supplierInviteSchema),
     defaultValues: {
       display_name: '', company_name: '', email: '', primary_phone: '', whatsapp_number: '',
@@ -27,9 +27,9 @@ export function InviteSupplierModal({ open, onClose }: { open: boolean; onClose:
     },
   });
 
-  const [visibleTo, setVisibleTo] = [
-    (watch as unknown as () => string[])(),  // satisfies TS via wrapper below
-  ] as const;
+  // const [visibleTo, setVisibleTo] = [
+  //   (watch as unknown as () => string[])(),  // satisfies TS via wrapper below
+  // ] as const;
   // Note: visible_to is supplied directly in the mutation below; modal keeps it simple.
 
   const mutation = useMutation({
