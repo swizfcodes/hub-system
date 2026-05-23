@@ -2,10 +2,12 @@
 
 const express = require("express");
 const router = express.Router();
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const svc = require("./purchasing.service");
+
+// ── SUPPLIERS ────────────────────────────────────────────────
 
 router.get("/suppliers", can("purchasing", "view"), async (req, res, next) => {
   try {
@@ -14,6 +16,7 @@ router.get("/suppliers", can("purchasing", "view"), async (req, res, next) => {
     next(e);
   }
 });
+
 router.post(
   "/suppliers",
   body("contact_id").isUUID(),
@@ -29,6 +32,7 @@ router.post(
     }
   },
 );
+
 router.get(
   "/suppliers/:id",
   param("id").isUUID(),
@@ -43,6 +47,25 @@ router.get(
   },
 );
 
+// POST /suppliers/:id/invite — generate portal access token
+router.post(
+  "/suppliers/:id/invite",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await svc.generateSupplierInvite(req.business, req.params.id, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ── RFQs ─────────────────────────────────────────────────────
+
 router.get("/rfqs", can("purchasing", "view"), async (req, res, next) => {
   try {
     res.json(await svc.listRFQs(req.business, req.query));
@@ -50,6 +73,7 @@ router.get("/rfqs", can("purchasing", "view"), async (req, res, next) => {
     next(e);
   }
 });
+
 router.post(
   "/rfqs",
   body("title").notEmpty(),
@@ -97,7 +121,6 @@ router.post(
   },
 );
 
-// POST /rfqs/:id/close
 router.post(
   "/rfqs/:id/close",
   param("id").isUUID(),
@@ -112,7 +135,6 @@ router.post(
   },
 );
 
-// POST /rfqs/:id/cancel
 router.post(
   "/rfqs/:id/cancel",
   param("id").isUUID(),
@@ -127,6 +149,33 @@ router.post(
   },
 );
 
+// ── SUPPLIER QUOTES ──────────────────────────────────────────
+
+// POST /quotes/:quoteId/generate-po — generate a PO from a winning quote
+router.post(
+  "/quotes/:quoteId/generate-po",
+  param("quoteId").isUUID(),
+  validate,
+  can("purchasing", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await svc.generatePOFromQuote(
+            req.business,
+            req.params.quoteId,
+            req.user,
+          ),
+        );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ── PURCHASE ORDERS ──────────────────────────────────────────
+
 router.get(
   "/purchase-orders",
   can("purchasing", "view"),
@@ -138,6 +187,7 @@ router.get(
     }
   },
 );
+
 router.post(
   "/purchase-orders",
   body("supplier_id").isUUID(),
@@ -154,6 +204,7 @@ router.post(
     }
   },
 );
+
 router.get(
   "/purchase-orders/:id",
   param("id").isUUID(),
@@ -167,6 +218,65 @@ router.get(
     }
   },
 );
+
+router.patch(
+  "/purchase-orders/:id",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await svc.updatePO(req.business, req.params.id, req.body, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/purchase-orders/:id/send",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.sendPO(req.business, req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/purchase-orders/:id/approve",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.approvePO(req.business, req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/purchase-orders/:id/cancel",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.cancelPO(req.business, req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.post(
   "/purchase-orders/:id/receive",
   param("id").isUUID(),
@@ -185,69 +295,6 @@ router.post(
   },
 );
 
-// PATCH /purchase-orders/:id — edit fields (e.g. expected_delivery, notes)
-router.patch(
-  "/purchase-orders/:id",
-  param("id").isUUID(),
-  validate,
-  can("purchasing", "edit"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await svc.updatePO(req.business, req.params.id, req.body, req.user),
-      );
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// POST /purchase-orders/:id/send — draft → sent
-router.post(
-  "/purchase-orders/:id/send",
-  param("id").isUUID(),
-  validate,
-  can("purchasing", "edit"),
-  async (req, res, next) => {
-    try {
-      res.json(await svc.sendPO(req.business, req.params.id, req.user));
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// POST /purchase-orders/:id/approve — requires purchasing.approve permission + threshold check
-router.post(
-  "/purchase-orders/:id/approve",
-  param("id").isUUID(),
-  validate,
-  can("purchasing", "approve"),
-  async (req, res, next) => {
-    try {
-      res.json(await svc.approvePO(req.business, req.params.id, req.user));
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// POST /purchase-orders/:id/cancel
-router.post(
-  "/purchase-orders/:id/cancel",
-  param("id").isUUID(),
-  validate,
-  can("purchasing", "edit"),
-  async (req, res, next) => {
-    try {
-      res.json(await svc.cancelPO(req.business, req.params.id, req.user));
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// GET /purchase-orders/:id/receipts — GRN list for PO detail page
 router.get(
   "/purchase-orders/:id/receipts",
   param("id").isUUID(),
@@ -256,6 +303,105 @@ router.get(
   async (req, res, next) => {
     try {
       res.json(await svc.listReceiptsForPO(req.business, req.params.id));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ── BILLS ────────────────────────────────────────────────────
+
+router.get("/bills", can("purchasing", "view"), async (req, res, next) => {
+  try {
+    res.json(await svc.listBills(req.business, req.query));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get(
+  "/bills/:id",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.getBill(req.business, req.params.id));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/bills",
+  body("supplier_id").isUUID(),
+  body("supplier_invoice_number").notEmpty(),
+  body("invoice_date").isISO8601(),
+  body("due_date").isISO8601(),
+  body("amount").isFloat({ min: 0.01 }),
+  body("currency").notEmpty(),
+  body("po_id").optional().isUUID(),
+  validate,
+  can("purchasing", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await svc.createBill(req.business, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/bills/:id/approve",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.approveBill(req.business, req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/bills/:id/dispute",
+  param("id").isUUID(),
+  body("reason").notEmpty(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await svc.disputeBill(
+          req.business,
+          req.params.id,
+          req.body.reason,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/bills/:id/pay",
+  param("id").isUUID(),
+  body("amount").isFloat({ min: 0.01 }),
+  validate,
+  can("purchasing", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await svc.payBill(req.business, req.params.id, req.body, req.user),
+      );
     } catch (e) {
       next(e);
     }

@@ -331,32 +331,34 @@ async function generateInvoiceFromOrder(
       orderId,
     });
 
-    // Generate Paystack payment link (fire-and-forget — link is optional)
+    // Generate Paystack payment link (fire-and-forget — link is optional).
+    // The invoice is still valid without it.
     try {
-      const paystackLib = require("../../lib/payments/paystack");
-      const contactRow = await client.query(
+      const paystackService = require("../../integrations/paystack/paystack.service");
+      const {
+        rows: [contact],
+      } = await client.query(
         `SELECT email FROM shared.contacts WHERE contact_id = $1`,
         [order.contact_id],
       );
-      const email = contactRow.rows[0]?.email || "noreply@orikaliving.com";
-      const paystackUrl = await paystackLib.initializeTransaction({
-        email,
-        amountNGN: order.total_amount,
-        reference: invoiceNumber,
-        metadata: { invoice_id: invoice.invoice_id, business },
-        callbackUrl: `${process.env.APP_URL}/sales/invoices/${invoice.invoice_id}`,
-      });
+      const email = contact?.email || "noreply@orikaliving.com";
+      const { authorizationUrl, reference } =
+        await paystackService.initializePayment({
+          email,
+          amount: order.total_amount,
+          reference: invoiceNumber,
+          callbackUrl: `${process.env.APP_URL || ""}/sales/invoices/${invoice.invoice_id}`,
+          metadata: { invoice_id: invoice.invoice_id, business },
+        });
       await repo.updateInvoicePaymentLinks(client, invoice.invoice_id, {
-        paystack_payment_url: paystackUrl,
-        paystack_reference: invoiceNumber,
+        paystack_payment_url: authorizationUrl,
+        paystack_reference: reference,
       });
-      invoice.paystack_payment_url = paystackUrl;
-      invoice.paystack_reference = invoiceNumber;
+      invoice.paystack_payment_url = authorizationUrl;
+      invoice.paystack_reference = reference;
     } catch (e) {
-      // Non-fatal — invoice created, payment link skipped
       require("../../config/logger").warn(
-        "[sales] Paystack link failed:",
-        e.message,
+        `[sales] Paystack link failed for ${invoiceNumber}: ${e.message}`,
       );
     }
 

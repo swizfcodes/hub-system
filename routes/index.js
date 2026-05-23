@@ -19,6 +19,12 @@ router.use("/auth", loginRateLimiter, require("../shared/auth/auth.routes"));
 // own accounting + stock path.
 router.use("/store", require("../modules/store/store.public.routes"));
 
+// ── Supplier portal (public, token-gated) ─────────────────────
+router.use(
+  "/purchasing/public",
+  require("../modules/purchasing/purchasing.public.routes"),
+);
+
 // ── Webhooks (public but signature-verified internally) ───
 router.use(
   "/webhooks/paystack",
@@ -73,6 +79,7 @@ router.use(
 );
 router.use("/calendar", protect, require("../shared/calendar/calendar.routes"));
 router.use("/tasks", protect, require("../shared/tasks/tasks.routes"));
+router.use("/audit", protect, require("../shared/audit/audit.routes"));
 
 // ── Protected — business modules (require business context) ─
 router.use("/crm", protect, require("../modules/crm/crm.routes"));
@@ -146,6 +153,5 @@ router.use(
   protect,
   require("../modules/settings/settings.routes"),
 );
-router.use("/audit", protect, require("../shared/audit/audit.routes"));
 router.use("/uploads", protect, require("../shared/upload/uploads.routes"));
 module.exports = router;
