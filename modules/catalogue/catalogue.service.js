@@ -427,6 +427,9 @@ async function updateProduct(business, productId, data, user) {
       reorderLevel: data.reorder_level,
       reorderQuantity: data.reorder_quantity,
       isActive: data.is_active,
+      incomeAccountId: data.income_account_id ?? undefined,
+      inventoryAccountId: data.inventory_account_id ?? undefined,
+      cogsAccountId: data.cogs_account_id ?? undefined,
     });
 
     // Option A: sync the storefront face. If the product already has

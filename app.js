@@ -11,7 +11,7 @@ const requestLogger = require("./middleware/requestLogger");
 const rateLimiter = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
 const routes = require("./routes/index");
-
+const path = require("path");
 const app = express();
 
 // ── Security & parsing ────────────────────────────────────
@@ -51,12 +51,21 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ── Uploads ─────────────────────────────────────────────
+if (config.storage.driver === "local") {
+  app.use(
+    "/uploads",
+    express.static(path.resolve(config.storage.localPath || "./uploads")),
+  );
+}
+
 // ── Logging ───────────────────────────────────────────────
 app.use(requestLogger);
 
 // ── Rate limiting (general) ───────────────────────────────
 app.use("/api", rateLimiter.general);
-
+// ---- cookies -------
+app.use(cookieParser());
 // ── Routes ───────────────────────────────────────────────
 app.use("/api", routes);
 
@@ -83,7 +92,6 @@ app.get("/health", (req, res) =>
 //   - the SPA fallback returns index.html for any non-API GET that
 //     isn't a real file, so React Router owns client-side routing;
 //   - the JSON 404 below now only fires for unmatched /api/* routes.
-const path = require("path");
 const clientDist = path.join(__dirname, "client", "dist");
 
 app.use(express.static(clientDist));

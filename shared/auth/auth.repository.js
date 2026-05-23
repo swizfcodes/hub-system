@@ -2,14 +2,16 @@
 
 async function findUserByEmail(client, email) {
   const { rows } = await client.query(
-    `SELECT u.user_id, u.password_hash, u.is_active, u.failed_login_attempts,
+    `SELECT u.user_id, u.email, u.password_hash, u.is_active, u.failed_login_attempts,
             u.locked_until, u.default_business, u.permitted_businesses,
             u.force_password_reset, u.staff_profile_id,
-            r.role_id, r.role_name
-     FROM shared.users u
-     LEFT JOIN shared.user_roles ur ON ur.user_id = u.user_id AND ur.business = '*'
-     LEFT JOIN shared.roles r ON r.role_id = ur.role_id
-     WHERE u.email = $1 LIMIT 1`,
+            r.role_id, r.role_name,
+            c.display_name
+    FROM shared.users u
+    LEFT JOIN shared.user_roles ur ON ur.user_id = u.user_id AND ur.business = '*'
+    LEFT JOIN shared.roles r ON r.role_id = ur.role_id
+    LEFT JOIN shared.contacts c ON c.contact_id = u.staff_profile_id
+    WHERE u.email = $1 LIMIT 1`,
     [email],
   );
   return rows[0] || null;

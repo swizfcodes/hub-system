@@ -118,4 +118,8 @@ CREATE TABLE {{BUSINESS}}.discount_approvals (
 );
 CREATE INDEX idx_{{BUSINESS}}_discount_approvals_status ON {{BUSINESS}}.discount_approvals (status) WHERE status = 'pending';
 
--- ┌── DIFFUSERS ────────────────────────────────────────────┐
+ALTER TABLE {{BUSINESS}}.quotations
+  ADD COLUMN crm_deal_id UUID REFERENCES {{BUSINESS}}.crm_deals(deal_id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_{{BUSINESS}}s_quotations_deal
+  ON {{BUSINESS}}s.quotations (crm_deal_id) WHERE crm_deal_id IS NOT NULL;

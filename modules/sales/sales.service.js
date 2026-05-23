@@ -10,6 +10,8 @@ const crmService = require("../crm/crm.service");
 const movementsService = require("../stock/movements.service");
 const repo = require("./sales.repository");
 
+// ─── Quotations ──────────────────────────────────────────────────────────────
+
 async function listQuotations(
   business,
   { page = 1, limit = 50, status, contactId } = {},
@@ -33,12 +35,9 @@ async function listQuotations(
 async function createQuotation(business, data, user) {
   return withBusinessContext(business, async (client) => {
     const quoteNumber = await nextDocumentNumber(client, business, "quotation");
-
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
-    // VAT rate from business_config (cached) — not a hardcode, so a
-    // FIRS rate change or a per-business override is picked up.
     const vatRate = getVatRate(business);
     for (const l of data.lines) {
       const lt = l.unit_price * l.quantity;
@@ -48,7 +47,6 @@ async function createQuotation(business, data, user) {
       discountTotal += disc;
       vatTotal += net * vatRate;
     }
-
     const q = await repo.insertQuotation(client, {
       quoteNumber,
       contact_id: data.contact_id,
@@ -64,7 +62,6 @@ async function createQuotation(business, data, user) {
       terms_conditions: data.terms_conditions,
       userId: user.user_id,
     });
-
     for (let i = 0; i < data.lines.length; i++) {
       const l = data.lines[i];
       const lt = l.unit_price * l.quantity;
@@ -81,7 +78,6 @@ async function createQuotation(business, data, user) {
         order: i,
       });
     }
-
     if (data.deal_id) {
       await crmService.logActivity(
         business,
@@ -95,7 +91,6 @@ async function createQuotation(business, data, user) {
         client,
       );
     }
-
     return q;
   });
 }
@@ -117,7 +112,6 @@ async function updateQuotation(business, quotationId, data, user) {
       throw Object.assign(new Error("Only draft quotations can be edited"), {
         status: 400,
       });
-
     const allowed = [
       "valid_until",
       "payment_terms",
@@ -146,27 +140,18 @@ async function sendQuotation(
 ) {
   const q = await getQuotation(business, quotationId);
   const pdf = await generateQuotationPDF(business, quotationId);
-
-  // Guard BEFORE doing anything — if the contact has no address for
-  // the requested channel, fail loudly. The old code let execution
-  // fall through both branches, mark the quotation 'sent', and return
-  // success while the customer received nothing.
-  if (channel === "email" && !q.email) {
+  if (channel === "email" && !q.email)
     throw Object.assign(new Error("Contact has no email address on file"), {
       status: 400,
     });
-  }
-  if (channel === "whatsapp" && !q.whatsapp_number) {
+  if (channel === "whatsapp" && !q.whatsapp_number)
     throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
       status: 400,
     });
-  }
-  if (channel !== "email" && channel !== "whatsapp") {
+  if (channel !== "email" && channel !== "whatsapp")
     throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
       status: 400,
     });
-  }
-
   if (channel === "email") {
     await sendEmail({
       to: q.email,
@@ -180,15 +165,12 @@ async function sendQuotation(
         },
       ],
     });
-  } else if (channel === "whatsapp") {
+  } else {
     await whatsapp.sendMessage({
       to: q.whatsapp_number,
       text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
     });
   }
-
-  // Only mark sent AFTER the send actually succeeded — if sendEmail
-  // or sendMessage threw, we never reach this line.
   await withBusinessContext(business, async (client) =>
     repo.setQuotationSent(client, quotationId),
   );
@@ -202,7 +184,6 @@ async function confirmQuotation(business, quotationId, user) {
       throw Object.assign(new Error("Quotation cannot be confirmed"), {
         status: 400,
       });
-
     const orderNumber = await nextDocumentNumber(
       client,
       business,
@@ -212,7 +193,8 @@ async function confirmQuotation(business, quotationId, user) {
       orderNumber,
       quotationId,
       contact_id: q.contact_id,
-      fulfilment_type: q.fulfilment_type,
+      deal_id: q.deal_id,
+      fulfilment_type: q.fulfilment_type || "walk_in",
       total_amount: q.total_amount,
       userId: user.user_id,
     });
@@ -221,17 +203,6 @@ async function confirmQuotation(business, quotationId, user) {
       quotationId,
     });
     await repo.setQuotationConfirmed(client, quotationId);
-
-    // Reserve stock for each line via movements.service.createReservation.
-    // This replaces the previous direct INSERT in sales.repo.reserveStock,
-    // which silently swallowed errors. The new path:
-    //   - validates availability (throws 409 if short)
-    //   - emits a socket event for real-time stock updates
-    //   - audit-logs the reservation
-    //
-    // If any single line can't be reserved, the whole confirmation
-    // is rolled back (withBusinessContext is transactional), and the
-    // caller sees a clear error message naming the SKU that ran short.
     const lines = await repo.getOrderProductLines(client, order.order_id);
     for (const l of lines) {
       try {
@@ -240,27 +211,62 @@ async function confirmQuotation(business, quotationId, user) {
           productId: l.product_id,
           quantity: l.quantity,
           reservedFor: q.contact_id,
-          // Quotation→Order reservations get a 7-day expiry — same
-          // window the old code used.
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          notes: `Reserved for order ${orderNumber} (quotation confirmation)`,
+          notes: `Reserved for order ${orderNumber}`,
           userId: user.user_id,
         });
       } catch (err) {
-        // Surface the product context so the error is actionable.
-        // The transaction will roll back automatically.
         throw Object.assign(
-          new Error(
-            `Cannot confirm quotation — insufficient stock for line item: ${err.message}`,
-          ),
+          new Error(`Cannot confirm — insufficient stock: ${err.message}`),
           { status: err.status || 409 },
         );
       }
     }
-
+    if (q.deal_id) {
+      await crmService.moveDealStage(business, q.deal_id, null, user, client);
+      await crmService.logActivity(
+        business,
+        q.deal_id,
+        {
+          activity_type: "order_confirmed",
+          summary: `Order ${orderNumber} created from ${q.quotation_number}`,
+          is_auto: true,
+        },
+        user,
+        client,
+      );
+    }
     return order;
   });
 }
+
+async function cancelQuotation(business, quotationId, user) {
+  return withBusinessContext(business, async (client) => {
+    const q = await repo.getQuotationStatus(client, quotationId);
+    if (!q) throw Object.assign(new Error("Not found"), { status: 404 });
+    if (["confirmed", "cancelled"].includes(q.status))
+      throw Object.assign(
+        new Error("Cannot cancel a confirmed or already-cancelled quotation"),
+        { status: 400 },
+      );
+    return repo.setQuotationCancelled(client, quotationId);
+  });
+}
+
+async function generateQuotationPDF(business, quotationId) {
+  const q = await getQuotation(business, quotationId);
+  return renderToPDF("quotations", q);
+}
+
+// ─── Sales KPIs ───────────────────────────────────────────────────────────────
+
+async function getSalesKpis(business) {
+  return withBusinessContext(business, async (client) => {
+    return repo.getSalesKpis(client);
+  });
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
 
 async function listOrders(business, { page = 1, limit = 50, status } = {}) {
   return withBusinessContext(business, async (client) => {
@@ -283,9 +289,193 @@ async function getOrder(business, orderId) {
   });
 }
 
-async function generateQuotationPDF(business, quotationId) {
-  const q = await getQuotation(business, quotationId);
-  return renderToPDF("quotations", q);
+async function generateInvoiceFromOrder(
+  business,
+  orderId,
+  { due_date, payment_instructions },
+  user,
+) {
+  return withBusinessContext(business, async (client) => {
+    const order = await repo.findOrderById(client, orderId);
+    if (!order)
+      throw Object.assign(new Error("Order not found"), { status: 404 });
+    if (!["confirmed", "partially_fulfilled"].includes(order.status))
+      throw Object.assign(
+        new Error("Order must be confirmed before generating invoice"),
+        { status: 400 },
+      );
+    const existingInvoice = await repo.findInvoiceByOrderId(client, orderId);
+    if (existingInvoice)
+      throw Object.assign(new Error("Invoice already exists for this order"), {
+        status: 409,
+      });
+
+    const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
+    const invoice = await repo.insertInvoice(client, {
+      invoiceNumber,
+      order_id: orderId,
+      contact_id: order.contact_id,
+      deal_id: order.deal_id,
+      issue_date: new Date().toISOString().split("T")[0],
+      due_date,
+      subtotal: order.total_amount,
+      discount_total: 0,
+      vat_amount: 0,
+      total_amount: order.total_amount,
+      currency: "NGN",
+      payment_instructions,
+      userId: user.user_id,
+    });
+    await repo.copyOrderLinesToInvoice(client, {
+      invoiceId: invoice.invoice_id,
+      orderId,
+    });
+
+    // Generate Paystack payment link (fire-and-forget — link is optional)
+    try {
+      const paystackLib = require("../../lib/payments/paystack");
+      const contactRow = await client.query(
+        `SELECT email FROM shared.contacts WHERE contact_id = $1`,
+        [order.contact_id],
+      );
+      const email = contactRow.rows[0]?.email || "noreply@orikaliving.com";
+      const paystackUrl = await paystackLib.initializeTransaction({
+        email,
+        amountNGN: order.total_amount,
+        reference: invoiceNumber,
+        metadata: { invoice_id: invoice.invoice_id, business },
+        callbackUrl: `${process.env.APP_URL}/sales/invoices/${invoice.invoice_id}`,
+      });
+      await repo.updateInvoicePaymentLinks(client, invoice.invoice_id, {
+        paystack_payment_url: paystackUrl,
+        paystack_reference: invoiceNumber,
+      });
+      invoice.paystack_payment_url = paystackUrl;
+      invoice.paystack_reference = invoiceNumber;
+    } catch (e) {
+      // Non-fatal — invoice created, payment link skipped
+      require("../../config/logger").warn(
+        "[sales] Paystack link failed:",
+        e.message,
+      );
+    }
+
+    const pdf = await renderToPDF("invoice", invoice);
+    await repo.archiveDocument(client, {
+      business,
+      document_type: "invoice",
+      reference_type: "invoice",
+      reference_id: invoice.invoice_id,
+      content: pdf,
+    });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "sales",
+      action: "create",
+      table: "invoices",
+      recordId: invoice.invoice_id,
+      after: invoice,
+    });
+    return invoice;
+  });
+}
+
+async function handToLogistics(business, orderId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const order = await repo.findOrderById(client, orderId);
+    if (!order)
+      throw Object.assign(new Error("Order not found"), { status: 404 });
+    const updated = await repo.setOrderDispatch(client, orderId, {
+      delivery_address: data.delivery_address,
+      delivery_notes: data.delivery_notes,
+      courier_preference: data.courier_preference,
+    });
+    return { message: "Order handed to logistics", order: updated };
+  });
+}
+
+async function cancelOrder(business, orderId, user) {
+  return withBusinessContext(business, async (client) => {
+    const order = await repo.findOrderById(client, orderId);
+    if (!order)
+      throw Object.assign(new Error("Order not found"), { status: 404 });
+    if (order.status === "cancelled")
+      throw Object.assign(new Error("Order already cancelled"), {
+        status: 400,
+      });
+    return repo.setOrderCancelled(client, orderId, user.user_id);
+  });
+}
+
+// ─── Receipts ─────────────────────────────────────────────────────────────────
+
+async function listReceipts(
+  business,
+  { invoice_id, page = 1, limit = 50 } = {},
+) {
+  return withBusinessContext(business, async (client) => {
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const rows = await repo.listReceipts(client, {
+      invoice_id,
+      limit: parseInt(limit),
+      offset,
+    });
+    return { data: rows };
+  });
+}
+
+async function getReceipt(business, receiptId) {
+  return withBusinessContext(business, async (client) => {
+    const r = await repo.findReceiptById(client, receiptId);
+    if (!r)
+      throw Object.assign(new Error("Receipt not found"), { status: 404 });
+    return r;
+  });
+}
+
+async function generateReceiptPDF(business, receiptId) {
+  const r = await getReceipt(business, receiptId);
+  return renderToPDF("receipt", r);
+}
+
+// ─── Discount approvals ───────────────────────────────────────────────────────
+
+async function listDiscountApprovals(business, { status, quotation_id } = {}) {
+  return withBusinessContext(business, async (client) => {
+    const rows = await repo.listDiscountApprovals(client, {
+      status,
+      quotation_id,
+    });
+    return { data: rows };
+  });
+}
+
+async function approveDiscount(business, approvalId, { notes }, user) {
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.setDiscountApprovalStatus(client, approvalId, {
+      status: "approved",
+      notes,
+      reviewedBy: user.user_id,
+    });
+    if (!row)
+      throw Object.assign(new Error("Approval not found"), { status: 404 });
+    return row;
+  });
+}
+
+async function rejectDiscount(business, approvalId, { notes }, user) {
+  return withBusinessContext(business, async (client) => {
+    const row = await repo.setDiscountApprovalStatus(client, approvalId, {
+      status: "rejected",
+      notes,
+      reviewedBy: user.user_id,
+    });
+    if (!row)
+      throw Object.assign(new Error("Approval not found"), { status: 404 });
+    return row;
+  });
 }
 
 module.exports = {
@@ -295,7 +485,18 @@ module.exports = {
   updateQuotation,
   sendQuotation,
   confirmQuotation,
+  cancelQuotation,
+  generateQuotationPDF,
+  getSalesKpis,
   listOrders,
   getOrder,
-  generateQuotationPDF,
+  generateInvoiceFromOrder,
+  handToLogistics,
+  cancelOrder,
+  listReceipts,
+  getReceipt,
+  generateReceiptPDF,
+  listDiscountApprovals,
+  approveDiscount,
+  rejectDiscount,
 };

@@ -146,5 +146,6 @@ router.use(
   protect,
   require("../modules/settings/settings.routes"),
 );
-
+router.use("/audit", protect, require("../shared/audit/audit.routes"));
+router.use("/uploads", protect, require("../shared/upload/uploads.routes"));
 module.exports = router;
