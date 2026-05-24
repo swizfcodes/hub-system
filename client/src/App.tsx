@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react';
 import { AppShell } from '@components/shell/AppShell';
 import { Skeleton } from '@components/ui/Skeleton';
 
-// ── Pages (lazy-loaded for code-splitting) ──
+// Pages (lazy-loaded for code-splitting)
 const Login                 = lazy(() => import('@pages/Login'));
 const HubHome               = lazy(() => import('@pages/HubHome'));
 const SettingsHome          = lazy(() => import('@pages/settings/SettingsHome'));
@@ -46,6 +46,26 @@ const BillsPage             = lazy(() => import('@pages/procurement/BillsPage'))
 const BillNew               = lazy(() => import('@pages/procurement/BillNew'));
 const SupplierPortal        = lazy(() => import('@pages/procurement/SupplierPortal'));
 
+// Stock module
+const StockHome             = lazy(() => import('@pages/stock/StockHome'));
+const AlertsPage            = lazy(() => import('@pages/stock/AlertsPage'));
+const CountSession          = lazy(() => import('@pages/stock/CountSession'));
+const ReservationsPage      = lazy(() => import('@pages/stock/ReservationsPage'));
+const TransfersPage         = lazy(() => import('@pages/stock/TransfersPage'));
+
+// Sales module
+const SalesHome             = lazy(() => import('@pages/sales/SalesHome'));
+const QuoteDetail           = lazy(() => import('@pages/sales/QuoteDetail'));
+const OrderDetail           = lazy(() => import('@pages/sales/OrderDetail'));
+const InvoiceDetail         = lazy(() => import('@pages/sales/InvoiceDetail'));
+
+// POS module — terminal selector + session history share the AppShell
+const POSTerminals          = lazy(() => import('@pages/pos/POSTerminals'));
+const POSSessions           = lazy(() => import('@pages/pos/POSSessions'));
+
+// POS session — fullscreen, rendered OUTSIDE AppShell (no sidebar/topbar)
+const POSSession            = lazy(() => import('@pages/pos/POSSession'));
+
 function PageFallback() {
   return (
     <div className="px-4 sm:px-8 py-10 max-w-7xl mx-auto space-y-6">
@@ -61,12 +81,13 @@ export default function App() {
       <Routes>
         {/* Public — outside the shell */}
         <Route path="/login" element={<Login />} />
-        {/* Supplier portal — tokenised public URL, no auth required */}
         <Route path="/rfq/:token" element={<SupplierPortal />} />
+
+        {/* POS active session — fullscreen, intentionally outside AppShell */}
+        <Route path="/pos/session/:sessionId" element={<POSSession />} />
 
         {/* Authenticated — inside the AppShell */}
         <Route element={<AppShell />}>
-          {/* Hub home (app grid) */}
           <Route path="/"    element={<HubHome />} />
           <Route path="/hub" element={<Navigate to="/" replace />} />
 
@@ -83,44 +104,58 @@ export default function App() {
           <Route path="/settings/document-numbering"       element={<DocumentNumbering />} />
           <Route path="/settings/permissions"              element={<PermissionsPage />} />
 
-          {/* Contacts module (Directory) */}
+          {/* Contacts */}
           <Route path="/contacts"             element={<ContactsHome />} />
           <Route path="/contacts/new"         element={<ContactNew />} />
           <Route path="/contacts/staff/new"   element={<StaffOnboard />} />
           <Route path="/contacts/:id"         element={<ContactDetail />} />
-          {/* /staff is a synonym that lands on the Directory's Employees tab */}
           <Route path="/staff" element={<Navigate to="/contacts?tab=staff" replace />} />
 
-          {/* CRM module */}
-          <Route path="/crm"             element={<CrmHome />} />
-          <Route path="/crm/:id"         element={<DealDetail />} />
+          {/* CRM */}
+          <Route path="/crm"     element={<CrmHome />} />
+          <Route path="/crm/:id" element={<DealDetail />} />
 
-          {/* Catalogue module */}
-          <Route path="/catalogue"       element={<CatalogueHome />} />
-          <Route path="/catalogue/:id"   element={<ProductDetail />} />
+          {/* Catalogue */}
+          <Route path="/catalogue"     element={<CatalogueHome />} />
+          <Route path="/catalogue/:id" element={<ProductDetail />} />
 
-          {/* Procurement module (formerly /purchasing — now the command center) */}
-          <Route path="/procurement"                              element={<ProcurementHome />} />
-          <Route path="/procurement/suppliers"                    element={<SuppliersPage />} />
-          <Route path="/procurement/suppliers/:id"                element={<SupplierDetail />} />
-          <Route path="/procurement/rfqs"                         element={<RFQPage />} />
-          <Route path="/procurement/rfqs/new"                     element={<RFQNew />} />
-          <Route path="/procurement/rfqs/:id"                     element={<RFQDetail />} />
-          <Route path="/procurement/purchase-orders"              element={<POPage />} />
-          <Route path="/procurement/purchase-orders/new"          element={<PONew />} />
-          <Route path="/procurement/purchase-orders/:id"          element={<PODetail />} />
-          <Route path="/procurement/bills"                        element={<BillsPage />} />
-          <Route path="/procurement/bills/new"                    element={<BillNew />} />
-          {/* /purchasing legacy hub-grid link → redirect to /procurement */}
-          <Route path="/purchasing"      element={<Navigate to="/procurement" replace />} />
+          {/* Procurement */}
+          <Route path="/procurement"                          element={<ProcurementHome />} />
+          <Route path="/procurement/suppliers"                element={<SuppliersPage />} />
+          <Route path="/procurement/suppliers/:id"            element={<SupplierDetail />} />
+          <Route path="/procurement/rfqs"                     element={<RFQPage />} />
+          <Route path="/procurement/rfqs/new"                 element={<RFQNew />} />
+          <Route path="/procurement/rfqs/:id"                 element={<RFQDetail />} />
+          <Route path="/procurement/purchase-orders"          element={<POPage />} />
+          <Route path="/procurement/purchase-orders/new"      element={<PONew />} />
+          <Route path="/procurement/purchase-orders/:id"      element={<PODetail />} />
+          <Route path="/procurement/bills"                    element={<BillsPage />} />
+          <Route path="/procurement/bills/new"                element={<BillNew />} />
+          <Route path="/purchasing" element={<Navigate to="/procurement" replace />} />
 
-          {/* Module placeholders — fill in when each module is built */}
+          {/* Stock & Inventory */}
+          <Route path="/stock"                  element={<StockHome />} />
+          <Route path="/stock/alerts"           element={<AlertsPage />} />
+          <Route path="/stock/count/:id"        element={<CountSession />} />
+          <Route path="/stock/reservations"     element={<ReservationsPage />} />
+          <Route path="/stock/transfers"        element={<TransfersPage />} />
+
+          {/* Sales */}
+          <Route path="/sales"                    element={<SalesHome />} />
+          <Route path="/sales/quotations/new"     element={<QuoteDetail />} />
+          <Route path="/sales/quotations/:id"     element={<QuoteDetail />} />
+          <Route path="/sales/orders/:id"         element={<OrderDetail />} />
+          <Route path="/sales/invoices/:id"       element={<InvoiceDetail />} />
+          {/* Legacy /invoicing redirect */}
+          <Route path="/invoicing"   element={<Navigate to="/sales" replace />} />
+
+          {/* POS */}
+          <Route path="/pos"          element={<POSTerminals />} />
+          <Route path="/pos/sessions" element={<POSSessions />} />
+
+          {/* Placeholders for upcoming modules */}
           <Route path="/dashboard"       element={<Placeholder title="Dashboard" />} />
-          <Route path="/sales"           element={<Placeholder title="Sales" />} />
-          <Route path="/pos"             element={<Placeholder title="POS" />} />
           <Route path="/logistics"       element={<Placeholder title="Logistics" />} />
-          <Route path="/stock"           element={<Placeholder title="Stock & Inventory" />} />
-          <Route path="/invoicing"       element={<Placeholder title="Invoices" />} />
           <Route path="/accounting"      element={<Placeholder title="Accounting" />} />
           <Route path="/expenses"        element={<Placeholder title="Expenses" />} />
           <Route path="/payroll"         element={<Placeholder title="Payroll" />} />
@@ -135,14 +170,12 @@ export default function App() {
           <Route path="/security"        element={<Placeholder title="Security & Audit" />} />
         </Route>
 
-        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
 }
 
-// Temporary placeholder until each module is built.
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="px-4 sm:px-8 py-10 max-w-3xl mx-auto text-center">

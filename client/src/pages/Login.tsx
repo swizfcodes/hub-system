@@ -136,14 +136,18 @@ export default function Login() {
     }
   };
 
+  // ── Render Splash Screen ──
   if (splashVisible) {
     return (
-      <div className={`fixed inset-0 z-[9999] bg-orika-black flex flex-col items-center justify-center transition-opacity duration-700 ${splashProgress === 100 ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="w-[120px] h-[120px] rounded-full bg-orika-black border border-orika-gold/50 flex items-center justify-center animate-splash-pulse shadow-glow-md p-4">
-          <span className="font-display text-5xl text-orika-gold">O</span>
+      <div className={`fixed inset-0 z-[9999] bg-orika-black flex flex-col items-center justify-center transition-opacity duration-800 ${splashProgress === 100 ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="w-[120px] h-[120px] rounded-full bg-orika-black border border-orika-gold/50 flex items-center justify-center animate-splash-pulse shadow-glow-md p-4 overflow-hidden">
+          <img src="/assets/images/logos/orika-logo-white.png" alt="Orika Logo" className="w-full h-full object-contain" />
         </div>
         <div className="w-[200px] h-[2px] bg-orika-graphite rounded-sm mt-10 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#8A6A30] via-orika-gold to-[#D9BC87] rounded-sm transition-all duration-300" style={{ width: `${splashProgress}%` }} />
+          <div 
+            className="h-full bg-gradient-to-r from-[#8A6A30] via-orika-gold to-[#D9BC87] rounded-sm transition-all duration-300"
+            style={{ width: `${splashProgress}%` }}
+          />
         </div>
         <p className="font-display italic font-light text-[0.95rem] text-orika-smoke mt-6 tracking-widest animate-splash-text">
           Crafting experiences, one detail at a time
@@ -151,7 +155,6 @@ export default function Login() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen relative animate-app-in bg-orika-black font-body text-orika-cream overflow-x-hidden">
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
@@ -253,14 +256,19 @@ export default function Login() {
       {loginModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-orika-black/60 backdrop-blur-xl" onClick={() => setLoginModalOpen(false)} />
-          <div className="relative w-full max-w-[420px] bg-orika-cream rounded-3xl p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] animate-scale-in border border-white/20">
-            <button onClick={() => setLoginModalOpen(false)} className="absolute top-6 right-6 text-orika-smoke hover:text-orika-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white" aria-label="Close">
+          
+          <div className="relative w-full max-w-[420px] bg-orika-cream rounded-3xl p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] animate-app-in border border-white/20">
+            <button onClick={() => setLoginModalOpen(false)} className="absolute top-6 right-6 text-orika-smoke hover:text-orika-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white">
               <X className="w-5 h-5" />
             </button>
-            <div className="w-[80px] h-[80px] mx-auto rounded-full bg-white border border-orika-cloud/50 flex items-center justify-center mb-6 shadow-sm">
-              <span className="font-display text-4xl text-orika-black">O</span>
+
+            <div className="w-[80px] h-[80px] mx-auto rounded-full bg-white border border-orika-cloud/50 flex items-center justify-center mb-6 shadow-sm p-2 overflow-hidden">
+              <img src="/assets/images/logos/orika-logo-black.png" alt="Orika Logo" className="w-full h-full object-contain" />
             </div>
-            <h2 className="font-display font-light text-3xl text-center text-orika-black mb-1">Welcome back</h2>
+
+            <h2 className="font-display font-light text-3xl text-center text-orika-black mb-1">
+              Welcome back
+            </h2>
             <p className="font-light text-xs text-center text-orika-smoke mb-8">Secure access to Orika Hub</p>
 
             {error && (
@@ -275,24 +283,37 @@ export default function Login() {
                 <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2 ml-1">Email address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/70" />
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-orika-black focus:outline-none focus:border-orika-black focus:ring-1 focus:ring-orika-black transition-all placeholder-orika-cloud/70 shadow-sm"
-                    placeholder="you@company.com" />
+                    placeholder="you@company.com"
+                  />
                 </div>
               </div>
+
               <div className="mb-6">
                 <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2 ml-1">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/70" />
-                  <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                  <input 
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-orika-black focus:outline-none focus:border-orika-black focus:ring-1 focus:ring-orika-black transition-all placeholder-orika-cloud/70 shadow-sm"
-                    placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-orika-smoke/70 hover:text-orika-black transition-colors">
+                    placeholder="••••••••"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-orika-smoke/70 hover:text-orika-black transition-colors"
+                  >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
+
               <div className="flex items-center justify-between mb-8 px-1">
                 <label className="flex items-center gap-2.5 cursor-pointer group">
                   <div className="relative w-4 h-4 border border-orika-cloud bg-white rounded flex items-center justify-center group-hover:border-orika-black transition-colors">
@@ -301,12 +322,12 @@ export default function Login() {
                   </div>
                   <span className="text-xs font-medium text-orika-smoke">Remember me</span>
                 </label>
-                <button type="button" onClick={() => { setLoginModalOpen(false); setForgotModalOpen(true); }} className="text-xs font-medium text-orika-black hover:text-orika-gold transition-colors">
+                <button type="button" onClick={() => {setLoginModalOpen(false); setForgotModalOpen(true);}} className="text-xs font-medium text-orika-black hover:text-orika-gold transition-colors">
                   Forgot password?
                 </button>
               </div>
-              <button type="submit" disabled={isLoading}
-                className="relative w-full py-4 rounded-xl bg-orika-black text-orika-cream font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-orika-charcoal hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none shimmer-trigger">
+
+              <button type="submit" disabled={isLoading} className="relative w-full py-4 rounded-xl bg-orika-black text-orika-cream font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-orika-charcoal hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none login-btn">
                 <span className={isLoading ? 'invisible' : ''}>Sign In</span>
                 <span className="btn-shimmer" />
                 {isLoading && (

@@ -1,0 +1,834 @@
+/**
+ * POSModals.tsx — all POS overlay components in one file.
+ *
+ * Components:
+ *   ReceiptModal       — post-payment options (WhatsApp / email / invoice)
+ *   SessionCloseModal  — cash count + session close
+ *   ParkedDrawer       — parked transaction management
+ *   DiscountGate       — manager credential gate for below-minimum pricing
+ *   ReturnModal        — post-session return with manager approval
+ *   XZReportView       — X/Z report display (inline, not a modal)
+ *
+ * IMPORTANT: ReturnModal uses DiscountGate directly (same file — no import
+ * needed). Do NOT add `import { DiscountGate } from './POSModals'` — that
+ * is a circular self-import and will break at runtime.
+ */
+import { useState } from 'react';
+import {
+  MessageCircle, Mail, FileText, RotateCcw,
+  Clock, Play, Trash2, Shield,
+} from 'lucide-react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { Modal } from '@components/ui/Modal';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
+import { Select } from '@components/ui/Select';
+import { usePOSStore } from '@stores/posStore';
+import {
+  sendReceipt,
+  generateInvoiceFromTransaction,
+  verifyManager,
+  createReturn,
+} from '@services/pos/transactions';
+import { closeSession } from '@services/pos/sessions';
+import {
+  closeSessionSchema, managerVerifySchema, returnSchema,
+  type CloseSessionValues, type ManagerVerifyValues, type ReturnValues,
+} from '@lib/schemas/pos';
+import { VARIANCE_STATUS_META } from '@lib/constants/posConstants';
+import { fmtMoney, fmtDateTime } from '@lib/format';
+import { showToast } from '@hooks/useToast';
+import { errMsg } from '@services/api';
+import type { PosTransaction, XReport, ZReport, ParkedTransaction } from '@typedefs/pos';
+
+// ── ReceiptModal ───────────────────────────────────────────────────────────────
+
+interface ReceiptModalProps {
+  open:        boolean;
+  transaction: PosTransaction;
+  currency?:   string;
+  onNewSale:   () => void;
+  onClose:     () => void;
+  onInvoice?:  (invoiceId: string) => void;
+}
+
+export function ReceiptModal({
+  open,
+  transaction,
+  currency = 'NGN',
+  onNewSale,
+  onClose,
+  onInvoice,
+}: ReceiptModalProps) {
+  const [sending,   setSending]   = useState(false);
+  const [invoicing, setInvoicing] = useState(false);
+
+  async function handleSend(channel: 'whatsapp' | 'email') {
+    setSending(true);
+    try {
+      await sendReceipt(transaction.transaction_id, { channel });
+      showToast.success(
+        channel === 'whatsapp' ? 'Receipt sent via WhatsApp' : 'Receipt sent via email',
+      );
+    } catch (err) {
+      showToast.error(errMsg(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleInvoice() {
+    setInvoicing(true);
+    try {
+      const result = await generateInvoiceFromTransaction(transaction.transaction_id);
+      showToast.success(`Invoice ${result.invoice_number} generated`);
+      onInvoice?.(result.invoice_id);
+    } catch (err) {
+      showToast.error(errMsg(err));
+    } finally {
+      setInvoicing(false);
+    }
+  }
+
+  const hasPhone = !!transaction.primary_phone;
+  const hasEmail = !!transaction.contact_id;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Transaction Complete"
+      size="sm"
+      surface="light"
+      footer={
+        <div className="flex gap-3">
+          <Button className="flex-1" onClick={onNewSale}>
+            <RotateCcw className="h-4 w-4" />
+            New Sale
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        {/* Summary */}
+        <div className="rounded-xl border border-green-500/30 bg-green-900/10 px-4 py-4 text-center">
+          <p className="text-xs text-green-300 uppercase tracking-widest">Paid</p>
+          <p className="font-display text-2xl font-extrabold text-green-300">
+            {fmtMoney(transaction.total_amount, currency)}
+          </p>
+          <p className="mt-1 text-xs text-green-400/70">{transaction.transaction_number}</p>
+          {parseFloat(String(transaction.change_given)) > 0 && (
+            <p className="mt-2 text-sm font-medium text-green-300">
+              Change: {fmtMoney(transaction.change_given, currency)}
+            </p>
+          )}
+        </div>
+
+        {/* Receipt delivery */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+            Send Receipt
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => handleSend('whatsapp')}
+              disabled={!hasPhone || sending}
+              loading={sending}
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleSend('email')}
+              disabled={!hasEmail || sending}
+              loading={sending}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </Button>
+          </div>
+          {!hasPhone && !hasEmail && (
+            <p className="text-xs text-orika-smoke/60">
+              No contact method on file — link a customer to send digital receipts.
+            </p>
+          )}
+        </div>
+
+        {/* Invoice option */}
+        {onInvoice && (
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-orika-smoke"
+            onClick={handleInvoice}
+            loading={invoicing}
+          >
+            <FileText className="h-4 w-4" />
+            Generate Invoice
+          </Button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ── SessionCloseModal ──────────────────────────────────────────────────────────
+
+interface SessionCloseModalProps {
+  open:      boolean;
+  onClose:   () => void;
+  onClosed:  () => void;
+  currency?: string;
+}
+
+export function SessionCloseModal({
+  open,
+  onClose,
+  onClosed,
+  currency = 'NGN',
+}: SessionCloseModalProps) {
+  const { session, pendingCount } = usePOSStore((s) => ({
+    session:      s.session,
+    pendingCount: s.pendingCount,
+  }));
+
+  const form = useForm<CloseSessionValues>({
+    resolver: zodResolver(closeSessionSchema),
+    defaultValues: { actual_cash: 0, reconciliation_notes: '' },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (values: CloseSessionValues) =>
+      closeSession(session!.session_id, values),
+    onSuccess: () => {
+      showToast.success('Session closed');
+      form.reset();
+      onClosed();
+    },
+    onError: (err) => showToast.error(errMsg(err)),
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Close Session"
+      size="md"
+      surface="light"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={form.handleSubmit((v) => mutation.mutate(v))}
+            loading={mutation.isPending}
+            disabled={pendingCount > 0}
+          >
+            Close Session
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {pendingCount > 0 && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-900/10 px-4 py-3 text-sm text-amber-300">
+            {pendingCount} transaction{pendingCount > 1 ? 's are' : ' is'} still syncing.
+            Wait for sync to complete before closing the session.
+          </div>
+        )}
+
+        <div className="rounded-lg bg-orika-graphite/30 px-4 py-3 text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-orika-smoke">Opening Float</span>
+            <span className="text-orika-cream tabular-nums">
+              {fmtMoney(session?.opening_float ?? 0, currency)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-orika-smoke">Revenue This Session</span>
+            <span className="text-orika-cream tabular-nums">
+              {fmtMoney(session?.total_revenue ?? 0, currency)}
+            </span>
+          </div>
+        </div>
+
+        <Controller
+          name="actual_cash"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                Cash in Till *
+              </label>
+              <Input
+                {...field}
+                type="number"
+                step="0.01"
+                min={0}
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                error={fieldState.error?.message}
+                placeholder="Count the physical cash"
+              />
+            </div>
+          )}
+        />
+
+        <Controller
+          name="reconciliation_notes"
+          control={form.control}
+          render={({ field }) => (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                Notes (optional)
+              </label>
+              <Textarea {...field} rows={2} placeholder="Any discrepancies or notes..." />
+            </div>
+          )}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+// ── ParkedDrawer ───────────────────────────────────────────────────────────────
+
+interface ParkedDrawerProps {
+  open:    boolean;
+  onClose: () => void;
+}
+
+export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
+  const { parked, resumeParked, discardParked } = usePOSStore((s) => ({
+    parked:        s.parked,
+    resumeParked:  s.resumeParked,
+    discardParked: s.discardParked,
+  }));
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/40"
+        onClick={onClose}
+      />
+      {/* Drawer */}
+      <div className="fixed inset-y-0 right-0 z-50 w-72 border-l border-white/5 bg-orika-black shadow-2xl flex flex-col">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+          <h2 className="text-sm font-semibold text-orika-cream">
+            Parked ({parked.length})
+          </h2>
+          <button onClick={onClose} className="text-orika-smoke hover:text-orika-cream transition-colors">
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto divide-y divide-white/5">
+          {parked.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-orika-smoke">
+              No parked transactions
+            </p>
+          ) : (
+            parked.map((p: ParkedTransaction) => (
+              <div key={p.park_id} className="px-4 py-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-orika-smoke shrink-0" />
+                  <span className="text-xs text-orika-cloud truncate">
+                    {p.label ?? fmtDateTime(p.parked_at)}
+                  </span>
+                </div>
+                {p.customer && (
+                  <p className="text-xs text-orika-smoke truncate">
+                    {p.customer.display_name}
+                  </p>
+                )}
+                <p className="text-xs text-orika-smoke">
+                  {p.lines.length} item{p.lines.length !== 1 ? 's' : ''}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { resumeParked(p.park_id); onClose(); }}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-orika-gold/10 py-1.5 text-xs font-medium text-orika-gold hover:bg-orika-gold/20 transition-colors"
+                  >
+                    <Play className="h-3 w-3" />
+                    Resume
+                  </button>
+                  <button
+                    onClick={() => discardParked(p.park_id)}
+                    className="rounded-md px-2 py-1.5 text-orika-smoke hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── DiscountGate ───────────────────────────────────────────────────────────────
+
+interface DiscountGateProps {
+  open:       boolean;
+  onClose:    () => void;
+  onApproved: (managerId: string, displayName: string) => void;
+}
+
+export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
+  const form = useForm<ManagerVerifyValues>({
+    resolver: zodResolver(managerVerifySchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  async function onSubmit(data: ManagerVerifyValues) {
+    try {
+      const result = await verifyManager(data.email, data.password);
+      if (result.approved) {
+        showToast.success(`Approved by ${result.display_name}`);
+        onApproved(result.manager_id, result.display_name);
+        form.reset();
+      }
+    } catch {
+      form.setError('password', { message: 'Invalid credentials or not a manager' });
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Manager Approval Required"
+      size="sm"
+      surface="light"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            loading={form.formState.isSubmitting}
+          >
+            <Shield className="h-4 w-4" />
+            Approve
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-orika-smoke/80">
+          One or more items are priced below the minimum selling price. A manager must approve to continue.
+        </p>
+        <Controller
+          name="email"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                Manager Email
+              </label>
+              <Input {...field} type="email" error={fieldState.error?.message} />
+            </div>
+          )}
+        />
+        <Controller
+          name="password"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                Password
+              </label>
+              <Input {...field} type="password" error={fieldState.error?.message} />
+            </div>
+          )}
+        />
+      </div>
+    </Modal>
+  );
+}
+
+// ── ReturnModal ────────────────────────────────────────────────────────────────
+// Uses DiscountGate directly (same file) — no self-import needed.
+
+interface ReturnModalProps {
+  open:        boolean;
+  onClose:     () => void;
+  transaction: PosTransaction;
+  currency?:   string;
+  onReturned:  () => void;
+}
+
+export function ReturnModal({
+  open,
+  onClose,
+  transaction,
+  currency = 'NGN',
+  onReturned,
+}: ReturnModalProps) {
+  const [showGate, setShowGate] = useState(false);
+  const [managerId, setManagerId] = useState<string | null>(null);
+  const [managerName, setManagerName] = useState<string>('');
+  const [qtys, setQtys] = useState<Record<string, number>>({});
+
+  const form = useForm<ReturnValues>({
+    resolver: zodResolver(returnSchema),
+    defaultValues: {
+      lines:         [],
+      refund_method: 'cash',
+      return_reason: '',
+      manager_id:    '',
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (values: ReturnValues) =>
+      createReturn(transaction.transaction_id, values),
+    onSuccess: (result) => {
+      showToast.success(
+        `Return processed — refund ${fmtMoney(result.refund_total, currency)} via ${result.refund_method}`,
+      );
+      onReturned();
+      onClose();
+    },
+    onError: (err) => showToast.error(errMsg(err)),
+  });
+
+  function handleApproved(mId: string, mName: string) {
+    setManagerId(mId);
+    setManagerName(mName);
+    form.setValue('manager_id', mId);
+    setShowGate(false);
+  }
+
+  function onSubmit(data: ReturnValues) {
+    const lines = (transaction.lines ?? [])
+      .filter((l) => l.product_id && (qtys[l.product_id] ?? 0) > 0)
+      .map((l) => ({
+        product_id: l.product_id!,
+        quantity:   qtys[l.product_id!],
+      }));
+
+    if (!lines.length) {
+      showToast.error('Select at least one item to return');
+      return;
+    }
+    if (!managerId) {
+      showToast.error('Manager approval is required');
+      return;
+    }
+    mutation.mutate({ ...data, lines, manager_id: managerId });
+  }
+
+  const productLines = (transaction.lines ?? []).filter((l) => l.product_id);
+
+  return (
+    <>
+      <Modal
+        open={open && !showGate}
+        onClose={onClose}
+        title={`Return — ${transaction.transaction_number}`}
+        size="md"
+        surface="light"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              disabled={mutation.isPending}
+            >
+              Cancel
+            </Button>
+            {!managerId ? (
+              <Button onClick={() => setShowGate(true)}>
+                <Shield className="h-4 w-4" />
+                Get Manager Approval
+              </Button>
+            ) : (
+              <Button
+                onClick={form.handleSubmit(onSubmit)}
+                loading={mutation.isPending}
+              >
+                Process Return
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {managerId && (
+            <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-3 py-2 text-xs text-green-400">
+              Approved by {managerName}
+            </div>
+          )}
+
+          {/* Line selection */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+              Select Items to Return
+            </p>
+            {productLines.map((line) => (
+              <div
+                key={line.line_id}
+                className="flex items-center gap-3 rounded-lg border border-black/10 px-3 py-2.5"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm text-orika-smoke">{line.description}</p>
+                  <p className="text-xs text-orika-smoke/60">
+                    {fmtMoney(line.unit_price, currency)} × {line.quantity} sold
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-orika-smoke">Return:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={line.quantity}
+                    value={qtys[line.product_id!] ?? 0}
+                    onChange={(e) =>
+                      setQtys((q) => ({
+                        ...q,
+                        [line.product_id!]: Math.min(
+                          parseInt(e.target.value) || 0,
+                          line.quantity,
+                        ),
+                      }))
+                    }
+                    className="w-14 rounded border border-black/10 px-2 py-1 text-center text-sm focus:border-orika-gold/40 focus:outline-none"
+                  />
+                  <span className="text-xs text-orika-smoke">/ {line.quantity}</span>
+                </div>
+              </div>
+            ))}
+
+            {productLines.length === 0 && (
+              <p className="text-sm text-orika-smoke">No returnable items on this transaction.</p>
+            )}
+          </div>
+
+          <Controller
+            name="refund_method"
+            control={form.control}
+            render={({ field }) => (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Refund Method
+                </label>
+                <Select
+                  {...field}
+                  options={[
+                    { value: 'cash', label: 'Cash' },
+                    { value: 'bank_transfer', label: 'Bank Transfer' },
+                    { value: 'pos_card', label: 'POS Card' },
+                  ]}
+                />
+              </div>
+            )}
+          />
+
+          <Controller
+            name="return_reason"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Reason *
+                </label>
+                <Input
+                  {...field}
+                  placeholder="Why is the customer returning this?"
+                  error={fieldState.error?.message}
+                />
+              </div>
+            )}
+          />
+        </div>
+      </Modal>
+
+      {/* DiscountGate used directly — no import needed (same file) */}
+      <DiscountGate
+        open={showGate}
+        onClose={() => setShowGate(false)}
+        onApproved={handleApproved}
+      />
+    </>
+  );
+}
+
+// ── XZReportView ───────────────────────────────────────────────────────────────
+// Inline component (not a modal) — embed inside a Modal or page.
+
+interface XZReportProps {
+  report:    XReport | ZReport;
+  currency?: string;
+}
+
+export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
+  const isZ = report.report_type === 'Z';
+
+  return (
+    <div className="space-y-4 text-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-semibold text-orika-cream">{report.terminal_name}</p>
+          <p className="text-xs text-orika-smoke">
+            Opened {fmtDateTime(report.opened_at)} · {report.opened_by}
+          </p>
+          {isZ && (
+            <p className="text-xs text-orika-smoke">
+              Closed {fmtDateTime((report as ZReport).closed_at)}
+            </p>
+          )}
+        </div>
+        <span className="rounded-full bg-orika-graphite px-2.5 py-1 text-xs font-bold text-orika-gold">
+          {report.report_type} Report
+        </span>
+      </div>
+
+      {/* Revenue breakdown */}
+      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+          Revenue
+        </p>
+        <ReportRow label="Cash"          value={fmtMoney(report.revenue.cash_total, currency)} />
+        <ReportRow label="Bank Transfer" value={fmtMoney(report.revenue.transfer_total, currency)} />
+        <ReportRow label="Card"          value={fmtMoney(report.revenue.card_total, currency)} />
+        <div className="border-t border-white/10 pt-2">
+          <ReportRow
+            label="Total Revenue"
+            value={fmtMoney(report.revenue.total_revenue, currency)}
+            bold
+          />
+        </div>
+      </div>
+
+      {/* Transaction counts */}
+      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+          Transactions
+        </p>
+        <ReportRow
+          label="Completed"
+          value={String(
+            (report as XReport).transactions?.completed ??
+            (report as ZReport).transactions?.total ??
+            0,
+          )}
+        />
+        {(report.transactions as any).voided > 0 && (
+          <ReportRow label="Voided" value={String((report.transactions as any).voided)} />
+        )}
+      </div>
+
+      {/* Cash drawer */}
+      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+          Cash Drawer
+        </p>
+        {isZ ? (
+          <>
+            <ReportRow
+              label="Opening Float"
+              value={fmtMoney((report as ZReport).cash_drawer.opening_float, currency)}
+            />
+            <ReportRow
+              label="Expected"
+              value={fmtMoney((report as ZReport).cash_drawer.expected_cash, currency)}
+            />
+            <ReportRow
+              label="Actual"
+              value={fmtMoney((report as ZReport).cash_drawer.actual_cash, currency)}
+            />
+            <div className="border-t border-white/10 pt-2">
+              <VarianceRow
+                variance={(report as ZReport).cash_drawer.variance}
+                status={(report as ZReport).cash_drawer.status}
+                currency={currency}
+              />
+            </div>
+            {(report as ZReport).reconciliation_notes && (
+              <p className="mt-2 text-xs text-orika-smoke italic">
+                Note: {(report as ZReport).reconciliation_notes}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <ReportRow
+              label="Opening Float"
+              value={fmtMoney((report as XReport).cash_drawer.opening_float, currency)}
+            />
+            <ReportRow
+              label="Cash Sales"
+              value={fmtMoney((report as XReport).cash_drawer.cash_sales, currency)}
+            />
+            <ReportRow
+              label="Expected in Till"
+              value={fmtMoney((report as XReport).cash_drawer.expected_cash_on_hand, currency)}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Local helper sub-components ────────────────────────────────────────────────
+
+function ReportRow({
+  label,
+  value,
+  bold = false,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-2 text-sm">
+      <span className="text-orika-smoke">{label}</span>
+      <span
+        className={
+          bold
+            ? 'font-semibold text-orika-cream tabular-nums'
+            : 'text-orika-cream tabular-nums'
+        }
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function VarianceRow({
+  variance,
+  status,
+  currency,
+}: {
+  variance: number;
+  status: keyof typeof VARIANCE_STATUS_META;
+  currency: string;
+}) {
+  const meta = VARIANCE_STATUS_META[status];
+  const Icon = meta.icon;
+  return (
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-orika-smoke">Variance</span>
+      <span
+        className="flex items-center gap-1 font-medium"
+        style={{ color: meta.color }}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        {meta.label} ({fmtMoney(Math.abs(variance), currency)})
+      </span>
+    </div>
+  );
+}

@@ -49,8 +49,12 @@ async function login(email, password, ip = "") {
       refreshToken,
       user: {
         user_id: user.user_id,
-        default_business: user.default_business,
+        role_id: user.role_id,
+        email: user.email,
+        display_name: user.display_name,
+        current_business: user.default_business,
         permitted_businesses: user.permitted_businesses,
+        default_business: user.default_business,
         force_password_reset: user.force_password_reset,
         role: user.role_name,
       },

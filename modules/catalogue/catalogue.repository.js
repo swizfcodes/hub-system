@@ -165,9 +165,16 @@ async function findProductById(client, productId) {
   const {
     rows: [row],
   } = await client.query(
-    `SELECT p.*, pc.name AS category_name
+    `SELECT p.*,
+            pc.name              AS category_name,
+            coa_i.account_name   AS income_account_name,
+            coa_inv.account_name AS inventory_account_name,
+            coa_c.account_name   AS cogs_account_name
      FROM products p
-     LEFT JOIN product_categories pc ON pc.category_id = p.category_id
+     LEFT JOIN product_categories pc     ON pc.category_id    = p.category_id
+     LEFT JOIN chart_of_accounts coa_i   ON coa_i.account_id   = p.income_account_id
+     LEFT JOIN chart_of_accounts coa_inv ON coa_inv.account_id  = p.inventory_account_id
+     LEFT JOIN chart_of_accounts coa_c   ON coa_c.account_id   = p.cogs_account_id
      WHERE p.product_id = $1`,
     [productId],
   );
@@ -240,19 +247,22 @@ async function updateProduct(client, productId, fields) {
     rows: [row],
   } = await client.query(
     `UPDATE products SET
-       name              = COALESCE($2,  name),
-       description       = COALESCE($3,  description),
-       category_id       = COALESCE($4,  category_id),
-       cost_price        = COALESCE($5,  cost_price),
-       selling_price     = COALESCE($6,  selling_price),
-       min_selling_price = COALESCE($7,  min_selling_price),
-       currency          = COALESCE($8,  currency),
-       weight_grams      = COALESCE($9,  weight_grams),
-       barcode           = COALESCE($10, barcode),
-       custom_fields     = COALESCE($11::jsonb, custom_fields),
-       reorder_level     = COALESCE($12, reorder_level),
-       reorder_quantity  = COALESCE($13, reorder_quantity),
-       is_active         = COALESCE($14, is_active)
+       name                 = COALESCE($2,  name),
+       description          = COALESCE($3,  description),
+       category_id          = COALESCE($4,  category_id),
+       cost_price           = COALESCE($5,  cost_price),
+       selling_price        = COALESCE($6,  selling_price),
+       min_selling_price    = COALESCE($7,  min_selling_price),
+       currency             = COALESCE($8,  currency),
+       weight_grams         = COALESCE($9,  weight_grams),
+       barcode              = COALESCE($10, barcode),
+       custom_fields        = COALESCE($11::jsonb, custom_fields),
+       reorder_level        = COALESCE($12, reorder_level),
+       reorder_quantity     = COALESCE($13, reorder_quantity),
+       is_active            = COALESCE($14, is_active),
+       income_account_id    = COALESCE($15, income_account_id),
+       inventory_account_id = COALESCE($16, inventory_account_id),
+       cogs_account_id      = COALESCE($17, cogs_account_id)
      WHERE product_id = $1 AND is_deleted = false
      RETURNING *`,
     [
@@ -270,6 +280,9 @@ async function updateProduct(client, productId, fields) {
       fields.reorderLevel ?? null,
       fields.reorderQuantity ?? null,
       fields.isActive ?? null,
+      fields.incomeAccountId ?? null,
+      fields.inventoryAccountId ?? null,
+      fields.cogsAccountId ?? null,
     ],
   );
   return row || null;

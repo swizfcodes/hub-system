@@ -50,6 +50,16 @@ CREATE TABLE {{BUSINESS}}.products (
   deleted_at            TIMESTAMPTZ
 );
 
+ALTER TABLE {{BUSINESS}}.products
+  ADD COLUMN income_account_id    UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL,
+  ADD COLUMN inventory_account_id UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL,
+  ADD COLUMN cogs_account_id      UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL;
+
+ALTER TABLE {{BUSINESS}}.product_categories
+  ADD COLUMN IF NOT EXISTS income_account_id    UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS inventory_account_id UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS cogs_account_id      UUID REFERENCES {{BUSINESS}}.chart_of_accounts(account_id) ON DELETE SET NULL;
+
 CREATE TRIGGER trg_{{BUSINESS}}_products_updated_at
   BEFORE UPDATE ON {{BUSINESS}}.products
   FOR EACH ROW EXECUTE FUNCTION shared.fn_set_updated_at();

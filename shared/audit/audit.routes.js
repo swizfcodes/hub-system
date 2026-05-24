@@ -172,6 +172,60 @@ router.get(
 );
 
 /**
+ * Lightweight activity feed — used by the Hub dashboard and
+ * SmartComm sidebars. Returns a flat chronological slice of
+ * recent audit events filtered by module and/or business.
+ *
+ * Query params:
+ *   module   — optional module name filter
+ *   business — optional business key filter
+ *   limit    — max rows, default 20, max 100
+ */
+router.get(
+  "/feed",
+  query("module").optional().isString(),
+  query("business").optional().isString(),
+  query("limit").optional().isInt({ min: 1, max: 100 }),
+  validate,
+  can("audit", "view"),
+  async (req, res, next) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+      const conditions = [];
+      const params = [];
+
+      if (req.query.business) {
+        params.push(req.query.business);
+        conditions.push(`business = $${params.length}`);
+      }
+      if (req.query.module) {
+        params.push(req.query.module);
+        conditions.push(`module = $${params.length}`);
+      }
+
+      const where = conditions.length
+        ? `WHERE ${conditions.join(" AND ")}`
+        : "";
+      params.push(limit);
+
+      const { rows } = await pool.query(
+        `SELECT log_id, occurred_at, user_name, business, module,
+                action, table_name, record_id
+         FROM shared.audit_log
+         ${where}
+         ORDER BY occurred_at DESC
+         LIMIT $${params.length}`,
+        params,
+      );
+
+      res.json({ data: rows });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
  * One audit row — used when the user clicks into an audit row from
  * the list view and wants to see the full before/after JSON.
  */

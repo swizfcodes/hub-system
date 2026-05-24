@@ -83,6 +83,7 @@ async function updateDeal(business, dealId, data, user) {
       "source",
       "assigned_to",
       "lost_reason",
+      "is_deleted",
     ];
     const sets = [],
       vals = [];
