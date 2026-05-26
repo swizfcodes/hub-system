@@ -57,7 +57,6 @@ const TransfersPage         = lazy(() => import('@pages/stock/TransfersPage'));
 const SalesHome             = lazy(() => import('@pages/sales/SalesHome'));
 const QuoteDetail           = lazy(() => import('@pages/sales/QuoteDetail'));
 const OrderDetail           = lazy(() => import('@pages/sales/OrderDetail'));
-const InvoiceDetail         = lazy(() => import('@pages/sales/InvoiceDetail'));
 
 // POS module — terminal selector + session history share the AppShell
 const POSTerminals          = lazy(() => import('@pages/pos/POSTerminals'));
@@ -65,6 +64,17 @@ const POSSessions           = lazy(() => import('@pages/pos/POSSessions'));
 
 // POS session — fullscreen, rendered OUTSIDE AppShell (no sidebar/topbar)
 const POSSession            = lazy(() => import('@pages/pos/POSSession'));
+
+// ── Invoicing ────────────────────────────────────────────────────────────────
+const InvoicesHome  = lazy(() => import('@pages/invoicing/InvoicesHome'));
+const InvoiceDetail = lazy(() => import('@pages/invoicing/InvoiceDetail'));
+
+// ── Logistics ─────────────────────────────────────────────────────────────────
+const LogisticsHome  = lazy(() => import('@pages/logistics/LogisticsHome'));
+const DeliveryDetail = lazy(() => import('@pages/logistics/DeliveryDetail'));
+
+// ── Public (no auth wrapper) ──────────────────────────────────────────────────
+const DeliverySignPage = lazy(() => import('@pages/sign/DeliverySignPage'));
 
 function PageFallback() {
   return (
@@ -146,12 +156,21 @@ export default function App() {
           <Route path="/sales/quotations/:id"     element={<QuoteDetail />} />
           <Route path="/sales/orders/:id"         element={<OrderDetail />} />
           <Route path="/sales/invoices/:id"       element={<InvoiceDetail />} />
-          {/* Legacy /invoicing redirect */}
-          <Route path="/invoicing"   element={<Navigate to="/sales" replace />} />
 
           {/* POS */}
           <Route path="/pos"          element={<POSTerminals />} />
           <Route path="/pos/sessions" element={<POSSessions />} />
+
+          {/*invoicing*/}
+          <Route path="/invoicing" element={<InvoicesHome />} />
+          <Route path="/invoicing/:id" element={<InvoiceDetail />} />
+
+          {/* Logistics */}
+          <Route path="/logistics"     element={<LogisticsHome  />} />
+          <Route path="/logistics/:id" element={<DeliveryDetail />} />
+
+          {/* Public delivery signing page */}
+          <Route path="/sign/:token" element={<DeliverySignPage />} />  
 
           {/* Placeholders for upcoming modules */}
           <Route path="/dashboard"       element={<Placeholder title="Dashboard" />} />

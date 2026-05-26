@@ -16,6 +16,22 @@ router.get("/", can("logistics", "view"), async (req, res, next) => {
   }
 });
 
+// POST /api/logistics/suggest — suggest couriers for a delivery address
+// MUST be before /:id to avoid Express matching 'suggest' as a UUID param
+router.post(
+  "/suggest",
+  body("delivery_address").notEmpty(),
+  validate,
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.suggestCouriers(req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // GET /api/logistics/:id
 router.get(
   "/:id",
@@ -38,7 +54,7 @@ router.post(
   body("reference_id").isUUID(),
   body("contact_id").isUUID(),
   body("delivery_address").notEmpty(),
-  body("courier").isIn(["chowdeck", "gigl", "manual"]),
+  body("courier").isIn(["relay", "chowdeck", "gigl", "manual"]),
   validate,
   can("logistics", "create"),
   async (req, res, next) => {
@@ -109,6 +125,29 @@ router.post(
   },
 );
 
+// POST /api/logistics/:id/mark-returned — restock items after failed return
+router.post(
+  "/:id/mark-returned",
+  param("id").isUUID(),
+  body("notes").optional().isString(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.markReturned(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // GET /api/logistics/:id/tracking
 router.get(
   "/:id/tracking",
@@ -124,10 +163,34 @@ router.get(
   },
 );
 
+// GET /api/logistics/:id/packing-slip — stream packing slip PDF
+router.get(
+  "/:id/packing-slip",
+  param("id").isUUID(),
+  validate,
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      const pdf = await service.generatePackingSlip(
+        req.business,
+        req.params.id,
+      );
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+      });
+      res.send(pdf);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // POST /api/logistics/quote — get delivery fee before booking
+// NOTE: registered last among non-:id routes; 'suggest' covers the pre-booking flow
 router.post(
   "/quote",
-  body("courier").isIn(["chowdeck", "gigl", "manual"]),
+  body("courier").isIn(["relay", "chowdeck", "gigl", "manual"]),
   body("pickup_address").notEmpty(),
   body("delivery_address").notEmpty(),
   validate,

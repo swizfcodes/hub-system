@@ -7,8 +7,10 @@ const notifService = require("../../shared/notifications/notifications.service")
 const auditService = require("../../shared/audit/audit.service");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const { emitToBusiness } = require("../../config/sockets");
+const { renderToPDF } = require("../../lib/pdf/generator");
 const logger = require("../../config/logger");
 const repo = require("./logistics.repository");
+const { v4: uuidv4 } = require("uuid");
 
 async function listDeliveries(
   business,
@@ -159,6 +161,34 @@ async function dispatchDelivery(business, deliveryId, user) {
         );
     }
 
+    // Generate signature token (48h expiry) for proof-of-delivery signing page
+    const signatureToken = uuidv4();
+    const tokenExpiresAt = new Date(
+      Date.now() + 48 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await client.query(
+      `UPDATE deliveries
+       SET signature_token = $1, token_expires_at = $2
+       WHERE delivery_id = $3`,
+      [signatureToken, tokenExpiresAt, deliveryId],
+    );
+
+    const signingUrl = `${process.env.HUB_BASE_URL}/sign/${signatureToken}`;
+    if (delivery.whatsapp_number) {
+      await whatsapp
+        .sendMessage({
+          to: delivery.whatsapp_number,
+          text:
+            `Your Orika order ${delivery.delivery_number} is here — please confirm receipt:\n` +
+            `${signingUrl}\n\n` +
+            `${booking.trackingUrl ? `Track your order: ${booking.trackingUrl}` : ""}`,
+        })
+        .catch((err) =>
+          logger.warn("WhatsApp signing URL notification failed", err),
+        );
+    }
+
     emitToBusiness(business, "delivery:dispatched", {
       deliveryId,
       courierId: booking.courierId,
@@ -249,6 +279,156 @@ async function getQuote({ courier, pickup_address, delivery_address }) {
   });
 }
 
+async function suggestCouriers({ delivery_address }) {
+  const address =
+    typeof delivery_address === "string"
+      ? JSON.parse(delivery_address)
+      : delivery_address;
+
+  const state = (address.state || "").toLowerCase();
+  const country = (address.country || "Nigeria").toLowerCase();
+
+  let zone;
+  if (state.includes("lagos")) zone = "lagos";
+  else if (country === "nigeria") zone = "interstate";
+  else zone = "international";
+
+  const suggestions = {
+    lagos: [
+      {
+        courier: "relay",
+        label: "Relay (Same-day)",
+        estimated_hours: "2–4",
+        recommended: true,
+      },
+      {
+        courier: "chowdeck",
+        label: "Chowdeck",
+        estimated_hours: "1–3",
+        recommended: false,
+      },
+      {
+        courier: "manual",
+        label: "Manual / In-house",
+        estimated_hours: "Varies",
+        recommended: false,
+      },
+    ],
+    interstate: [
+      {
+        courier: "gigl",
+        label: "GIG Logistics",
+        estimated_hours: "24–72",
+        recommended: true,
+      },
+      {
+        courier: "manual",
+        label: "Manual / DHL",
+        estimated_hours: "Varies",
+        recommended: false,
+      },
+    ],
+    international: [
+      {
+        courier: "manual",
+        label: "Manual / DHL",
+        estimated_hours: "Varies",
+        recommended: true,
+      },
+    ],
+  };
+
+  const options = suggestions[zone] || suggestions.international;
+  const quotedOptions = await Promise.all(
+    options.map(async (opt) => {
+      if (opt.courier === "manual") return { ...opt, fee: null };
+      try {
+        const quote = await courierService.getQuote({
+          courier: opt.courier,
+          pickupAddress:
+            process.env.HUB_WAREHOUSE_ADDRESS || "Lekki TownSquare Mall, Lagos",
+          deliveryAddress: address,
+        });
+        return { ...opt, fee: quote.fee, currency: "NGN" };
+      } catch {
+        return { ...opt, fee: null, fee_error: "Quote unavailable" };
+      }
+    }),
+  );
+
+  return { zone, options: quotedOptions };
+}
+
+async function markReturned(business, deliveryId, { notes }, user) {
+  return withBusinessContext(business, async (client) => {
+    const {
+      rows: [delivery],
+    } = await client.query(
+      `UPDATE deliveries SET status='returned', updated_at=now()
+       WHERE delivery_id=$1 AND status='failed' RETURNING *`,
+      [deliveryId],
+    );
+    if (!delivery)
+      throw Object.assign(
+        new Error("Only failed deliveries can be returned"),
+        { status: 400 },
+      );
+
+    // Auto-restock — reverse the dispatch stock movement
+    const items = await repo.getDeliveryItems(client, deliveryId);
+    for (const item of items) {
+      if (item.product_id) {
+        await stockService
+          .recordMovement(client, {
+            business,
+            productId: item.product_id,
+            movementType: "return_from_customer",
+            quantity: item.quantity,
+            direction: 1,
+            referenceType: "delivery_return",
+            referenceId: deliveryId,
+            notes: notes || "Return to sender",
+            performedBy: user.user_id,
+          })
+          .catch((err) =>
+            logger.warn(
+              `[logistics] restock failed for item ${item.product_id}`,
+              err,
+            ),
+          );
+      }
+    }
+
+    await repo.insertTrackingEntry(client, {
+      delivery_id: deliveryId,
+      status: "returned",
+      source: "manual",
+      message: `Returned to sender${notes ? ": " + notes : ""}`,
+    });
+
+    const managers = await repo.getLogisticsManagers(client, business);
+    for (const m of managers) {
+      await notifService.create(client, {
+        userId: m.user_id,
+        business,
+        type: "delivery_update",
+        title: `Delivery returned: ${delivery.delivery_number}`,
+        body: "Package returned to sender. Stock has been restocked.",
+        referenceType: "delivery",
+        referenceId: deliveryId,
+        actionUrl: `/logistics/${deliveryId}`,
+      });
+    }
+
+    return delivery;
+  });
+}
+
+async function generatePackingSlip(business, deliveryId) {
+  const delivery = await getDelivery(business, deliveryId);
+  return renderToPDF("packing-slip", { delivery, business });
+}
+
 module.exports = {
   listDeliveries,
   getDelivery,
@@ -258,4 +438,7 @@ module.exports = {
   markFailed,
   getTracking,
   getQuote,
+  suggestCouriers,
+  markReturned,
+  generatePackingSlip,
 };

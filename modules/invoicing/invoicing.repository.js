@@ -308,12 +308,53 @@ async function setCreditNoteStatus(client, creditNoteId, status) {
   return cn || null;
 }
 
+async function updateAmountPaid(client, invoiceId) {
+  const {
+    rows: [inv],
+  } = await client.query(
+    `UPDATE invoices
+     SET
+       amount_paid = (
+         SELECT COALESCE(SUM(amount), 0)
+         FROM invoice_payments
+         WHERE invoice_id = $1 AND is_confirmed = true
+       ),
+       status = CASE
+         WHEN (
+           SELECT COALESCE(SUM(amount), 0)
+           FROM invoice_payments
+           WHERE invoice_id = $1 AND is_confirmed = true
+         ) >= total_amount THEN 'paid'
+         WHEN (
+           SELECT COALESCE(SUM(amount), 0)
+           FROM invoice_payments
+           WHERE invoice_id = $1 AND is_confirmed = true
+         ) > 0 THEN 'partially_paid'
+         ELSE status
+       END,
+       paid_at = CASE
+         WHEN (
+           SELECT COALESCE(SUM(amount), 0)
+           FROM invoice_payments
+           WHERE invoice_id = $1 AND is_confirmed = true
+         ) >= total_amount AND paid_at IS NULL THEN now()
+         ELSE paid_at
+       END,
+       updated_at = now()
+     WHERE invoice_id = $1
+     RETURNING invoice_id, status, amount_paid, amount_outstanding, paid_at`,
+    [invoiceId],
+  );
+  return inv || null;
+}
+
 module.exports = {
   list,
   findById,
   insert,
   insertLine,
   insertPayment,
+  updateAmountPaid,
   getInvoiceNumberAndContact,
   setSent,
   setVoided,

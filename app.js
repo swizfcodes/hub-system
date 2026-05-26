@@ -64,8 +64,14 @@ app.use(requestLogger);
 
 // ── Rate limiting (general) ───────────────────────────────
 app.use("/api", rateLimiter.general);
+
 // ---- cookies -------
 app.use(cookieParser());
+
+// ── Public signing routes (proof-of-delivery) — NO auth middleware ────────────
+// Must be registered before /api so verifyToken is never applied.
+app.use("/sign", require("./modules/logistics/sign/sign.routes"));
+
 // ── Routes ───────────────────────────────────────────────
 app.use("/api", routes);
 
