@@ -16,6 +16,37 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 },
 });
 
+// ─── PUBLIC PRODUCT IMAGES ───────────────────────────────────
+// Unauthenticated. Only serves documents of type `product_image`
+// so no commercial, supplier, or HR documents are ever exposed.
+
+router.get(
+  "/:id/image",
+  param("id").isUUID(),
+  validate,
+  async (req, res, next) => {
+    try {
+      const { buffer, mime_type, document } = await service.downloadDocument(
+        req.params.id,
+        null,
+      );
+
+      if (document.document_type !== "product_image") {
+        return res.status(404).json({ message: "Not found" });
+      }
+
+      res.set({
+        "Content-Type": mime_type,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Length": buffer.length,
+      });
+      res.send(buffer);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─── LIST / GET ──────────────────────────────────────────────
 
 router.get(
@@ -124,7 +155,10 @@ router.post(
         return res.status(400).json({ message: "file is required" });
       }
       const tags = req.body.tags
-        ? req.body.tags.split(",").map((t) => t.trim()).filter(Boolean)
+        ? req.body.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
         : [];
       const doc = await service.uploadDocument(
         {
@@ -161,9 +195,9 @@ router.post(
   can("documents", "edit"),
   async (req, res, next) => {
     try {
-      res.status(201).json(
-        await service.addTag(req.params.id, req.body, req.user),
-      );
+      res
+        .status(201)
+        .json(await service.addTag(req.params.id, req.body, req.user));
     } catch (e) {
       next(e);
     }

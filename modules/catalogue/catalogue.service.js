@@ -697,7 +697,7 @@ async function listProductImages(business, productId) {
 async function uploadProductImage(
   business,
   productId,
-  { buffer, originalFilename, mimeType, altText, isPrimary, displayOrder },
+  { buffer, mimeType, altText, isPrimary, displayOrder },
   user,
 ) {
   if (!buffer || !Buffer.isBuffer(buffer)) {
@@ -721,7 +721,6 @@ async function uploadProductImage(
       {
         business,
         buffer,
-        originalFilename,
         mimeType,
         documentType: "product_image",
         referenceType: "product",
