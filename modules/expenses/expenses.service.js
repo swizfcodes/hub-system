@@ -3,6 +3,8 @@
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const repo = require("./expenses.repository");
 const auditService = require("../../shared/audit/audit.service");
+const journalService = require("../accounting/journal.service");
+const logger = require("../../config/logger");
 const notifService = require("../../shared/notifications/notifications.service");
 
 async function list(business, query, user, scope) {
@@ -167,52 +169,44 @@ async function markPaid(business, expenseId, user) {
 async function postExpenseJournal(client, expense) {
   const categoryAccountMap = {
     transport: "6200",
+    fuel: "6200",
     office_supplies: "6500",
     client_entertainment: "6400",
+    meals: "6400",
     utilities: "6500",
     maintenance: "6500",
+    accommodation: "6600",
     other: "6800",
   };
   const expenseCode = categoryAccountMap[expense.category] || "6800";
 
   const [expAcc, bankAcc] = await Promise.all([
-    client.query(
-      `SELECT account_id FROM chart_of_accounts WHERE account_code=$1 LIMIT 1`,
-      [expenseCode],
-    ),
-    client.query(
-      `SELECT account_id FROM chart_of_accounts WHERE account_code='1210' LIMIT 1`,
-    ),
+    journalService.getAccountId(client, expenseCode),
+    journalService.getAccountId(client, "1210"),
   ]);
 
-  if (!expAcc.rows[0] || !bankAcc.rows[0]) return;
+  if (!expAcc || !bankAcc) {
+    logger.warn(
+      `[expenses] journal skipped — missing COA for code ${expenseCode} or bank 1210`,
+    );
+    return;
+  }
 
-  const {
-    rows: [entry],
-  } = await client.query(
-    `INSERT INTO journal_entries
-       (entry_number, entry_date, description, reference_type, reference_id, posted_by)
-     VALUES ('JE-EXP-' || $1, CURRENT_DATE, $2, 'expense', $3, $4)
-     RETURNING entry_id`,
-    [
-      expense.expense_id.substring(0, 8),
-      `Expense ${expense.expense_number}`,
-      expense.expense_id,
-      expense.approved_by,
-    ],
-  );
+  const paidAt = expense.paid_at
+    ? new Date(expense.paid_at).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
 
-  await client.query(
-    `INSERT INTO journal_lines (entry_id, account_id, debit, credit) VALUES
-     ($1,$2,$3,0),
-     ($1,$4,0,$3)`,
-    [
-      entry.entry_id,
-      expAcc.rows[0].account_id,
-      expense.amount,
-      bankAcc.rows[0].account_id,
+  await journalService.postEntry(client, {
+    entryDate: paidAt,
+    description: `Expense ${expense.expense_number} — ${expense.category}`,
+    referenceType: "expense",
+    referenceId: expense.expense_id,
+    postedBy: expense.approved_by,
+    lines: [
+      { account_id: expAcc, debit: parseFloat(expense.amount), credit: 0 },
+      { account_id: bankAcc, debit: 0, credit: parseFloat(expense.amount) },
     ],
-  );
+  });
 }
 
 async function listAdvances(business, query, user, scope) {

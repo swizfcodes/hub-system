@@ -87,12 +87,42 @@ async function handleChargeSuccess(data) {
       [reference],
     );
     if (result.rows.length) {
+      const paymentId = result.rows[0].payment_id;
       await pool.query(
         `UPDATE invoice_payments
          SET is_confirmed = true, confirmed_at = now()
          WHERE paystack_reference = $1`,
         [reference],
       );
+      // Post the cash-collection journal now that the gateway confirmed.
+      try {
+        const invoicingService = require("../../modules/invoicing/invoicing.service");
+        const { withBusinessContext } = require("../../config/db");
+        await withBusinessContext(business, async (client) => {
+          const {
+            rows: [pay],
+          } = await client.query(
+            `SELECT p.payment_id, p.amount, p.payment_method, p.payment_date,
+                    i.invoice_number
+             FROM invoice_payments p
+             JOIN invoices i ON i.invoice_id = p.invoice_id
+             WHERE p.payment_id = $1`,
+            [paymentId],
+          );
+          if (pay) {
+            await invoicingService.postPaymentJournal(client, {
+              payment: pay,
+              invoiceNumber: pay.invoice_number,
+              userId: config.systemUserId,
+            });
+          }
+        });
+      } catch (jerr) {
+        logger.error(
+          `Paystack payment journal failed: ${reference} [${business}]`,
+          jerr,
+        );
+      }
       logger.info(`Paystack payment confirmed: ${reference} [${business}]`);
       return;
     }

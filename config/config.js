@@ -10,6 +10,11 @@ require("dotenv").config({
 });
 
 const config = {
+  // Fixed UUID used as posted_by for machine-generated journal entries
+  // (e.g. payment-gateway webhooks). Must exist in shared.users — seeded by
+  // migration 000029_accounting_expansion.sql.
+  systemUserId:
+    process.env.SYSTEM_USER_ID || "00000000-0000-0000-0000-000000000001",
   app: {
     env: process.env.NODE_ENV || "development",
     port: parseInt(process.env.PORT || "3000"),

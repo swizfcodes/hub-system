@@ -3,6 +3,8 @@
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const movements = require("../stock/movements.service");
 const valuation = require("../stock/valuation.service");
+const journalService = require("../accounting/journal.service");
+const logger = require("../../config/logger");
 const auditService = require("../../shared/audit/audit.service");
 const notifService = require("../../shared/notifications/notifications.service");
 const { emitToBusiness } = require("../../config/sockets");
@@ -11,6 +13,120 @@ const repo = require("./retail-partners.repository");
 // ─────────────────────────────────────────────────────────────
 // PARTNER CRUD
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// CONSIGNMENT JOURNALS
+// Posted via journalService.postEntry so each entry is DR=CR validated
+// and fiscal-period stamped. Account codes:
+//   1410 Inventory · 1430 Consignment Stock Asset · 1350 Partner Receivable
+//   4100 Sales Revenue · 2210 VAT Payable · 5000 COGS · 1210 Bank
+// ─────────────────────────────────────────────────────────────
+
+// Stock sent to a partner: DR Consignment Stock (1430) / CR Inventory (1410).
+async function postConsignmentDispatchJournal(client, { consignment, value, user }) {
+  if (!value || value <= 0) return;
+  const [consAcc, invAcc] = await Promise.all([
+    journalService.getAccountId(client, "1430"),
+    journalService.getAccountId(client, "1410"),
+  ]);
+  if (!consAcc || !invAcc) {
+    logger.warn("[retail_partners] dispatch journal skipped — missing COA 1430/1410");
+    return;
+  }
+  await journalService.postEntry(client, {
+    entryDate: new Date().toISOString().slice(0, 10),
+    description: `Consignment stock sent — ${consignment.consignment_id}`,
+    referenceType: "consignment",
+    referenceId: consignment.consignment_id,
+    postedBy: user.user_id,
+    lines: [
+      { account_id: consAcc, debit: value, credit: 0 },
+      { account_id: invAcc, debit: 0, credit: value },
+    ],
+  });
+}
+
+// Partner reports a sale: two entries —
+//   (1) DR Partner Receivable (1350) / CR Sales Revenue (4100) [+ CR VAT 2210]
+//   (2) DR COGS (5000) / CR Consignment Stock (1430)
+async function postConsignmentSaleJournal(
+  client,
+  { sale, saleAmount, vatAmount, cost, user },
+) {
+  const gross = parseFloat(saleAmount);
+  const vat = parseFloat(vatAmount || 0);
+  const net = parseFloat((gross - vat).toFixed(2));
+
+  const [arAcc, revAcc, vatAcc, cogsAcc, consAcc] = await Promise.all([
+    journalService.getAccountId(client, "1350"),
+    journalService.getAccountId(client, "4100"),
+    journalService.getAccountId(client, "2210"),
+    journalService.getAccountId(client, "5000"),
+    journalService.getAccountId(client, "1430"),
+  ]);
+
+  if (arAcc && revAcc) {
+    const revLines = [
+      { account_id: arAcc, debit: gross, credit: 0 },
+      { account_id: revAcc, debit: 0, credit: net },
+    ];
+    if (vat > 0 && vatAcc) {
+      revLines.push({ account_id: vatAcc, debit: 0, credit: vat });
+    } else if (vat > 0) {
+      // No VAT account — fold VAT into revenue so the entry still balances.
+      revLines[1].credit = gross;
+    }
+    await journalService.postEntry(client, {
+      entryDate: new Date().toISOString().slice(0, 10),
+      description: `Partner sale reported — ${sale.sale_id}`,
+      referenceType: "consignment_sale",
+      referenceId: sale.sale_id,
+      postedBy: user.user_id,
+      lines: revLines,
+    });
+  } else {
+    logger.warn("[retail_partners] sale revenue journal skipped — missing COA 1350/4100");
+  }
+
+  if (cost && cost > 0 && cogsAcc && consAcc) {
+    await journalService.postEntry(client, {
+      entryDate: new Date().toISOString().slice(0, 10),
+      description: `Partner sale COGS — ${sale.sale_id}`,
+      referenceType: "consignment_sale",
+      referenceId: sale.sale_id,
+      postedBy: user.user_id,
+      lines: [
+        { account_id: cogsAcc, debit: cost, credit: 0 },
+        { account_id: consAcc, debit: 0, credit: cost },
+      ],
+    });
+  }
+}
+
+// Partner remits payment: DR Bank (1210) / CR Partner Receivable (1350).
+async function postConsignmentPaymentJournal(client, { settlement, amount, user }) {
+  const value = parseFloat(amount);
+  if (!value || value <= 0) return;
+  const [bankAcc, arAcc] = await Promise.all([
+    journalService.getAccountId(client, "1210"),
+    journalService.getAccountId(client, "1350"),
+  ]);
+  if (!bankAcc || !arAcc) {
+    logger.warn("[retail_partners] payment journal skipped — missing COA 1210/1350");
+    return;
+  }
+  await journalService.postEntry(client, {
+    entryDate: new Date().toISOString().slice(0, 10),
+    description: `Partner settlement received — ${settlement.settlement_number || settlement.settlement_id}`,
+    referenceType: "partner_settlement",
+    referenceId: settlement.settlement_id,
+    postedBy: user.user_id,
+    lines: [
+      { account_id: bankAcc, debit: value, credit: 0 },
+      { account_id: arAcc, debit: 0, credit: value },
+    ],
+  });
+}
 
 async function listPartners(business, query) {
   return withBusinessContext(business, async (client) => {
@@ -224,6 +340,17 @@ async function sendConsignment(business, data, user) {
         performedBy: user.user_id,
       });
 
+      // Accounting: move the inventory value into the consignment asset.
+      const { line_cost } = await valuation.calculateLineCOGS(client, {
+        productId: item.product_id,
+        quantity: item.quantity,
+      });
+      await postConsignmentDispatchJournal(client, {
+        consignment,
+        value: line_cost,
+        user,
+      });
+
       consignments.push(consignment);
     }
 
@@ -336,6 +463,22 @@ async function reportPartnerSale(business, data, user) {
       referenceType: "consignment_sale",
       referenceId: sale.sale_id,
       performedBy: user.user_id,
+    });
+
+    // Accounting: recognise revenue (less partner margin handled at
+    // settlement) and relieve the consignment asset for COGS.
+    const saleAmount =
+      Number(data.quantity_sold) * Number(data.sale_price || 0);
+    const { line_cost } = await valuation.calculateLineCOGS(client, {
+      productId: consignment.product_id,
+      quantity: data.quantity_sold,
+    });
+    await postConsignmentSaleJournal(client, {
+      sale,
+      saleAmount,
+      vatAmount: data.vat_amount || 0,
+      cost: line_cost,
+      user,
     });
 
     // Refresh the cached balance.
@@ -550,6 +693,13 @@ async function markSettlementPaid(business, settlementId, user) {
       throw Object.assign(new Error("Settlement not found"), { status: 404 });
     const after = await repo.updateSettlementStatus(client, settlementId, {
       status: "paid",
+    });
+
+    // Accounting: DR Bank / CR Partner Receivable for the amount remitted.
+    await postConsignmentPaymentJournal(client, {
+      settlement: before,
+      amount: before.amount_due_to_us,
+      user,
     });
 
     // Refresh cached balance — paid settlements no longer count as outstanding.

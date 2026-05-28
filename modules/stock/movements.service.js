@@ -2,6 +2,9 @@
 
 const notifService = require("../../shared/notifications/notifications.service");
 const { emitToBusiness } = require("../../config/sockets");
+const journalService = require("../accounting/journal.service");
+const valuation = require("./valuation.service");
+const logger = require("../../config/logger");
 const repo = require("./stock.repository");
 
 // ─────────────────────────────────────────────────────────────
@@ -82,6 +85,19 @@ async function recordMovement(client, input) {
     await checkLowStock(client, input.business, input.productId);
   }
 
+  // Accounting for VALUE-CHANGING movements. Sales/receipts/consignment are
+  // journalled by their own modules; here we only handle adjustments and
+  // write-offs, which otherwise never touch the ledger.
+  //   adjustment (+): DR Inventory (1410)        / CR Adjustment Income (4900)
+  //   adjustment (−): DR Inventory Write-off (6900) / CR Inventory (1410)
+  //   write_off:      DR Inventory Write-off (6900) / CR Inventory (1410)
+  if (
+    input.movementType === "adjustment" ||
+    input.movementType === "write_off"
+  ) {
+    await postStockValueJournal(client, movement, input);
+  }
+
   // Real-time stock change broadcast — the stock dashboard listens
   // for this event and updates without a refresh.
   emitToBusiness(input.business, "stock:movement", {
@@ -93,6 +109,68 @@ async function recordMovement(client, input) {
   });
 
   return movement;
+}
+
+// Posts the ledger entry for a value-changing stock movement (adjustment or
+// write-off). Quantity × unit cost gives the value; unit cost comes from the
+// movement input if supplied, else the product valuation.
+async function postStockValueJournal(client, movement, input) {
+  let unitCost = Number(input.unitCost || 0);
+  if (!unitCost) {
+    try {
+      const v = await valuation.calculateLineCOGS(client, {
+        productId: input.productId,
+        quantity: 1,
+      });
+      unitCost = Number(v.unit_cost || 0);
+    } catch {
+      unitCost = 0;
+    }
+  }
+  const value = parseFloat((unitCost * Number(input.quantity)).toFixed(2));
+  if (!value || value <= 0) return;
+
+  const isIncrease =
+    input.movementType === "adjustment" && input.direction === 1;
+
+  let debitCode;
+  let creditCode;
+  let description;
+  if (isIncrease) {
+    debitCode = "1410"; // Inventory
+    creditCode = "4900"; // Stock Adjustment Income
+    description = `Stock adjustment +${input.quantity} units`;
+  } else {
+    debitCode = "6900"; // Inventory Write-off
+    creditCode = "1410"; // Inventory
+    description =
+      input.movementType === "write_off"
+        ? `Stock write-off — ${input.quantity} units`
+        : `Stock adjustment −${input.quantity} units`;
+  }
+
+  const [debitAcc, creditAcc] = await Promise.all([
+    journalService.getAccountId(client, debitCode),
+    journalService.getAccountId(client, creditCode),
+  ]);
+  if (!debitAcc || !creditAcc) {
+    logger.warn(
+      `[stock] value journal skipped — missing COA ${debitCode}/${creditCode}`,
+    );
+    return;
+  }
+
+  await journalService.postEntry(client, {
+    entryDate: new Date().toISOString().slice(0, 10),
+    description,
+    referenceType: "stock_movement",
+    referenceId: movement.movement_id,
+    postedBy: input.performedBy,
+    lines: [
+      { account_id: debitAcc, debit: value, credit: 0 },
+      { account_id: creditAcc, debit: 0, credit: value },
+    ],
+  });
 }
 
 function validateMovementInput(input) {

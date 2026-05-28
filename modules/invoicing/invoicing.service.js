@@ -229,6 +229,48 @@ async function postSaleCOGSJournal(client, business, invoice, invoiceLines) {
   });
 }
 
+// Shared helper — posts the cash-collection journal for an invoice payment.
+//   DR  Bank / Cash / AR-settlement account   amount
+//     CR  Accounts Receivable (1310)            amount
+// Reused by recordPayment (manual) and the payment-gateway webhooks once a
+// pending gateway payment is confirmed. Posted via journalService.postEntry
+// so it gets DR=CR validation and fiscal-period stamping.
+async function postPaymentJournal(client, { payment, invoiceNumber, userId }) {
+  const methodMap = {
+    bank_transfer: "1210",
+    cash: "1100",
+    pos_card: "1210",
+    paystack: "1210", // assume same-day settlement
+    flutterwave: "1210",
+  };
+  const bankCode = methodMap[payment.payment_method] || "1210";
+  const [bankAcc, arAcc] = await Promise.all([
+    journalService.getAccountId(client, bankCode),
+    journalService.getAccountId(client, "1310"),
+  ]);
+  if (!bankAcc || !arAcc) {
+    logger.warn(
+      `[invoicing] payment journal skipped — missing COA (bank ${bankCode} / AR 1310)`,
+    );
+    return;
+  }
+  const amount = parseFloat(payment.amount);
+  await journalService.postEntry(client, {
+    entryDate:
+      (payment.payment_date &&
+        new Date(payment.payment_date).toISOString().slice(0, 10)) ||
+      new Date().toISOString().slice(0, 10),
+    description: `Payment received — ${invoiceNumber || payment.invoice_id}`,
+    referenceType: "invoice_payment",
+    referenceId: payment.payment_id,
+    postedBy: userId,
+    lines: [
+      { account_id: bankAcc, debit: amount, credit: 0 },
+      { account_id: arAcc, debit: 0, credit: amount },
+    ],
+  });
+}
+
 async function recordPayment(business, invoiceId, data, user) {
   let contactId = null;
 
@@ -250,6 +292,17 @@ async function recordPayment(business, invoiceId, data, user) {
 
     // Recalculate invoice amount_paid and status.
     await repo.updateAmountPaid(client, invoiceId);
+
+    // Post the cash collection journal: DR Bank/Cash, CR Accounts Receivable.
+    // Only for confirmed payments — gateway payments pending confirmation are
+    // posted by their webhook once confirmed (see postPaymentJournal).
+    if (data.is_confirmed !== false) {
+      await postPaymentJournal(client, {
+        payment: p,
+        invoiceNumber: inv?.invoice_number,
+        userId: user.user_id,
+      });
+    }
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -336,6 +389,22 @@ async function voidInvoice(business, invoiceId, user) {
       throw Object.assign(new Error("Cannot void this invoice"), {
         status: 400,
       });
+
+    // Reverse the original revenue journal so AR and revenue don't linger.
+    const {
+      rows: [je],
+    } = await client.query(
+      `SELECT entry_id FROM journal_entries
+       WHERE reference_type = 'invoice' AND reference_id = $1 AND is_reversed = false
+       LIMIT 1`,
+      [invoiceId],
+    );
+    if (je) {
+      await journalService.reverseEntry(client, {
+        entryId: je.entry_id,
+        postedBy: user.user_id,
+      });
+    }
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -707,6 +776,7 @@ module.exports = {
   getById,
   create,
   recordPayment,
+  postPaymentJournal,
   send,
   voidInvoice,
   generatePDF,

@@ -415,7 +415,7 @@ async function getPOLineProduct(client, po_line_id) {
   const {
     rows: [poLine],
   } = await client.query(
-    `SELECT pl.product_id, po.supplier_id
+    `SELECT pl.product_id, pl.unit_price, po.supplier_id, po.po_number
      FROM po_lines pl
      JOIN purchase_orders po ON po.po_id = pl.po_id
      WHERE pl.line_id = $1`,
