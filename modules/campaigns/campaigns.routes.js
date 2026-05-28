@@ -35,6 +35,86 @@ router.post(
   },
 );
 
+
+// ─── SAVED SEGMENTS (must come BEFORE /:id routes) ──────
+
+router.get("/segments", can("campaigns", "view"), async (req, res, next) => {
+  try {
+    res.json({ data: await service.listSegments(req.business) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get(
+  "/segments/:segmentId",
+  param("segmentId").isUUID(),
+  validate,
+  can("campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      const row = await service.getSegment(req.business, req.params.segmentId);
+      if (!row) return res.status(404).json({ message: "Segment not found" });
+      res.json(row);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  "/segments/:segmentId/preview",
+  param("segmentId").isUUID(),
+  query("channel_type").optional().isIn(["email", "whatsapp", "auto"]),
+  validate,
+  can("campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.previewSegment(
+          req.business,
+          req.params.segmentId,
+          req.query.channel_type,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/segments",
+  body("name").isString().notEmpty(),
+  body("filter").isObject(),
+  body("description").optional().isString(),
+  validate,
+  can("campaigns", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.saveSegment(req.business, req.body, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/segments/:segmentId",
+  param("segmentId").isUUID(),
+  validate,
+  can("campaigns", "delete"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.deleteSegment(req.business, req.params.segmentId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.get(
   "/:id",
   param("id").isUUID(),
@@ -128,82 +208,6 @@ router.post(
 
 // ─── SAVED SEGMENTS ───────────────────────────────────────────
 
-router.get("/segments", can("campaigns", "view"), async (req, res, next) => {
-  try {
-    res.json({ data: await service.listSegments(req.business) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get(
-  "/segments/:segmentId",
-  param("segmentId").isUUID(),
-  validate,
-  can("campaigns", "view"),
-  async (req, res, next) => {
-    try {
-      const row = await service.getSegment(req.business, req.params.segmentId);
-      if (!row) return res.status(404).json({ message: "Segment not found" });
-      res.json(row);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.get(
-  "/segments/:segmentId/preview",
-  param("segmentId").isUUID(),
-  query("channel_type").optional().isIn(["email", "whatsapp", "auto"]),
-  validate,
-  can("campaigns", "view"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await service.previewSegment(
-          req.business,
-          req.params.segmentId,
-          req.query.channel_type,
-        ),
-      );
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.post(
-  "/segments",
-  body("name").isString().notEmpty(),
-  body("filter").isObject(),
-  body("description").optional().isString(),
-  validate,
-  can("campaigns", "create"),
-  async (req, res, next) => {
-    try {
-      res
-        .status(201)
-        .json(await service.saveSegment(req.business, req.body, req.user));
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-router.delete(
-  "/segments/:segmentId",
-  param("segmentId").isUUID(),
-  validate,
-  can("campaigns", "delete"),
-  async (req, res, next) => {
-    try {
-      res.json(await service.deleteSegment(req.business, req.params.segmentId));
-    } catch (err) {
-      next(err);
-    }
-  },
-);
 
 // ─── SCHEDULING ───────────────────────────────────────────────
 
@@ -366,65 +370,5 @@ router.post(
 // ─── PUBLIC TRACKING ENDPOINTS ────────────────────────────────
 // These are NOT under `protect` — they're hit by email clients
 // directly. The tracking_token is the credential.
-
-// Open pixel — always returns a 1×1 GIF even on bad tokens, so an
-// invalid token never breaks an email's display.
-router.get("/track/:token", async (req, res, next) => {
-  try {
-    const pixel = await service.handlePixelOpen(req.params.token, {
-      ip: req.ip,
-      user_agent: req.get("user-agent"),
-    });
-    res.set({ "Content-Type": "image/gif", "Content-Length": pixel.length });
-    res.send(pixel);
-  } catch {
-    // Even on internal failure, return a pixel — never break the email.
-    const fallback = Buffer.from(
-      "R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==",
-      "base64",
-    );
-    res.set({
-      "Content-Type": "image/gif",
-      "Content-Length": fallback.length,
-    });
-    res.send(fallback);
-  }
-});
-
-// Click redirect — record the click, then 302 to the real URL.
-router.get(
-  "/track/:token/click",
-  query("url").isURL({ require_protocol: true }),
-  validate,
-  async (req, res, next) => {
-    try {
-      const { redirectTo } = await service.handleClick(
-        req.params.token,
-        req.query.url,
-        { ip: req.ip, user_agent: req.get("user-agent") },
-      );
-      res.redirect(302, redirectTo);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// Unsubscribe — usually hit from an email footer link. Returns a tiny
-// HTML confirmation page; production should redirect to a branded page.
-router.get("/unsubscribe/:token", async (req, res) => {
-  const result = await service.handleUnsubscribe(req.params.token, {
-    ip: req.ip,
-  });
-  const message = result.ok
-    ? "You have been unsubscribed. We're sorry to see you go."
-    : "Unsubscribe link is invalid or expired.";
-  res.set("Content-Type", "text/html");
-  res.send(
-    `<!doctype html><html><body style="font-family:sans-serif;text-align:center;padding:48px">
-      <h2>${message}</h2>
-    </body></html>`,
-  );
-});
 
 module.exports = router;

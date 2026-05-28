@@ -116,7 +116,15 @@ const config = {
 
   whatsapp: {
     apiToken: process.env.WHATSAPP_API_TOKEN,
+    // Legacy single phone-number id — kept for backward compatibility with
+    // single-brand callers. Multi-brand callers should use phoneNumbers.
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    phoneNumbers: {
+      jewelry:   process.env.WHATSAPP_PHONE_ID_JEWELRY
+                 || process.env.WHATSAPP_PHONE_NUMBER_ID,
+      diffusers: process.env.WHATSAPP_PHONE_ID_DIFFUSERS
+                 || process.env.WHATSAPP_PHONE_NUMBER_ID,
+    },
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
     baseUrl: "https://graph.facebook.com/v18.0",
   },

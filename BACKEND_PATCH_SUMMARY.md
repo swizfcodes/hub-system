@@ -187,3 +187,72 @@ Seeds system user and new COA codes in both schemas:
   enrollment/login routes are a follow-up.
 - Payroll "simplified mode" toggle in the calculator was not implemented;
   the existing PAYE/NHF/Pension calculations remain.
+
+## 8. Campaigns + Messaging (added this round)
+
+### Migration 000042_campaigns_messaging_extras.sql
+- `jewelry.saved_segments`, `diffusers.saved_segments` (reusable audience filters).
+- `jewelry.whatsapp_templates`, `diffusers.whatsapp_templates` (Cloud-API templates).
+- `shared.message_channels.{assigned_to, assigned_at, status}` (thread ownership / resolved state).
+- `shared.message_reactions` table (emoji reactions, unique per message+user+emoji).
+
+### Campaigns
+- **Route ordering fix:** moved the `/segments` block in `campaigns.routes.js`
+  to before the `/:id` block. Previously `GET /segments` was being matched
+  as a UUID id and failing validation.
+- **Public tracking routes:** extracted `/track/:token`, `/track/:token/click`,
+  and `/unsubscribe/:token` into a new `campaigns.public.routes.js` and
+  mounted it in `app.js` on `/api/campaigns` BEFORE the authenticated
+  `/api` router — so email clients with no JWT can hit them.
+- **Cron job:** `jobs/runScheduledCampaigns.js` runs `* * * * *` and
+  delegates to `scheduler.runScheduledSweep()`.
+
+### Messaging — shared service (`shared/messaging/messaging.service.js`)
+- **`@mention` notifications** in `sendMessage`: extracts `@firstname`
+  tokens, matches against channel members' first names, and creates a
+  notification for each mention.
+- **`assignThread(channelId, { assigned_to, handoff_note }, user)`** —
+  updates `message_channels.assigned_to` + `assigned_at`, posts a system
+  message, notifies the assignee, and audit-logs.
+- **`resolveThread(channelId, user)`** — sets `status='resolved'` and
+  `is_archived=true`, posts a system message, audit-logs.
+- **`toggleReaction(messageId, emoji, user)`** — toggles a row in
+  `shared.message_reactions`, returns `{added, emoji}`.
+- **`getCustomer360(contactId, user)`** — fetches the contact from
+  shared and aggregates recent orders / open invoices / deliveries
+  across each business in `user.permitted_businesses`. Quiet on
+  per-schema failures (a brand may have no relationship with the contact).
+
+### Messaging — routes
+- `PATCH /messaging/channels/:id/assign` — `can("messaging","edit")`.
+- `PATCH /messaging/channels/:id/resolve` — `can("messaging","edit")`.
+- `POST  /messaging/messages/:id/react` — `can("messaging","view")`.
+- `GET   /messaging/customer-360/:contactId` — `can("messaging","view")`.
+
+### Messaging — integrations layer (`integrations/messaging/messaging.service.js`)
+- **Dynamic business socket room:** the `emitToUser("business:jewelry", ...)`
+  hardcode in `handleInbound` is gone. The channel's actual business is
+  looked up by id and used for `emitToBusiness("business:<biz>", ...)`.
+  Import switched from `emitToUser` to `emitToBusiness`.
+- **Email source wired into `handleInbound`** via `smtp.parseInbound`,
+  and into `sendReply` via `smtp.sendChannelMessage` (subject from
+  `emailMeta.subject`, default `"Re: Your enquiry"`).
+
+### Messaging — config & adapters
+- `config.whatsapp.phoneNumbers.{jewelry,diffusers}` for per-brand
+  WhatsApp Cloud API numbers. Legacy `phoneNumberId` retained as
+  fallback so single-brand callers don't break.
+- `integrations/messaging/adapters/whatsapp.js`: removed the module-load
+  `BASE` constant, added `baseFor(business)` that resolves the right
+  phone number per call. `sendMessage`/`sendTemplate`/`sendDocument`
+  all accept an optional `business` arg.
+
+### Required env vars (add to your .env if not already set)
+```
+WHATSAPP_PHONE_ID_JEWELRY=<phone_number_id_bejewelled>
+WHATSAPP_PHONE_ID_DIFFUSERS=<phone_number_id_orika_living>
+META_ACCESS_TOKEN=<page_access_token>
+META_VERIFY_TOKEN=<webhook_verify_token>
+CAMPAIGN_APPROVAL_THRESHOLD=50          # optional
+WA_DAILY_SEND_LIMIT=1000                # optional
+```

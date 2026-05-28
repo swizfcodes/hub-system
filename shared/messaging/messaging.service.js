@@ -301,6 +301,30 @@ async function sendMessage(channelId, data, user) {
       reply_to_id: data.reply_to_id,
     });
 
+    // @mentions — notify any channel members whose first name appears as
+    // @firstname in the message. We only resolve user_id participants.
+    const mentions = (data.content || "").match(/@(\w+)/g) || [];
+    if (mentions.length && Array.isArray(channel.members)) {
+      const notifService = require("../notifications/notifications.service");
+      for (const m of channel.members) {
+        if (!m.user_id || m.user_id === user.user_id) continue;
+        const firstName = (m.display_name || "").split(" ")[0] || "";
+        if (!firstName) continue;
+        if (mentions.includes(`@${firstName}`)) {
+          await notifService.create(client, {
+            userId: m.user_id,
+            business: channel.business,
+            type: "message",
+            title: `${user.display_name} mentioned you`,
+            body: (data.content || "").substring(0, 100),
+            referenceType: "channel",
+            referenceId: channelId,
+            actionUrl: `/messaging?channel=${channelId}`,
+          });
+        }
+      }
+    }
+
     // Attach any documents.
     for (const att of data.attachments || []) {
       await repo.attachDocument(client, {
@@ -402,6 +426,200 @@ async function getUnreadCount(user) {
   });
 }
 
+// ─────────────────────────────────────────────────────────────
+// Thread assignment & resolution
+// ─────────────────────────────────────────────────────────────
+
+async function assignThread(channelId, { assigned_to, handoff_note }, user) {
+  return withSharedContext(async (client) => {
+    const {
+      rows: [ch],
+    } = await client.query(
+      `UPDATE shared.message_channels
+       SET assigned_to = $1, assigned_at = now(), updated_at = now()
+       WHERE channel_id = $2
+       RETURNING *`,
+      [assigned_to || null, channelId],
+    );
+    if (!ch)
+      throw Object.assign(new Error("Channel not found"), { status: 404 });
+
+    if (handoff_note) {
+      await repo.insertMessage(client, {
+        channel_id: channelId,
+        message_type: "system",
+        content: `Thread assigned by ${user.display_name}: ${handoff_note}`,
+      });
+    } else {
+      await repo.insertMessage(client, {
+        channel_id: channelId,
+        message_type: "system",
+        content: `Thread assigned by ${user.display_name}`,
+      });
+    }
+
+    if (assigned_to && assigned_to !== user.user_id) {
+      const notifService = require("../notifications/notifications.service");
+      await notifService.create(client, {
+        userId: assigned_to,
+        business: ch.business,
+        type: "task_assigned",
+        title: "Thread assigned to you",
+        body: ch.name || "Customer conversation",
+        referenceType: "channel",
+        referenceId: channelId,
+        actionUrl: `/messaging?channel=${channelId}`,
+      });
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name,
+      business: ch.business,
+      module: "messaging",
+      action: "thread_assigned",
+      table: "shared.message_channels",
+      recordId: channelId,
+      metadata: { assigned_to },
+    });
+    return ch;
+  });
+}
+
+async function resolveThread(channelId, user) {
+  return withSharedContext(async (client) => {
+    const {
+      rows: [ch],
+    } = await client.query(
+      `UPDATE shared.message_channels
+       SET status = 'resolved', is_archived = true, updated_at = now()
+       WHERE channel_id = $1
+       RETURNING *`,
+      [channelId],
+    );
+    if (!ch)
+      throw Object.assign(new Error("Channel not found"), { status: 404 });
+
+    await repo.insertMessage(client, {
+      channel_id: channelId,
+      message_type: "system",
+      content: `Conversation resolved by ${user.display_name}`,
+    });
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name,
+      business: ch.business,
+      module: "messaging",
+      action: "thread_resolved",
+      table: "shared.message_channels",
+      recordId: channelId,
+    });
+    return ch;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Emoji reactions — toggle per (message, user, emoji).
+// ─────────────────────────────────────────────────────────────
+
+async function toggleReaction(messageId, emoji, user) {
+  return withSharedContext(async (client) => {
+    const {
+      rows: [existing],
+    } = await client.query(
+      `SELECT reaction_id FROM shared.message_reactions
+       WHERE message_id = $1 AND user_id = $2 AND emoji = $3`,
+      [messageId, user.user_id, emoji],
+    );
+    if (existing) {
+      await client.query(
+        `DELETE FROM shared.message_reactions WHERE reaction_id = $1`,
+        [existing.reaction_id],
+      );
+      return { added: false, emoji };
+    }
+    await client.query(
+      `INSERT INTO shared.message_reactions (message_id, user_id, emoji)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (message_id, user_id, emoji) DO NOTHING`,
+      [messageId, user.user_id, emoji],
+    );
+    return { added: true, emoji };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Customer 360 — contact + recent orders / open invoices / deliveries.
+// The contact lives in shared schema; orders/invoices/deliveries live
+// in each business schema, so we query both jewelry & diffusers and
+// merge. Quiet on per-schema failures (a brand may have no business
+// relationship with this contact).
+// ─────────────────────────────────────────────────────────────
+
+async function getCustomer360(contactId, user) {
+  const { pool } = require("../../config/db");
+  const businesses = user.permitted_businesses || ["jewelry", "diffusers"];
+
+  // Shared contact lookup.
+  const {
+    rows: [contact],
+  } = await pool.query(
+    `SELECT contact_id, display_name, primary_phone, email, whatsapp_number,
+            company_name, tags
+     FROM shared.contacts
+     WHERE contact_id = $1 AND is_deleted = false`,
+    [contactId],
+  );
+  if (!contact)
+    throw Object.assign(new Error("Contact not found"), { status: 404 });
+
+  const orders = [];
+  const invoices = [];
+  const deliveries = [];
+
+  for (const biz of businesses) {
+    try {
+      const o = await pool.query(
+        `SELECT order_id, order_number, status, total_amount AS total
+         FROM ${biz}.sales_orders
+         WHERE contact_id = $1
+         ORDER BY created_at DESC LIMIT 5`,
+        [contactId],
+      );
+      orders.push(...o.rows);
+    } catch { /* brand may not have sales_orders for this contact */ }
+
+    try {
+      const i = await pool.query(
+        `SELECT invoice_id, invoice_number,
+                amount_outstanding AS amount_due,
+                due_date
+         FROM ${biz}.invoices
+         WHERE contact_id = $1
+           AND status NOT IN ('paid','voided')
+           AND is_deleted = false
+         ORDER BY due_date ASC NULLS LAST LIMIT 5`,
+        [contactId],
+      );
+      invoices.push(...i.rows);
+    } catch { /* may not exist */ }
+
+    try {
+      const d = await pool.query(
+        `SELECT delivery_id, delivery_number, status
+         FROM ${biz}.deliveries
+         WHERE contact_id = $1
+         ORDER BY created_at DESC LIMIT 5`,
+        [contactId],
+      );
+      deliveries.push(...d.rows);
+    } catch { /* may not exist */ }
+  }
+
+  return { contact, orders, invoices, deliveries };
+}
+
 module.exports = {
   // channels
   listChannels,
@@ -418,6 +636,13 @@ module.exports = {
   // reads
   markRead,
   getUnreadCount,
+  // thread management
+  assignThread,
+  resolveThread,
+  // reactions
+  toggleReaction,
+  // customer 360
+  getCustomer360,
   // constants
   VALID_MESSAGE_TYPES,
   VALID_CHANNEL_TYPES,

@@ -110,6 +110,12 @@ function start() {
     "0 7 1 * *",
     require("./sendScheduledReports"),
   );
+  // Campaign scheduler — fires queued campaigns whose scheduled_at <= now().
+  register(
+    "runScheduledCampaigns",
+    "* * * * *",
+    require("./runScheduledCampaigns"),
+  );
 
   jobs.forEach(({ name, task }) => {
     task.start();

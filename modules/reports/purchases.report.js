@@ -28,7 +28,6 @@ async function generateBySupplier(client, { startDate, endDate }) {
      FROM supplier_invoices si
      JOIN shared.contacts c ON c.contact_id = si.supplier_id
      WHERE si.invoice_date BETWEEN $1 AND $2
-       AND si.is_deleted = false
      GROUP BY c.contact_id, c.display_name
      ORDER BY total_spend DESC`,
     [startDate, endDate],
