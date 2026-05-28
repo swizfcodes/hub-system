@@ -66,6 +66,18 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+// PATCH /api/notifications/read-all
+// MUST be registered before "/:id/read" — otherwise Express matches
+// "read-all" against the ":id" param and the UUID validator rejects it.
+router.patch("/read-all", async (req, res, next) => {
+  try {
+    await service.markAllRead(req.user.user_id, req.business);
+    res.json({ message: "All notifications marked as read" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // PATCH /api/notifications/:id/read
 router.patch(
   "/:id/read",
@@ -80,15 +92,5 @@ router.patch(
     }
   },
 );
-
-// PATCH /api/notifications/read-all
-router.patch("/read-all", async (req, res, next) => {
-  try {
-    await service.markAllRead(req.user.user_id, req.business);
-    res.json({ message: "All notifications marked as read" });
-  } catch (err) {
-    next(err);
-  }
-});
 
 module.exports = router;

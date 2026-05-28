@@ -142,6 +142,97 @@ router.get(
   },
 );
 
+// Purchases — financially sensitive, requires approve.
+router.get(
+  "/purchases/:reportType",
+  param("reportType").isIn(["by_supplier", "by_category", "by_period"]),
+  query("start_date").isISO8601(),
+  query("end_date").isISO8601(),
+  query("format").optional().isIn(["json", "csv", "pdf", "excel"]),
+  query("archive").optional().isBoolean(),
+  validate,
+  can("reports", "approve"),
+  async (req, res, next) => {
+    try {
+      await handle(req, res, "purchases");
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Attendance — HR-sensitive.
+router.get(
+  "/attendance/:reportType",
+  param("reportType").isIn(["leave_summary", "by_staff"]),
+  query("start_date").isISO8601(),
+  query("end_date").isISO8601(),
+  query("format").optional().isIn(["json", "csv", "pdf", "excel"]),
+  query("archive").optional().isBoolean(),
+  validate,
+  can("payroll", "approve"),
+  async (req, res, next) => {
+    try {
+      await handle(req, res, "attendance");
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Consolidated cross-brand report (owner only).
+router.get(
+  "/consolidated/:family/:reportType",
+  param("family").isString(),
+  param("reportType").isString(),
+  query("start_date").isISO8601(),
+  query("end_date").isISO8601(),
+  validate,
+  can("reports", "approve"),
+  async (req, res, next) => {
+    try {
+      const businessList = ["jewelry", "diffusers"];
+      const labels = { jewelry: "Bejewelled", diffusers: "Orika Living" };
+      const results = await Promise.all(
+        businessList.map((biz) =>
+          service.generate({
+            business: biz,
+            family: req.params.family,
+            reportType: req.params.reportType,
+            format: "json",
+            options: {
+              startDate: req.query.start_date,
+              endDate: req.query.end_date,
+            },
+            user: req.user,
+          }),
+        ),
+      );
+
+      const merged = {
+        meta: {
+          ...results[0].output.meta,
+          title: `[Consolidated] ${results[0].output.meta.title}`,
+        },
+        columns: [
+          { key: "business", label: "Business", type: "string" },
+          ...results[0].output.columns,
+        ],
+        rows: results.flatMap((r, i) =>
+          r.output.rows.map((row) => ({
+            business: labels[businessList[i]],
+            ...row,
+          })),
+        ),
+      };
+
+      res.json(merged);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─────────────────────────────────────────────────────────────
 // SHARED HANDLER
 // ─────────────────────────────────────────────────────────────

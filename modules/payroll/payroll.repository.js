@@ -160,7 +160,7 @@ async function findPayslipById(client, payslipId) {
   const {
     rows: [ps],
   } = await client.query(
-    `SELECT p.*, c.display_name, c.email, sp.job_title, sp.employee_number, sp.bank_name, sp.bank_account_number, r.run_number, r.period_month, r.period_year FROM payslips p JOIN payroll_runs r ON r.run_id = p.run_id JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id JOIN shared.contacts c ON c.contact_id = sp.contact_id WHERE p.payslip_id = $1`,
+    `SELECT p.*, c.display_name, c.email, c.whatsapp_number, sp.job_title, sp.employee_number, sp.bank_name, sp.bank_account_number, r.run_number, r.period_month, r.period_year FROM payslips p JOIN payroll_runs r ON r.run_id = p.run_id JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id JOIN shared.contacts c ON c.contact_id = sp.contact_id WHERE p.payslip_id = $1`,
     [payslipId],
   );
   return ps || null;

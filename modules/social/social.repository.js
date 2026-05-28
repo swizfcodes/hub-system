@@ -71,6 +71,7 @@ async function insert(
     scheduled_at,
     campaign_id,
     created_by,
+    status = "scheduled",
   },
 ) {
   const {
@@ -79,7 +80,7 @@ async function insert(
     `INSERT INTO shared.social_posts
        (business, channels, caption, title, description,
         media_paths, video_path, scheduled_at, campaign_id, created_by, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'scheduled')
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [
       business,
@@ -92,6 +93,7 @@ async function insert(
       scheduled_at,
       campaign_id || null,
       created_by,
+      status,
     ],
   );
   return row;

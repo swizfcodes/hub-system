@@ -172,4 +172,59 @@ router.post(
   },
 );
 
+// ── COMPLIANCE OUTPUTS (CSV) ─────────────────────────────────
+
+function complianceRoute(suffix, method, filename) {
+  router.get(
+    `/runs/:id/compliance/${suffix}`,
+    param("id").isUUID(),
+    validate,
+    can("payroll", "view"),
+    async (req, res, next) => {
+      try {
+        const csv = await service[method](req.business, req.params.id);
+        res.set({
+          "Content-Type": "text/csv",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        });
+        res.send(csv);
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+}
+
+complianceRoute("paye-schedule", "generatePayeSchedule", "paye-schedule.csv");
+complianceRoute("pencom", "generatePencomFile", "pencom-schedule.csv");
+complianceRoute("nhf", "generateNhfSchedule", "nhf-schedule.csv");
+complianceRoute(
+  "payment-schedule",
+  "generatePaymentSchedule",
+  "payment-schedule.csv",
+);
+
+// ── SEND PAYSLIP ─────────────────────────────────────────────
+router.post(
+  "/payslips/:id/send",
+  param("id").isUUID(),
+  body("channel").optional().isIn(["email", "whatsapp", "both"]),
+  validate,
+  can("payroll", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.sendPayslip(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 module.exports = router;

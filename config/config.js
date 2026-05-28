@@ -22,6 +22,10 @@ const config = {
     jwtExpiry: process.env.JWT_EXPIRY || "24h",
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || "7d",
+    // Public base URL of the Hub frontend — used in invite/onboarding links.
+    hubBaseUrl:
+      process.env.HUB_BASE_URL ||
+      (process.env.ALLOWED_ORIGINS || "http://localhost:7000").split(",")[0],
     allowedOrigins: (
       process.env.ALLOWED_ORIGINS || "http://localhost:7000"
     ).split(","),

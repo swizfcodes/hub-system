@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const config = require("../../config/config");
 const { withSharedContext } = require("../../config/db");
 const { invalidatePermissionCache } = require("../../config/redis");
+const auditService = require("../../shared/audit/audit.service");
 const repo = require("./auth.repository");
 
 async function login(email, password, ip = "") {
@@ -187,6 +188,58 @@ async function changePassword(userId, currentPassword, newPassword) {
   });
 }
 
+async function listActiveSessions(userId) {
+  return withSharedContext(async (client) => {
+    const { rows } = await client.query(
+      `SELECT token_id, created_at, expires_at
+       FROM shared.refresh_tokens
+       WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC`,
+      [userId],
+    );
+    return { data: rows };
+  });
+}
+
+async function revokeSession(userId, tokenId, actingUser) {
+  return withSharedContext(async (client) => {
+    const { rowCount } = await client.query(
+      `UPDATE shared.refresh_tokens SET revoked_at = now()
+       WHERE token_id = $1 AND user_id = $2 AND revoked_at IS NULL`,
+      [tokenId, userId],
+    );
+    if (!rowCount)
+      throw Object.assign(new Error("Session not found"), { status: 404 });
+    await auditService.log(client, {
+      userId: actingUser.user_id,
+      userName: actingUser.display_name,
+      business: actingUser.current_business,
+      module: "security",
+      action: "session_revoked",
+      table: "shared.refresh_tokens",
+      metadata: { target_user_id: userId, token_id: tokenId },
+    });
+    return { revoked: true };
+  });
+}
+
+async function revokeAllSessions(userId, actingUser) {
+  return withSharedContext(async (client) => {
+    await repo.revokeAllRefreshTokens(client, userId);
+    await repo.deleteUserSessions(client, userId);
+    await auditService.log(client, {
+      userId: actingUser.user_id,
+      userName: actingUser.display_name,
+      business: actingUser.current_business,
+      module: "security",
+      action: "all_sessions_revoked",
+      table: "shared.refresh_tokens",
+      metadata: { target_user_id: userId },
+    });
+    return { revoked: true };
+  });
+}
+
 module.exports = {
   login,
   refresh,
@@ -194,4 +247,7 @@ module.exports = {
   switchBusiness,
   getMe,
   changePassword,
+  listActiveSessions,
+  revokeSession,
+  revokeAllSessions,
 };

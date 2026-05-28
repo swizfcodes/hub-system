@@ -5,6 +5,8 @@ const { calculatePayslip } = require("./calculator.service");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const auditService = require("../../shared/audit/audit.service");
 const journalService = require("../accounting/journal.service");
+const emailSender = require("../../lib/email/sender");
+const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./payroll.repository");
 
@@ -280,6 +282,169 @@ async function createCommissionRule(business, data, user) {
   });
 }
 
+function monthName(m) {
+  return [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ][(parseInt(m) || 1) - 1];
+}
+
+function csvCell(v) {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function toCsv(header, rows) {
+  return [header.join(","), ...rows.map((r) => r.map(csvCell).join(","))].join(
+    "\n",
+  );
+}
+
+// PAYE schedule — TIN lives on contacts.tin in this schema.
+async function generatePayeSchedule(business, runId) {
+  return withBusinessContext(business, async (client) => {
+    const { rows } = await client.query(
+      `SELECT c.display_name, c.tin, sp.employee_number,
+              p.gross_salary, p.paye_deduction,
+              p.pension_employee, p.nhf_deduction
+       FROM payslips p
+       JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id
+       JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       WHERE p.run_id = $1 ORDER BY c.display_name`,
+      [runId],
+    );
+    return toCsv(
+      ["Name", "TIN", "Employee No", "Gross Salary", "PAYE", "Pension", "NHF"],
+      rows.map((r) => [
+        r.display_name,
+        r.tin || "",
+        r.employee_number || "",
+        r.gross_salary,
+        r.paye_deduction,
+        r.pension_employee,
+        r.nhf_deduction,
+      ]),
+    );
+  });
+}
+
+// PENCOM file — pension_pin on staff_profiles (no separate PFA name column).
+async function generatePencomFile(business, runId) {
+  return withBusinessContext(business, async (client) => {
+    const { rows } = await client.query(
+      `SELECT c.display_name, sp.pension_pin,
+              p.pension_employee, p.pension_employer
+       FROM payslips p
+       JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id
+       JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       WHERE p.run_id = $1 ORDER BY c.display_name`,
+      [runId],
+    );
+    return toCsv(
+      ["Name", "RSA PIN", "Employee Pension", "Employer Pension", "Total"],
+      rows.map((r) => [
+        r.display_name,
+        r.pension_pin || "",
+        r.pension_employee,
+        r.pension_employer,
+        (
+          parseFloat(r.pension_employee) + parseFloat(r.pension_employer)
+        ).toFixed(2),
+      ]),
+    );
+  });
+}
+
+// NHF schedule.
+async function generateNhfSchedule(business, runId) {
+  return withBusinessContext(business, async (client) => {
+    const { rows } = await client.query(
+      `SELECT c.display_name, sp.nhf_number, sp.employee_number, p.nhf_deduction
+       FROM payslips p
+       JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id
+       JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       WHERE p.run_id = $1 ORDER BY c.display_name`,
+      [runId],
+    );
+    return toCsv(
+      ["Name", "NHF Number", "Employee No", "NHF Contribution"],
+      rows.map((r) => [
+        r.display_name,
+        r.nhf_number || "",
+        r.employee_number || "",
+        r.nhf_deduction,
+      ]),
+    );
+  });
+}
+
+// Bulk bank payment schedule.
+async function generatePaymentSchedule(business, runId) {
+  return withBusinessContext(business, async (client) => {
+    const { rows } = await client.query(
+      `SELECT c.display_name, sp.bank_name, sp.bank_account_number,
+              sp.bank_sort_code, p.net_salary
+       FROM payslips p
+       JOIN shared.staff_profiles sp ON sp.profile_id = p.profile_id
+       JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       WHERE p.run_id = $1 ORDER BY c.display_name`,
+      [runId],
+    );
+    return toCsv(
+      ["Name", "Bank", "Account Number", "Sort Code", "Net Salary"],
+      rows.map((r) => [
+        r.display_name,
+        r.bank_name || "",
+        r.bank_account_number || "",
+        r.bank_sort_code || "",
+        r.net_salary,
+      ]),
+    );
+  });
+}
+
+// Deliver a payslip by email and/or WhatsApp.
+async function sendPayslip(business, payslipId, { channel = "email" }, user) {
+  const payslip = await getPayslip(business, payslipId, user);
+  const pdf = await renderToPDF("payslips", payslip);
+
+  const results = {};
+  if (["email", "both"].includes(channel) && payslip.email) {
+    await emailSender.sendWithAttachment({
+      to: payslip.email,
+      subject: `Your Payslip — ${monthName(payslip.period_month)} ${payslip.period_year}`,
+      html: `<p>Dear ${payslip.display_name},</p><p>Please find your payslip attached.</p>`,
+      filename: `payslip-${payslip.run_number}.pdf`,
+      pdfBuffer: pdf,
+    });
+    results.email = "sent";
+  }
+  if (["whatsapp", "both"].includes(channel) && payslip.whatsapp_number) {
+    await whatsapp.sendMessage({
+      to: payslip.whatsapp_number,
+      text: `Your payslip for ${monthName(payslip.period_month)} ${payslip.period_year} is ready. Net pay: ₦${Number(payslip.net_salary).toLocaleString()}. Please check your email for the full payslip PDF.`,
+    });
+    results.whatsapp = "sent";
+  }
+  if (!Object.keys(results).length) {
+    throw Object.assign(
+      new Error("No delivery channel available for this payslip"),
+      { status: 400 },
+    );
+  }
+  return results;
+}
+
 module.exports = {
   listRuns,
   initiateRun,
@@ -291,4 +456,9 @@ module.exports = {
   generatePayslipPDF,
   listCommissionRules,
   createCommissionRule,
+  generatePayeSchedule,
+  generatePencomFile,
+  generateNhfSchedule,
+  generatePaymentSchedule,
+  sendPayslip,
 };

@@ -260,6 +260,45 @@ async function deleteDashboardConfig(business, configId, user) {
   });
 }
 
+// Morning-briefing rollup for yesterday's activity.
+async function getYesterdaySummary(business, user) {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const date = yesterday.toISOString().slice(0, 10);
+
+  return withBusinessContext(business, async (client) => {
+    const [revenue, topProduct, newOrders] = await Promise.all([
+      repo.getOverviewRevenue(client, { startDate: date, endDate: date }),
+      repo.getTopProducts(client, { startDate: date, endDate: date }),
+      client
+        .query(
+          `SELECT COUNT(*) AS new_customers
+           FROM shared.contacts c
+           WHERE c.created_at::DATE = $1
+             AND 'customer' = ANY(c.contact_type)
+             AND c.is_deleted = false`,
+          [date],
+        )
+        .then((r) => r.rows[0]),
+    ]);
+
+    const topItem = topProduct?.[0] || null;
+    return {
+      date,
+      revenue: Number(revenue?.revenue ?? 0),
+      invoice_count: Number(revenue?.invoices ?? 0),
+      new_customers: parseInt(newOrders?.new_customers || 0),
+      top_product: topItem
+        ? {
+            name: topItem.description || topItem.product_name,
+            units: Number(topItem.units_sold),
+            revenue: Number(topItem.revenue),
+          }
+        : null,
+    };
+  });
+}
+
 module.exports = {
   getSalesDashboard,
   getFinanceDashboard,
@@ -268,6 +307,7 @@ module.exports = {
   getRetailPartnerDashboard,
   getLogisticsDashboard,
   getOverview,
+  getYesterdaySummary,
   // dashboard configs
   listDashboardConfigs,
   getDashboardConfig,
