@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, ChevronRight, Users, Package, Banknote } from 'lucide-react';
+import { Plus, ChevronRight, Users, Package, Banknote } from 'lucide-react';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
 import { Skeleton } from '@components/ui/Skeleton';
 import { Tabs } from '@components/ui/Tabs';
-import { PartnerBadge, PartnerFormModal } from '@components/retail-partner/RetailPartnerComponents';
+import { PartnerBadge, PartnerFormModal } from '@components/retail-partners/RetailPartnerComponents';
 import { getAllPartnersOverview } from '@services/retailPartners';
-import { CYCLE_LABEL, FILTER_ARRANGEMENT_OPTIONS } from '@lib/constants/retailPartnersConstants';
+import { CYCLE_LABEL } from '@lib/constants/retailPartnersConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtMoney } from '@lib/format';
-import type { PartnerOverview } from '@/lib/schemas/retailPartners';
 
 const FILTER_TABS = [
   { key: 'all',         label: 'All'         },

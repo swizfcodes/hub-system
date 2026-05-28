@@ -5,6 +5,7 @@ export type EventType =
   | 'training' | 'review' | 'reminder' | 'other' | string;
 
 export interface CalendarEvent {
+  is_private?: boolean;
   event_id: string;
   business: string;
   title: string;

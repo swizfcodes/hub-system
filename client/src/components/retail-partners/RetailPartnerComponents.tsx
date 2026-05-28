@@ -4,11 +4,11 @@
  *          PartnerFormModal, SendConsignmentModal, RecallConsignmentModal,
  *          ReportSaleModal, GenerateSettlementModal, WholesaleDispatchModal
  */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Trash2, Search } from 'lucide-react';
 import { Badge } from '@components/ui/Badge';
 import { Modal } from '@components/ui/Modal';
 import { Button } from '@components/ui/Button';
@@ -25,15 +25,13 @@ import {
   recallSchema, type RecallValues,
   reportSaleSchema, type ReportSaleValues,
   generateSettlementSchema, type GenerateSettlementValues,
-  wholesaleDispatchSchema, type WholesaleDispatchValues,
 } from '@lib/schemas/retailPartners';
 import {
   createPartner, updatePartner,
   sendConsignment, recallConsignment,
   reportPartnerSale, generateSettlement,
-  recordWholesaleDispatch, listConsignmentStock,
-  getStockLocations,
-} from '@services/retailPartners';
+  listConsignmentStock,
+  getStockLocations } from '@services/retailPartners';
 import { fmtMoney } from '@lib/format';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
@@ -41,9 +39,8 @@ import { api } from '@services/api';
 import type {
   ArrangementType, ConsignmentStatus, SettlementStatus,
   RetailPartner, ConsignmentStock,
-} from '@/lib/schemas/retailPartners';
+} from '@typedefs/retailPartners';
 import type { Contact } from '@typedefs/contacts';
-import { cn } from '@lib/cn';
 
 // ── Badges ────────────────────────────────────────────────────────────────────
 
@@ -473,7 +470,7 @@ interface GenerateSettlementModalProps {
   onGenerated: (settlementId: string) => void;
 }
 
-export function GenerateSettlementModal({ open, onClose, partner, currency = 'NGN', onGenerated }: GenerateSettlementModalProps) {
+export function GenerateSettlementModal({ open, onClose, partner, currency: _currency = 'NGN', onGenerated }: GenerateSettlementModalProps) {
   const qc = useQueryClient();
 
   // Default: first day of previous month to last day of previous month
