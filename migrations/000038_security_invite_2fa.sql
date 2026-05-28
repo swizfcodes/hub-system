@@ -33,19 +33,51 @@ ALTER TABLE shared.users
   ADD COLUMN IF NOT EXISTS totp_backup_codes TEXT[];
 
 -- ── Security & settings permission seeds ──────────────────────
--- Owner (role 0001): full security/settings access.
-INSERT INTO shared.permissions (role_id, module, action, record_scope, hidden_fields)
-SELECT '00000001-0000-0000-0000-000000000001', m, a, 'all', '{}'
-FROM unnest(ARRAY['settings','security']) m,
+
+-- Owner: full security/settings access
+INSERT INTO shared.permissions (
+  role_id,
+  module,
+  action,
+  record_scope,
+  hidden_fields
+)
+SELECT
+  r.role_id,
+  m,
+  a,
+  'all',
+  '{}'
+FROM shared.roles r,
+     unnest(ARRAY['settings','security']) m,
      unnest(ARRAY['view','create','edit','delete','approve','export']) a
+WHERE r.role_name = 'owner'
 ON CONFLICT (role_id, module, action) DO NOTHING;
 
--- Manager (role 0002): settings view/edit + security view (no approve).
-INSERT INTO shared.permissions (role_id, module, action, record_scope, hidden_fields)
-VALUES
-  ('00000001-0000-0000-0000-000000000002', 'settings', 'view', 'all', '{}'),
-  ('00000001-0000-0000-0000-000000000002', 'settings', 'edit', 'all', '{}'),
-  ('00000001-0000-0000-0000-000000000002', 'security', 'view', 'all', '{}')
+
+-- Manager: settings view/edit + security view
+INSERT INTO shared.permissions (
+  role_id,
+  module,
+  action,
+  record_scope,
+  hidden_fields
+)
+SELECT
+  r.role_id,
+  v.module,
+  v.action,
+  'all',
+  '{}'
+FROM shared.roles r
+JOIN (
+  VALUES
+    ('settings', 'view'),
+    ('settings', 'edit'),
+    ('security', 'view')
+) AS v(module, action)
+ON TRUE
+WHERE r.role_name = 'manager'
 ON CONFLICT (role_id, module, action) DO NOTHING;
 
 COMMIT;

@@ -161,7 +161,7 @@ async function getCustomerSummary(client, { startDate, endDate, business }) {
   const {
     rows: [row],
   } = await client.query(
-    `SELECT COUNT(DISTINCT c.contact_id) AS total_customers, COUNT(DISTINCT c.contact_id) FILTER (WHERE c.priority_level='vip') AS vip_count, COUNT(DISTINCT c.contact_id) FILTER (WHERE c.created_at::DATE >= $1) AS new_this_period FROM shared.contacts c WHERE 'customer' = ANY(c.contact_type) AND c.is_deleted=false AND $3 = ANY(c.visible_to)`,
+    `SELECT COUNT(DISTINCT c.contact_id) AS total_customers, COUNT(DISTINCT c.contact_id) FILTER (WHERE c.priority_level='vip') AS vip_count, COUNT(DISTINCT c.contact_id) FILTER (WHERE c.created_at::DATE BETWEEN $1 AND $2) AS new_this_period FROM shared.contacts c WHERE 'customer' = ANY(c.contact_type) AND c.is_deleted=false AND $3 = ANY(c.visible_to)`,
     [startDate, endDate, business],
   );
   return row;
