@@ -10,7 +10,11 @@ const service = require("./contacts.service");
 // GET /api/contacts?search=&type=&page=&limit=
 router.get("/", can("crm", "view"), async (req, res, next) => {
   try {
-    const result = await service.list(req.query, req.user, req.hiddenFields);
+    const result = await service.list(
+      { ...req.query, business: req.business },
+      req.user,
+      req.hiddenFields,
+    );
     res.json(result);
   } catch (err) {
     next(err);

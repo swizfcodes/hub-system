@@ -132,6 +132,10 @@ router.use(
   protect,
   require("../modules/campaigns/campaigns.routes"),
 );
+router.use("/sales-campaigns", protect, (function () {
+  const { adminRouter } = require("../modules/sales_campaigns/admin.service");
+  return adminRouter;
+})());
 router.use("/social", protect, require("../modules/social/social.routes"));
 router.use("/loyalty", protect, require("../modules/loyalty/loyalty.routes"));
 router.use(

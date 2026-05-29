@@ -127,6 +127,45 @@ async function handleChargeSuccess(data) {
       return;
     }
   }
+
+  // No matching invoice payment — try campaign storefront orders.
+  // Reference for those is the order_id UUID itself (not a separate column).
+  try {
+    const storefrontService = require(
+      "../../modules/sales_campaigns/storefront.service",
+    );
+    const { rows: [order] } = await pool.query(
+      `SELECT co.order_id, sc.business
+         FROM jewelry.campaign_orders co
+         JOIN jewelry.sales_campaigns sc ON sc.campaign_id = co.campaign_id
+        WHERE co.order_id::TEXT = $1 AND co.payment_method = 'paystack'
+          AND co.status = 'pending'
+       UNION ALL
+       SELECT co.order_id, sc.business
+         FROM diffusers.campaign_orders co
+         JOIN diffusers.sales_campaigns sc ON sc.campaign_id = co.campaign_id
+        WHERE co.order_id::TEXT = $1 AND co.payment_method = 'paystack'
+          AND co.status = 'pending'
+       LIMIT 1`,
+      [reference],
+    );
+    if (order) {
+      await storefrontService.handlePaystackConfirmation(
+        order.business,
+        order.order_id,
+      );
+      logger.info(
+        `Paystack campaign order confirmed: ${reference} [${order.business}]`,
+      );
+      return;
+    }
+  } catch (err) {
+    logger.error(
+      `Paystack campaign order confirmation failed: ${reference}`,
+      err.message,
+    );
+  }
+
   logger.warn(`Paystack charge.success with no matching payment: ${reference}`);
 }
 

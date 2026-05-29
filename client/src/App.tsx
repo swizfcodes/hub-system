@@ -135,6 +135,15 @@ const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'))
 // SmartComm Messaging
 const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
 
+// Sales Campaigns (admin — inside auth wall)
+const SalesCampaignsHome   = lazy(() => import('@pages/salesCampaigns/SalesCampaignsHome'));
+const SalesCampaignBuilder = lazy(() => import('@pages/salesCampaigns/CampaignBuilder'));
+
+// Storefront (public — OUTSIDE auth wall)
+const StorefrontLanding   = lazy(() => import('@pages/storefront/LandingPage'));
+const StorefrontCheckout  = lazy(() => import('@pages/storefront/Checkout'));
+const StorefrontOrderTrack = lazy(() => import('@pages/storefront/OrderTracking'));
+
 function PageFallback() {
   return (
     <div className="px-4 sm:px-8 py-10 max-w-7xl mx-auto space-y-6">
@@ -153,6 +162,12 @@ export default function App() {
         <Route path="/rfq/:token" element={<SupplierPortal />} />
         <Route path="/invite/:token" element={<AcceptInvitePage />} />
         <Route path="/sign/:token" element={<DeliverySignPage />} />
+
+        {/* Public storefront — campaign landing, checkout, order tracking
+            (no AppShell, no auth) */}
+        <Route path="/c/:business/:slug"          element={<StorefrontLanding />} />
+        <Route path="/c/:business/:slug/checkout" element={<StorefrontCheckout />} />
+        <Route path="/orders/:business/:token"    element={<StorefrontOrderTrack />} />
 
         {/* POS active session — fullscreen, intentionally outside AppShell */}
         <Route path="/pos/session/:sessionId" element={<POSSession />} />
@@ -274,6 +289,11 @@ export default function App() {
 
           {/* SmartComm Messaging */}
           <Route path="/messaging" element={<MessagingPage />} />
+
+          {/* Sales Campaigns (admin) — /new must precede /:id */}
+          <Route path="/sales-campaigns"     element={<SalesCampaignsHome />} />
+          <Route path="/sales-campaigns/new" element={<SalesCampaignBuilder />} />
+          <Route path="/sales-campaigns/:id" element={<SalesCampaignBuilder />} />
 
           {/* Reports — /reports/saved MUST precede /:family/:reportType */}
           <Route path="/reports"                     element={<ReportsHome />} />

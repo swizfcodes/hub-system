@@ -1,0 +1,453 @@
+'use strict';
+// ── storefront.service.js — PUBLIC, no auth ───────────────────────────────────
+
+const { withBusinessContext, withSharedContext, nextDocumentNumber } = require('../../config/db');
+const notifService   = require('../../shared/notifications/notifications.service');
+const loyaltyService = require('../loyalty/loyalty.service');
+const repo           = require('./campaigns.repository');
+const logger         = require('../../config/logger');
+const crypto         = require('crypto');
+const config         = require('../../config/config');
+const axios          = require('axios');
+
+// ── LANDING PAGE DATA ─────────────────────────────────────────────────────────
+
+async function getPage(business, slug) {
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.getStorefrontCampaign(client, slug);
+    if (!campaign) throw Object.assign(new Error('Page not found'), { status: 404 });
+
+    // Auto-expire if past end_date
+    if (!campaign.is_evergreen && campaign.end_date && new Date(campaign.end_date) < new Date()) {
+      if (campaign.status === 'live') {
+        await repo.updateCampaign(client, campaign.campaign_id, { status: 'expired' });
+        campaign.status = 'expired';
+      }
+    }
+
+    // Auto-activate if past start_date
+    if (campaign.status === 'scheduled' && campaign.start_date && new Date(campaign.start_date) <= new Date()) {
+      await repo.updateCampaign(client, campaign.campaign_id, { status: 'live' });
+      campaign.status = 'live';
+    }
+
+    if (!['live', 'expired'].includes(campaign.status)) {
+      throw Object.assign(new Error('This campaign is not currently available'), { status: 404 });
+    }
+
+    return campaign;
+  });
+}
+
+// ── ANALYTICS TRACKING ────────────────────────────────────────────────────────
+
+async function trackEvent(business, slug, { event_type, product_id, source, session_id }, req) {
+  // Hash the IP for privacy (no raw IPs stored)
+  const ipHash = crypto.createHash('sha256').update(req.ip || '').digest('hex').slice(0, 16);
+
+  return withSharedContext(async (client) => {
+    // Find campaign_id from slug — must be done in business context though
+    const { rows: [camp] } = await client.query(
+      `SELECT campaign_id FROM ${business}.sales_campaigns WHERE slug = $1`, [slug]
+    );
+    if (!camp) return;
+
+    await repo.insertAnalyticsEvent(client, {
+      campaign_id: camp.campaign_id, business, slug,
+      event_type, source: source || null,
+      ip_hash: ipHash, session_id: session_id || null,
+      product_id: product_id || null,
+    });
+  });
+}
+
+// ── INQUIRY LEAD ──────────────────────────────────────────────────────────────
+
+async function submitLead(business, slug, data, req) {
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.findCampaignBySlug(client, slug);
+    if (!campaign || campaign.status !== 'live') {
+      throw Object.assign(new Error('Campaign not available'), { status: 400 });
+    }
+
+    // Auto-create or find contact
+    let contactId = null;
+    if (data.phone) {
+      const { rows: [existing] } = await client.query(
+        `SELECT contact_id FROM shared.contacts WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
+        [data.phone]
+      );
+      if (existing) {
+        contactId = existing.contact_id;
+      } else {
+        const { rows: [newContact] } = await client.query(
+          `INSERT INTO shared.contacts (display_name, primary_phone, primary_email, contact_type, visible_to)
+           VALUES ($1,$2,$3,ARRAY['customer']::text[],ARRAY[$4]) RETURNING contact_id`,
+          [data.name || data.phone, data.phone, data.email || null, business]
+        );
+        contactId = newContact.contact_id;
+      }
+    }
+
+    const lead = await repo.insertLead(client, {
+      campaign_id: campaign.campaign_id, business, slug,
+      name: data.name, phone: data.phone, email: data.email,
+      message: data.message, lead_type: data.lead_type || 'form',
+      source: data.source || null,
+    });
+
+    if (contactId) await repo.updateLeadContact(client, lead.lead_id, contactId);
+
+    // Notify campaign owner / staff
+    await notifyStaffOfLead(client, business, campaign, lead, contactId);
+
+    return { submitted: true, lead_id: lead.lead_id };
+  });
+}
+
+// ── PLACE ORDER ───────────────────────────────────────────────────────────────
+
+async function placeOrder(business, slug, data, req) {
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.findCampaignBySlug(client, slug);
+    if (!campaign || campaign.status !== 'live') {
+      throw Object.assign(new Error('Campaign is no longer active'), { status: 400 });
+    }
+
+    if (!data.items?.length) throw Object.assign(new Error('Cart is empty'), { status: 400 });
+    if (!data.customer_name || !data.customer_phone) {
+      throw Object.assign(new Error('Name and phone are required'), { status: 400 });
+    }
+
+    // ── Validate and reserve stock ────────────────────────────────────────────
+    const resolvedItems = [];
+    let subtotal = 0, discountAmount = 0;
+
+    for (const item of data.items) {
+      const { rows: [cp] } = await client.query(
+        `SELECT cp.*, p.name AS product_name, p.selling_price,
+                COALESCE(cp.campaign_price, p.selling_price) AS effective_price
+         FROM campaign_products cp
+         JOIN products p ON p.product_id = cp.product_id
+         WHERE cp.id = $1 AND cp.campaign_id = $2`,
+        [item.campaign_product_id, campaign.campaign_id]
+      );
+      if (!cp) throw Object.assign(new Error(`Product not found in campaign`), { status: 400 });
+
+      // Reserve stock
+      const reserved = await repo.deductCampaignStock(client, item.campaign_product_id, item.quantity);
+      if (!reserved) {
+        throw Object.assign(
+          new Error(`Insufficient stock for "${cp.product_name}" — only ${cp.quantity_available} remaining`),
+          { status: 409 }
+        );
+      }
+
+      const unitPrice = parseFloat(cp.effective_price);
+      const lineDiscount = campaign.discount_type === 'percentage'
+        ? (unitPrice * item.quantity * parseFloat(campaign.discount_value || 0)) / 100
+        : campaign.discount_type === 'fixed_amount'
+        ? parseFloat(campaign.discount_value || 0)
+        : 0;
+      const lineTotal = unitPrice * item.quantity - lineDiscount;
+
+      subtotal      += unitPrice * item.quantity;
+      discountAmount += lineDiscount;
+
+      resolvedItems.push({
+        campaign_product_id: item.campaign_product_id,
+        product_id:   cp.product_id,
+        product_name: cp.product_name,
+        quantity:     item.quantity,
+        unit_price:   unitPrice,
+        discount_amount: lineDiscount,
+        line_total:   lineTotal,
+      });
+    }
+
+    const totalAmount = subtotal - discountAmount;
+    const orderNumber = await nextDocumentNumber(client, business, 'campaign_order');
+
+    const order = await repo.insertOrder(client, {
+      campaign_id:    campaign.campaign_id,
+      order_number:   orderNumber,
+      customer_name:  data.customer_name,
+      customer_phone: data.customer_phone,
+      customer_email: data.customer_email || null,
+      fulfilment_type: data.fulfilment_type || 'delivery',
+      delivery_address: data.delivery_address || null,
+      pickup_location: campaign.store_location || null,
+      payment_method:  data.payment_method,
+      subtotal, discount_amount: discountAmount, total_amount: totalAmount,
+      source: data.source || null,
+      bank_account_id: data.bank_account_id || null,
+    });
+
+    for (const item of resolvedItems) {
+      await repo.insertOrderItem(client, { order_id: order.order_id, ...item });
+    }
+
+    // ── Handle Paystack payment initialisation ────────────────────────────────
+    let paystackUrl = null;
+    if (data.payment_method === 'paystack') {
+      paystackUrl = await initializePaystackPayment({
+        email:     data.customer_email || `${data.customer_phone}@orikahub.com`,
+        amount:    Math.round(totalAmount * 100),  // kobo
+        reference: order.order_id,
+        metadata:  { order_number: orderNumber, campaign_slug: slug, business },
+        callback_url: `${config.app.hubBaseUrl}/orders/${order.tracking_token}`,
+      });
+    }
+
+    // Notify staff of new order (bank transfer pending proof)
+    if (data.payment_method === 'bank_transfer') {
+      await notifyStaffOfPendingOrder(client, business, campaign, order, resolvedItems);
+    }
+
+    logger.info(`[storefront] order ${orderNumber} placed for campaign ${slug}`);
+
+    return {
+      order_id:       order.order_id,
+      order_number:   orderNumber,
+      tracking_token: order.tracking_token,
+      total_amount:   totalAmount,
+      payment_method: data.payment_method,
+      paystack_url:   paystackUrl,
+      status:         order.status,
+    };
+  });
+}
+
+// ── PROOF OF PAYMENT UPLOAD ───────────────────────────────────────────────────
+
+async function submitProof(business, orderId, { proof_image_url, source }) {
+  return withBusinessContext(business, async (client) => {
+    const { rows: [order] } = await client.query(
+      `SELECT co.*, json_agg(coi.*) AS items
+       FROM campaign_orders co
+       LEFT JOIN campaign_order_items coi ON coi.order_id = co.order_id
+       WHERE co.order_id = $1 GROUP BY co.order_id`, [orderId]
+    );
+    if (!order) throw Object.assign(new Error('Order not found'), { status: 404 });
+    if (order.status !== 'pending') {
+      throw Object.assign(new Error('Proof already submitted or order is closed'), { status: 409 });
+    }
+    if (!proof_image_url) throw Object.assign(new Error('proof_image_url is required'), { status: 400 });
+
+    const updated = await repo.updateOrderStatus(client, orderId, {
+      status: 'proof_submitted',
+      proofImageUrl: proof_image_url,
+    });
+
+    // Stock was reserved at order placement, now stays reserved until staff confirm/cancel.
+    // Notify staff to verify the payment.
+    const { rows: [campaign] } = await client.query(
+      `SELECT campaign_name, slug FROM sales_campaigns WHERE campaign_id = $1`,
+      [order.campaign_id]
+    );
+    await notifyStaffProofSubmitted(client, business, campaign, order, proof_image_url);
+
+    logger.info(`[storefront] proof submitted for order ${order.order_number}`);
+    return { submitted: true, status: 'proof_submitted', tracking_token: order.tracking_token };
+  });
+}
+
+// ── ORDER TRACKING (public) ───────────────────────────────────────────────────
+
+async function getOrderByToken(business, trackingToken) {
+  return withBusinessContext(business, async (client) => {
+    const order = await repo.findOrderByToken(client, trackingToken);
+    if (!order) throw Object.assign(new Error('Order not found'), { status: 404 });
+
+    // Build customer-friendly status message
+    const messages = {
+      pending:          'Waiting for your payment proof.',
+      proof_submitted:  'Payment proof received. Our team is verifying your transfer.',
+      confirmed:        order.fulfilment_type === 'pickup'
+                          ? `Your order is ready. Please visit ${order.pickup_location || 'our store'} to collect.`
+                          : 'Order confirmed! We\'re preparing your items for delivery.',
+      dispatched:       'Your order is on its way!',
+      ready_for_pickup: `Your order is ready for collection at ${order.pickup_location || 'our store'}.`,
+      completed:        'Order completed. Thank you!',
+      cancelled:        `Order cancelled${order.cancellation_reason ? ': ' + order.cancellation_reason : ''}.`,
+    };
+
+    return {
+      order_number:    order.order_number,
+      status:          order.status,
+      status_message:  messages[order.status] || order.status,
+      fulfilment_type: order.fulfilment_type,
+      pickup_location: order.pickup_location,
+      total_amount:    order.total_amount,
+      items:           order.items,
+      created_at:      order.created_at,
+    };
+  });
+}
+
+// ── PAYSTACK INTEGRATION ──────────────────────────────────────────────────────
+
+async function initializePaystackPayment({ email, amount, reference, metadata, callback_url }) {
+  const response = await axios.post(
+    'https://api.paystack.co/transaction/initialize',
+    { email, amount, reference, metadata, callback_url },
+    { headers: { Authorization: `Bearer ${config.paystack.secretKey}` } }
+  );
+  return response.data?.data?.authorization_url || null;
+}
+
+// Called from the existing paystack webhook when charge.success fires
+// (webhook must detect campaign_order references and call this)
+async function handlePaystackConfirmation(business, orderId) {
+  const adminSvc = require('./admin.service');
+  // Use a system user context for webhook-triggered confirmations
+  const systemUser = { user_id: null, display_name: 'Paystack Webhook', email: 'system' };
+  try {
+    await adminSvc.confirmOrder(business, orderId, systemUser);
+    logger.info(`[storefront] Paystack auto-confirmed order ${orderId}`);
+  } catch (err) {
+    logger.error(`[storefront] Paystack confirmation failed for order ${orderId}:`, err.message);
+  }
+}
+
+// ── NOTIFICATION HELPERS ──────────────────────────────────────────────────────
+
+async function notifyStaffOfLead(client, business, campaign, lead, contactId) {
+  const { rows: managers } = await client.query(
+    `SELECT u.user_id FROM shared.users u
+     JOIN shared.user_roles ur ON ur.user_id = u.user_id
+     JOIN shared.roles r ON r.role_id = ur.role_id
+     WHERE r.role_name IN ('owner','manager') AND (ur.business = $1 OR ur.business = '*')`,
+    [business]
+  );
+  for (const m of managers) {
+    await notifService.create(client, {
+      userId: m.user_id, business,
+      type: 'campaign_lead',
+      title: `New inquiry — ${campaign.campaign_name}`,
+      body: `${lead.name || lead.phone} submitted an inquiry form`,
+      referenceType: 'campaign_lead', referenceId: lead.lead_id,
+      actionUrl: `/sales-campaigns/${campaign.campaign_id}/orders`,
+    });
+  }
+}
+
+async function notifyStaffOfPendingOrder(client, business, campaign, order, items) {
+  const { rows: managers } = await client.query(
+    `SELECT u.user_id FROM shared.users u
+     JOIN shared.user_roles ur ON ur.user_id = u.user_id
+     JOIN shared.roles r ON r.role_id = ur.role_id
+     WHERE r.role_name IN ('owner','manager') AND (ur.business = $1 OR ur.business = '*')`,
+    [business]
+  );
+  const summary = items.map(i => `${i.product_name} ×${i.quantity}`).join(', ');
+  for (const m of managers) {
+    await notifService.create(client, {
+      userId: m.user_id, business,
+      type: 'campaign_order',
+      title: `New order — ₦${parseFloat(order.total_amount).toLocaleString()}`,
+      body: `${order.customer_name} ordered: ${summary}. Awaiting proof of payment.`,
+      referenceType: 'campaign_order', referenceId: order.order_id,
+      actionUrl: `/sales-campaigns/${order.campaign_id}/orders`,
+    });
+  }
+}
+
+async function notifyStaffProofSubmitted(client, business, campaign, order, proofUrl) {
+  const { rows: managers } = await client.query(
+    `SELECT u.user_id FROM shared.users u
+     JOIN shared.user_roles ur ON ur.user_id = u.user_id
+     JOIN shared.roles r ON r.role_id = ur.role_id
+     WHERE r.role_name IN ('owner','manager') AND (ur.business = $1 OR ur.business = '*')`,
+    [business]
+  );
+  for (const m of managers) {
+    await notifService.create(client, {
+      userId: m.user_id, business,
+      type: 'approval_required',
+      title: `Payment proof received — ${order.order_number}`,
+      body: `${order.customer_name} (${order.customer_phone}) uploaded payment proof. Verify and confirm.`,
+      referenceType: 'campaign_order', referenceId: order.order_id,
+      actionUrl: `/sales-campaigns/${order.campaign_id}/orders`,
+    });
+  }
+}
+
+module.exports = {
+  getPage, trackEvent, submitLead,
+  placeOrder, submitProof,
+  getOrderByToken, handlePaystackConfirmation,
+};
+
+// ── storefront.routes.js ──────────────────────────────────────────────────────
+// PUBLIC routes — no verifyToken, no businessContext middleware.
+// Business key comes from the URL: /c/:business/:slug
+
+const express = require('express');
+const pubRouter = express.Router({ mergeParams: true });
+const { body, param } = require('express-validator');
+const validate = require('../../middleware/validateBody');
+const svc = module.exports;
+
+// GET /api/c/:business/:slug — landing page data
+pubRouter.get('/:business/:slug', async (req, res, next) => {
+  try {
+    const page = await svc.getPage(req.params.business, req.params.slug);
+    res.json(page);
+  } catch(e) { next(e); }
+});
+
+// POST /api/c/:business/:slug/events — analytics tracking (fire-and-forget)
+pubRouter.post('/:business/:slug/events',
+  body('event_type').isString().notEmpty(), validate,
+  async (req, res, next) => {
+    svc.trackEvent(req.params.business, req.params.slug, req.body, req).catch(() => {});
+    res.json({ ok: true });
+  }
+);
+
+// POST /api/c/:business/:slug/leads — inquiry form
+pubRouter.post('/:business/:slug/leads',
+  body('name').optional().isString(),
+  body('phone').optional().isString(),
+  body('email').optional().isEmail(),
+  validate,
+  async (req, res, next) => {
+    try { res.status(201).json(await svc.submitLead(req.params.business, req.params.slug, req.body, req)); }
+    catch(e) { next(e); }
+  }
+);
+
+// POST /api/c/:business/:slug/orders — place order
+pubRouter.post('/:business/:slug/orders',
+  body('customer_name').isString().notEmpty(),
+  body('customer_phone').isString().notEmpty(),
+  body('items').isArray({ min: 1 }),
+  body('payment_method').isIn(['paystack','bank_transfer']),
+  body('fulfilment_type').isIn(['delivery','pickup']),
+  validate,
+  async (req, res, next) => {
+    try { res.status(201).json(await svc.placeOrder(req.params.business, req.params.slug, req.body, req)); }
+    catch(e) { next(e); }
+  }
+);
+
+// POST /api/c/orders/:orderId/proof — upload proof of payment
+pubRouter.post('/orders/:orderId/proof',
+  param('orderId').isUUID(),
+  body('proof_image_url').isURL(),
+  body('business').isString().notEmpty(),  // must pass business in body for routing
+  validate,
+  async (req, res, next) => {
+    try { res.json(await svc.submitProof(req.body.business, req.params.orderId, req.body, req)); }
+    catch(e) { next(e); }
+  }
+);
+
+// GET /api/c/track/:business/:token — order tracking
+pubRouter.get('/track/:business/:token', async (req, res, next) => {
+  try { res.json(await svc.getOrderByToken(req.params.business, req.params.token)); }
+  catch(e) { next(e); }
+});
+
+module.exports.storefrontRouter = pubRouter;

@@ -256,3 +256,97 @@ META_VERIFY_TOKEN=<webhook_verify_token>
 CAMPAIGN_APPROVAL_THRESHOLD=50          # optional
 WA_DAILY_SEND_LIMIT=1000                # optional
 ```
+
+## 9. Sales Campaigns (added this round)
+
+A complete campaign-landing-page + storefront system: admins build campaigns
+in the Hub, public customers visit `/c/:business/:slug` to view and place
+orders, payments go via Paystack or manual bank transfer with proof-of-payment
+upload, and orders flow through pending → proof_submitted → confirmed.
+
+### Migration 000043_sales_campaigns.sql
+- Per-business tables (both `jewelry` and `diffusers`):
+  - `sales_campaigns` (campaign_id, slug, template, status, headline,
+    discount fields, dates, sections JSONB, qr_code_url, ...)
+  - `campaign_products` (per-campaign product overrides + display order)
+  - `campaign_bank_accounts` (bank transfer destinations)
+  - `campaign_orders` (storefront orders with tracking_token,
+    proof_image_url, status pending → proof_submitted → confirmed → dispatched)
+  - `campaign_order_items` (per-order product lines)
+- Shared tables:
+  - `shared.campaign_leads` (inquiry form submissions, public routes can't
+    set business context)
+  - `shared.campaign_analytics` (page views, clicks, scroll depth)
+
+### modules/sales_campaigns/ — new module
+- `campaigns.repository.js` — listCampaigns, findCampaignById,
+  getStorefrontCampaign (joins products + bank_accounts), upsertProduct,
+  removeProduct, addBankAccount, removeBankAccount, createOrder,
+  addOrderItem, findOrderById, findOrderByToken, updateOrderStatus,
+  attachProof, listOrdersForCampaign, recordEvent, recordLead.
+- `admin.service.js` — exposes `adminRouter`; CRUD on campaigns + products
+  + bank accounts, publishCampaign (generates QR code via `qrcode` pkg),
+  expireCampaign, listOrders, confirmOrder (awards loyalty points),
+  cancelOrder. Permissions gate everything on `sales_campaigns` module
+  with the standard view/create/edit/approve/delete actions.
+- `storefront.service.js` — exposes `storefrontRouter`; all routes are
+  PUBLIC (no `verifyToken`). Endpoints: `GET /:business/:slug` (landing
+  page data), `POST /:business/:slug/events` (analytics fire-and-forget),
+  `POST /:business/:slug/leads` (inquiry form), `POST /:business/:slug/orders`
+  (place order — issues tracking_token), `POST /orders/:orderId/proof`
+  (proof-of-payment image URL), `GET /track/:business/:token` (order
+  tracking by token), and `handlePaystackConfirmation(business, orderId)`
+  called from the webhook on confirmed Paystack charges.
+
+### app.js / routes/index.js wiring
+- Public storefront mounted BEFORE `/api` so `verifyToken` never runs:
+  ```
+  app.use("/api/c", storefrontRouter);
+  ```
+- Admin router mounted inside `/api` with `protect` middleware:
+  ```
+  router.use("/sales-campaigns", protect, adminRouter);
+  ```
+
+### integrations/paystack/paystack.webhook.js
+- After the existing invoice-payment loop, the webhook also checks
+  `campaign_orders` (across both business schemas) for a row where
+  `order_id::TEXT = $reference` AND `payment_method = 'paystack'` AND
+  `status = 'pending'`. On match, calls
+  `storefrontService.handlePaystackConfirmation(business, orderId)`.
+- Errors in the campaign-order branch don't break the invoice path —
+  they're logged and the webhook still returns 200 to Paystack.
+
+### jobs/updateCampaignStatuses.js (new) + jobs/index.js
+- Runs `*/5 * * * *`. For each active business:
+  - Auto-activates scheduled campaigns where `start_date <= now()`.
+  - Auto-expires live, non-evergreen campaigns where `end_date < now()`.
+
+### modules/files/files.routes.js (new)
+- `POST /api/files/upload` — public, multer memory storage, 5MB max,
+  PNG/JPEG/WebP/PDF only, rate-limited at 30 uploads / IP / hour.
+- Stores via the existing `lib/storage` abstraction under `proofs/` and
+  returns `{ url }`. Filenames are random hex (16 bytes) so customers
+  can't enumerate a flat S3 listing.
+- Mounted in app.js BEFORE `/api` so no auth runs.
+
+### package.json
+- Added `qrcode@^1.5.3` (used by `admin.publishCampaign` to generate the
+  QR code data URL stored in `campaigns.qr_code_url`).
+
+### Permissions
+- Migration 000043 includes seeds for `sales_campaigns` module:
+  - owner: all actions
+  - manager: view, create, edit, approve
+  - sales: view, create, edit
+  - sales_associate: view
+
+### Caveats
+- The webhook adapter assumes Paystack's `reference` for campaign orders
+  is the order_id UUID itself (because no separate `paystack_reference`
+  column was added on `campaign_orders`). If your frontend chooses a
+  different reference scheme, the webhook query needs updating.
+- The proof-upload endpoint accepts PDFs as well as images. If you
+  prefer images-only, remove `"application/pdf"` from the MIME whitelist
+  in `modules/files/files.routes.js`.
+- Run `npm install` after deploying to pick up the new `qrcode` dep.
