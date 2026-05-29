@@ -22,117 +22,16 @@ router.get("/", can("invoicing", "view"), async (req, res, next) => {
   }
 });
 
-// GET /api/invoicing/:id
-router.get(
-  "/:id",
-  param("id").isUUID(),
-  validate,
-  can("invoicing", "view"),
-  async (req, res, next) => {
-    try {
-      const inv = await service.getById(req.business, req.params.id);
-      if (!inv) return res.status(404).json({ message: "Invoice not found" });
-      res.json(inv);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+// ─── KPI endpoint (MUST be before /:id) ─────────────────────────────────────
+router.get("/kpis", can("invoicing", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.getKpis(req.business));
+  } catch (err) {
+    next(err);
+  }
+});
 
-// POST /api/invoicing — create manual invoice
-router.post(
-  "/",
-  body("contact_id").isUUID(),
-  body("due_date").isISO8601(),
-  body("lines").isArray({ min: 1 }),
-  validate,
-  can("invoicing", "create"),
-  async (req, res, next) => {
-    try {
-      const inv = await service.create(req.business, req.body, req.user);
-      res.status(201).json(inv);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// POST /api/invoicing/:id/send — email / WhatsApp invoice to customer
-router.post(
-  "/:id/send",
-  param("id").isUUID(),
-  validate,
-  can("invoicing", "edit"),
-  async (req, res, next) => {
-    try {
-      await service.send(req.business, req.params.id, req.body, req.user);
-      res.json({ message: "Invoice sent" });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// POST /api/invoicing/:id/payments — record a payment
-router.post(
-  "/:id/payments",
-  param("id").isUUID(),
-  body("amount").isNumeric(),
-  body("payment_method").notEmpty(),
-  validate,
-  can("invoicing", "edit"),
-  async (req, res, next) => {
-    try {
-      const payment = await service.recordPayment(
-        req.business,
-        req.params.id,
-        req.body,
-        req.user,
-      );
-      res.status(201).json(payment);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// POST /api/invoicing/:id/void
-router.post(
-  "/:id/void",
-  param("id").isUUID(),
-  validate,
-  can("invoicing", "delete"),
-  async (req, res, next) => {
-    try {
-      await service.voidInvoice(req.business, req.params.id, req.user);
-      res.json({ message: "Invoice voided" });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// GET /api/invoicing/:id/pdf
-router.get(
-  "/:id/pdf",
-  param("id").isUUID(),
-  validate,
-  can("invoicing", "view"),
-  async (req, res, next) => {
-    try {
-      const pdfBuffer = await service.generatePDF(req.business, req.params.id);
-      res.set({
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "inline",
-      });
-      res.send(pdfBuffer);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
-// ─── CREDIT NOTES ────────────────────────────────────────────
+// ─── CREDIT NOTES (MUST be before /:id) ─────────────────────────────────────
 //   GET    /invoicing/credit-notes
 //   GET    /invoicing/credit-notes/:id
 //   POST   /invoicing/credit-notes
@@ -223,6 +122,136 @@ router.post(
       );
     } catch (e) {
       next(e);
+    }
+  },
+);
+
+// ─── /:id routes ─────────────────────────────────────────────────────────────
+
+// GET /api/invoicing/:id
+router.get(
+  "/:id",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "view"),
+  async (req, res, next) => {
+    try {
+      const inv = await service.getById(req.business, req.params.id);
+      if (!inv) return res.status(404).json({ message: "Invoice not found" });
+      res.json(inv);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/invoicing — create manual invoice
+router.post(
+  "/",
+  body("contact_id").isUUID(),
+  body("due_date").isISO8601(),
+  body("lines").isArray({ min: 1 }),
+  validate,
+  can("invoicing", "create"),
+  async (req, res, next) => {
+    try {
+      const inv = await service.create(req.business, req.body, req.user);
+      res.status(201).json(inv);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/invoicing/:id/send — email / WhatsApp invoice to customer
+router.post(
+  "/:id/send",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "edit"),
+  async (req, res, next) => {
+    try {
+      await service.send(req.business, req.params.id, req.body, req.user);
+      res.json({ message: "Invoice sent" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/invoicing/:id/payments — record a payment
+router.post(
+  "/:id/payments",
+  param("id").isUUID(),
+  body("amount").isNumeric(),
+  body("payment_method").notEmpty(),
+  validate,
+  can("invoicing", "edit"),
+  async (req, res, next) => {
+    try {
+      const payment = await service.recordPayment(
+        req.business,
+        req.params.id,
+        req.body,
+        req.user,
+      );
+      res.status(201).json(payment);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/invoicing/:id/void
+router.post(
+  "/:id/void",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "delete"),
+  async (req, res, next) => {
+    try {
+      await service.voidInvoice(req.business, req.params.id, req.user);
+      res.json({ message: "Invoice voided" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/invoicing/:id/write-off — manager write-off with bad debt journal
+router.post(
+  "/:id/write-off",
+  param("id").isUUID(),
+  body("reason").isString().notEmpty(),
+  validate,
+  can("invoicing", "approve"), // manager/owner only
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.writeOff(req.business, req.params.id, req.body, req.user),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/invoicing/:id/pdf
+router.get(
+  "/:id/pdf",
+  param("id").isUUID(),
+  validate,
+  can("invoicing", "view"),
+  async (req, res, next) => {
+    try {
+      const pdfBuffer = await service.generatePDF(req.business, req.params.id);
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+      });
+      res.send(pdfBuffer);
+    } catch (err) {
+      next(err);
     }
   },
 );

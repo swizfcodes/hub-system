@@ -2,10 +2,12 @@
 
 const express = require("express");
 const router = express.Router();
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { verifyToken } = require("../../middleware/auth");
+const { can } = require("../../middleware/permissions");
 const authService = require("./auth.service");
+const inviteService = require("./invite.service");
 
 // POST /api/auth/login
 router.post(
@@ -96,6 +98,120 @@ router.post(
         req.body.newPassword,
       );
       res.json({ message: "Password changed successfully" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Invite tokens ──────────────────────────────────────────────
+// POST /api/auth/invite — generate + email an invite (admin only)
+router.post(
+  "/invite",
+  verifyToken,
+  can("settings", "approve"),
+  body("email").isEmail().normalizeEmail(),
+  body("role_id").isUUID(),
+  body("businesses").isArray(),
+  body("display_name").isString().notEmpty(),
+  body("job_title").optional().isString(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.status(201).json(await inviteService.createInvite(req.user, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/auth/invite/:token — verify token (public)
+router.get("/invite/:token", async (req, res, next) => {
+  try {
+    res.json(await inviteService.verifyInvite(req.params.token));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/invite/:token/accept — accept invite (public)
+router.post(
+  "/invite/:token/accept",
+  body("password").isLength({ min: 12 }),
+  body("display_name").isString().notEmpty(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(
+        await inviteService.acceptInvite(req.params.token, req.body),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Active sessions ────────────────────────────────────────────
+// GET /api/auth/sessions/:userId — list active sessions (self or admin)
+router.get(
+  "/sessions/:userId",
+  verifyToken,
+  param("userId").isUUID(),
+  validate,
+  async (req, res, next) => {
+    try {
+      const isSelf = req.params.userId === req.user.user_id;
+      if (!isSelf) {
+        // Only owner/manager may view other users' sessions.
+        const allowed = ["owner", "manager"];
+        if (!allowed.includes(req.user.role_name)) {
+          return res
+            .status(403)
+            .json({ error: "Not permitted to view other users' sessions" });
+        }
+      }
+      res.json(await authService.listActiveSessions(req.params.userId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /api/auth/sessions/:userId/:tokenId — force-logout one session
+router.delete(
+  "/sessions/:userId/:tokenId",
+  verifyToken,
+  can("settings", "approve"),
+  param("userId").isUUID(),
+  param("tokenId").isUUID(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(
+        await authService.revokeSession(
+          req.params.userId,
+          req.params.tokenId,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /api/auth/sessions/:userId — force-logout ALL sessions
+router.delete(
+  "/sessions/:userId",
+  verifyToken,
+  can("settings", "approve"),
+  param("userId").isUUID(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(
+        await authService.revokeAllSessions(req.params.userId, req.user),
+      );
     } catch (err) {
       next(err);
     }

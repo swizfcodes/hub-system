@@ -1,11 +1,12 @@
 "use strict";
 
 const { withSharedContext } = require("../../config/db");
-const { emitToUser } = require("../../config/sockets");
+const { emitToBusiness } = require("../../config/sockets");
 const logger = require("../../config/logger");
 const whatsapp = require("./adapters/whatsapp");
 const instaDM = require("./adapters/instagram-dm");
 const fbMsgr = require("./adapters/facebook-messenger");
+const smtp = require("./adapters/smtp");
 
 // Route inbound messages to the right Smartcomm channel
 async function handleInbound({ source, entry, messaging }) {
@@ -18,6 +19,8 @@ async function handleInbound({ source, entry, messaging }) {
       normalized = instaDM.parseInbound(messaging);
     } else if (source === "page") {
       normalized = fbMsgr.parseInbound(messaging);
+    } else if (source === "email") {
+      normalized = smtp.parseInbound(messaging); // messaging = email payload
     }
 
     if (!normalized) return;
@@ -87,8 +90,19 @@ async function handleInbound({ source, entry, messaging }) {
         [channelId, contactId, normalized.text, normalized.externalRef],
       );
 
-      // Emit real-time notification to business room
-      emitToUser("business:jewelry", "message:new", {
+      // Look up the channel's business — the incoming-payload doesn't
+      // tell us which brand owns the customer, but the channel row does
+      // (it was tagged at channel creation in the contact-lookup step).
+      const { rows: [ch] } = await client.query(
+        `SELECT business FROM shared.message_channels WHERE channel_id = $1`,
+        [channelId],
+      );
+      const businessRoom = ch?.business
+        ? `business:${ch.business}`
+        : "business:shared";
+
+      // Emit real-time notification to that business's socket room.
+      emitToBusiness(businessRoom, "message:new", {
         channelId,
         messageId: msg.rows[0].message_id,
         source,
@@ -100,13 +114,19 @@ async function handleInbound({ source, entry, messaging }) {
 }
 
 // Send a reply back to the customer via the correct channel
-async function sendReply({ contactId, channelId, text, source }) {
+async function sendReply({ contactId, channelId, text, source, emailMeta }) {
   if (source === "whatsapp_business_account" || source === "whatsapp") {
     await whatsapp.sendMessage({ to: contactId, text });
   } else if (source === "instagram") {
     await instaDM.sendMessage({ recipientId: contactId, text });
   } else if (source === "page") {
     await fbMsgr.sendMessage({ recipientId: contactId, text });
+  } else if (source === "email") {
+    await smtp.sendChannelMessage({
+      to: contactId, // customer email
+      subject: emailMeta?.subject || "Re: Your enquiry",
+      html: `<p>${text}</p>`,
+    });
   }
 }
 

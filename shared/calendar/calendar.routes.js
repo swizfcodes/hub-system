@@ -137,4 +137,77 @@ router.delete(
   },
 );
 
+// ─── PARTICIPANTS ────────────────────────────────────────────
+
+// GET /calendar/events/:id/participants
+router.get(
+  "/events/:id/participants",
+  param("id").isUUID(),
+  validate,
+  can("calendar", "view"),
+  async (req, res, next) => {
+    try {
+      res.json({ data: await service.listParticipants(req.params.id) });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// POST /calendar/events/:id/participants
+router.post(
+  "/events/:id/participants",
+  param("id").isUUID(),
+  body("user_id").optional().isUUID(),
+  body("contact_id").optional().isUUID(),
+  validate,
+  can("calendar", "edit"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await service.addParticipant(req.params.id, req.body, req.user),
+        );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// DELETE /calendar/events/:id/participants/:pid
+router.delete(
+  "/events/:id/participants/:pid",
+  param("id").isUUID(),
+  param("pid").isUUID(),
+  validate,
+  can("calendar", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.removeParticipant(req.params.pid));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// POST /calendar/events/:id/participants/:pid/respond — RSVP
+router.post(
+  "/events/:id/participants/:pid/respond",
+  param("id").isUUID(),
+  param("pid").isUUID(),
+  body("status").isIn(["accepted", "declined", "tentative"]),
+  validate,
+  can("calendar", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.respondToEvent(req.params.pid, req.body.status),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 module.exports = router;

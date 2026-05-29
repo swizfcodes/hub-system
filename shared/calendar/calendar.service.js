@@ -327,6 +327,81 @@ function validateEventInput(data) {
   }
 }
 
+async function listParticipants(eventId) {
+  return withSharedContext(async (client) => {
+    const { rows } = await client.query(
+      `SELECT ep.participant_id, ep.status, ep.is_organiser, ep.responded_at,
+              ep.user_id, ep.contact_id,
+              COALESCE(c.display_name, cc.display_name) AS display_name
+       FROM shared.event_participants ep
+       LEFT JOIN shared.users u ON u.user_id = ep.user_id
+       LEFT JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
+       LEFT JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       LEFT JOIN shared.contacts cc ON cc.contact_id = ep.contact_id
+       WHERE ep.event_id = $1
+       ORDER BY ep.is_organiser DESC, display_name`,
+      [eventId],
+    );
+    return rows;
+  });
+}
+
+async function addParticipant(eventId, { user_id, contact_id }, user) {
+  return withSharedContext(async (client) => {
+    const {
+      rows: [p],
+    } = await client.query(
+      `INSERT INTO shared.event_participants (event_id, user_id, contact_id)
+       VALUES ($1,$2,$3)
+       ON CONFLICT DO NOTHING
+       RETURNING *`,
+      [eventId, user_id || null, contact_id || null],
+    );
+
+    // Notify an invited internal user (skip self-invites).
+    if (user_id && user_id !== user.user_id) {
+      const event = await repo.findById(client, eventId);
+      if (event) {
+        await notifService.create(client, {
+          userId: user_id,
+          business: event.business,
+          type: "calendar_invite",
+          title: `You're invited: ${event.title}`,
+          referenceType: "calendar_event",
+          referenceId: eventId,
+          actionUrl: `/calendar?event=${eventId}`,
+        });
+      }
+    }
+    return p;
+  });
+}
+
+async function removeParticipant(participantId) {
+  return withSharedContext(async (client) => {
+    await client.query(
+      `DELETE FROM shared.event_participants WHERE participant_id = $1`,
+      [participantId],
+    );
+    return { deleted: true };
+  });
+}
+
+async function respondToEvent(participantId, status) {
+  return withSharedContext(async (client) => {
+    const {
+      rows: [p],
+    } = await client.query(
+      `UPDATE shared.event_participants
+       SET status = $1, responded_at = now()
+       WHERE participant_id = $2
+       RETURNING *`,
+      [status, participantId],
+    );
+    return p;
+  });
+}
+
 module.exports = {
   listInRange,
   getEvent,
@@ -335,5 +410,9 @@ module.exports = {
   updateEvent,
   deleteEvent,
   findUpcomingForReminders,
+  listParticipants,
+  addParticipant,
+  removeParticipant,
+  respondToEvent,
   VALID_EVENT_TYPES,
 };

@@ -411,8 +411,8 @@ async function listProductImages(client, productId) {
   const { rows } = await client.query(
     `SELECT pi.image_id, pi.product_id, pi.document_id, pi.is_primary,
             pi.display_order, pi.alt_text, pi.created_at,
-            d.original_filename, d.mime_type, d.file_size_bytes,
-            d.storage_path, d.content_hash
+            d.mime_type, d.file_size_bytes,
+            d.file_path, d.content_hash
      FROM product_images pi
      JOIN shared.documents d ON d.document_id = pi.document_id
      WHERE pi.product_id = $1

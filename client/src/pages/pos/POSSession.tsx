@@ -306,7 +306,7 @@ export default function POSSession() {
           currency={currency}
           onNewSale={handleNewSale}
           onClose={handleNewSale}
-          onInvoice={(invoiceId) => navigate(`/sales/invoices/${invoiceId}`)}
+          onInvoice={(invoiceId) => navigate(`/invoices/${invoiceId}`)}
         />
       )}
 

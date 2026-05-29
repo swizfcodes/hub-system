@@ -94,6 +94,28 @@ function start() {
     "0 0 1 * *",
     require("./sendPartnerPaymentReminders"),
   );
+  register(
+    "fetchSocialMetrics",
+    "0 3 * * *",
+    require("./fetchSocialMetrics"),
+  );
+  // Weekly digest (Mondays 7am) and monthly digest (1st 7am).
+  register(
+    "sendScheduledReportsWeekly",
+    "0 7 * * 1",
+    require("./sendScheduledReports"),
+  );
+  register(
+    "sendScheduledReportsMonthly",
+    "0 7 1 * *",
+    require("./sendScheduledReports"),
+  );
+  // Campaign scheduler — fires queued campaigns whose scheduled_at <= now().
+  register(
+    "runScheduledCampaigns",
+    "* * * * *",
+    require("./runScheduledCampaigns"),
+  );
 
   jobs.forEach(({ name, task }) => {
     task.start();

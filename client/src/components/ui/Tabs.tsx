@@ -6,6 +6,7 @@ export interface Tab {
   label: string;
   icon?: React.ReactNode;
   badge?: number | string;
+  disabled?: boolean;
 }
 
 export interface TabsProps {

@@ -57,7 +57,6 @@ const TransfersPage         = lazy(() => import('@pages/stock/TransfersPage'));
 const SalesHome             = lazy(() => import('@pages/sales/SalesHome'));
 const QuoteDetail           = lazy(() => import('@pages/sales/QuoteDetail'));
 const OrderDetail           = lazy(() => import('@pages/sales/OrderDetail'));
-const InvoiceDetail         = lazy(() => import('@pages/sales/InvoiceDetail'));
 
 // POS module — terminal selector + session history share the AppShell
 const POSTerminals          = lazy(() => import('@pages/pos/POSTerminals'));
@@ -65,6 +64,76 @@ const POSSessions           = lazy(() => import('@pages/pos/POSSessions'));
 
 // POS session — fullscreen, rendered OUTSIDE AppShell (no sidebar/topbar)
 const POSSession            = lazy(() => import('@pages/pos/POSSession'));
+
+// Invoicing
+const InvoicesHome  = lazy(() => import('@pages/invoicing/InvoicesHome'));
+const InvoiceDetail = lazy(() => import('@pages/invoicing/InvoiceDetail'));
+
+// Logistics
+const LogisticsHome  = lazy(() => import('@pages/logistics/LogisticsHome'));
+const DeliveryDetail = lazy(() => import('@pages/logistics/DeliveryDetail'));
+
+// Dashboard
+const DashboardPage = lazy(() => import('@pages/dashboard/DashboardPage'));
+
+// Accounting
+const AccountingDashboard = lazy(() => import('@pages/accounting/AccountingDashboard'));
+const ChartOfAccounts     = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ChartOfAccounts })));
+const JournalsPage        = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.JournalsPage })));
+const AcctReportsPage     = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReportsPage })));
+const ReconciliationPage  = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReconciliationPage })));
+const FiscalPeriodsPage   = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.FiscalPeriodsPage })));
+
+// Expenses
+const ExpensesHome  = lazy(() => import('@pages/expenses/ExpensesHome'));
+const ExpenseDetail = lazy(() => import('@pages/expenses/ExpenseDetail'));
+
+// Payroll
+const PayrollHome      = lazy(() => import('@pages/payroll/PayrollHome'));
+const PayrollRunDetail = lazy(() => import('@pages/payroll/PayrollRunDetail'));
+const PayslipDetail    = lazy(() => import('@pages/payroll/PayslipDetail'));
+
+// Loyalty
+const LoyaltyDashboard   = lazy(() => import('@pages/loyalty/LoyaltyDashboard'));
+const ContactLoyaltyPage = lazy(() => import('@pages/loyalty/ContactLoyalty'));
+const TiersManager       = lazy(() => import('@pages/loyalty/TiersManager'));
+
+// Social
+const SocialHome = lazy(() => import('@pages/social/SocialHome'));
+const PostDetail = lazy(() => import('@pages/social/PostDetail'));
+
+// Reports
+const ReportsHome  = lazy(() => import('@pages/reports/ReportsHome'));
+const ReportViewer = lazy(() => import('@pages/reports/ReportViewer'));
+const SavedReports = lazy(() => import('@pages/reports/SavedReports'));
+
+// Security
+const SecurityDashboard = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.SecurityDashboard })));
+const UsersPage         = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.UsersPage })));
+const RolesPage         = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.RolesPage })));
+const AuditLogPage      = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.AuditLogPage })));
+const AcceptInvitePage  = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.AcceptInvitePage })));
+
+// Calendar, Tasks & Workspace
+const CalendarPage  = lazy(() => import('@pages/calendar/CalendarPage'));
+const TasksPage     = lazy(() => import('@pages/tasks/TasksPage'));
+const WorkspacePage = lazy(() => import('@pages/workspace/WorkspacePage'));
+
+// Retail Partners
+const RetailPartnersHome = lazy(() => import('@pages/retail-partners/RetailPartnersHome'));
+const PartnerDetail      = lazy(() => import('@pages/retail-partners/PartnerDetail'));
+
+// Public (no auth wrapper)
+const DeliverySignPage = lazy(() => import('@pages/sign/DeliverySignPage'));
+
+// Marketing — Campaigns
+const CampaignsHome    = lazy(() => import('@pages/campaigns/CampaignsHome'));
+const CampaignBuilder  = lazy(() => import('@pages/campaigns/CampaignBuilder'));
+const CampaignDetail   = lazy(() => import('@pages/campaigns/CampaignDetail'));
+const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'));
+
+// SmartComm Messaging
+const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
 
 function PageFallback() {
   return (
@@ -82,6 +151,8 @@ export default function App() {
         {/* Public — outside the shell */}
         <Route path="/login" element={<Login />} />
         <Route path="/rfq/:token" element={<SupplierPortal />} />
+        <Route path="/invite/:token" element={<AcceptInvitePage />} />
+        <Route path="/sign/:token" element={<DeliverySignPage />} />
 
         {/* POS active session — fullscreen, intentionally outside AppShell */}
         <Route path="/pos/session/:sessionId" element={<POSSession />} />
@@ -146,41 +217,82 @@ export default function App() {
           <Route path="/sales/quotations/:id"     element={<QuoteDetail />} />
           <Route path="/sales/orders/:id"         element={<OrderDetail />} />
           <Route path="/sales/invoices/:id"       element={<InvoiceDetail />} />
-          {/* Legacy /invoicing redirect */}
-          <Route path="/invoicing"   element={<Navigate to="/sales" replace />} />
 
           {/* POS */}
           <Route path="/pos"          element={<POSTerminals />} />
           <Route path="/pos/sessions" element={<POSSessions />} />
 
-          {/* Placeholders for upcoming modules */}
-          <Route path="/dashboard"       element={<Placeholder title="Dashboard" />} />
-          <Route path="/logistics"       element={<Placeholder title="Logistics" />} />
-          <Route path="/accounting"      element={<Placeholder title="Accounting" />} />
-          <Route path="/expenses"        element={<Placeholder title="Expenses" />} />
-          <Route path="/payroll"         element={<Placeholder title="Payroll" />} />
-          <Route path="/messaging"       element={<Placeholder title="Messaging" />} />
-          <Route path="/campaigns"       element={<Placeholder title="Campaigns" />} />
-          <Route path="/social"          element={<Placeholder title="Social" />} />
-          <Route path="/loyalty"         element={<Placeholder title="Loyalty" />} />
-          <Route path="/retail-partners" element={<Placeholder title="Retail Partners" />} />
-          <Route path="/calendar"        element={<Placeholder title="Calendar" />} />
-          <Route path="/tasks"           element={<Placeholder title="Tasks" />} />
-          <Route path="/reports"         element={<Placeholder title="Reports" />} />
-          <Route path="/security"        element={<Placeholder title="Security & Audit" />} />
+          {/* Invoicing */}
+          <Route path="/invoicing"     element={<InvoicesHome />} />
+          <Route path="/invoicing/:id" element={<InvoiceDetail />} />
+
+          {/* Logistics */}
+          <Route path="/logistics"     element={<LogisticsHome  />} />
+          <Route path="/logistics/:id" element={<DeliveryDetail />} />
+
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* Workspace / Calendar / Tasks */}
+          <Route path="/workspace" element={<WorkspacePage />} />
+          <Route path="/calendar"  element={<CalendarPage  />} />
+          <Route path="/tasks"     element={<TasksPage     />} />
+
+          {/* Accounting */}
+          <Route path="/accounting"                element={<AccountingDashboard />} />
+          <Route path="/accounting/accounts"       element={<ChartOfAccounts />} />
+          <Route path="/accounting/journals"       element={<JournalsPage />} />
+          <Route path="/accounting/reports"        element={<AcctReportsPage />} />
+          <Route path="/accounting/reconciliation" element={<ReconciliationPage />} />
+          <Route path="/accounting/periods"        element={<FiscalPeriodsPage />} />
+
+          {/* Expenses */}
+          <Route path="/expenses"     element={<ExpensesHome />} />
+          <Route path="/expenses/:id" element={<ExpenseDetail />} />
+
+          {/* Payroll */}
+          <Route path="/payroll"              element={<PayrollHome />} />
+          <Route path="/payroll/runs/:id"     element={<PayrollRunDetail />} />
+          <Route path="/payroll/payslips/:id" element={<PayslipDetail />} />
+
+          {/* Loyalty */}
+          <Route path="/loyalty"                    element={<LoyaltyDashboard />} />
+          <Route path="/loyalty/tiers"              element={<TiersManager />} />
+          <Route path="/loyalty/contact/:contactId" element={<ContactLoyaltyPage />} />
+
+          {/* Social */}
+          <Route path="/social"     element={<SocialHome />} />
+          <Route path="/social/:id" element={<PostDetail />} />
+
+          {/* Campaigns — /new and /settings MUST precede /:id or
+              React Router will match "new" as a campaign id. */}
+          <Route path="/campaigns"          element={<CampaignsHome    />} />
+          <Route path="/campaigns/new"      element={<CampaignBuilder  />} />
+          <Route path="/campaigns/settings" element={<CampaignSettings />} />
+          <Route path="/campaigns/:id"      element={<CampaignDetail   />} />
+          <Route path="/campaigns/:id/edit" element={<CampaignBuilder  />} />
+
+          {/* SmartComm Messaging */}
+          <Route path="/messaging" element={<MessagingPage />} />
+
+          {/* Reports — /reports/saved MUST precede /:family/:reportType */}
+          <Route path="/reports"                     element={<ReportsHome />} />
+          <Route path="/reports/saved"               element={<SavedReports />} />
+          <Route path="/reports/:family/:reportType" element={<ReportViewer />} />
+
+          {/* Security & Audit */}
+          <Route path="/security"       element={<SecurityDashboard />} />
+          <Route path="/security/users" element={<UsersPage />} />
+          <Route path="/security/roles" element={<RolesPage />} />
+          <Route path="/security/audit" element={<AuditLogPage />} />
+
+          {/* Retail Partners */}
+          <Route path="/retail-partners"     element={<RetailPartnersHome />} />
+          <Route path="/retail-partners/:id" element={<PartnerDetail />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
-  );
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="px-4 sm:px-8 py-10 max-w-3xl mx-auto text-center">
-      <h1 className="font-display text-3xl sm:text-5xl text-orika-cream mb-3">{title}</h1>
-      <p className="text-sm text-orika-cloud">This module is on the build roadmap. Settings is shipped and ready.</p>
-    </div>
   );
 }

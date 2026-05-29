@@ -4,6 +4,7 @@ export type TaskStatus = 'inbox' | 'today' | 'this_week' | 'this_month' | 'later
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface Task {
+  is_personal?: boolean;
   task_id: string;
   business: string;
   title: string;

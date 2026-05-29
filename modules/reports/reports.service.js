@@ -9,6 +9,8 @@ const financeReport = require("./finance.report");
 const stockReport = require("./stock.report");
 const payrollReport = require("./payroll.report");
 const deliveryReport = require("./delivery.report");
+const purchasesReport = require("./purchases.report");
+const attendanceReport = require("./attendance.report");
 const repo = require("./reports.repository");
 
 // ─────────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ const REPORT_FAMILIES = {
   stock: stockReport,
   payroll: payrollReport,
   delivery: deliveryReport,
+  purchases: purchasesReport,
+  attendance: attendanceReport,
 };
 
 const SUPPORTED_FORMATS = ["json", "csv", "pdf", "excel"];

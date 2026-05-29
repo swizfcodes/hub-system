@@ -64,8 +64,23 @@ app.use(requestLogger);
 
 // ── Rate limiting (general) ───────────────────────────────
 app.use("/api", rateLimiter.general);
+
 // ---- cookies -------
 app.use(cookieParser());
+
+// ── Public signing routes (proof-of-delivery) — NO auth middleware ────────────
+// Must be registered before /api so verifyToken is never applied.
+app.use("/sign", require("./modules/logistics/sign/sign.routes"));
+
+// ── Public campaign tracking routes — NO auth middleware ─────────────────────
+// Hit by email clients (open pixel, click redirect, unsubscribe links)
+// with no JWT. Mounted on /api/campaigns *before* the authenticated
+// /api router so the public tracking endpoints resolve first.
+app.use(
+  "/api/campaigns",
+  require("./modules/campaigns/campaigns.public.routes"),
+);
+
 // ── Routes ───────────────────────────────────────────────
 app.use("/api", routes);
 

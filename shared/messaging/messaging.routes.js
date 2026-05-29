@@ -197,4 +197,75 @@ router.post(
   },
 );
 
+// ─── THREAD ASSIGNMENT ─────────────────────────────────────────
+
+router.patch(
+  "/channels/:id/assign",
+  param("id").isUUID(),
+  body("assigned_to").optional({ nullable: true }).isUUID(),
+  body("handoff_note").optional().isString(),
+  validate,
+  can("messaging", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.assignThread(req.params.id, req.body, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.patch(
+  "/channels/:id/resolve",
+  param("id").isUUID(),
+  validate,
+  can("messaging", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.resolveThread(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ─── EMOJI REACTIONS ───────────────────────────────────────────
+
+router.post(
+  "/messages/:id/react",
+  param("id").isUUID(),
+  body("emoji").isString().notEmpty(),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.toggleReaction(req.params.id, req.body.emoji, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ─── CUSTOMER 360 ──────────────────────────────────────────────
+
+router.get(
+  "/customer-360/:contactId",
+  param("contactId").isUUID(),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.getCustomer360(req.params.contactId, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 module.exports = router;

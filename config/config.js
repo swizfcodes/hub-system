@@ -10,6 +10,11 @@ require("dotenv").config({
 });
 
 const config = {
+  // Fixed UUID used as posted_by for machine-generated journal entries
+  // (e.g. payment-gateway webhooks). Must exist in shared.users — seeded by
+  // migration 000029_accounting_expansion.sql.
+  systemUserId:
+    process.env.SYSTEM_USER_ID || "00000000-0000-0000-0000-000000000001",
   app: {
     env: process.env.NODE_ENV || "development",
     port: parseInt(process.env.PORT || "3000"),
@@ -17,6 +22,10 @@ const config = {
     jwtExpiry: process.env.JWT_EXPIRY || "24h",
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || "7d",
+    // Public base URL of the Hub frontend — used in invite/onboarding links.
+    hubBaseUrl:
+      process.env.HUB_BASE_URL ||
+      (process.env.ALLOWED_ORIGINS || "http://localhost:7000").split(",")[0],
     allowedOrigins: (
       process.env.ALLOWED_ORIGINS || "http://localhost:7000"
     ).split(","),
@@ -107,7 +116,15 @@ const config = {
 
   whatsapp: {
     apiToken: process.env.WHATSAPP_API_TOKEN,
+    // Legacy single phone-number id — kept for backward compatibility with
+    // single-brand callers. Multi-brand callers should use phoneNumbers.
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    phoneNumbers: {
+      jewelry:   process.env.WHATSAPP_PHONE_ID_JEWELRY
+                 || process.env.WHATSAPP_PHONE_NUMBER_ID,
+      diffusers: process.env.WHATSAPP_PHONE_ID_DIFFUSERS
+                 || process.env.WHATSAPP_PHONE_NUMBER_ID,
+    },
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
     baseUrl: "https://graph.facebook.com/v18.0",
   },

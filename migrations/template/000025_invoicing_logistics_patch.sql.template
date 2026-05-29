@@ -1,0 +1,54 @@
+-- ============================================================
+-- Invoicing & Logistics Patch Migration
+-- Apply to BOTH schemas: jewelry and diffusers
+-- ============================================================
+
+-- ── INVOICING ────────────────────────────────────────────────
+
+-- COA: Bad Debt Expense account (required by write-off journal)
+INSERT INTO {{BUSINESS}}.chart_of_accounts
+  (account_code, account_name, account_type, account_subtype, is_system)
+VALUES
+  ('6000', 'Bad Debt Expense', 'expense', 'operating_expense', true)
+ON CONFLICT (account_code) DO NOTHING;
+
+-- ── LOGISTICS ────────────────────────────────────────────────
+
+-- 1. Add 'relay' to courier CHECK constraints
+ALTER TABLE {{BUSINESS}}.deliveries
+  DROP CONSTRAINT IF EXISTS deliveries_courier_check;
+
+ALTER TABLE {{BUSINESS}}.courier_webhooks
+  DROP CONSTRAINT IF EXISTS courier_webhooks_courier_check;
+
+ALTER TABLE {{BUSINESS}}.deliveries
+  ADD CONSTRAINT deliveries_courier_check
+  CHECK (courier IN ('relay', 'chowdeck', 'gigl', 'manual'));
+
+ALTER TABLE {{BUSINESS}}.courier_webhooks
+  ADD CONSTRAINT courier_webhooks_courier_check
+  CHECK (courier IN ('relay', 'chowdeck', 'gigl'));
+
+-- 2. Signature columns on deliveries
+ALTER TABLE {{BUSINESS}}.deliveries
+  ADD COLUMN IF NOT EXISTS signature_token    TEXT        UNIQUE,
+  ADD COLUMN IF NOT EXISTS customer_signature TEXT,
+  ADD COLUMN IF NOT EXISTS driver_signature   TEXT,
+  ADD COLUMN IF NOT EXISTS customer_signed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS driver_signed_at   TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS token_expires_at   TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS signed_at          TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_{{BUSINESS}}_deliveries_signature_token
+  ON {{BUSINESS}}.deliveries (signature_token)
+  WHERE signature_token IS NOT NULL;
+
+-- 3. Business column on deliveries (used by sign service for multi-BUSINESS lookup)
+ALTER TABLE {{BUSINESS}}.deliveries
+  ADD COLUMN IF NOT EXISTS business TEXT NOT NULL DEFAULT '{{BUSINESS}}';
+
+-- ── USAGE ───────────────────────────────────────────────────
+-- Run for each BUSINESS:
+--   psql -v BUSINESS=jewelry  -f invoicing_logistics_patch.sql
+--   psql -v BUSINESS=diffusers -f invoicing_logistics_patch.sql
+-- Or use the app's migrate script with {{BUSINESS}} substitution.

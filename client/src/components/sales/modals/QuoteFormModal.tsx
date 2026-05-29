@@ -17,7 +17,7 @@ import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { cn } from '@lib/cn';
 import { ContactSearchInput } from '@components/shared/ContactSearchInput';
-import type { Contact } from '@services/contacts';
+import type { Contact } from '@typedefs/contacts';
 import { api } from '@services/api';
 
 interface Props {

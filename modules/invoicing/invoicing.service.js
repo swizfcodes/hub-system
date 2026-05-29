@@ -229,6 +229,48 @@ async function postSaleCOGSJournal(client, business, invoice, invoiceLines) {
   });
 }
 
+// Shared helper — posts the cash-collection journal for an invoice payment.
+//   DR  Bank / Cash / AR-settlement account   amount
+//     CR  Accounts Receivable (1310)            amount
+// Reused by recordPayment (manual) and the payment-gateway webhooks once a
+// pending gateway payment is confirmed. Posted via journalService.postEntry
+// so it gets DR=CR validation and fiscal-period stamping.
+async function postPaymentJournal(client, { payment, invoiceNumber, userId }) {
+  const methodMap = {
+    bank_transfer: "1210",
+    cash: "1100",
+    pos_card: "1210",
+    paystack: "1210", // assume same-day settlement
+    flutterwave: "1210",
+  };
+  const bankCode = methodMap[payment.payment_method] || "1210";
+  const [bankAcc, arAcc] = await Promise.all([
+    journalService.getAccountId(client, bankCode),
+    journalService.getAccountId(client, "1310"),
+  ]);
+  if (!bankAcc || !arAcc) {
+    logger.warn(
+      `[invoicing] payment journal skipped — missing COA (bank ${bankCode} / AR 1310)`,
+    );
+    return;
+  }
+  const amount = parseFloat(payment.amount);
+  await journalService.postEntry(client, {
+    entryDate:
+      (payment.payment_date &&
+        new Date(payment.payment_date).toISOString().slice(0, 10)) ||
+      new Date().toISOString().slice(0, 10),
+    description: `Payment received — ${invoiceNumber || payment.invoice_id}`,
+    referenceType: "invoice_payment",
+    referenceId: payment.payment_id,
+    postedBy: userId,
+    lines: [
+      { account_id: bankAcc, debit: amount, credit: 0 },
+      { account_id: arAcc, debit: 0, credit: amount },
+    ],
+  });
+}
+
 async function recordPayment(business, invoiceId, data, user) {
   let contactId = null;
 
@@ -247,6 +289,20 @@ async function recordPayment(business, invoiceId, data, user) {
       userId: user.user_id,
       notes: data.notes,
     });
+
+    // Recalculate invoice amount_paid and status.
+    await repo.updateAmountPaid(client, invoiceId);
+
+    // Post the cash collection journal: DR Bank/Cash, CR Accounts Receivable.
+    // Only for confirmed payments — gateway payments pending confirmation are
+    // posted by their webhook once confirmed (see postPaymentJournal).
+    if (data.is_confirmed !== false) {
+      await postPaymentJournal(client, {
+        payment: p,
+        invoiceNumber: inv?.invoice_number,
+        userId: user.user_id,
+      });
+    }
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -333,6 +389,22 @@ async function voidInvoice(business, invoiceId, user) {
       throw Object.assign(new Error("Cannot void this invoice"), {
         status: 400,
       });
+
+    // Reverse the original revenue journal so AR and revenue don't linger.
+    const {
+      rows: [je],
+    } = await client.query(
+      `SELECT entry_id FROM journal_entries
+       WHERE reference_type = 'invoice' AND reference_id = $1 AND is_reversed = false
+       LIMIT 1`,
+      [invoiceId],
+    );
+    if (je) {
+      await journalService.reverseEntry(client, {
+        entryId: je.entry_id,
+        postedBy: user.user_id,
+      });
+    }
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -576,14 +648,140 @@ async function setCreditNoteApplied(business, creditNoteId, status, user) {
   });
 }
 
+async function getKpis(business) {
+  return withBusinessContext(business, async (client) => {
+    const {
+      rows: [kpis],
+    } = await client.query(
+      `SELECT
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided') AND is_deleted = false
+         ), 0) AS total_outstanding,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status = 'overdue' AND is_deleted = false
+         ), 0) AS total_overdue,
+
+         (SELECT COALESCE(SUM(ip.amount), 0)
+          FROM invoice_payments ip
+          JOIN invoices i ON i.invoice_id = ip.invoice_id
+          WHERE ip.is_confirmed = true
+            AND date_trunc('month', ip.created_at) = date_trunc('month', now())
+            AND i.is_deleted = false
+         ) AS collected_this_month,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided')
+             AND due_date >= CURRENT_DATE
+             AND is_deleted = false
+         ), 0) AS bucket_current,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided')
+             AND due_date BETWEEN CURRENT_DATE - 30 AND CURRENT_DATE - 1
+             AND is_deleted = false
+         ), 0) AS bucket_1_30,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided')
+             AND due_date BETWEEN CURRENT_DATE - 60 AND CURRENT_DATE - 31
+             AND is_deleted = false
+         ), 0) AS bucket_31_60,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided')
+             AND due_date BETWEEN CURRENT_DATE - 90 AND CURRENT_DATE - 61
+             AND is_deleted = false
+         ), 0) AS bucket_61_90,
+
+         COALESCE(SUM(amount_outstanding) FILTER (
+           WHERE status NOT IN ('paid','voided')
+             AND due_date < CURRENT_DATE - 90
+             AND is_deleted = false
+         ), 0) AS bucket_90_plus
+
+       FROM invoices`,
+    );
+    return kpis;
+  });
+}
+
+async function writeOff(business, invoiceId, { reason }, user) {
+  return withBusinessContext(business, async (client) => {
+    const inv = await repo.findById(client, invoiceId);
+    if (!inv)
+      throw Object.assign(new Error("Invoice not found"), { status: 404 });
+    if (["paid", "voided"].includes(inv.status))
+      throw Object.assign(
+        new Error(`Cannot write off a ${inv.status} invoice`),
+        { status: 400 },
+      );
+
+    const outstanding = parseFloat(inv.amount_outstanding || 0);
+    if (outstanding <= 0)
+      throw Object.assign(new Error("No outstanding balance to write off"), {
+        status: 400,
+      });
+
+    // Void the invoice
+    await repo.setVoided(client, invoiceId);
+
+    // Post bad debt journal:
+    //   DR Bad Debt Expense (6000)  outstanding
+    //   CR Accounts Receivable (1310)  outstanding
+    const badDebtAcc = await journalService.getAccountId(client, "6000");
+    const arAcc = await journalService.getAccountId(client, "1310");
+
+    if (badDebtAcc && arAcc) {
+      await journalService.postEntry(client, {
+        description: `Write-off Invoice ${inv.invoice_number} — ${reason}`,
+        referenceType: "invoice_write_off",
+        referenceId: invoiceId,
+        postedBy: user.user_id,
+        lines: [
+          { account_id: badDebtAcc, debit: outstanding, credit: 0 },
+          { account_id: arAcc, debit: 0, credit: outstanding },
+        ],
+      });
+    } else {
+      logger.warn(
+        `[invoicing] write-off journal skipped for ${inv.invoice_number}: ` +
+          `missing COA 6000 (bad debt) or 1310 (AR)`,
+      );
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "manager",
+      business,
+      module: "invoicing",
+      action: "write_off",
+      table: "invoices",
+      recordId: invoiceId,
+      before: { status: inv.status, amount_outstanding: outstanding },
+      after: { status: "voided", reason },
+      metadata: { sensitive: true, reason },
+    });
+
+    return {
+      invoice_id: invoiceId,
+      status: "voided",
+      amount_written_off: outstanding,
+    };
+  });
+}
+
 module.exports = {
   list,
   getById,
   create,
   recordPayment,
+  postPaymentJournal,
   send,
   voidInvoice,
   generatePDF,
+  getKpis,
+  writeOff,
   // credit notes
   listCreditNotes,
   getCreditNote,

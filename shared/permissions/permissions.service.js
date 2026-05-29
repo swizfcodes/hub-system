@@ -32,7 +32,30 @@ const repo = require("./permissions.repository");
 // All endpoints require settings.approve (set in routes).
 // ─────────────────────────────────────────────────────────────
 
-const OWNER_ROLE_ID = "00000001-0000-0000-0000-000000000001";
+// Looked up by role_name = 'owner' on first call and cached for the
+// life of the process. Doing it this way means the owner role can be
+// reseeded with a fresh UUID (see migration 000035) without code
+// edits, and a corrupted DB where the row is missing fails loudly
+// rather than silently using a wrong literal.
+let _ownerRoleId = null;
+async function getOwnerRoleId() {
+  if (_ownerRoleId) return _ownerRoleId;
+  return withSharedContext(async (client) => {
+    const { rows } = await client.query(
+      `SELECT role_id FROM shared.roles
+        WHERE role_name = 'owner' AND business IS NULL
+        LIMIT 1`,
+    );
+    if (!rows.length) {
+      throw new Error(
+        "System role 'owner' not found in shared.roles — " +
+        "run migration 000022 (seed) and 000035 (reseed) first.",
+      );
+    }
+    _ownerRoleId = rows[0].role_id;
+    return _ownerRoleId;
+  });
+}
 
 const VALID_ACTIONS = ["view", "create", "edit", "delete", "approve", "export"];
 const VALID_SCOPES = ["all", "own", "team"];
@@ -330,7 +353,7 @@ function assertValidScope(scope) {
  * causes operational pain. The actual brake is in assertOwnerSafe:
  * we never let anyone revoke owner.settings.approve specifically.
  */
-function assertNotSelfLockout(user, targetRoleId, module, action) {
+async function assertNotSelfLockout(user, targetRoleId, module, action) {
   if (module !== "settings") return;
   if (action !== "approve" && action !== "edit") return;
   // The auth middleware puts role_id (singular) on req.user.
@@ -339,7 +362,7 @@ function assertNotSelfLockout(user, targetRoleId, module, action) {
   const actingOnSelf = user.role_id === targetRoleId;
   if (!actingOnSelf) return;
   // Owner is allowed — see comment above.
-  if (targetRoleId === OWNER_ROLE_ID) return;
+  if (targetRoleId === (await getOwnerRoleId())) return;
 
   throw Object.assign(
     new Error(
@@ -356,8 +379,8 @@ function assertNotSelfLockout(user, targetRoleId, module, action) {
  * always recover from a permissions mistake. If we let anyone revoke
  * this permission, a misclick could brick the system.
  */
-function assertOwnerSafe(roleId, module, action) {
-  if (roleId !== OWNER_ROLE_ID) return;
+async function assertOwnerSafe(roleId, module, action) {
+  if (roleId !== (await getOwnerRoleId())) return;
   if (module === "settings" && action === "approve") {
     throw Object.assign(
       new Error(
@@ -426,8 +449,8 @@ async function grant(
 
 async function revoke(user, roleId, { module, action }) {
   assertValidAction(action);
-  assertOwnerSafe(roleId, module, action);
-  assertNotSelfLockout(user, roleId, module, action);
+  await assertOwnerSafe(roleId, module, action);
+  await assertNotSelfLockout(user, roleId, module, action);
 
   return withSharedContext(async (client) => {
     const role = await repo.findRoleById(client, roleId);
@@ -488,7 +511,7 @@ async function bulkReplace(user, roleId, permissions) {
       status: 400,
     });
   }
-  if (roleId === OWNER_ROLE_ID) {
+  if (roleId === (await getOwnerRoleId())) {
     throw Object.assign(
       new Error(
         "Bulk replace is disabled for the owner role. " +

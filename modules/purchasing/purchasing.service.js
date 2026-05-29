@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const stockService = require("../stock/stock.service");
+const journalService = require("../accounting/journal.service");
 const auditService = require("../../shared/audit/audit.service");
 const repo = require("./purchasing.repository");
 
@@ -532,6 +533,8 @@ async function receiveGoods(
       notes,
     });
 
+    let grnTotalCost = 0;
+
     for (const l of lines) {
       await repo.insertGoodsReceiptLine(client, {
         receipt_id: receipt.receipt_id,
@@ -548,6 +551,10 @@ async function receiveGoods(
       if (l.quantity_accepted > 0) {
         const poLine = await repo.getPOLineProduct(client, l.po_line_id);
         if (poLine) {
+          // Accumulate inventory value for the GRN journal using the
+          // PO line's agreed unit price.
+          grnTotalCost +=
+            Number(l.quantity_accepted) * Number(poLine.unit_price || 0);
           await stockService.recordMovement(client, {
             business,
             productId: poLine.product_id,
@@ -564,6 +571,27 @@ async function receiveGoods(
             performedBy: user.user_id,
           });
         }
+      }
+    }
+
+    // GRN journal: DR Inventory (1410) / CR Goods Received Not Invoiced (2150).
+    if (grnTotalCost > 0) {
+      const [invAcc, grniAcc] = await Promise.all([
+        journalService.getAccountId(client, "1410"),
+        journalService.getAccountId(client, "2150"),
+      ]);
+      if (invAcc && grniAcc) {
+        await journalService.postEntry(client, {
+          entryDate: new Date().toISOString().slice(0, 10),
+          description: `Goods received — receipt ${receipt.receipt_id}`,
+          referenceType: "goods_received",
+          referenceId: receipt.receipt_id,
+          postedBy: user.user_id,
+          lines: [
+            { account_id: invAcc, debit: grnTotalCost, credit: 0 },
+            { account_id: grniAcc, debit: 0, credit: grnTotalCost },
+          ],
+        });
       }
     }
 
@@ -731,6 +759,35 @@ async function approveBill(business, billId, user) {
       );
     }
     const updated = await repo.updateBillStatus(client, billId, "approved");
+
+    // Recognise the payable on approval (accrual basis).
+    //   PO-linked bill: DR GRNI (2150) / CR AP (2100)  — clears the GRNI accrual
+    //   Non-PO bill:    DR Purchases-Non-stock (6700) / CR AP (2100)
+    {
+      const debitCode = bill.po_id ? "2150" : "6700";
+      const [debitAcc, apAcc] = await Promise.all([
+        journalService.getAccountId(client, debitCode),
+        journalService.getAccountId(client, "2100"),
+      ]);
+      if (debitAcc && apAcc) {
+        const amount = parseFloat(bill.amount);
+        await journalService.postEntry(client, {
+          entryDate:
+            (bill.invoice_date &&
+              new Date(bill.invoice_date).toISOString().slice(0, 10)) ||
+            new Date().toISOString().slice(0, 10),
+          description: `Supplier invoice — ${bill.supplier_invoice_number}`,
+          referenceType: "supplier_invoice",
+          referenceId: billId,
+          postedBy: user.user_id,
+          lines: [
+            { account_id: debitAcc, debit: amount, credit: 0 },
+            { account_id: apAcc, debit: 0, credit: amount },
+          ],
+        });
+      }
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name,
@@ -792,6 +849,29 @@ async function payBill(business, billId, data, user) {
       newAmountPaid,
       fullyPaid,
     });
+
+    // Settlement journal: DR Accounts Payable (2100) / CR Bank (1210).
+    {
+      const [apAcc, bankAcc] = await Promise.all([
+        journalService.getAccountId(client, "2100"),
+        journalService.getAccountId(client, data.bank_account_code || "1210"),
+      ]);
+      if (apAcc && bankAcc) {
+        const amount = parseFloat(data.amount);
+        await journalService.postEntry(client, {
+          entryDate: new Date().toISOString().slice(0, 10),
+          description: `Supplier payment — ${bill.supplier_invoice_number}`,
+          referenceType: "supplier_payment",
+          referenceId: billId,
+          postedBy: user.user_id,
+          lines: [
+            { account_id: apAcc, debit: amount, credit: 0 },
+            { account_id: bankAcc, debit: 0, credit: amount },
+          ],
+        });
+      }
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name,

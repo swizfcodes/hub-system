@@ -88,6 +88,7 @@ function validateChannels(channels) {
  * grace so "publish now" UI flows don't fight the clock).
  */
 function validateScheduledAt(scheduledAt) {
+  if (!scheduledAt) return null; // drafts have no scheduled_at
   const when = new Date(scheduledAt);
   if (isNaN(when.getTime())) {
     throw Object.assign(new Error("scheduled_at must be a valid timestamp"), {
@@ -136,7 +137,14 @@ async function schedule(business, data, user) {
     });
   }
   validateChannels(data.channels);
+  const isDraft = data.status === "draft";
   const when = validateScheduledAt(data.scheduled_at);
+  if (!isDraft && !when) {
+    throw Object.assign(
+      new Error("scheduled_at is required unless saving as a draft"),
+      { status: 400 },
+    );
+  }
   validateMedia(data.channels, {
     media_paths: data.media_paths,
     video_path: data.video_path,
@@ -154,6 +162,7 @@ async function schedule(business, data, user) {
       scheduled_at: when,
       campaign_id: data.campaign_id,
       created_by: user.user_id,
+      status: data.status || "scheduled",
     });
 
     await auditService.log(client, {

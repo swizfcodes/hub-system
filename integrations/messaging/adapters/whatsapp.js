@@ -4,7 +4,21 @@ const axios = require("axios");
 const config = require("../../../config/config");
 const logger = require("../../../config/logger");
 
-const BASE = `${config.whatsapp.baseUrl}/${config.whatsapp.phoneNumberId}`;
+// Resolve the WhatsApp phone-number id for the calling business. Falls
+// back to the legacy single phoneNumberId so callers that don't pass a
+// `business` keep working.
+function resolvePhoneId(business) {
+  const numbers = config.whatsapp.phoneNumbers || {};
+  return (
+    numbers[business] ||
+    config.whatsapp.phoneNumberId ||
+    numbers.jewelry ||
+    numbers.diffusers
+  );
+}
+function baseFor(business) {
+  return `${config.whatsapp.baseUrl}/${resolvePhoneId(business)}`;
+}
 const HEADERS = {
   Authorization: `Bearer ${config.whatsapp.apiToken}`,
   "Content-Type": "application/json",
@@ -26,10 +40,10 @@ function parseInbound(change) {
   };
 }
 
-async function sendMessage({ to, text }) {
+async function sendMessage({ to, text, business }) {
   try {
     await axios.post(
-      `${BASE}/messages`,
+      `${baseFor(business)}/messages`,
       {
         messaging_product: "whatsapp",
         to,
@@ -49,9 +63,10 @@ async function sendTemplate({
   templateName,
   languageCode = "en",
   components = [],
+  business,
 }) {
   await axios.post(
-    `${BASE}/messages`,
+    `${baseFor(business)}/messages`,
     {
       messaging_product: "whatsapp",
       to,
@@ -66,9 +81,9 @@ async function sendTemplate({
   );
 }
 
-async function sendDocument({ to, documentUrl, filename, caption }) {
+async function sendDocument({ to, documentUrl, filename, caption, business }) {
   await axios.post(
-    `${BASE}/messages`,
+    `${baseFor(business)}/messages`,
     {
       messaging_product: "whatsapp",
       to,
