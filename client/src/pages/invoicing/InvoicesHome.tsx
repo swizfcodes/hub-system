@@ -15,6 +15,7 @@ import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtMoney, fmtDate } from '@lib/format';
 import { cn } from '@lib/cn';
 import type { Invoice } from '@typedefs/invoicing';
+import { Topbar } from '@/components/shell/Topbar';
 
 export default function InvoicesHome() {
   const navigate          = useNavigate();
@@ -42,11 +43,13 @@ export default function InvoicesHome() {
   const invoices = data?.data ?? [];
 
   return (
+    <>
+    <Topbar title="Invoices" subtitle="Payments · Credit Notes" />
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Invoices"
         subtitle="Manage invoices, payments, credit notes, and aging."
-        crumbs={[{ label: 'Invoices' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Invoices' }]}
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
@@ -216,5 +219,6 @@ export default function InvoicesHome() {
         />
       )}
     </div>
+    </>
   );
 }

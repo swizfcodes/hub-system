@@ -6,6 +6,7 @@ import { listSavedReports } from '@services/reports';
 import { REPORT_FAMILIES }  from '@lib/constants/reportsConstants';
 import type { ReportFamilyKey } from '@lib/constants/reportsConstants';
 import { fmtDate } from '@lib/format';
+import { Topbar } from '@/components/shell/Topbar';
 
 export default function ReportsHome() {
   const navigate = useNavigate();
@@ -19,11 +20,13 @@ export default function ReportsHome() {
   const pinned    = savedList.filter((r) => r.is_shared).slice(0, 4);
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-8">
-      <PageHeader
-        title="Reports"
-        subtitle="Standard reports, custom analysis, and scheduled delivery."
-        crumbs={[{ label: 'Reports' }]}
+    <>
+      <Topbar title="Reports" subtitle="Analysis · Reports" />
+      <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-8">
+        <PageHeader
+          title="Reports"
+          subtitle="Standard reports, custom analysis, and scheduled delivery."
+          crumbs={[{ label: 'Hub', to: '/' }, { label: 'Reports' }]}
       />
 
       {/* Pinned / shared saved reports */}
@@ -111,5 +114,6 @@ export default function ReportsHome() {
         </button>
       </div>
     </div>
+  </>
   );
 }

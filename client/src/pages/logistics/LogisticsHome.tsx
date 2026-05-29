@@ -16,6 +16,7 @@ import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import { cn } from '@lib/cn';
 import type { Delivery } from '@typedefs/logistics';
+import { Topbar } from '@/components/shell/Topbar';
 
 // Tab → status filter mapping
 const TAB_STATUS_MAP: Record<string, string | undefined> = {
@@ -89,11 +90,13 @@ export default function LogisticsHome() {
   }));
 
   return (
+    <>
+    <Topbar title="Logistics" subtitle="Dispatch · Delivery" />  
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Logistics"
         subtitle="Dispatch queue, tracking, and proof of delivery."
-        crumbs={[{ label: 'Logistics' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Logistics' }]}
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
@@ -228,5 +231,6 @@ export default function LogisticsHome() {
         currency={currency}
       />
     </div>
+    </>
   );
 }

@@ -16,6 +16,7 @@ import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import type { PayrollMode, PaymentMethod } from '@typedefs/payroll';
 import type { SelectOption } from '@components/ui/Select';
+import { Topbar } from '@components/shell/Topbar';
 
 // Build month/year options
 const currentYear = new Date().getFullYear();
@@ -68,6 +69,8 @@ export default function PayrollHome() {
   });
 
   return (
+    <>
+    <Topbar title="Payroll" subtitle="Salary processing · Compliance" />
     <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-8">
       <PageHeader
         title="Payroll"
@@ -187,5 +190,6 @@ export default function PayrollHome() {
         </div>
       </Modal>
     </div>
+    </>
   );
 }

@@ -37,6 +37,7 @@ import { showToast } from '@hooks/useToast';
 import { errMsg }    from '@services/api';
 import { cn }        from '@lib/cn';
 import type { StaffUser, AuditLogEntry } from '@typedefs/security';
+import { Topbar } from '@/components/shell/Topbar';
 
 // ── SecurityDashboard ─────────────────────────────────────────────────────────
 
@@ -64,10 +65,12 @@ export function SecurityDashboard() {
   ];
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-8">
+    <>
+    <Topbar title="Security" subtitle="Access · Sessions · Audit" />
+    <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-8">
       <PageHeader
         title="Security" subtitle="IAM, audit log, sessions, and access control"
-        crumbs={[{ label: 'Security' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Security' }]}
       />
 
       {/* Quick nav */}
@@ -76,7 +79,7 @@ export function SecurityDashboard() {
           { label: 'Users & Access', icon: Users,    href: '/security/users' },
           { label: 'Roles & Perms',  icon: Key,      href: '/security/roles' },
           { label: 'Audit Log',      icon: BookOpen, href: '/security/audit' },
-          { label: 'My Settings',    icon: Shield,   href: '/settings/security' },
+          //{ label: 'My Settings',    icon: Shield,   href: '/settings/security' },
         ].map((item) => (
           <button key={item.href} onClick={() => navigate(item.href)}
             className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-5 hover:border-white/15 hover:bg-orika-graphite/20 transition-all">
@@ -147,6 +150,7 @@ export function SecurityDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -177,6 +181,8 @@ export function UsersPage() {
   });
 
   return (
+    <>
+    <Topbar title="Users & Access" subtitle="Login · Roles" />
     <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-6">
       <PageHeader title="Users & Access"
         subtitle="Manage staff accounts, roles, and login access"
@@ -280,6 +286,7 @@ export function UsersPage() {
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -322,84 +329,87 @@ export function RolesPage() {
   });
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
-      <PageHeader title="Roles & Permissions"
-        subtitle="Define what each role can see and do"
-        crumbs={[{ label: 'Security', to: '/security' }, { label: 'Roles' }]}
-        actions={
-          <Button onClick={() => setShowCreateRole(true)}>
-            <Key className="h-4 w-4" />
-            New Role
-          </Button>
-        } />
+      <>
+      <Topbar title="Roles & Permissions" subtitle="Access · Control" />
+      <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
+        <PageHeader title="Roles & Permissions"
+          subtitle="Define what each role can see and do"
+          crumbs={[{ label: 'Security', to: '/security' }, { label: 'Roles' }]}
+          actions={
+            <Button onClick={() => setShowCreateRole(true)}>
+              <Key className="h-4 w-4" />
+              New Role
+            </Button>
+          } />
 
-      <Tabs
-        tabs={[
-          { key: 'matrix', label: 'Overview Matrix' },
-          { key: 'editor', label: 'Role Editor', disabled: !selectedRole },
-        ]}
-        active={activeTab}
-        onChange={(k) => setActiveTab(k as 'matrix' | 'editor')} />
+        <Tabs
+          tabs={[
+            { key: 'matrix', label: 'Overview Matrix' },
+            { key: 'editor', label: 'Role Editor', disabled: !selectedRole },
+          ]}
+          active={activeTab}
+          onChange={(k) => setActiveTab(k as 'matrix' | 'editor')} />
 
-      {activeTab === 'matrix' ? (
-        <PermissionMatrix
-          onSelectRole={(id) => { setSelectedRole(id); setActiveTab('editor'); }}
-          selectedRoleId={selectedRole ?? undefined}
-        />
-      ) : selectedRole ? (
-        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          {/* Role list sidebar */}
-          <div className="space-y-1">
-            {roles.map((r) => (
-              <button key={r.role_id} onClick={() => setSelectedRole(r.role_id)}
-                className={cn(
-                  'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors',
-                  selectedRole === r.role_id
-                    ? 'bg-orika-gold/10 border border-orika-gold/30 text-orika-cream'
-                    : 'text-orika-smoke hover:bg-orika-graphite/20',
-                )}>
-                <span className="text-sm font-medium">{r.role_name}</span>
-                {!r.is_system && selectedRole !== r.role_id && (
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete role "${r.role_name}"?`)) deleteMutation.mutate(r.role_id);
-                  }} className="text-orika-smoke/30 hover:text-state-danger transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </button>
-            ))}
-          </div>
-          {/* Role editor */}
-          <div className="overflow-y-auto max-h-[calc(100vh-220px)]">
-            <RoleEditor roleId={selectedRole} />
-          </div>
-        </div>
-      ) : null}
-
-      {/* Create role modal */}
-      {showCreateRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-orika-charcoal p-6 space-y-4">
-            <h3 className="font-semibold text-orika-cream">Create New Role</h3>
-            <Input label="Role Name *" value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)} placeholder="e.g. Senior Sales" />
-            <Select label="Clone permissions from" surface="dark"
-              value={cloneFrom}
-              onChange={(e) => setCloneFrom(e.target.value)}
-              placeholder="Start from scratch"
-              options={roles.map((r) => ({ value: r.role_id, label: r.role_name }))} />
-            <div className="flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setShowCreateRole(false)}>Cancel</Button>
-              <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending}
-                disabled={!newRoleName.trim()}>
-                Create Role
-              </Button>
+        {activeTab === 'matrix' ? (
+          <PermissionMatrix
+            onSelectRole={(id) => { setSelectedRole(id); setActiveTab('editor'); }}
+            selectedRoleId={selectedRole ?? undefined}
+          />
+        ) : selectedRole ? (
+          <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+            {/* Role list sidebar */}
+            <div className="space-y-1">
+              {roles.map((r) => (
+                <button key={r.role_id} onClick={() => setSelectedRole(r.role_id)}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors',
+                    selectedRole === r.role_id
+                      ? 'bg-orika-gold/10 border border-orika-gold/30 text-orika-cream'
+                      : 'text-orika-smoke hover:bg-orika-graphite/20',
+                  )}>
+                  <span className="text-sm font-medium">{r.role_name}</span>
+                  {!r.is_system && selectedRole !== r.role_id && (
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete role "${r.role_name}"?`)) deleteMutation.mutate(r.role_id);
+                    }} className="text-orika-smoke/30 hover:text-state-danger transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Role editor */}
+            <div className="overflow-y-auto max-h-[calc(100vh-220px)]">
+              <RoleEditor roleId={selectedRole} />
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        ) : null}
+
+        {/* Create role modal */}
+        {showCreateRole && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-orika-charcoal p-6 space-y-4">
+              <h3 className="font-semibold text-orika-cream">Create New Role</h3>
+              <Input label="Role Name *" value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)} placeholder="e.g. Senior Sales" />
+              <Select label="Clone permissions from" surface="dark"
+                value={cloneFrom}
+                onChange={(e) => setCloneFrom(e.target.value)}
+                placeholder="Start from scratch"
+                options={roles.map((r) => ({ value: r.role_id, label: r.role_name }))} />
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" onClick={() => setShowCreateRole(false)}>Cancel</Button>
+                <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending}
+                  disabled={!newRoleName.trim()}>
+                  Create Role
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -461,68 +471,71 @@ export function AuditLogPage() {
   ];
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-6">
-      <PageHeader title="Audit Log"
-        subtitle="Complete record of every action taken in the system"
-        crumbs={[{ label: 'Security', to: '/security' }, { label: 'Audit Log' }]}
-        actions={
-          <Button variant="secondary" onClick={handleExport} loading={isExporting}>
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-        } />
+    <>
+      <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-6">
+        <PageHeader title="Audit Log"
+          subtitle="Complete record of every action taken in the system"
+          crumbs={[{ label: 'Security', to: '/security' }, { label: 'Audit Log' }]}
+          actions={
+            <Button variant="secondary" onClick={handleExport} loading={isExporting}>
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          } />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <Select options={moduleOptions} value={filters.module} surface="dark"
-          onChange={(e) => setFilters((f) => ({ ...f, module: e.target.value, page: 1 }))} />
-        <Select options={actionOptions} value={filters.action} surface="dark"
-          onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value, page: 1 }))} />
-        <Input label="" type="date" value={filters.start_date} surface="dark"
-          hint="From" onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value, page: 1 }))} />
-        <Input label="" type="date" value={filters.end_date} surface="dark"
-          hint="To" onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value, page: 1 }))} />
-      </div>
-
-      <p className="text-xs text-orika-smoke">{total.toLocaleString()} entries</p>
-
-      {isLoading ? (
-        <div className="space-y-1">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
-      ) : (
-        <div className="space-y-1">
-          {entries.map((entry) => (
-            <AuditRow
-              key={entry.log_id}
-              entry={entry}
-              isExpanded={expandedId === entry.log_id}
-              onToggle={() => setExpandedId(expandedId === entry.log_id ? null : entry.log_id)}
-            />
-          ))}
-          {entries.length === 0 && (
-            <div className="py-12 text-center text-sm text-orika-smoke">
-              No audit entries match these filters.
-            </div>
-          )}
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3">
+          <Select options={moduleOptions} value={filters.module} surface="dark"
+            onChange={(e) => setFilters((f) => ({ ...f, module: e.target.value, page: 1 }))} />
+          <Select options={actionOptions} value={filters.action} surface="dark"
+            onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value, page: 1 }))} />
+          <Input label="" type="date" value={filters.start_date} surface="dark"
+            hint="From" onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value, page: 1 }))} />
+          <Input label="" type="date" value={filters.end_date} surface="dark"
+            hint="To" onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value, page: 1 }))} />
         </div>
-      )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <Button variant="ghost" size="sm" disabled={filters.page <= 1}
-            onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
-            Previous
-          </Button>
-          <span className="text-xs text-orika-smoke">
-            Page {filters.page} of {totalPages}
-          </span>
-          <Button variant="ghost" size="sm" disabled={filters.page >= totalPages}
-            onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
-            Next
-          </Button>
-        </div>
-      )}
-    </div>
+        <p className="text-xs text-orika-smoke">{total.toLocaleString()} entries</p>
+
+        {isLoading ? (
+          <div className="space-y-1">{[1,2,3,4,5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+        ) : (
+          <div className="space-y-1">
+            {entries.map((entry) => (
+              <AuditRow
+                key={entry.log_id}
+                entry={entry}
+                isExpanded={expandedId === entry.log_id}
+                onToggle={() => setExpandedId(expandedId === entry.log_id ? null : entry.log_id)}
+              />
+            ))}
+            {entries.length === 0 && (
+              <div className="py-12 text-center text-sm text-orika-smoke">
+                No audit entries match these filters.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3">
+            <Button variant="ghost" size="sm" disabled={filters.page <= 1}
+              onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}>
+              Previous
+            </Button>
+            <span className="text-xs text-orika-smoke">
+              Page {filters.page} of {totalPages}
+            </span>
+            <Button variant="ghost" size="sm" disabled={filters.page >= totalPages}
+              onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}>
+              Next
+            </Button>
+          </div>
+        )}
+      </div>  
+    </>
+
   );
 }
 

@@ -8,6 +8,7 @@ import { TierBadge }    from '@components/loyalty/LoyaltyComponents';
 import { getLoyaltyStats, getLeaderboard, listTiers } from '@services/loyalty';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { cn } from '@lib/cn';
+import { Topbar } from '@/components/shell/Topbar';
 
 export default function LoyaltyDashboard() {
   const navigate      = useNavigate();
@@ -35,11 +36,13 @@ export default function LoyaltyDashboard() {
   const nairaPerPt  = ptsPerNaira > 0 ? Math.round(1 / ptsPerNaira).toLocaleString() : '—';
 
   return (
+    <>
+    <Topbar title="Loyalty" subtitle="Points · Rewards" />
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Loyalty Programme"
         subtitle={`Earning rate: 1 point per ₦${nairaPerPt} spent · Expiry: ${stats?.config?.expiry_months ?? 12} months`}
-        crumbs={[{ label: 'Loyalty' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Loyalty' }]}
         actions={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => navigate('/loyalty/tiers')}>
@@ -185,5 +188,6 @@ export default function LoyaltyDashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -23,6 +23,7 @@ import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import { cn } from '@lib/cn';
 import type { Expense, CashAdvance } from '@typedefs/expenses';
+import { Topbar } from '@/components/shell/Topbar';
 
 const MAIN_TABS = [
   { key: 'expenses',  label: 'Expenses'         },
@@ -92,11 +93,13 @@ export default function ExpensesHome() {
   const pendingCount = expenseData?.data.filter((e) => e.status === 'pending').length ?? 0;
 
   return (
+    <>
+    <Topbar title="Expenses" subtitle="Expenses · Approval" />
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Expenses"
         subtitle="Track every expense and ensure it posts to accounting on approval."
-        crumbs={[{ label: 'Expenses' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Expenses' }]}
         actions={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => setShowAdvance(true)}>
@@ -283,5 +286,6 @@ export default function ExpensesHome() {
           advanceId={approveAdv.advance_id} requested={approveAdv.amount_requested} currency={currency} />
       )}
     </div>
+  </>
   );
 }

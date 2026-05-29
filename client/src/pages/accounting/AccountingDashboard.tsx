@@ -8,6 +8,7 @@ import { Badge } from '@components/ui/Badge';
 import { getDashboard } from '@services/accounting';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtMoney, fmtDate } from '@lib/format';
+import { Topbar } from '@components/shell/Topbar';
 
 export default function AccountingDashboard() {
   const navigate     = useNavigate();
@@ -22,11 +23,14 @@ export default function AccountingDashboard() {
   const netPositive = (dash?.net_profit_mtd ?? 0) >= 0;
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-8">
+    <>
+    <Topbar title="Accounting" subtitle="Journals · Reports · Reconciliation" />
+    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
+      
       <PageHeader
         title="Accounting"
         subtitle="Financial overview — all journals, reports, and reconciliation in one place."
-        crumbs={[{ label: 'Accounting' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Accounting' }]}
       />
 
       {/* KPI strip */}
@@ -131,6 +135,7 @@ export default function AccountingDashboard() {
         </div>
       </div>
     </div>
+  </>
   );
 }
 

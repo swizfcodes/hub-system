@@ -18,6 +18,7 @@ import { errMsg } from '@services/api';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { cn } from '@lib/cn';
 import type { PosTerminal } from '@typedefs/pos';
+import { Topbar } from '@/components/shell/Topbar';
 
 export default function POSTerminals() {
   const navigate     = useNavigate();
@@ -64,8 +65,10 @@ export default function POSTerminals() {
   }
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-6">
-      <Breadcrumbs items={[{ label: 'POS' }]} />
+    <>
+      <Topbar title="POS" subtitle="Terminals · Sessions" />
+      <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto space-y-6">
+        <Breadcrumbs items={[{ label: 'Hub', to: '/' }, { label: 'POS' }]} />
 
       <PageHeader
         title="Point of Sale"
@@ -184,5 +187,6 @@ export default function POSTerminals() {
         </div>
       </Modal>
     </div>
+    </>
   );
 }

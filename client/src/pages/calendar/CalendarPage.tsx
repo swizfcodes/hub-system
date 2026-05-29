@@ -13,6 +13,7 @@ import {
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { cn } from '@lib/cn';
 import type { CalendarEvent } from '@typedefs/scheduling';
+import { Topbar } from '@/components/shell/Topbar';
 
 type CalView = 'month' | 'week' | 'list';
 
@@ -71,11 +72,13 @@ export default function CalendarPage() {
   const selectedEvents = selectedDay ? eventsForDay(events, selectedDay) : [];
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-4">
+    <>
+    <Topbar title="Calendar" subtitle="Events · Meetings · Deadlines." />
+    <div className="px-4 sm:px-8 py-6 sm:py-8 max-w-[1500px] mx-auto">
       <PageHeader
         title="Calendar"
         subtitle="Schedule events, meetings, and track deadlines."
-        crumbs={[{ label: 'Calendar' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Calendar' }]}
         actions={
           <Button onClick={() => { setDefaultStart(undefined); setShowCreate(true); }}>
             <Plus className="h-4 w-4" />
@@ -212,6 +215,7 @@ export default function CalendarPage() {
         />
       )}
     </div>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ import { getAllPartnersOverview } from '@services/retailPartners';
 import { CYCLE_LABEL } from '@lib/constants/retailPartnersConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtMoney } from '@lib/format';
+import { Topbar } from '@/components/shell/Topbar';
 
 const FILTER_TABS = [
   { key: 'all',         label: 'All'         },
@@ -42,11 +43,13 @@ export default function RetailPartnersHome() {
   const activeCount      = partners.filter((p) => p.is_active).length;
 
   return (
+    <>
+    <Topbar title="Retail Partners" subtitle="Consignment · Wholesale · Settlements" />
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Retail Partners"
         subtitle="Manage consignment stock, partner sales, and settlement statements."
-        crumbs={[{ label: 'Retail Partners' }]}
+        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Retail Partners' }]}
         actions={
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
@@ -148,6 +151,7 @@ export default function RetailPartnersHome() {
         }}
       />
     </div>
+    </>
   );
 }
 

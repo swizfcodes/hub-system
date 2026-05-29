@@ -126,6 +126,15 @@ const PartnerDetail      = lazy(() => import('@pages/retail-partners/PartnerDeta
 // Public (no auth wrapper)
 const DeliverySignPage = lazy(() => import('@pages/sign/DeliverySignPage'));
 
+// Marketing — Campaigns
+const CampaignsHome    = lazy(() => import('@pages/campaigns/CampaignsHome'));
+const CampaignBuilder  = lazy(() => import('@pages/campaigns/CampaignBuilder'));
+const CampaignDetail   = lazy(() => import('@pages/campaigns/CampaignDetail'));
+const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'));
+
+// SmartComm Messaging
+const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
+
 function PageFallback() {
   return (
     <div className="px-4 sm:px-8 py-10 max-w-7xl mx-auto space-y-6">
@@ -254,6 +263,17 @@ export default function App() {
           {/* Social */}
           <Route path="/social"     element={<SocialHome />} />
           <Route path="/social/:id" element={<PostDetail />} />
+
+          {/* Campaigns — /new and /settings MUST precede /:id or
+              React Router will match "new" as a campaign id. */}
+          <Route path="/campaigns"          element={<CampaignsHome    />} />
+          <Route path="/campaigns/new"      element={<CampaignBuilder  />} />
+          <Route path="/campaigns/settings" element={<CampaignSettings />} />
+          <Route path="/campaigns/:id"      element={<CampaignDetail   />} />
+          <Route path="/campaigns/:id/edit" element={<CampaignBuilder  />} />
+
+          {/* SmartComm Messaging */}
+          <Route path="/messaging" element={<MessagingPage />} />
 
           {/* Reports — /reports/saved MUST precede /:family/:reportType */}
           <Route path="/reports"                     element={<ReportsHome />} />

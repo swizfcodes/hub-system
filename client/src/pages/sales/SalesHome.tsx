@@ -7,6 +7,7 @@ import { QuotationsView } from '@components/sales/views/QuotationsView';
 import { OrdersView } from '@components/sales/views/OrdersView';
 import { getSalesKpis } from '@services/sales/quotations';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { Topbar } from '@/components/shell/Topbar';
 
 const TABS = [
   { key: 'quotations', label: 'Quotations' },
@@ -26,12 +27,14 @@ export default function SalesHome() {
   });
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
-      <PageHeader
-        title="Sales"
-        subtitle="Quotations, orders, invoices, and receipts."
-        crumbs={[{ label: 'Hub', to: '/' }, { label: 'Sales' }]}
-      />
+    <>
+      <Topbar title="Sales" subtitle="Quotations · Orders" />
+      <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
+        <PageHeader
+          title="Sales"
+          subtitle=" All quotations and orders."
+          crumbs={[{ label: 'Hub', to: '/' }, { label: 'Sales' }]}
+        />
 
       <SalesKpiStrip kpis={kpis} isLoading={kpisLoading} currency={currency} />
 
@@ -45,5 +48,6 @@ export default function SalesHome() {
         {activeTab === 'quotations' ? <QuotationsView /> : <OrdersView />}
       </div>
     </div>
+    </>
   );
 }
