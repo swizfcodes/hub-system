@@ -115,7 +115,7 @@ export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props)
       <ConfirmationModal
         open={archiveOpen}
         onClose={() => setArchiveOpen(false)}
-        onConfirm={() => { archive.mutateAsync() }}
+        onConfirm={() => { archive.mutateAsync().catch(() => {}); }}
         title={`Archive “${contact.display_name}”?`}
         message={<p>The contact will be hidden from the directory but their history (deals, invoices, activity) is preserved and can be reviewed.</p>}
         confirmPhrase={contact.display_name}

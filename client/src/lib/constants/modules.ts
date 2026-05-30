@@ -2,7 +2,7 @@ import {
   LayoutGrid, Users, ShoppingBag, CreditCard, Truck, Package, Factory,
   FileText, BookOpen, Wallet, UserCog, Megaphone, MessageCircle, Calendar,
   CheckSquare, BarChart3, Mail, Heart, Building2, Settings, ShieldCheck,
-  Share2,
+  Share2, Vault,
 } from 'lucide-react';
 
 export interface AppModule {
@@ -42,6 +42,7 @@ export const HUB_MODULES: AppModule[] = [
   { key: 'reports',         label: 'Reports',        description: 'Standard & custom reports',           icon: BarChart3,     route: '/reports',           accent: 'gold',  group: 'finance' },
   { key: 'settings',        label: 'Settings',       description: 'Business config, RBAC, integrations', icon: Settings,      route: '/settings',          accent: 'mixed', group: 'system' },
   { key: 'security',        label: 'Security',       description: 'Audit log & sessions',                icon: ShieldCheck,   route: '/security',          accent: 'mixed', group: 'system' },
+  { key: 'documents',       label: 'Document Vault', description: 'Tamper-proof document archive',       icon: Vault,         route: '/documents',         accent: 'gold',  group: 'system' },
 ];
 
 export const SETTINGS_SUBMODULES: AppModule[] = [

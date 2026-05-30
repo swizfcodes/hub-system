@@ -14,7 +14,7 @@ const NAV_GROUPS: { label: string; modules: string[] }[] = [
   { label: 'Finance', modules: ['invoicing', 'accounting', 'expenses', 'reports'] },
   { label: 'People',  modules: ['staff', 'payroll', 'contacts', 'messaging', 'loyalty'] },
   { label: 'Grow',    modules: ['campaigns', 'social', 'calendar', 'tasks'] },
-  { label: 'System',  modules: ['settings', 'security'] },
+  { label: 'System',  modules: ['settings', 'security', 'documents'] },
 ];
 
 export function Sidebar() {

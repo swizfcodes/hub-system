@@ -129,7 +129,7 @@ export function StaffSearchCombobox({
               <UserCircle2 className="h-3.5 w-3.5 shrink-0 text-orika-gold" />
               {s.display_name}
               {!s.user_id && (
-                <span aria-label="No login account — cannot receive messages">
+                <span title="No login account — cannot receive messages">
                   <AlertTriangle className="h-3 w-3 text-amber-400 shrink-0" />
                 </span>
               )}

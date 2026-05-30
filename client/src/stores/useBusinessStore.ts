@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { usePOSStore } from './posStore';
 
 interface BusinessState {
   active: string | null; // business_key
@@ -16,8 +17,6 @@ export const useBusinessStore = create<BusinessState>()(
         set({ active: key });
         // Clear POS state when business changes — stale terminal/session IDs
         // from the previous business cause 404s in the new business context.
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const { usePOSStore } = require('./posStore') as typeof import('./posStore');
         const pos = usePOSStore.getState();
         pos.setTerminal(null);
         pos.setSession(null);
