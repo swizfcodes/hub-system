@@ -292,15 +292,19 @@ async function uploadHeroImage(business, campaignId, { buffer, mimeType, origina
     const campaign = await repo.findCampaignById(client, campaignId);
     if (!campaign) throw Object.assign(new Error('Campaign not found'), { status: 404 });
 
-    const doc = await documentsService.uploadDocument({
-      business,
-      buffer,
-      mimeType,
-      documentType: 'campaign_image',
-      referenceType: 'sales_campaign',
-      referenceId: campaignId,
-      originalFilename: originalFilename || 'hero.jpg',
-    });
+    const doc = await documentsService.uploadDocument(
+      {
+        business,
+        buffer,
+        mimeType,
+        documentType: 'product_image',   // closest allowed type; campaign images are product-specific
+        referenceType: 'sales_campaign',
+        referenceId: campaignId,
+        originalFilename: originalFilename || 'hero.jpg',
+        title: 'Campaign hero image',
+      },
+      user,
+    );
 
     const imageUrl = `/api/documents/${doc.document_id}/image`;
     const updated = await repo.updateCampaign(client, campaignId, { hero_image_url: imageUrl });
