@@ -81,6 +81,19 @@ app.use(
   require("./modules/campaigns/campaigns.public.routes"),
 );
 
+// ── Public storefront routes (sales campaigns landing pages) ─────────────────
+// /c/:business/:slug — landing page, /api/c/:business/:slug/orders — checkout,
+// /api/c/track/:business/:token — order tracking. Mounted BEFORE /api so the
+// authenticated router never sees these requests and verifyToken is skipped.
+{
+  const { storefrontRouter } = require("./modules/sales_campaigns/storefront.service");
+  app.use("/api/c", storefrontRouter);
+}
+
+// ── Public file uploads (proof-of-payment from storefront) — NO auth ────────
+// Rate-limited and MIME-restricted; see modules/files/files.routes.js.
+app.use("/api/files", require("./modules/files/files.routes"));
+
 // ── Routes ───────────────────────────────────────────────
 app.use("/api", routes);
 

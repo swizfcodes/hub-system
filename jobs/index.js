@@ -116,6 +116,12 @@ function start() {
     "* * * * *",
     require("./runScheduledCampaigns"),
   );
+  // Sales-campaign status sweep — activate scheduled, expire ended.
+  register(
+    "updateCampaignStatuses",
+    "*/5 * * * *",
+    require("./updateCampaignStatuses"),
+  );
 
   jobs.forEach(({ name, task }) => {
     task.start();

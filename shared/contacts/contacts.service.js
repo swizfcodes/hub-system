@@ -4,18 +4,21 @@ const { withSharedContext } = require("../../config/db");
 const auditService = require("../audit/audit.service");
 const repo = require("./contacts.repository");
 
-async function list({ search = "", type, page = 1, limit = 50 }, user) {
+async function list({ business, search = "", type, page = 1, limit = 50 }, user) {
   return withSharedContext(async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    const business = user.current_business || "jewelry";
+    // Prefer the explicit business passed by the route (sourced from
+    // req.business, which honours the X-Business-Line header). Fall back
+    // to the JWT's current_business only if the route didn't pass one.
+    const biz = business || user.current_business || "jewelry";
     const rows = await repo.list(client, {
-      business,
+      business: biz,
       search,
       type,
       limit: parseInt(limit),
       offset,
     });
-    const total = await repo.count(client, business);
+    const total = await repo.count(client, biz);
     return { data: rows, total, page: parseInt(page), limit: parseInt(limit) };
   });
 }
