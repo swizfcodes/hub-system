@@ -5,6 +5,7 @@ import { useAuthStore } from '@stores/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesData, getFinanceData } from '@services/dashboard/dashboard';
 import { getMyAuditFeed } from '@services/audit';
+import { formatAuditEntry, auditActionColor } from '@lib/formatAuditEntry';
 import { fmtRelative } from '@lib/format';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useBusinessStore } from '@stores/useBusinessStore';
@@ -166,11 +167,9 @@ export default function HubHome() {
             <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 divide-y divide-orika-graphite/50">
               {auditFeed.map((entry) => (
                 <div key={entry.log_id} className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orika-gold/60 shrink-0" />
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${auditActionColor(entry.action).replace('text-', 'bg-')}`} />
                   <span className="text-xs text-orika-cream truncate flex-1">
-                    <span className="font-medium">{entry.user_name}</span>
-                    {' '}{entry.action}{' '}
-                    <span className="text-orika-smoke">{entry.table_name.replace(/_/g, ' ')}</span>
+                    {formatAuditEntry(entry)}
                   </span>
                   <span className="text-[0.65rem] text-orika-smoke shrink-0">{fmtRelative(entry.occurred_at)}</span>
                 </div>
