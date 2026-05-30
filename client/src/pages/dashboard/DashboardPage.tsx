@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { useQuery, useQueryClient }          from '@tanstack/react-query';
-import { LayoutDashboard, Calendar, Bell, RefreshCw, Settings2 } from 'lucide-react';
+import { LayoutDashboard, Calendar, Bell, RefreshCw, Settings2, Menu } from 'lucide-react';
 import { AlertsStrip, NotificationsPanel } from '@components/dashboard/AlertsAndNotifications';
 import {
   SalesSection, FinanceSection, CustomersSection,
@@ -21,6 +21,9 @@ import {
   DASHBOARD_SECTIONS, BRAND_OPTIONS, PERIOD_OPTIONS,
   DEFAULT_VISIBLE_SECTIONS, getPeriodParams, type SectionKey, type BrandOption } from '@lib/constants/dashboardConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { useUiStore } from '@stores/useUiStore';
+import { useIsDesktop } from '@hooks/useMediaQuery';
+import { CommandPalette } from '@components/search/CommandPalette';
 import { fmtMoney, fmtDate } from '@lib/format';
 import { cn } from '@lib/cn';
 import type { AlertItem } from '@typedefs/dashboard';
@@ -30,6 +33,9 @@ type Tab = 'dashboard' | 'workspace' | 'notifications';
 export default function DashboardPage() {
   const qc                       = useQueryClient();
   const { currency }   = useActiveBusiness();
+  const { setMobileSidebarOpen } = useUiStore();
+  const isDesktop = useIsDesktop();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Tab state
   const [activeTab,  setActiveTab]  = useState<Tab>('dashboard');
@@ -110,6 +116,16 @@ export default function DashboardPage() {
     <div className="flex h-screen flex-col overflow-hidden bg-orika-black">
       {/* Top nav */}
       <div className="flex items-center justify-between border-b border-white/5 px-4 sm:px-8 py-3 flex-shrink-0">
+        {/* Mobile menu toggle */}
+        {!isDesktop && (
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="p-2 -ml-2 text-orika-cream hover:bg-orika-graphite rounded-lg transition-colors mr-2"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
         {/* Tabs */}
         <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-orika-charcoal p-1">
           {([
@@ -196,6 +212,8 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto">

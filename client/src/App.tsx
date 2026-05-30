@@ -135,6 +135,9 @@ const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'))
 // SmartComm Messaging
 const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
 
+// Document Vault
+const DocumentsVault   = lazy(() => import('@pages/documents/DocumentsVault'));
+
 // Sales Campaigns (admin — inside auth wall)
 const SalesCampaignsHome   = lazy(() => import('@pages/salesCampaigns/SalesCampaignsHome'));
 const SalesCampaignBuilder = lazy(() => import('@pages/salesCampaigns/CampaignBuilder'));
@@ -289,6 +292,9 @@ export default function App() {
 
           {/* SmartComm Messaging */}
           <Route path="/messaging" element={<MessagingPage />} />
+
+          {/* Document Vault */}
+          <Route path="/documents" element={<DocumentsVault />} />
 
           {/* Sales Campaigns (admin) — /new must precede /:id */}
           <Route path="/sales-campaigns"     element={<SalesCampaignsHome />} />

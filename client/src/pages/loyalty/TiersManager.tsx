@@ -13,6 +13,7 @@ import { showToast }   from '@hooks/useToast';
 import { errMsg }      from '@services/api';
 import { cn }          from '@lib/cn';
 import type { LoyaltyTier } from '@typedefs/loyalty';
+import { Topbar } from '@components/shell/Topbar';
 
 export default function TiersManager() {
   const qc               = useQueryClient();
@@ -78,7 +79,9 @@ export default function TiersManager() {
   const sortedTiers = [...tiers].sort((a, b) => a.display_order - b.display_order);
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-3xl mx-auto space-y-6">
+    <>
+      <Topbar title="Loyalty Tiers" subtitle="Programme tiers & thresholds" />
+      <div className="px-4 sm:px-8 py-6 max-w-3xl mx-auto space-y-6">
       <PageHeader
         title="Loyalty Tiers"
         subtitle="Define the tiers of your loyalty programme. Drag to reorder."
@@ -207,5 +210,6 @@ export default function TiersManager() {
         />
       )}
     </div>
+    </>
   );
 }

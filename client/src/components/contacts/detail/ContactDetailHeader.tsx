@@ -11,7 +11,6 @@ import { ConfirmationModal } from '@components/ui/ConfirmationModal';
 import { deleteContact } from '@services/contacts/contacts';
 import { createChannel } from '@services/messaging';
 import { useStaffByContact } from '../employment/useStaffByContact';
-//import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
@@ -114,7 +113,7 @@ export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props)
       <ConfirmationModal
         open={archiveOpen}
         onClose={() => setArchiveOpen(false)}
-        onConfirm={() => { archive.mutateAsync() }}
+        onConfirm={() => { archive.mutateAsync().catch(() => {}); }}
         title={`Archive “${contact.display_name}”?`}
         message={<p>The contact will be hidden from the directory but their history (deals, invoices, activity) is preserved and can be reviewed.</p>}
         confirmPhrase={contact.display_name}
