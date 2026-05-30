@@ -39,8 +39,8 @@ async function findCampaignById(client, campaignId) {
                    'campaign_label',     cp.campaign_label,
                    'image_url',          COALESCE(
                                            cp.campaign_image_url,
-                                           CASE WHEN p.primary_image_document_id IS NOT NULL
-                                                THEN '/api/documents/' || p.primary_image_document_id || '/image'
+                                           CASE WHEN pi.document_id IS NOT NULL
+                                                THEN '/api/documents/' || pi.document_id || '/image'
                                                 ELSE NULL END
                                          ),
                    'quantity_allocated', cp.quantity_allocated,
@@ -57,6 +57,7 @@ async function findCampaignById(client, campaignId) {
              )
              FROM campaign_products cp
              JOIN products p ON p.product_id = cp.product_id
+             LEFT JOIN product_images pi ON pi.product_id = p.product_id AND pi.is_primary = true
              WHERE cp.campaign_id = sc.campaign_id
             ) AS products,
             (SELECT COALESCE(
