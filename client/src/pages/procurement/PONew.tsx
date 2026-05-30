@@ -7,9 +7,9 @@
  */
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Plus, Trash2, Search } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { Breadcrumbs } from '@components/ui/Breadcrumbs';
@@ -28,9 +28,7 @@ import { errMsg, api } from '@services/api';
 
 // ── Per-line product search ───────────────────────────────────────────────────
 
-function ProductLineSearch({ lineIndex, currency, onSelect }: {
-  lineIndex: number;
-  currency: string;
+function ProductLineSearch({ onSelect }: {
   onSelect: (p: { product_id: string; name: string; sku?: string }) => void;
 }) {
   const [query,   setQuery]   = useState('');
@@ -195,8 +193,6 @@ export default function PONew() {
                     <span className="text-[0.6rem] text-orika-smoke font-mono uppercase tracking-widest mt-3 w-7">L{i + 1}</span>
                     <div className="flex-1 space-y-3">
                       <ProductLineSearch
-                        lineIndex={i}
-                        currency={currency}
                         onSelect={(p) => {
                           setValue(`lines.${i}.product_id`, p.product_id);
                           setLineDescriptions((d) => ({ ...d, [i]: p.name }));

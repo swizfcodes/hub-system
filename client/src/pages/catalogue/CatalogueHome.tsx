@@ -24,7 +24,7 @@ import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import { fmtRelative } from '@lib/format';
-import type { ProductCategory } from '@typedefs/catalogue';
+import type { ProductCategory, LocationType } from '@typedefs/catalogue';
 import { cn } from '@lib/cn';
 
 type View = 'cards' | 'table';
@@ -308,7 +308,7 @@ function LocationsTab({ creating, onClose }: { creating: boolean; onClose: () =>
   const [address,      setAddress]      = useState('');
 
   const createMut = useMutation({
-    mutationFn: () => createLocation({ name: name.trim(), location_type: locationType, address: address.trim() || undefined }),
+    mutationFn: () => createLocation({ name: name.trim(), location_type: locationType as LocationType, address: address.trim() || undefined }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['catalogue', 'locations'] });
       qc.invalidateQueries({ queryKey: ['stock-locations-for-pos'] });
