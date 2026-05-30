@@ -23,24 +23,58 @@ async function listCampaigns(client, { status, limit = 20, offset = 0 }) {
 }
 
 async function findCampaignById(client, campaignId) {
-  // Use subqueries to avoid the PostgreSQL restriction on json_agg(DISTINCT ... ORDER BY ...)
+  // Subqueries avoid the PostgreSQL restriction on json_agg(DISTINCT ... ORDER BY ...).
+  // The products subquery joins campaign_products with products so the admin UI
+  // gets product_name, selling_price, and image_url alongside the campaign fields.
   const { rows: [campaign] } = await client.query(
     `SELECT sc.*,
-            (SELECT COALESCE(jsonb_agg(row_to_json(cp_ordered.*) ORDER BY cp_ordered.display_order), '[]'::jsonb)
-             FROM (
-               SELECT id, product_id, campaign_price, campaign_label, campaign_image_url,
-                      quantity_allocated, quantity_sold, quantity_reserved,
-                      show_stock_count, low_stock_threshold, display_order
-               FROM campaign_products
-               WHERE campaign_id = sc.campaign_id
-             ) cp_ordered
+            (SELECT COALESCE(
+               jsonb_agg(
+                 jsonb_build_object(
+                   'id',                 cp.id,
+                   'product_id',         cp.product_id,
+                   'product_name',       p.name,
+                   'selling_price',      p.selling_price,
+                   'campaign_price',     cp.campaign_price,
+                   'campaign_label',     cp.campaign_label,
+                   'image_url',          COALESCE(
+                                           cp.campaign_image_url,
+                                           CASE WHEN p.primary_image_document_id IS NOT NULL
+                                                THEN '/api/documents/' || p.primary_image_document_id || '/image'
+                                                ELSE NULL END
+                                         ),
+                   'quantity_allocated', cp.quantity_allocated,
+                   'quantity_sold',      cp.quantity_sold,
+                   'quantity_reserved',  cp.quantity_reserved,
+                   'quantity_available', CASE WHEN cp.quantity_allocated = 0 THEN NULL
+                                              ELSE GREATEST(0, cp.quantity_allocated - cp.quantity_reserved - cp.quantity_sold) END,
+                   'show_stock_count',   cp.show_stock_count,
+                   'low_stock_threshold',cp.low_stock_threshold,
+                   'display_order',      cp.display_order
+                 ) ORDER BY cp.display_order
+               ),
+               '[]'::jsonb
+             )
+             FROM campaign_products cp
+             JOIN products p ON p.product_id = cp.product_id
+             WHERE cp.campaign_id = sc.campaign_id
             ) AS products,
-            (SELECT COALESCE(jsonb_agg(row_to_json(cba_ordered.*) ORDER BY cba_ordered.display_order), '[]'::jsonb)
-             FROM (
-               SELECT id, bank_name, account_number, account_name, sort_code, is_primary, display_order
-               FROM campaign_bank_accounts
-               WHERE campaign_id = sc.campaign_id
-             ) cba_ordered
+            (SELECT COALESCE(
+               jsonb_agg(
+                 jsonb_build_object(
+                   'id',             cba.id,
+                   'bank_name',      cba.bank_name,
+                   'account_number', cba.account_number,
+                   'account_name',   cba.account_name,
+                   'sort_code',      cba.sort_code,
+                   'is_primary',     cba.is_primary,
+                   'display_order',  cba.display_order
+                 ) ORDER BY cba.display_order
+               ),
+               '[]'::jsonb
+             )
+             FROM campaign_bank_accounts cba
+             WHERE cba.campaign_id = sc.campaign_id
             ) AS bank_accounts
      FROM sales_campaigns sc
      WHERE sc.campaign_id = $1`,
