@@ -19,7 +19,8 @@ import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal'
 import { CategoryFormModal } from '@components/catalogue/modals/CategoryFormModal';
 import { listProducts, deleteProduct, restoreProduct } from '@services/catalogue/products';
 import { listCategories, deleteCategory } from '@services/catalogue/categories';
-import { listLocations } from '@services/catalogue/locations';
+import { listLocations, createLocation } from '@services/catalogue/locations';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import { fmtRelative } from '@lib/format';
@@ -37,6 +38,7 @@ export default function CatalogueHome() {
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
+  const [creatingLocation, setCreatingLocation] = useState(false);
 
   const setViewPersist = (v: View) => { setView(v); localStorage.setItem('orika_catalogue_view', v); };
 
@@ -53,6 +55,8 @@ export default function CatalogueHome() {
               <Button variant="gold" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setCreatingProduct(true)}>New product</Button>
             ) : tab === 'categories' ? (
               <Button variant="gold" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setCreatingCategory(true)}>New category</Button>
+            ) : tab === 'locations' ? (
+              <Button variant="gold" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setCreatingLocation(true)}>New location</Button>
             ) : null
           }
         />
@@ -79,7 +83,7 @@ export default function CatalogueHome() {
         )}
 
         {tab === 'categories' && <CategoriesTab onNew={() => setCreatingCategory(true)} onEdit={setEditingCategory} />}
-        {tab === 'locations'  && <LocationsTab />}
+        {tab === 'locations'  && <LocationsTab creating={creatingLocation} onClose={() => setCreatingLocation(false)} />}
       </div>
 
       <ProductFormModal  open={creatingProduct}  onClose={() => setCreatingProduct(false)} />
@@ -102,11 +106,12 @@ function ProductsTab({
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const { data: catsResp } = useQuery({ queryKey: ['catalogue', 'categories'], queryFn: () => listCategories(false) });
+  const { active: business } = useActiveBusiness();
+  const { data: catsResp } = useQuery({ queryKey: ['catalogue', 'categories', business], queryFn: () => listCategories(false) });
   const cats = catsResp ?? [];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['catalogue', 'products', { search, categoryFilter, includeInactive }],
+    queryKey: ['catalogue', 'products', business, { search, categoryFilter, includeInactive }],
     queryFn: () => listProducts({
       search: search || undefined,
       category_id: categoryFilter || undefined,
@@ -124,12 +129,12 @@ function ProductsTab({
 
   const archive = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products'] }); showToast.success('Product archived'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products', business] }); showToast.success('Product archived'); },
     onError: (e) => showToast.error('Failed', errMsg(e)),
   });
   const restore = useMutation({
     mutationFn: (id: string) => restoreProduct(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products'] }); showToast.success('Product restored'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products', business] }); showToast.success('Product restored'); },
     onError: (e) => showToast.error('Failed', errMsg(e)),
   });
 
@@ -244,7 +249,8 @@ function Th({ children, className }: { children?: React.ReactNode; className?: s
 // ─── CATEGORIES TAB ───────────────────────────────────────────
 function CategoriesTab({ onNew, onEdit }: { onNew: () => void; onEdit: (c: ProductCategory) => void }) {
   const qc = useQueryClient();
-  const { data: cats, isLoading } = useQuery({ queryKey: ['catalogue', 'categories', 'all'], queryFn: () => listCategories(true) });
+  const { active: business } = useActiveBusiness();
+  const { data: cats, isLoading } = useQuery({ queryKey: ['catalogue', 'categories', 'all', business], queryFn: () => listCategories(true) });
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
@@ -281,25 +287,132 @@ function CategoriesTab({ onNew, onEdit }: { onNew: () => void; onEdit: (c: Produ
 }
 
 // ─── LOCATIONS TAB ────────────────────────────────────────────
-function LocationsTab() {
-  const { data: locs, isLoading } = useQuery({ queryKey: ['catalogue', 'locations'], queryFn: () => listLocations(true) });
+const LOCATION_TYPES = [
+  { value: 'warehouse',     label: 'Warehouse' },
+  { value: 'showroom',      label: 'Showroom' },
+  { value: 'pos_terminal',  label: 'POS Terminal' },
+  { value: 'retail_partner',label: 'Retail Partner' },
+  { value: 'transit',       label: 'Transit' },
+] as const;
+
+function LocationsTab({ creating, onClose }: { creating: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { active: business } = useActiveBusiness();
+  const { data: locs, isLoading } = useQuery({
+    queryKey: ['catalogue', 'locations', business],
+    queryFn: () => listLocations(true),
+  });
+
+  const [name,         setName]         = useState('');
+  const [locationType, setLocationType] = useState('warehouse');
+  const [address,      setAddress]      = useState('');
+
+  const createMut = useMutation({
+    mutationFn: () => createLocation({ name: name.trim(), location_type: locationType, address: address.trim() || undefined }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['catalogue', 'locations'] });
+      qc.invalidateQueries({ queryKey: ['stock-locations-for-pos'] });
+      showToast.success(`Location "${name.trim()}" created`);
+      setName(''); setLocationType('warehouse'); setAddress('');
+      onClose();
+    },
+    onError: (e) => showToast.error('Could not create location', errMsg(e)),
+  });
+
   if (isLoading) return <div className="space-y-2">{[0,1].map((i) => <Skeleton key={i} className="h-16" />)}</div>;
-  if (!locs || locs.length === 0) {
-    return <EmptyState icon={<MapPin className="w-6 h-6" />} title="No stock locations yet" description="Locations come into play during the Inventory module. Add warehouses, showrooms, POS terminals, and retail partners here." />;
-  }
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {locs.map((l) => (
-        <div key={l.location_id} className="rounded-xl border border-orika-graphite bg-orika-charcoal/60 p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <MapPin className="w-3.5 h-3.5 text-orika-gold" />
-            <span className="text-sm font-medium text-orika-cream">{l.name}</span>
-            {!l.is_active && <Badge tone="warn" size="xs">Inactive</Badge>}
-          </div>
-          <div className="text-[0.65rem] text-orika-smoke uppercase tracking-widest">{l.location_type.replace('_', ' ')}</div>
-          {l.address && <div className="text-xs text-orika-cloud mt-2">{l.address}</div>}
+    <>
+      {(!locs || locs.length === 0) && !creating ? (
+        <EmptyState
+          icon={<MapPin className="w-6 h-6" />}
+          title="No stock locations yet"
+          description="Add warehouses, showrooms, POS counters, and transit locations here. Terminals, stock counts, and transfers all need at least one location."
+          action={<Button variant="gold" leftIcon={<Plus className="w-4 h-4" />} onClick={onClose}>New location</Button>}
+        />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(locs ?? []).map((l) => (
+            <div key={l.location_id} className="rounded-xl border border-orika-graphite bg-orika-charcoal/60 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin className="w-3.5 h-3.5 text-orika-gold" />
+                <span className="text-sm font-medium text-orika-cream">{l.name}</span>
+                {!l.is_active && <Badge tone="warn" size="xs">Inactive</Badge>}
+              </div>
+              <div className="text-[0.65rem] text-orika-smoke uppercase tracking-widest">
+                {l.location_type.replace(/_/g, ' ')}
+              </div>
+              {l.address && <div className="text-xs text-orika-cloud mt-2">{l.address}</div>}
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+
+      {/* Create location modal */}
+      {creating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-orika-black shadow-2xl p-6 space-y-5">
+            <div>
+              <h2 className="text-lg font-semibold text-orika-cream">New Stock Location</h2>
+              <p className="text-xs text-orika-smoke mt-0.5">
+                Warehouses, showrooms, POS counters, and transit points all live here.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Main Warehouse, Lagos Showroom"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Location Type <span className="text-red-400">*</span>
+                </label>
+                <Select
+                  value={locationType}
+                  onChange={(e) => setLocationType(e.target.value)}
+                  options={LOCATION_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Address <span className="text-orika-smoke/40">(optional)</span>
+                </label>
+                <Input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. 14 Akin Adesola St, Victoria Island"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-1">
+              <Button variant="ghost" onClick={() => { onClose(); setName(''); setAddress(''); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="gold"
+                onClick={() => createMut.mutate()}
+                loading={createMut.isPending}
+                disabled={!name.trim()}
+              >
+                Create Location
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

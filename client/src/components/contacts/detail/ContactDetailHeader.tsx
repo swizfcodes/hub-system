@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, Pencil, Archive, ArrowLeft } from 'lucide-react';
+import { Star, Pencil, Archive, ArrowLeft, MessageSquare } from 'lucide-react';
 import { ContactAvatar } from '../shared/ContactAvatar';
 import { ContactTypeBadges } from '../shared/ContactTypeBadges';
 import { QuickActions } from '../shared/QuickActions';
@@ -9,6 +9,10 @@ import { Button } from '@components/ui/Button';
 import { DropdownMenu } from '@components/ui/DropdownMenu';
 import { ConfirmationModal } from '@components/ui/ConfirmationModal';
 import { deleteContact } from '@services/contacts/contacts';
+import { createChannel } from '@services/messaging';
+import { useStaffByContact } from '../employment/useStaffByContact';
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import type { Contact } from '@typedefs/contacts';
@@ -21,8 +25,22 @@ interface Props {
 }
 
 export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props) {
-  const qc = useQueryClient();
+  const qc      = useQueryClient();
+  const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
+
+  // Resolve the staff profile for this contact so we can message them directly
+  const { staff } = useStaffByContact(contact.contact_id);
+  const canMessage = !!staff?.user_id;
+
+  const messageMutation = useMutation({
+    mutationFn: () => createChannel({
+      channel_type:    'direct',
+      business:        contact.contact_type?.[0] ?? 'internal',
+      member_user_ids: [staff!.user_id as string],
+    }),
+    onSuccess: (ch) => navigate(`/messaging?channel=${ch.channel_id}`),
+  });
 
   const archive = useMutation({
     mutationFn: () => deleteContact(contact.contact_id),
@@ -72,6 +90,18 @@ export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props)
           <div className="flex flex-col gap-2 self-stretch sm:self-start">
             <QuickActions contact={contact} size="md" />
             <div className="flex items-center gap-2">
+              {canMessage && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
+                  onClick={() => messageMutation.mutate()}
+                  loading={messageMutation.isPending}
+                  title="Send internal message"
+                >
+                  Message
+                </Button>
+              )}
               <Button variant="secondary" size="sm" leftIcon={<Pencil className="w-3.5 h-3.5" />} onClick={onEdit}>Edit</Button>
               <DropdownMenu items={[
                 { label: 'Archive contact', icon: <Archive className="w-3.5 h-3.5" />, destructive: true, onClick: () => setArchiveOpen(true) },

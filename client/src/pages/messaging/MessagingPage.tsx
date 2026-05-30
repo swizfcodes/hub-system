@@ -19,6 +19,8 @@ import { ChannelList } from '@components/messaging/ChannelList';
 import { MessageThread } from '@components/messaging/MessageThread';
 import { CustomerSidebar } from '@components/messaging/CustomerSidebar';
 import { getChannel, createChannel } from '@services/messaging';
+import { StaffSearchCombobox } from '@components/messaging/StaffSearchCombobox';
+import type { StaffOption } from '@components/messaging/StaffSearchCombobox';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { cn } from '@lib/cn';
 import type { Channel } from '@typedefs/messaging';
@@ -143,28 +145,36 @@ function EmptyState({ onNew }: { onNew: () => void }) {
 
 // ── NewChannelModal ───────────────────────────────────────────────────────────
 
-function NewChannelModal({ open, onClose, business, onCreated }: {
+function NewChannelModal({ open, onClose, business, onCreated, preselected }: {
   open: boolean; onClose: () => void; business: string;
   onCreated: (ch: Channel) => void;
+  /** Pre-fill a staff member (e.g. when opening from a contact page) */
+  preselected?: StaffOption;
 }) {
-  const [channelType, setChannelType] = useState<'group' | 'direct'>('group');
-  const [name, setName] = useState('');
-  const [memberIds, setMemberIds] = useState('');
+  const [channelType, setChannelType] = useState<'group' | 'direct'>('direct');
+  const [name,        setName]        = useState('');
+  const [members,     setMembers]     = useState<StaffOption[]>(preselected ? [preselected] : []);
+
+  // When preselected changes (modal reopened from a different contact), sync it
+  useState(() => {
+    if (preselected) { setMembers([preselected]); setChannelType('direct'); }
+  });
+
+  const validMembers  = members.filter((m) => !!m.user_id);
+  const canCreate     = validMembers.length > 0 && (channelType === 'direct' || name.trim());
 
   const mutation = useMutation({
     mutationFn: () => createChannel({
-      channel_type: channelType,
-      name:         channelType === 'group' ? name : undefined,
+      channel_type:    channelType,
+      name:            channelType === 'group' ? name : undefined,
       business,
-      member_user_ids: memberIds
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
+      member_user_ids: validMembers.map((m) => m.user_id as string),
     }),
     onSuccess: (ch) => {
       onCreated(ch);
       setName('');
-      setMemberIds('');
+      setMembers([]);
+      setChannelType('direct');
     },
   });
 
@@ -181,10 +191,10 @@ function NewChannelModal({ open, onClose, business, onCreated }: {
           <Button
             onClick={() => mutation.mutate()}
             loading={mutation.isPending}
-            disabled={channelType === 'group' && !name.trim()}
+            disabled={!canCreate}
           >
             <Users className="h-4 w-4" />
-            Create
+            {channelType === 'direct' ? 'Message' : 'Create group'}
           </Button>
         </div>
       }
@@ -194,29 +204,42 @@ function NewChannelModal({ open, onClose, business, onCreated }: {
           label="Type"
           surface="light"
           value={channelType}
-          onChange={(e) => setChannelType(e.target.value as 'group' | 'direct')}
+          onChange={(e) => {
+            setChannelType(e.target.value as 'group' | 'direct');
+            if (e.target.value === 'direct' && members.length > 1) setMembers([members[0]]);
+          }}
           options={[
-            { value: 'group',  label: 'Group — multiple team members' },
-            { value: 'direct', label: 'Direct — one-on-one message' },
+            { value: 'direct', label: 'Direct -- one-on-one with a team member' },
+            { value: 'group',  label: 'Group -- multiple team members' },
           ]}
         />
+
         {channelType === 'group' && (
           <Input
-            label="Channel Name *"
+            label="Channel name *"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Sales Team, Bejewelled Support"
+            placeholder="e.g. Sales Team, Jewellery Support"
             surface="light"
           />
         )}
-        <Input
-          label={channelType === 'direct' ? 'User ID to message *' : 'Add members (User IDs, comma-separated)'}
-          value={memberIds}
-          onChange={(e) => setMemberIds(e.target.value)}
-          placeholder="Paste user UUID(s)"
-          surface="light"
-          hint="Copy from the staff profile page"
-        />
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-orika-black/70">
+            {channelType === 'direct' ? 'Message' : 'Add members'}
+            <span className="text-red-500 ml-0.5">*</span>
+          </label>
+          <StaffSearchCombobox
+            selected={members}
+            onChange={setMembers}
+            max={channelType === 'direct' ? 1 : undefined}
+            placeholder={channelType === 'direct' ? 'Search team members by name...' : 'Add team members...'}
+            surface="light"
+          />
+          <p className="mt-1.5 text-[11px] text-orika-smoke/60">
+            Only active staff with a login account can receive internal messages.
+          </p>
+        </div>
       </div>
     </Modal>
   );
