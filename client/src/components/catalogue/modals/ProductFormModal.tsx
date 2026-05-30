@@ -72,12 +72,9 @@ export function ProductFormModal({ open, onClose, editing, onSaved }: Props) {
       category_id: editing.category_id ?? '', cost_price: editing.cost_price, selling_price: editing.selling_price,
       min_selling_price: editing.min_selling_price ?? undefined, currency: editing.currency,
       weight_grams: editing.weight_grams ?? undefined, custom_fields: editing.custom_fields ?? {},
-      reorder_level: editing.reorder_level, reorder_quantity: editing.reorder_quantity,
-    } : {
+      reorder_level: editing.reorder_level, reorder_quantity: editing.reorder_quantity } : {
       sku: '', name: '', description: '', category_id: '', cost_price: 0, selling_price: 0,
-      currency: 'NGN', custom_fields: {}, reorder_level: 0, reorder_quantity: 0,
-    },
-  });
+      currency: 'NGN', custom_fields: {}, reorder_level: 0, reorder_quantity: 0 } });
 
   // Re-sync form when editing prop changes
   useEffect(() => {
@@ -88,13 +85,11 @@ export function ProductFormModal({ open, onClose, editing, onSaved }: Props) {
           category_id: editing.category_id ?? '', cost_price: editing.cost_price, selling_price: editing.selling_price,
           min_selling_price: editing.min_selling_price ?? undefined, currency: editing.currency,
           weight_grams: editing.weight_grams ?? undefined, custom_fields: editing.custom_fields ?? {},
-          reorder_level: editing.reorder_level, reorder_quantity: editing.reorder_quantity,
-        });
+          reorder_level: editing.reorder_level, reorder_quantity: editing.reorder_quantity });
       } else {
         reset({
           sku: '', name: '', description: '', category_id: '', cost_price: 0, selling_price: 0,
-          currency: 'NGN', custom_fields: {}, reorder_level: 0, reorder_quantity: 0,
-        });
+          currency: 'NGN', custom_fields: {}, reorder_level: 0, reorder_quantity: 0 });
       }
       clearImage();
     }
@@ -108,8 +103,7 @@ export function ProductFormModal({ open, onClose, editing, onSaved }: Props) {
         category_id: v.category_id || undefined,
         description: v.description || undefined,
         min_selling_price: v.min_selling_price || undefined,
-        weight_grams: v.weight_grams || undefined,
-      };
+        weight_grams: v.weight_grams || undefined };
       
       // 1. Core Product Payload
       const product = await (editing 
@@ -144,8 +138,7 @@ export function ProductFormModal({ open, onClose, editing, onSaved }: Props) {
       } else {
         showToast.error('Could not save', errMsg(e));
       }
-    },
-  });
+    } });
 
   return (
     <Modal open={open} onClose={handleClose} surface="light" size="lg"
