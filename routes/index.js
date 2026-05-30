@@ -59,6 +59,34 @@ router.use(
   require("../integrations/messaging/messaging.webhook"),
 );
 
+// ── Public document image serving ────────────────────────────
+// Serves product_image documents without authentication so campaign
+// landing pages and catalogue cards can load images publicly.
+// Only product_image type is served; all other types return 404.
+{
+  const { param: _p } = require("express-validator");
+  const docService = require("../shared/documents/documents.service");
+  router.get("/documents/:id/image", async (req, res, next) => {
+    try {
+      const { buffer, mime_type, document } = await docService.downloadDocument(
+        req.params.id,
+        null,
+      );
+      if (document.document_type !== "product_image") {
+        return res.status(404).end();
+      }
+      res.set({
+        "Content-Type": mime_type,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Length": buffer.length,
+      });
+      res.send(buffer);
+    } catch (e) {
+      next(e);
+    }
+  });
+}
+
 // ── Protected — shared modules (no business schema needed) ─
 router.use("/contacts", protect, require("../shared/contacts/contacts.routes"));
 router.use(

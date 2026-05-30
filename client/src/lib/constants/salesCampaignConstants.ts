@@ -33,7 +33,7 @@ export const campaignSchema = z.object({
   headline:       z.string().optional().or(z.literal('')),
   subheadline:    z.string().optional().or(z.literal('')),
   body_copy:      z.string().optional().or(z.literal('')),
-  hero_image_url: z.string().url().optional().or(z.literal('')),
+  hero_image_url: z.string().optional().or(z.literal('')),
   discount_type:  z.enum(['percentage','fixed_amount','none']).default('none'),
   discount_value: z.number().min(0).optional(),
   start_date:     z.string().optional().or(z.literal('')),
