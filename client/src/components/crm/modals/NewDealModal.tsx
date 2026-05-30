@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -9,7 +9,8 @@ import { Select } from '@components/ui/Select';
 import { dealCreateSchema, type DealCreateValues } from '@lib/schemas/deal';
 import { createDeal } from '@services/crm/deals';
 import { getPipeline } from '@services/crm/pipeline';
-import { listContacts } from '@services/contacts/contacts';
+import { ContactSearchInput } from '@components/shared/ContactSearchInput';
+import type { Contact } from '@typedefs/contacts';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 
@@ -24,9 +25,9 @@ interface Props {
 export function NewDealModal({ open, onClose, defaultStage, defaultContactId, onCreated }: Props) {
   const qc = useQueryClient();
   const { data: pipeline } = useQuery({ queryKey: ['crm', 'pipeline'], queryFn: () => getPipeline() });
-  const { data: contactsResp } = useQuery({ queryKey: ['contacts', { limit: 200 }], queryFn: () => listContacts({ limit: 200 }) });
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<DealCreateValues>({
+  const { register, control, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<DealCreateValues>({
     resolver: zodResolver(dealCreateSchema),
     defaultValues: {
       contact_id: defaultContactId ?? '',
@@ -55,7 +56,7 @@ export function NewDealModal({ open, onClose, defaultStage, defaultContactId, on
     onSuccess: (d) => {
       qc.invalidateQueries({ queryKey: ['crm'] });
       showToast.success('Deal created', d.title);
-      reset(); onClose(); onCreated?.(d.deal_id);
+      reset(); setSelectedContact(null); onClose(); onCreated?.(d.deal_id);
     },
     onError: (e) => showToast.error('Could not save', errMsg(e)),
   });
@@ -67,19 +68,20 @@ export function NewDealModal({ open, onClose, defaultStage, defaultContactId, on
         <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>Create deal</Button>
       </>}>
       <form className="space-y-4">
-        <Controller
-          control={control}
-          name="contact_id"
-          render={({ field }) => (
-            <Select
-              {...field}
-              label="Contact"
-              placeholder="Pick a contact"
-              options={(contactsResp?.data ?? []).map((c) => ({ value: c.contact_id, label: c.display_name }))}
-              error={errors.contact_id?.message}
-            />
+        <div>
+          <ContactSearchInput
+            value={selectedContact}
+            onChange={(c) => {
+              setSelectedContact(c);
+              setValue('contact_id', c?.contact_id ?? '');
+            }}
+            label="Contact"
+            required
+          />
+          {errors.contact_id && (
+            <p className="mt-1 text-xs text-red-500">{errors.contact_id.message}</p>
           )}
-        />
+        </div>
         <Input {...register('title')} label="Deal title" placeholder="Engagement ring · Adaeze" error={errors.title?.message} />
         <div className="grid gap-3 sm:grid-cols-2">
           <Controller

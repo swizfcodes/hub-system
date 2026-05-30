@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { Plus, FileText } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
@@ -9,7 +10,7 @@ import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { Skeleton } from '@components/ui/Skeleton';
 import { EmptyState } from '@components/ui/EmptyState';
-import { listPOs } from '@services/purchasing/pos';
+import { listPOs } from '@services/purchasing/purchaseOrders';
 import { fmtDate, fmtMoney } from '@lib/format';
 import type { POStatus } from '@typedefs/purchasing';
 
@@ -19,11 +20,12 @@ const STATUS_TONE: Record<POStatus, 'gold' | 'sage' | 'rose' | 'neutral' | 'dang
 };
 
 export default function POPage() {
+  const { active: business } = useActiveBusiness();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<POStatus | ''>('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['purchasing', 'pos', { status: statusFilter }],
+    queryKey: ['purchasing', 'purchase-orders', business, { status: statusFilter }],
     queryFn: () => listPOs({ status: statusFilter || undefined, limit: 100 }),
   });
 

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
@@ -20,17 +21,27 @@ import { Topbar } from '@/components/shell/Topbar';
 export default function TasksPage() {
   const { active: business }   = useActiveBusiness();
   const qc             = useQueryClient();
+  const [searchParams] = useSearchParams();
 
-  const [showCreate,   setShowCreate]   = useState(false);
+  // Support deep-link filters from the contacts tab:
+  //   /tasks?reference_type=contact&reference_id=UUID
+  const filterRefType = searchParams.get('reference_type') ?? undefined;
+  const filterRefId   = searchParams.get('reference_id')   ?? undefined;
+
+  const [showCreate,    setShowCreate]    = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('inbox');
-  const [editTask,     setEditTask]     = useState<Task | null>(null);
-  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
-  const [search,       setSearch]       = useState('');
-  const [dragOver,     setDragOver]     = useState<TaskStatus | null>(null);
+  const [editTask,      setEditTask]      = useState<Task | null>(null);
+  const [detailTaskId,  setDetailTaskId]  = useState<string | null>(null);
+  const [search,        setSearch]        = useState('');
+  const [dragOver,      setDragOver]      = useState<TaskStatus | null>(null);
 
   const { data: board, isLoading } = useQuery({
-    queryKey: ['task-board', business],
-    queryFn:  () => getBoard({ business: business! }),
+    queryKey: ['task-board', business, filterRefType, filterRefId],
+    queryFn:  () => getBoard({
+      business:       business!,
+      reference_type: filterRefType,
+      reference_id:   filterRefId,
+    }),
     enabled:  !!business,
     refetchInterval: 30_000,
   });

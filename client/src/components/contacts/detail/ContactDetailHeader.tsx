@@ -11,8 +11,8 @@ import { ConfirmationModal } from '@components/ui/ConfirmationModal';
 import { deleteContact } from '@services/contacts/contacts';
 import { createChannel } from '@services/messaging';
 import { useStaffByContact } from '../employment/useStaffByContact';
-import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import type { Contact } from '@typedefs/contacts';
@@ -25,8 +25,9 @@ interface Props {
 }
 
 export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props) {
-  const qc      = useQueryClient();
-  const navigate = useNavigate();
+  const qc               = useQueryClient();
+  const navigate         = useNavigate();
+  const { active: biz }  = useActiveBusiness();
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   // Resolve the staff profile for this contact so we can message them directly
@@ -36,7 +37,7 @@ export function ContactDetailHeader({ contact, onEdit, onBack, isStaff }: Props)
   const messageMutation = useMutation({
     mutationFn: () => createChannel({
       channel_type:    'direct',
-      business:        contact.contact_type?.[0] ?? 'internal',
+      business:        biz ?? undefined,
       member_user_ids: [staff!.user_id as string],
     }),
     onSuccess: (ch) => navigate(`/messaging?channel=${ch.channel_id}`),

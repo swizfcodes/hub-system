@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Truck, ArrowLeft, Plus, Trash2, MapPin, Send, PackageCheck, X } from 'lucide-react';
@@ -30,11 +31,12 @@ const STATUS_TONE: Record<TransferStatus, 'gold' | 'sage' | 'rose' | 'neutral' |
 };
 
 export default function TransfersPage() {
+  const { active: business } = useActiveBusiness();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
 
-  const { data, isLoading } = useQuery({ queryKey: ['stock', 'transfers'], queryFn: () => listTransfers() });
+  const { data, isLoading } = useQuery({ queryKey: ['stock', 'transfers', business], queryFn: () => listTransfers() });
   const list = data?.data ?? [];
 
   const dispatch = useMutation({

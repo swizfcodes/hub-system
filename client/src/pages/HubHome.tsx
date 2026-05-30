@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import { Sparkles, TrendingUp, AlertCircle, ArrowRight } from 'lucide-react';
 import { useGreeting } from '@hooks/useGreeting';
 import { useAuthStore } from '@stores/useAuthStore';
+import { useQuery } from '@tanstack/react-query';
+import { getSalesData, getFinanceData } from '@services/dashboard/dashboard';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useBusinessStore } from '@stores/useBusinessStore';
 import { AppGrid } from '@components/hub/AppGrid';
 import { HUB_MODULES } from '@lib/constants/modules';
@@ -13,6 +16,29 @@ export default function HubHome() {
   const active = useBusinessStore((s) => s.active);
 
   const firstName = (user?.display_name || user?.email || '').split(' ')[0]?.split('@')[0] ?? '';
+  const { active: business } = useActiveBusiness();
+
+  // Live KPIs from the dashboards module
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const { data: salesData }   = useQuery({
+    queryKey: ['dashboard', 'sales', business, year, month],
+    queryFn:  () => getSalesData({ year, month }),
+    enabled:  !!business,
+    staleTime: 5 * 60_000,
+  });
+  const { data: financeData } = useQuery({
+    queryKey: ['dashboard', 'finance', business, year, month],
+    queryFn:  () => getFinanceData({ year, month }),
+    enabled:  !!business,
+    staleTime: 5 * 60_000,
+  });
+
+  // Derived KPI values — show real data when available, fallback to "—"
+  const todayRevenue   = salesData?.revenue?.total_amount;
+  const overdueCount   = financeData?.ar_ageing?.invoice_count;
+  const overdueAmount  = financeData?.ar_ageing?.total;
 
   // TODO: replace with a single dashboard endpoint that returns all live counts in one call.
   // For now: stub badges to demonstrate the UI; backend will fill these in once dashboards module ships.
@@ -67,8 +93,12 @@ export default function HubHome() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[0.65rem] tracking-widest uppercase text-orika-smoke">Invoices · Overdue</div>
-                  <div className="font-display text-2xl text-orika-cream mt-0.5">—</div>
-                  <div className="text-xs text-orika-cloud mt-1 truncate">Wire dashboards module to populate</div>
+                  <div className="font-display text-2xl text-orika-cream mt-0.5">
+                    {overdueCount !== undefined ? overdueCount : '—'}
+                  </div>
+                  <div className="text-xs text-orika-cloud mt-1 truncate">
+                    {overdueAmount !== undefined ? `₦${overdueAmount.toLocaleString()} outstanding` : 'Loading...'}
+                  </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-orika-smoke group-hover:text-orika-gold group-hover:translate-x-0.5 transition-all" />
               </div>
@@ -80,7 +110,7 @@ export default function HubHome() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[0.65rem] tracking-widest uppercase text-orika-smoke">Today's Revenue</div>
-                  <div className="font-display text-2xl text-orika-cream mt-0.5">—</div>
+                  <div className="font-display text-2xl text-orika-cream mt-0.5">{todayRevenue !== undefined ? todayRevenue.toLocaleString('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }) : '—'}</div>
                   <div className="text-xs text-orika-cloud mt-1 truncate">Across active business</div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-orika-smoke group-hover:text-living-sage group-hover:translate-x-0.5 transition-all" />

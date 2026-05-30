@@ -42,3 +42,16 @@ export async function addAddress(id: string, payload: Partial<ContactAddress>): 
   const { data } = await api.post<ContactAddress>(`/contacts/${id}/addresses`, payload);
   return data;
 }
+
+/**
+ * searchContacts — quick search for typeaheads.
+ * Returns an array (never throws) — suitable for live search dropdowns.
+ */
+export async function searchContacts(search: string, limit = 10): Promise<Contact[]> {
+  try {
+    const { data } = await api.get<{ data: Contact[] }>('/contacts', { params: { search, limit } });
+    return data.data ?? [];
+  } catch {
+    return [];
+  }
+}

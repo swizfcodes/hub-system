@@ -13,6 +13,7 @@ import { DealNotes } from '@components/crm/detail/DealNotes';
 import { DealItems } from '@components/crm/detail/DealItems';
 import { LogActivityFab } from '@components/crm/detail/LogActivityFab';
 import { getDeal } from '@services/crm/deals';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 
@@ -23,12 +24,13 @@ const TABS = [
 ];
 
 export default function DealDetail() {
+  const { active: business } = useActiveBusiness();
   const { id } = useParams();
   const navigate = useNavigate();
   const [tab, setTab] = useState('timeline');
 
   const { data: deal, isLoading, error } = useQuery({
-    queryKey: ['crm', 'deal', id],
+    queryKey: ['crm', 'deal', id, business],
     queryFn: () => getDeal(id!),
     enabled: !!id,
   });

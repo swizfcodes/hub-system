@@ -8,7 +8,7 @@ import { Skeleton } from '@components/ui/Skeleton';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
-import { getPO } from '@services/purchasing/pos';
+import { getPO } from '@services/purchasing/purchaseOrders';
 import { fmtDate, fmtDateTime, fmtMoney } from '@lib/format';
 import { ReceiveGoodsModal } from '@components/procurement/grn/ReceiveGoodsModal';
 import type { POStatus } from '@typedefs/purchasing';
