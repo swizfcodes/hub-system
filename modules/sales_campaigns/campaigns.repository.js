@@ -300,15 +300,20 @@ async function getStorefrontCampaign(client, slug) {
                 'product_name',      p.name,
                 'sku',               p.sku,
                 'description',       p.description,
-                'image_url',         COALESCE(cp.campaign_image_url, p.primary_image_url),
+                'image_url',         COALESCE(
+                                       cp.campaign_image_url,
+                                       CASE WHEN p.primary_image_document_id IS NOT NULL
+                                            THEN '/api/documents/' || p.primary_image_document_id || '/image'
+                                            ELSE NULL END
+                                     ),
                 'selling_price',     p.selling_price,
                 'campaign_price',    cp.campaign_price,
                 'effective_price',   COALESCE(cp.campaign_price, p.selling_price),
                 'campaign_label',    cp.campaign_label,
                 'quantity_available',
                   CASE WHEN cp.quantity_allocated = 0
-                       THEN p.current_stock - cp.quantity_reserved - cp.quantity_sold
-                       ELSE cp.quantity_allocated - cp.quantity_reserved - cp.quantity_sold
+                       THEN NULL
+                       ELSE GREATEST(0, cp.quantity_allocated - cp.quantity_reserved - cp.quantity_sold)
                   END,
                 'show_stock_count',  cp.show_stock_count,
                 'low_stock_threshold', cp.low_stock_threshold,

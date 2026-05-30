@@ -39,6 +39,15 @@ export async function expireCampaign(id: string): Promise<SalesCampaign> {
   return data;
 }
 
+export async function uploadHeroImage(campaignId: string, file: File): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post<{ url: string }>(`/sales-campaigns/${campaignId}/hero-image`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
 export async function upsertCampaignProduct(campaignId: string, product: Record<string, unknown>): Promise<void> {
   await api.put(`/sales-campaigns/${campaignId}/products`, product);
 }

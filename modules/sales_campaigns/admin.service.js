@@ -5,6 +5,7 @@ const { withBusinessContext, nextDocumentNumber } = require('../../config/db');
 const auditService    = require('../../shared/audit/audit.service');
 const notifService    = require('../../shared/notifications/notifications.service');
 const loyaltyService  = require('../loyalty/loyalty.service');
+const documentsService = require('../../shared/documents/documents.service');
 const repo            = require('./campaigns.repository');
 const logger          = require('../../config/logger');
 
@@ -80,7 +81,7 @@ async function publishCampaign(business, campaignId, user) {
   return withBusinessContext(business, async (client) => {
     const campaign = await repo.findCampaignById(client, campaignId);
     if (!campaign) throw Object.assign(new Error('Campaign not found'), { status: 404 });
-    if (!['draft', 'scheduled'].includes(campaign.status)) {
+    if (!['draft', 'scheduled', 'expired'].includes(campaign.status)) {
       throw Object.assign(new Error(`Cannot publish a campaign in status '${campaign.status}'`), { status: 400 });
     }
     if (!campaign.products?.length) {
@@ -286,9 +287,39 @@ async function getAnalytics(business, campaignId) {
   });
 }
 
+async function uploadHeroImage(business, campaignId, { buffer, mimeType, originalFilename }, user) {
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.findCampaignById(client, campaignId);
+    if (!campaign) throw Object.assign(new Error('Campaign not found'), { status: 404 });
+
+    const doc = await documentsService.uploadDocument({
+      business,
+      buffer,
+      mimeType,
+      documentType: 'campaign_image',
+      referenceType: 'sales_campaign',
+      referenceId: campaignId,
+      originalFilename: originalFilename || 'hero.jpg',
+    });
+
+    const imageUrl = `/api/documents/${doc.document_id}/image`;
+    const updated = await repo.updateCampaign(client, campaignId, { hero_image_url: imageUrl });
+
+    await auditService.log(client, {
+      userId: user.user_id, userName: user.display_name || 'staff',
+      business, module: 'sales_campaigns', action: 'edit',
+      table: 'sales_campaigns', recordId: campaignId,
+      after: { hero_image_url: imageUrl },
+    });
+
+    return { url: imageUrl, document_id: doc.document_id };
+  });
+}
+
 module.exports = {
   listCampaigns, getCampaign, createCampaign, updateCampaign,
   publishCampaign, expireCampaign,
+  uploadHeroImage,
   upsertProduct, removeProduct,
   addBankAccount, removeBankAccount,
   listOrders, confirmOrder, cancelOrder,
@@ -299,11 +330,14 @@ module.exports = {
 // (appended below for single-file delivery; split in production)
 
 const express = require('express');
+const multer  = require('multer');
 const router  = express.Router();
 const { body, param, query } = require('express-validator');
 const validate = require('../../middleware/validateBody');
 const { can }  = require('../../middleware/permissions');
-const svc      = module.exports; // self-reference (works because exports is set above)
+const svc      = module.exports; // self-reference
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Campaigns CRUD
 router.get('/',       can('sales_campaigns','view'),   async (req,res,next) => { try { res.json(await svc.listCampaigns(req.business, req.query)); } catch(e) { next(e); }});
@@ -320,6 +354,23 @@ router.patch('/:id',  param('id').isUUID(), validate, can('sales_campaigns','edi
 router.post('/:id/publish', param('id').isUUID(), validate, can('sales_campaigns','approve'), async (req,res,next) => { try { res.json(await svc.publishCampaign(req.business, req.params.id, req.user)); } catch(e) { next(e); }});
 router.post('/:id/expire',  param('id').isUUID(), validate, can('sales_campaigns','approve'), async (req,res,next) => { try { res.json(await svc.expireCampaign(req.business, req.params.id, req.user)); } catch(e) { next(e); }});
 router.get('/:id/analytics', param('id').isUUID(), validate, can('sales_campaigns','view'), async (req,res,next) => { try { res.json(await svc.getAnalytics(req.business, req.params.id)); } catch(e) { next(e); }});
+
+// Hero image upload
+router.post('/:id/hero-image',
+  param('id').isUUID(), validate, can('sales_campaigns', 'edit'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ message: 'file is required' });
+      const result = await svc.uploadHeroImage(req.business, req.params.id, {
+        buffer:           req.file.buffer,
+        mimeType:         req.file.mimetype,
+        originalFilename: req.file.originalname,
+      }, req.user);
+      res.json(result);
+    } catch(e) { next(e); }
+  }
+);
 
 // Products
 router.put('/:id/products', param('id').isUUID(), body('product_id').isUUID(), validate, can('sales_campaigns','edit'), async (req,res,next) => { try { res.json(await svc.upsertProduct(req.business, req.params.id, req.body, req.user)); } catch(e) { next(e); }});

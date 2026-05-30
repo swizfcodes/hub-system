@@ -220,8 +220,8 @@ function CampaignCard({ campaign, business, menuOpen, onMenuToggle, onEdit, onPu
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-8 z-20 min-w-[160px] rounded-xl border border-white/10 bg-orika-charcoal shadow-2xl py-1">
-                {['draft','scheduled'].includes(campaign.status) && (
-                  <MenuItem icon={<Play className="h-3.5 w-3.5 text-green-400" />} label="Publish" onClick={onPublish} />
+                {['draft','scheduled','expired'].includes(campaign.status) && (
+                  <MenuItem icon={<Play className="h-3.5 w-3.5 text-green-400" />} label={campaign.status === 'expired' ? 'Re-publish' : 'Publish'} onClick={onPublish} />
                 )}
                 {campaign.status === 'live' && (
                   <MenuItem icon={<XCircle className="h-3.5 w-3.5 text-rose-400" />} label="Expire" onClick={onExpire} />

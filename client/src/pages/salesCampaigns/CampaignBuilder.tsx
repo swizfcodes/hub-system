@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ArrowLeft, ArrowRight, Eye, Globe, Plus, Trash2,
-  Share2, ShoppingBag, Link } from 'lucide-react';
+  Share2, ShoppingBag, Link, ImagePlus, RotateCw } from 'lucide-react';
 import { PageHeader }   from '@components/ui/PageHeader';
 import { Button }       from '@components/ui/Button';
 import { Input }        from '@components/ui/Input';
@@ -19,7 +19,7 @@ import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { api }          from '@services/api';
 import {
   getCampaign, createCampaign, updateCampaign, publishCampaign,
-  upsertCampaignProduct, removeCampaignProduct,
+  uploadHeroImage, upsertCampaignProduct, removeCampaignProduct,
   addBankAccount, removeBankAccount,
 } from '@services/salesCampaign';
 import {
@@ -46,6 +46,26 @@ export default function CampaignBuilder() {
   const [saving, setSaving]     = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleHeroUpload(file: File) {
+    if (!campaignId) return showToast.error('Save the campaign details first');
+    setHeroUploading(true);
+    try {
+      const { url } = await uploadHeroImage(campaignId, file);
+      // Reflect the new URL in the form field
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__heroUrl = url; // temp signal — reset below
+      await updateCampaign(campaignId, { hero_image_url: url });
+      qc.invalidateQueries({ queryKey: ['sales-campaign', campaignId] });
+      showToast.success('Hero image uploaded');
+    } catch (e: any) {
+      showToast.error(e.message ?? 'Upload failed');
+    } finally {
+      setHeroUploading(false);
+    }
+  }
   const [bankModalOpen, setBankModalOpen] = useState(false);
   const [bankForm, setBankForm] = useState({ bank_name:'', account_number:'', account_name:'', sort_code:'', is_primary: false });
 
@@ -237,7 +257,55 @@ export default function CampaignBuilder() {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <Input label="Hero image URL" error={errors.hero_image_url?.message} surface="dark" {...register('hero_image_url')} placeholder="https://..." />
+            {/* Hero image — upload or paste URL */}
+            <div>
+              <label className="block text-sm font-medium text-orika-cream mb-1.5">Hero image</label>
+              <input
+                ref={heroInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleHeroUpload(f);
+                }}
+              />
+              {(existing?.hero_image_url || watch('hero_image_url')) ? (
+                <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                  <img
+                    src={existing?.hero_image_url || watch('hero_image_url')}
+                    alt="Hero"
+                    className="w-full h-32 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => heroInputRef.current?.click()}
+                    className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <RotateCw className="h-4 w-4" /> Replace image
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => heroInputRef.current?.click()}
+                  disabled={heroUploading}
+                  className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-orika-gold/40 flex flex-col items-center justify-center gap-2 text-orika-smoke hover:text-orika-cloud transition-colors"
+                >
+                  <ImagePlus className="h-6 w-6" />
+                  <span className="text-xs">{heroUploading ? 'Uploading…' : 'Click to upload hero image'}</span>
+                  <span className="text-[10px] opacity-60">Recommended: 1200 × 630 px (OG banner size)</span>
+                </button>
+              )}
+              {/* Fallback: paste URL manually */}
+              <Input
+                surface="dark"
+                className="mt-2"
+                placeholder="Or paste image URL…"
+                error={errors.hero_image_url?.message}
+                {...register('hero_image_url')}
+              />
+            </div>
             <Input label="Headline" error={errors.headline?.message} surface="dark" {...register('headline')} placeholder="The Easter Edit — Bejewelled" />
           </div>
 
@@ -342,6 +410,7 @@ export default function CampaignBuilder() {
             onClose={() => setProductPickerOpen(false)}
             campaignId={campaignId}
             business={business ?? ""}
+            addedProductIds={(existing?.products ?? []).map((p: any) => p.product_id)}
             onAdded={() => qc.invalidateQueries({ queryKey: ['sales-campaign', campaignId] })}
           />
         </div>
@@ -468,7 +537,21 @@ export default function CampaignBuilder() {
                 >Copy</button>
               </div>
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`${existing.headline || existing.campaign_name}\n\nShop now: ${publicUrl}`)}`}
+                href={(() => {
+                  const title = existing.headline || existing.campaign_name;
+                  const sub   = existing.subheadline ? `\n${existing.subheadline}` : '';
+                  const body  = existing.body_copy ? `\n\n${existing.body_copy}` : '';
+                  const disc  = existing.discount_type === 'percentage' && existing.discount_value
+                    ? `\n\n🏷️ Get ${existing.discount_value}% off your order!`
+                    : existing.discount_type === 'fixed_amount' && existing.discount_value
+                    ? `\n\n🏷️ Save ₦${Number(existing.discount_value).toLocaleString()} on your order!`
+                    : '';
+                  const dates = existing.end_date && !existing.is_evergreen
+                    ? `\n⏰ Offer ends ${new Date(existing.end_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}.`
+                    : '';
+                  const msg = `✨ *${title}*${sub}${body}${disc}${dates}\n\n👉 Shop now: ${publicUrl}`;
+                  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                })()}
                 target="_blank" rel="noopener noreferrer"
               >
                 <Button size="sm" variant="secondary" fullWidth>
@@ -529,44 +612,85 @@ function CampaignProductRow({ product, campaignId: _campaignId, onRemove }: { pr
   );
 }
 
-function ProductPickerModal({ open, onClose, campaignId, business: _business, onAdded }: { open: boolean; onClose: () => void; campaignId: string; business: string; onAdded: () => void }) {
-  const [search, setSearch] = useState('');
-  const [adding, setAdding] = useState<string | null>(null);
+function ProductPickerModal({
+  open, onClose, campaignId, business: _business, onAdded, addedProductIds,
+}: {
+  open: boolean; onClose: () => void; campaignId: string;
+  business: string; onAdded: () => void; addedProductIds: string[];
+}) {
+  const [search, setSearch]     = useState('');
+  const [adding, setAdding]     = useState<string | null>(null);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
 
   const { data } = useQuery({
     queryKey: ['catalogue-search', search],
-    queryFn:  () => api.get(`/catalogue`, { params: { q: search, limit: 20 } }).then(r => r.data),
+    queryFn:  () => api.get(`/catalogue/products`, { params: { search: search || undefined, limit: 50 } }).then(r => r.data),
     enabled:  open,
   });
-  const products: any[] = data?.data ?? [];
+
+  // Filter out products already in the campaign
+  const products: any[] = (data?.data ?? []).filter(
+    (p: any) => !addedProductIds.includes(p.product_id),
+  );
 
   return (
     <Modal open={open} onClose={onClose} title="Add Products" size="lg">
       <div className="space-y-3">
         <Input placeholder="Search catalogue..." surface="dark" value={search} onChange={e => setSearch(e.target.value)} />
+        {products.length === 0 && data && (
+          <p className="text-xs text-orika-smoke text-center py-4">
+            {search ? 'No matching products found.' : 'All catalogue products have already been added.'}
+          </p>
+        )}
         <div className="space-y-2 max-h-80 overflow-y-auto">
-          {products.map(p => (
-            <div key={p.product_id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-orika-graphite px-4 py-3">
-              {p.primary_image_url && <img src={p.primary_image_url} alt="" className="h-9 w-9 rounded-lg object-cover" />}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-orika-cream truncate">{p.name}</p>
-                <p className="text-xs text-orika-smoke">{fmtMoney(p.selling_price)} · {p.current_stock} in stock</p>
+          {products.map((p: any) => {
+            const qty = qtyInputs[p.product_id] ?? '';
+            return (
+              <div key={p.product_id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-orika-graphite px-4 py-3">
+                {p.primary_image_url && (
+                  <img src={p.primary_image_url} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-orika-cream truncate">{p.name}</p>
+                  <p className="text-xs text-orika-smoke">{fmtMoney(p.selling_price)}</p>
+                </div>
+                {/* Quantity to allocate */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Qty"
+                    title="Units to allocate (leave blank for unlimited)"
+                    value={qty}
+                    onChange={e => setQtyInputs(q => ({ ...q, [p.product_id]: e.target.value }))}
+                    className="w-16 rounded-lg border border-white/10 bg-orika-charcoal px-2 py-1.5 text-xs text-center text-orika-cream focus:outline-none focus:border-orika-gold/40"
+                  />
+                  <span className="text-[10px] text-orika-smoke">units</span>
+                </div>
+                <Button
+                  size="sm" variant="secondary"
+                  loading={adding === p.product_id}
+                  onClick={async () => {
+                    setAdding(p.product_id);
+                    try {
+                      const allocated = qty ? parseInt(qty, 10) : 0;
+                      await upsertCampaignProduct(campaignId, {
+                        product_id: p.product_id,
+                        display_order: 0,
+                        quantity_allocated: allocated,
+                      });
+                      onAdded();
+                      showToast.success(
+                        `${p.name} added${allocated ? ` · ${allocated} units allocated` : ' · unlimited stock'}`,
+                      );
+                      setQtyInputs(q => { const n = { ...q }; delete n[p.product_id]; return n; });
+                    } catch (e: any) { showToast.error(e.message); }
+                    finally { setAdding(null); }
+                  }}
+                >Add</Button>
               </div>
-              <Button
-                size="sm" variant="secondary"
-                loading={adding === p.product_id}
-                onClick={async () => {
-                  setAdding(p.product_id);
-                  try {
-                    await upsertCampaignProduct(campaignId, { product_id: p.product_id, display_order: 0 });
-                    onAdded();
-                    showToast.success(`${p.name} added`);
-                  } catch (e: any) { showToast.error(e.message); }
-                  finally { setAdding(null); }
-                }}
-              >Add</Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </Modal>
