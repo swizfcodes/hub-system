@@ -16,6 +16,7 @@ import {
   listCampaigns, publishCampaign, expireCampaign,
 } from '@services/salesCampaign';
 import type { SalesCampaign } from '@typedefs/salesCampaign';
+import { Topbar } from '@components/shell/Topbar';
 
 const STATUS_BADGE: Record<string, 'gold' | 'sage' | 'neutral' | 'rose' | 'warn' | 'info'> = {
   draft:     'neutral',
@@ -73,7 +74,9 @@ export default function SalesCampaignsHome() {
   }
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <Topbar title="Sales Campaigns" subtitle="Landing pages · Storefronts" />
+      <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Sales Campaigns"
         subtitle="Create shareable campaign pages that convert visitors into buyers."
@@ -147,6 +150,7 @@ export default function SalesCampaignsHome() {
         </p>
       </Modal>
     </div>
+    </>
   );
 }
 

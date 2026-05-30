@@ -21,6 +21,7 @@ import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtDate } from '@lib/format';
 import { cn } from '@lib/cn';
 import type { CalendarEvent } from '@typedefs/scheduling';
+import { Topbar } from '@components/shell/Topbar';
 
 export default function WorkspacePage() {
   const navigate         = useNavigate();
@@ -96,7 +97,9 @@ export default function WorkspacePage() {
   const teamMembers = Object.entries(byAssignee).sort((a, b) => b[1].overdue - a[1].overdue);
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
+    <>
+      <Topbar title="Workspace" subtitle="Tasks · Notes · Focus" />
+      <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title={`Good ${getGreeting()}, ${getFirstName()}`}
         subtitle={today.toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -314,6 +317,7 @@ export default function WorkspacePage() {
       <EventFormModal open={showCreateEvent} onClose={() => setShowCreateEvent(false)} />
       <TaskFormModal open={showCreateTask} onClose={() => setShowCreateTask(false)} isManager={true} />
     </div>
+    </>
   );
 }
 

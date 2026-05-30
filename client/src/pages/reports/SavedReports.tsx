@@ -22,6 +22,7 @@ import { errMsg }    from '@services/api';
 import { fmtDate }   from '@lib/format';
 import { cn }        from '@lib/cn';
 import type { SavedReport, ScheduleConfig } from '@typedefs/reports';
+import { Topbar } from '@components/shell/Topbar';
 
 const DAY_OPTIONS = [
   { value: '0', label: 'Sunday' },   { value: '1', label: 'Monday' },
@@ -105,7 +106,9 @@ export default function SavedReports() {
   }
 
   return (
-    <div className="px-4 sm:px-8 py-6 max-w-4xl mx-auto space-y-6">
+    <>
+      <Topbar title="Saved Reports" subtitle="Scheduled & saved report configs" />
+      <div className="px-4 sm:px-8 py-6 max-w-4xl mx-auto space-y-6">
       <PageHeader
         title="Saved Reports"
         subtitle="Your saved report configurations. Set schedules for automatic weekly or monthly delivery."
@@ -331,5 +334,6 @@ export default function SavedReports() {
         </div>
       </Modal>
     </div>
+    </>
   );
 }
