@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import {
-  Building2, FileQuestion, FileText, Truck, Receipt, ArrowRight, TrendingUp, AlertTriangle,
+  Building2, FileQuestion, FileText, Truck, Receipt, ArrowRight, TrendingUp,
 } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
@@ -9,15 +10,16 @@ import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { listSuppliers } from '@services/purchasing/suppliers';
 import { listRFQs } from '@services/purchasing/rfqs';
-import { listPOs } from '@services/purchasing/pos';
+import { listPOs } from '@services/purchasing/purchaseOrders';
 import { listBills } from '@services/purchasing/bills';
 import { fmtMoney, fmtRelative } from '@lib/format';
 import { cn } from '@lib/cn';
 
 export default function ProcurementHome() {
+  const { active: business } = useActiveBusiness();
   const { data: sups }  = useQuery({ queryKey: ['purchasing', 'suppliers'], queryFn: () => listSuppliers({ limit: 200 }) });
   const { data: rfqs }  = useQuery({ queryKey: ['purchasing', 'rfqs', 'all'], queryFn: () => listRFQs({ limit: 100 }) });
-  const { data: pos }   = useQuery({ queryKey: ['purchasing', 'pos', 'all'], queryFn: () => listPOs({ limit: 100 }) });
+  const { data: pos }   = useQuery({ queryKey: ['purchasing', 'purchase-orders', 'all', business], queryFn: () => listPOs({ limit: 100 }) });
   const { data: bills } = useQuery({ queryKey: ['purchasing', 'bills'], queryFn: () => listBills() });
 
   const openRFQs       = (rfqs?.data ?? []).filter((r) => r.status === 'sent' || r.status === 'draft');
@@ -92,16 +94,36 @@ export default function ProcurementHome() {
           />
         </div>
 
-        <div className="mt-8 rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-5 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-orika-gold mt-0.5 shrink-0" />
-          <div>
-            <h3 className="font-display text-lg text-orika-cream mb-1">Activity feed coming soon</h3>
-            <p className="text-sm text-orika-cloud">
-              Once the backend mounts an activity-stream endpoint, this dashboard will show <em>"Vendor X submitted a quote · 5m ago"</em>,
-              <em> "PO #1234 approved by Tom · 1h ago"</em> in real-time. SmartComm will mirror it too. See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md §activity-feed</code>.
-            </p>
+        {/* Recent PO activity — derived from the POs already loaded above */}
+        {(pos?.data ?? []).length > 0 && (
+          <div className="mt-8 space-y-3">
+            <p className="text-[0.65rem] tracking-widest uppercase text-orika-gold font-semibold">Recent Activity</p>
+            <div className="space-y-2">
+              {(pos?.data ?? [])
+                .slice()
+                .sort((a, b) => new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime())
+                .slice(0, 6)
+                .map((po) => (
+                  <Link
+                    key={po.po_id}
+                    to={`/procurement/purchase-orders/${po.po_id}`}
+                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-orika-charcoal/40 px-4 py-3 hover:border-white/10 transition-colors"
+                  >
+                    <FileText className="h-4 w-4 text-orika-smoke shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-orika-cream truncate">
+                        <span className="font-mono text-xs text-orika-gold mr-2">{po.po_number}</span>
+                        {po.supplier_name ?? 'Unknown supplier'}
+                      </p>
+                      <p className="text-xs text-orika-smoke">{fmtMoney(po.total_amount ?? 0, po.currency ?? 'NGN')}</p>
+                    </div>
+                    <Badge tone="neutral" size="xs">{po.status}</Badge>
+                    <span className="text-[10px] text-orika-smoke/50 shrink-0">{fmtRelative(po.updated_at ?? po.created_at)}</span>
+                  </Link>
+                ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );

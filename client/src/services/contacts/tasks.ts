@@ -21,7 +21,7 @@ export async function listTasks(params: TaskListParams = {}): Promise<TaskListRe
   return data;
 }
 
-export async function getBoard(params: { business?: string; assigned_to?: string } = {}): Promise<TaskBoard> {
+export async function getBoard(params: { business?: string; assigned_to?: string; reference_type?: string; reference_id?: string } = {}): Promise<TaskBoard> {
   const { data } = await api.get<TaskBoard>('/tasks/board', { params });
   return data;
 }

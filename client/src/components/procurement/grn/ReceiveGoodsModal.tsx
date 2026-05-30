@@ -9,7 +9,7 @@ import { Input } from '@components/ui/Input';
 import { Textarea } from '@components/ui/Textarea';
 import { Select } from '@components/ui/Select';
 import { grnSchema, type GRNValues } from '@lib/schemas/purchasing';
-import { receiveGoods } from '@services/purchasing/pos';
+import { receiveGoods } from '@services/purchasing/purchaseOrders';
 import { listLocations } from '@services/catalogue/locations';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';

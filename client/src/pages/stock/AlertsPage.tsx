@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { BellRing, ArrowLeft, AlertCircle, ArrowUpRight, Calendar } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { Breadcrumbs } from '@components/ui/Breadcrumbs';
@@ -13,9 +14,10 @@ import { listAlerts, markAlertRead } from '@services/stock/alerts';
 import { fmtRelative } from '@lib/format';
 
 export default function AlertsPage() {
+  const { active: business } = useActiveBusiness();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: alerts, isLoading } = useQuery({ queryKey: ['stock', 'alerts'], queryFn: () => listAlerts() });
+  const { data: alerts, isLoading } = useQuery({ queryKey: ['stock', 'alerts', business], queryFn: () => listAlerts() });
 
   const markRead = useMutation({
     mutationFn: (id: string) => markAlertRead(id),

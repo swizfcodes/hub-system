@@ -26,6 +26,7 @@ export interface Business {
   cash_handling_rules?: Record<string, unknown>;
   payment_methods?: Record<string, unknown>;
   loyalty_settings?: Record<string, unknown>;
+  campaign_settings?: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;

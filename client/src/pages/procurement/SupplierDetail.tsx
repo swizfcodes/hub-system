@@ -9,7 +9,7 @@ import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { getSupplier } from '@services/purchasing/suppliers';
-import { listPOs } from '@services/purchasing/pos';
+import { listPOs } from '@services/purchasing/purchaseOrders';
 import { listBills } from '@services/purchasing/bills';
 import { fmtDate, fmtMoney } from '@lib/format';
 

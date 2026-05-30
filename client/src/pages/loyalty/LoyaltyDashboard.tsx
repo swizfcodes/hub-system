@@ -11,8 +11,8 @@ import { cn } from '@lib/cn';
 import { Topbar } from '@/components/shell/Topbar';
 
 export default function LoyaltyDashboard() {
-  const navigate      = useNavigate();
-  const { business }  = useActiveBusiness();
+  const { active: business } = useActiveBusiness();
+  const navigate = useNavigate();
 
   const { data: stats,       isLoading: statsLoading  } = useQuery({
     queryKey: ['loyalty-stats', business],

@@ -44,14 +44,17 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  // Mark read when channel is opened
+  // Mark read when channel is opened — errors are logged but never surfaced
+  // to the user (a failed mark-read is not worth interrupting the conversation).
   useEffect(() => {
     if (messages.length > 0) {
       const lastId = messages[messages.length - 1]?.message_id;
-      markRead(channel.channel_id, lastId).catch(() => {});
+      markRead(channel.channel_id, lastId)
+        .then(() => qc.invalidateQueries({ queryKey: ['notifications'] }))
+        .catch((err) => console.warn('[MessageThread] mark-read failed:', err?.message));
     }
     qc.invalidateQueries({ queryKey: ['channels'] });
-  }, [channel.channel_id, messages.length]);
+  }, [channel.channel_id, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMutation = useMutation({
     mutationFn: (text: string) => sendMessage(channel.channel_id, {

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { Search, LayoutGrid, History, Truck, Lock, ClipboardCheck, BellRing, MapPin } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
@@ -26,6 +27,7 @@ import type { MovementType } from '@typedefs/stock';
 type View = 'product' | 'location' | 'movements';
 
 export default function StockHome() {
+  const { active: business } = useActiveBusiness();
   const navigate = useNavigate();
 
   const [view, setView] = useState<View>(() => (localStorage.getItem('orika_stock_view') as View) || 'product');
@@ -45,7 +47,7 @@ export default function StockHome() {
 
   // Data
   const { data: onHand, isLoading } = useQuery({
-    queryKey: ['stock', 'on-hand', { search, category_id: categoryFilter, location_id: locationFilter, low_stock_only: lowStockOnly }],
+    queryKey: ['stock', 'on-hand', business, { search, category_id: categoryFilter, location_id: locationFilter, low_stock_only: lowStockOnly }],
     queryFn: () => listOnHand({
       search: search || undefined,
       category_id: categoryFilter || undefined,
@@ -59,8 +61,8 @@ export default function StockHome() {
 
   // KPI strip data (cheap parallel fetches; small responses)
   const { data: reservations } = useQuery({ queryKey: ['stock', 'reservations', 'active'], queryFn: () => listReservations({ status: 'active', limit: 200 }) });
-  const { data: transfers } = useQuery({ queryKey: ['stock', 'transfers', 'open'], queryFn: () => listTransfers() });
-  const { data: qcs } = useQuery({ queryKey: ['stock', 'qcs', 'all'], queryFn: () => listQCs() });
+  const { data: transfers } = useQuery({ queryKey: ['stock', 'transfers', 'open', business], queryFn: () => listTransfers() });
+  const { data: qcs } = useQuery({ queryKey: ['stock', 'qcs', 'all', business], queryFn: () => listQCs() });
 
   const rows = onHand?.data ?? [];
   const totals = onHand?.totals;

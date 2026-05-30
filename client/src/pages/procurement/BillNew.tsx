@@ -6,7 +6,7 @@ import { Breadcrumbs } from '@components/ui/Breadcrumbs';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { Skeleton } from '@components/ui/Skeleton';
-import { getPO } from '@services/purchasing/pos';
+import { getPO } from '@services/purchasing/purchaseOrders';
 import { fmtMoney } from '@lib/format';
 
 /**

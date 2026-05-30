@@ -92,7 +92,7 @@ export function ContactSearchInput({
         whatsapp_number: data.whatsapp_number || undefined,
         email:           data.email || undefined,
         contact_type:    ['customer'],
-        source:          'pos',
+        source:          'walk_in',
       });
       select(contact);
       setShowCreate(false);

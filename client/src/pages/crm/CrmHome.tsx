@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { Plus, LayoutGrid, Rows3, CalendarRange, BarChart3 } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
@@ -24,6 +25,7 @@ const VIEWS: Array<{ key: View; label: string; icon: React.ComponentType<{ class
 ];
 
 export default function CrmHome() {
+  const { active: business } = useActiveBusiness();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<View>(() => (localStorage.getItem('orika_crm_view') as View) || (searchParams.get('view') as View) || 'table');
@@ -37,7 +39,7 @@ export default function CrmHome() {
     setSearchParams(next, { replace: true });
   }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data, isLoading } = useQuery({ queryKey: ['crm', 'pipeline'], queryFn: () => getPipeline(), refetchOnWindowFocus: true });
+  const { data, isLoading } = useQuery({ queryKey: ['crm', 'pipeline', business], queryFn: () => getPipeline(), refetchOnWindowFocus: true });
 
   return (
     <>

@@ -16,6 +16,7 @@ import { Skeleton } from '@components/ui/Skeleton';
 import { listTasks, createTask, moveTask } from '@services/contacts/tasks';
 import { taskCreateSchema, TASK_PRIORITIES, type TaskCreateValues } from '@lib/schemas/task';
 import { useBusinessStore } from '@stores/useBusinessStore';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtDate, fmtRelative } from '@lib/format';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
@@ -33,6 +34,7 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 export function TasksTab({ contactId, contactName }: { contactId: string; contactName: string }) {
   const qc = useQueryClient();
   const active = useBusinessStore((s) => s.active);
+  const { active: businessKey } = useActiveBusiness();
   const [adding, setAdding] = useState(false);
 
   const { data: tasks, isLoading } = useQuery({
@@ -90,7 +92,7 @@ export function TasksTab({ contactId, contactName }: { contactId: string; contac
         onClose={() => setAdding(false)}
         contactId={contactId}
         contactName={contactName}
-        defaultBusiness={active}
+        defaultBusiness={businessKey ?? active}
       />
     </div>
   );
@@ -153,10 +155,11 @@ function AssignTaskModal({ open, onClose, contactId, contactName, defaultBusines
   open: boolean; onClose: () => void; contactId: string; contactName: string; defaultBusiness: string | null;
 }) {
   const qc = useQueryClient();
+  const { active: fallbackBiz } = useActiveBusiness();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskCreateValues>({
     resolver: zodResolver(taskCreateSchema),
     defaultValues: {
-      business: defaultBusiness ?? '',
+      business: defaultBusiness ?? fallbackBiz ?? '',
       title: '',
       description: '',
       status: 'inbox',
@@ -169,12 +172,17 @@ function AssignTaskModal({ open, onClose, contactId, contactName, defaultBusines
   });
 
   const mutation = useMutation({
-    mutationFn: (v: TaskCreateValues) => createTask({
-      ...v,
-      description: v.description || undefined,
-      assigned_to: v.assigned_to || undefined,
-      due_at: v.due_at ? new Date(v.due_at).toISOString() : undefined,
-    } as Partial<Task>),
+    mutationFn: (v: TaskCreateValues) => {
+      if (!v.business) {
+        return Promise.reject(new Error('No active business context. Please select a business first.'));
+      }
+      return createTask({
+        ...v,
+        description: v.description || undefined,
+        assigned_to: v.assigned_to || undefined,
+        due_at: v.due_at ? new Date(v.due_at).toISOString() : undefined,
+      } as Partial<Task>);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contacts', contactId, 'tasks'] });
       showToast.success('Task assigned');
