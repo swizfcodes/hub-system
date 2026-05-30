@@ -23,28 +23,27 @@ async function listCampaigns(client, { status, limit = 20, offset = 0 }) {
 }
 
 async function findCampaignById(client, campaignId) {
+  // Use subqueries to avoid the PostgreSQL restriction on json_agg(DISTINCT ... ORDER BY ...)
   const { rows: [campaign] } = await client.query(
     `SELECT sc.*,
-            json_agg(DISTINCT jsonb_build_object(
-              'id', cp.id, 'product_id', cp.product_id,
-              'campaign_price', cp.campaign_price, 'campaign_label', cp.campaign_label,
-              'campaign_image_url', cp.campaign_image_url,
-              'quantity_allocated', cp.quantity_allocated,
-              'quantity_sold', cp.quantity_sold, 'quantity_reserved', cp.quantity_reserved,
-              'show_stock_count', cp.show_stock_count,
-              'low_stock_threshold', cp.low_stock_threshold,
-              'display_order', cp.display_order
-            ) ORDER BY cp.display_order) FILTER (WHERE cp.id IS NOT NULL) AS products,
-            json_agg(DISTINCT jsonb_build_object(
-              'id', cba.id, 'bank_name', cba.bank_name,
-              'account_number', cba.account_number, 'account_name', cba.account_name,
-              'sort_code', cba.sort_code, 'is_primary', cba.is_primary
-            ) ORDER BY cba.display_order) FILTER (WHERE cba.id IS NOT NULL) AS bank_accounts
+            (SELECT COALESCE(jsonb_agg(row_to_json(cp_ordered.*) ORDER BY cp_ordered.display_order), '[]'::jsonb)
+             FROM (
+               SELECT id, product_id, campaign_price, campaign_label, campaign_image_url,
+                      quantity_allocated, quantity_sold, quantity_reserved,
+                      show_stock_count, low_stock_threshold, display_order
+               FROM campaign_products
+               WHERE campaign_id = sc.campaign_id
+             ) cp_ordered
+            ) AS products,
+            (SELECT COALESCE(jsonb_agg(row_to_json(cba_ordered.*) ORDER BY cba_ordered.display_order), '[]'::jsonb)
+             FROM (
+               SELECT id, bank_name, account_number, account_name, sort_code, is_primary, display_order
+               FROM campaign_bank_accounts
+               WHERE campaign_id = sc.campaign_id
+             ) cba_ordered
+            ) AS bank_accounts
      FROM sales_campaigns sc
-     LEFT JOIN campaign_products cp ON cp.campaign_id = sc.campaign_id
-     LEFT JOIN campaign_bank_accounts cba ON cba.campaign_id = sc.campaign_id
-     WHERE sc.campaign_id = $1
-     GROUP BY sc.campaign_id`,
+     WHERE sc.campaign_id = $1`,
     [campaignId]
   );
   return campaign || null;
