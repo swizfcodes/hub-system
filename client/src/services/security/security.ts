@@ -8,10 +8,10 @@ import type {
 
 export async function listRoles(business?: string): Promise<Role[]> {
   try {
-    const { data } = await api.get<Role[]>('/settings/permissions/roles', {
+    const { data } = await api.get<{ data: Role[] }>('/settings/permissions/roles', {
       params: business ? { business } : undefined,
     });
-    return Array.isArray(data) ? data : [];
+    return data.data ?? [];
   } catch { return []; }
 }
 
