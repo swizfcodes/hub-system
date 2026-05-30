@@ -253,6 +253,17 @@ async function bootstrap(opts) {
       );
     }
 
+    // Seed a default stock location so that POS terminals can be created
+    // immediately after provisioning. Without at least one location,
+    // the "New Terminal" modal shows an empty dropdown and admins are
+    // left wondering why they can't create a terminal.
+    logger.info(`[bootstrap:${opts.key}] Seeding default stock location`);
+    await client.query(
+      `INSERT INTO ${opts.key}.stock_locations (name, location_type, is_active)
+       VALUES ('Main Floor', 'retail', true)
+       ON CONFLICT DO NOTHING`,
+    );
+
     await client.query("COMMIT");
 
     // Cache hook — new business becomes valid for routing immediately.

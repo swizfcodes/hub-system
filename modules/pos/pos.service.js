@@ -548,11 +548,17 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
 
   const revAcc = await journalService.getAccountId(client, "4100");
   const vatAcc = await journalService.getAccountId(client, "2210");
+  // Sales Revenue (4100) is required. Do NOT silently skip — a missing
+  // COA would let the sale succeed with no accounting entry, corrupting
+  // the P&L. Throw so the entire transaction rolls back cleanly.
   if (!revAcc) {
-    logger.warn(
-      `[pos] revenue journal skipped for tx ${tx.transaction_number}: missing COA 4100`,
+    throw Object.assign(
+      new Error(
+        `COA account 4100 (Sales Revenue) not found for ${business}. ` +
+          `Contact your administrator to seed the Chart of Accounts.`,
+      ),
+      { status: 500 },
     );
-    return;
   }
 
   // Build the lines:
@@ -602,12 +608,18 @@ async function postPosCOGSJournal(client, business, tx, lines) {
 
   const cogsAcc = await journalService.getAccountId(client, "5000");
   const inventoryAcc = await journalService.getAccountId(client, "1410");
+  // COGS and Inventory accounts are required for correct P&L.
+  // Throw rather than silently skip so the transaction rolls back
+  // and the admin knows the COA needs to be seeded.
   if (!cogsAcc || !inventoryAcc) {
-    logger.warn(
-      `[pos] COGS journal skipped for tx ${tx.transaction_number}: ` +
-        `missing COA cogs=${cogsAcc ? "ok" : "5000"} inv=${inventoryAcc ? "ok" : "1410"}`,
+    throw Object.assign(
+      new Error(
+        `COA accounts missing for ${business}: ` +
+          `${!cogsAcc ? "5000 (COGS) " : ""}${!inventoryAcc ? "1410 (Inventory)" : ""}. ` +
+          `Contact your administrator to seed the Chart of Accounts.`,
+      ),
+      { status: 500 },
     );
-    return;
   }
 
   //   DR Cost of Goods Sold   total_cost

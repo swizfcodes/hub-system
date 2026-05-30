@@ -9,8 +9,15 @@ async function list({ business, search = "", type, page = 1, limit = 50 }, user)
     const offset = (parseInt(page) - 1) * parseInt(limit);
     // Prefer the explicit business passed by the route (sourced from
     // req.business, which honours the X-Business-Line header). Fall back
-    // to the JWT's current_business only if the route didn't pass one.
-    const biz = business || user.current_business || "jewelry";
+    // to the JWT's current_business. Never fall back to a hardcoded key —
+    // that would silently expose the wrong business's contacts.
+    const biz = business || user.current_business;
+    if (!biz) {
+      throw Object.assign(
+        new Error("Business context required — include X-Business-Line header"),
+        { status: 400 },
+      );
+    }
     const rows = await repo.list(client, {
       business: biz,
       search,
@@ -18,7 +25,10 @@ async function list({ business, search = "", type, page = 1, limit = 50 }, user)
       limit: parseInt(limit),
       offset,
     });
-    const total = await repo.count(client, biz);
+    // Use countFiltered so the total reflects the same search/type filter
+    // as the list query — raw count() returns the unfiltered total which
+    // produces incorrect pagination when filtering is active.
+    const total = await repo.countFiltered(client, biz, { search, type });
     return { data: rows, total, page: parseInt(page), limit: parseInt(limit) };
   });
 }
@@ -77,6 +87,10 @@ async function update(contactId, data, user) {
       "source",
       "notes",
       "addresses",
+      // contact_type and visible_to were previously missing — contacts
+      // could be created with a type but never reclassified after creation.
+      "contact_type",
+      "visible_to",
     ];
     const sets = [],
       values = [];

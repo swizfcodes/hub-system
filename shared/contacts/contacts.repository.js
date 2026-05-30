@@ -29,6 +29,24 @@ async function count(client, business) {
   return parseInt(count);
 }
 
+/**
+ * countFiltered — mirrors the WHERE clause in list() so pagination
+ * totals are correct when search/type filters are active.
+ */
+async function countFiltered(client, business, { search = "", type } = {}) {
+  const {
+    rows: [{ count }],
+  } = await client.query(
+    `SELECT COUNT(*) FROM shared.contacts
+     WHERE is_deleted = false
+       AND ($1 = ANY(visible_to) OR visible_to IS NULL)
+       AND ($2::TEXT IS NULL OR display_name ILIKE $2 OR primary_phone ILIKE $2 OR email ILIKE $2)
+       AND ($3::TEXT IS NULL OR $3 = ANY(contact_type))`,
+    [business, search ? `%${search}%` : null, type || null],
+  );
+  return parseInt(count);
+}
+
 async function findById(client, contactId) {
   const { rows } = await client.query(
     `SELECT c.*,
@@ -199,6 +217,7 @@ async function insertAddress(
 module.exports = {
   list,
   count,
+  countFiltered,
   findById,
   insert,
   findForUpdate,

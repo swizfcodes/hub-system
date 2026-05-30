@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, DollarSign, Send } from 'lucide-react';
+import { Plus, Eye, DollarSign, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Tabs } from '@components/ui/Tabs';
 import { Button } from '@components/ui/Button';
@@ -17,11 +17,14 @@ import { cn } from '@lib/cn';
 import type { Invoice } from '@typedefs/invoicing';
 import { Topbar } from '@/components/shell/Topbar';
 
+const INVOICE_PAGE_SIZE = 50;
+
 export default function InvoicesHome() {
   const navigate          = useNavigate();
   const { currency }      = useActiveBusiness();
 
   const [activeTab,    setActiveTab]    = useState('all');
+  const [page,         setPage]         = useState(1);
   const [showCreate,   setShowCreate]   = useState(false);
   const [paymentInv,   setPaymentInv]   = useState<Invoice | null>(null);
   const [sendInv,      setSendInv]      = useState<Invoice | null>(null);
@@ -33,14 +36,23 @@ export default function InvoicesHome() {
   });
 
   const { data, isLoading: listLoading } = useQuery({
-    queryKey: ['invoices', activeTab],
+    queryKey: ['invoices', activeTab, page],
     queryFn:  () => listInvoices({
       status: activeTab === 'all' ? undefined : activeTab,
-      limit: 100,
+      page,
+      limit: INVOICE_PAGE_SIZE,
     }),
-  });
+    keepPreviousData: true,
+  } as any);
 
-  const invoices = data?.data ?? [];
+  const invoices   = (data as any)?.data ?? [];
+  const total      = (data as any)?.total ?? invoices.length;
+  const totalPages = Math.max(1, Math.ceil(total / INVOICE_PAGE_SIZE));
+
+  function handleTabChange(tab: string) {
+    setActiveTab(tab);
+    setPage(1);
+  }
 
   return (
     <>
@@ -84,7 +96,7 @@ export default function InvoicesHome() {
       <Tabs
         tabs={INVOICE_STATUS_TABS.map((t) => ({ key: t.key, label: t.label }))}
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={handleTabChange}
         surface="dark"
         variant="underline"
       />
@@ -189,6 +201,29 @@ export default function InvoicesHome() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-orika-smoke">{total} invoices · page {page} of {totalPages}</p>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Prev
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+            >
+              Next <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

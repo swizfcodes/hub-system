@@ -21,9 +21,14 @@ export {
   listSubtasks,
 } from '@services/contacts/tasks';
 
-// The UI calls addSubtask(taskId, title); the core service takes a payload.
-export function addSubtask(_taskId: string, title: string): Promise<Subtask> {
-  return addSubtaskCore(_taskId, { title });
+// The UI calls addSubtask(taskId, title, display_order?); the core service takes a payload.
+// display_order is forwarded so drag-and-drop ordering is preserved.
+export function addSubtask(
+  _taskId: string,
+  title: string,
+  display_order?: number,
+): Promise<Subtask> {
+  return addSubtaskCore(_taskId, { title, display_order });
 }
 
 // The UI calls setSubtaskDone(taskId, subtaskId, done); core keys off subtaskId.

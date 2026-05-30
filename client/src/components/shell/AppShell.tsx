@@ -14,15 +14,26 @@ import { cn } from '@lib/cn';
 export function AppShell() {
   const { sidebarCollapsed } = useUiStore();
   const isDesktop = useIsDesktop();
-  const user = useAuthStore((s) => s.user);
-  const hydrate = useAuthStore((s) => s.hydrate);
+  const { user, isHydrated, hydrate } = useAuthStore((s) => ({
+    user:        s.user,
+    isHydrated:  s.isHydrated,
+    hydrate:     s.hydrate,
+  }));
 
   const { pathname } = useLocation();
   const onCrm = pathname.startsWith('/crm');
 
   // Re-hydrate user from localStorage on first mount.
+  // IMPORTANT: we must wait for hydration to complete before deciding
+  // to redirect — otherwise every page refresh sends the user to /login
+  // because the store initialises with user=null before localStorage is read.
   useEffect(() => { hydrate(); }, [hydrate]);
   useActiveBusiness();
+
+  // Still loading from localStorage — show a blank screen, not a redirect.
+  if (!isHydrated) {
+    return <div className="min-h-screen bg-orika-black" />;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;

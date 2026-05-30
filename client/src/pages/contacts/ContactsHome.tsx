@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, UserPlus, BookUser } from 'lucide-react';
+import { Plus, UserPlus, BookUser, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
@@ -21,6 +21,8 @@ import { cn } from '@lib/cn';
 
 type TabKey = 'all' | ContactType;
 
+const PAGE_SIZE = 50;
+
 export default function ContactsHome() {
   const navigate = useNavigate();
   const isDesktop = useIsDesktop();
@@ -29,6 +31,7 @@ export default function ContactsHome() {
   const [activeTab, setActiveTab] = useState<TabKey>((searchParams.get('tab') as TabKey) || 'all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<DirectoryFilterValues>({ search: '', priority: '', source: '', showAllBusinesses: false });
 
   useEffect(() => { localStorage.setItem('orika_contacts_view', view); }, [view]);
@@ -36,37 +39,28 @@ export default function ContactsHome() {
     const params = new URLSearchParams(searchParams);
     if (activeTab !== 'all') params.set('tab', activeTab); else params.delete('tab');
     setSearchParams(params, { replace: true });
+    setPage(1);
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load: when "All" tab, no server type filter (we show every type).
+  // All filtering is server-side — type, search, priority, source.
   const { data, isLoading } = useQuery({
-    queryKey: ['contacts', { search: filters.search }],
-    queryFn: () => listContacts({ search: filters.search, limit: 200 }),
-  });
+    queryKey: ['contacts', { search: filters.search, type: activeTab, page }],
+    queryFn: () => listContacts({
+      search: filters.search || undefined,
+      type:   activeTab !== 'all' ? activeTab : undefined,
+      page,
+      limit:  PAGE_SIZE,
+    }),
+    keepPreviousData: true,
+  } as any);
 
-  // Client-side filter for type, priority, source.
-  const filtered = useMemo(() => {
-    const all = data?.data ?? [];
-    return all.filter((c) => {
-      if (activeTab !== 'all' && !c.contact_type?.includes(activeTab)) return false;
-      if (filters.priority && c.priority_level !== filters.priority) return false;
-      if (filters.source && c.source !== filters.source) return false;
-      return true;
-    });
-  }, [data, activeTab, filters.priority, filters.source]);
+  const contacts   = (data as any)?.data ?? [];
+  const total      = (data as any)?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const counts: Partial<Record<TabKey, number>> = { all: total };
 
-  // Counts per tab.
-  const counts = useMemo(() => {
-    const all = data?.data ?? [];
-    const c: Partial<Record<TabKey, number>> = { all: all.length };
-    for (const type of CONTACT_TYPE_ORDER) c[type] = all.filter((x) => x.contact_type?.includes(type)).length;
-    return c;
-  }, [data]);
+  const selected = contacts.find((c: Contact) => c.contact_id === selectedId);
 
-  const selected = filtered.find((c) => c.contact_id === selectedId);
-
-  // When the user clicks a row on desktop with the rail view, we use the side panel.
-  // On mobile or in cards view, we navigate to /contacts/:id.
   const onClickContact = (c: Contact) => {
     if (isDesktop && view === 'rail') setSelectedId(c.contact_id);
     else navigate(`/contacts/${c.contact_id}`);
@@ -106,7 +100,7 @@ export default function ContactsHome() {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {[0,1,2,3,4,5].map((i) => <Skeleton key={i} className="h-24" />)}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : contacts.length === 0 ? (
           <EmptyState
             icon={<BookUser className="w-7 h-7" />}
             title={filters.search ? 'No matches' : activeTab === 'all' ? 'Your directory is empty' : `No ${CONTACT_TYPE_META[activeTab as ContactType].shortLabel.toLowerCase()} yet`}
@@ -120,7 +114,7 @@ export default function ContactsHome() {
         ) : view === 'cards' ? (
           // Cards view
           <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 stagger">
-            {filtered.map((c, i) => (
+            {contacts.map((c, i) => (
               <ContactCard key={c.contact_id} contact={c} onClick={() => navigate(`/contacts/${c.contact_id}`)} style={{ animationDelay: `${i * 25}ms` }} />
             ))}
           </div>
@@ -128,7 +122,7 @@ export default function ContactsHome() {
           // Master-detail (rail) view
           <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
             <aside className="space-y-1 lg:max-h-[calc(100vh-260px)] lg:overflow-y-auto lg:pr-2">
-              {filtered.map((c) => (
+              {contacts.map((c) => (
                 <ContactRailRow
                   key={c.contact_id}
                   contact={c}
@@ -149,6 +143,29 @@ export default function ContactsHome() {
                 </div>
               )}
             </section>
+          </div>
+        )}
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4">
+            <p className="text-xs text-orika-smoke">{total} total · page {page} of {totalPages}</p>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Prev
+              </button>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+              >
+                Next <ChevronRightIcon className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

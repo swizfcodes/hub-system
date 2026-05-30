@@ -104,7 +104,6 @@ router.post(
   },
 );
 
-// ── Invite tokens ──────────────────────────────────────────────
 // POST /api/auth/invite — generate + email an invite (admin only)
 router.post(
   "/invite",
@@ -151,8 +150,9 @@ router.post(
   },
 );
 
-// ── Active sessions ────────────────────────────────────────────
 // GET /api/auth/sessions/:userId — list active sessions (self or admin)
+// Self can always view their own sessions.
+// Other users' sessions require owner/manager/admin role (role_name set by verifyToken).
 router.get(
   "/sessions/:userId",
   verifyToken,
@@ -162,12 +162,11 @@ router.get(
     try {
       const isSelf = req.params.userId === req.user.user_id;
       if (!isSelf) {
-        // Only owner/manager may view other users' sessions.
-        const allowed = ["owner", "manager"];
-        if (!allowed.includes(req.user.role_name)) {
+        const adminRoles = ["owner", "manager", "admin"];
+        if (!adminRoles.includes(req.user.role_name)) {
           return res
             .status(403)
-            .json({ error: "Not permitted to view other users' sessions" });
+            .json({ message: "Not permitted to view other users' sessions" });
         }
       }
       res.json(await authService.listActiveSessions(req.params.userId));

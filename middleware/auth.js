@@ -27,10 +27,17 @@ async function verifyToken(req, res, next) {
 
     // Check token hasn't been revoked (DB lookup — cached in Redis per session)
     await withSharedContext(async (client) => {
+      // Join user_roles + roles to pull role_name in one query.
+      // role_name is needed by downstream route guards (e.g. admin session
+      // management) without an extra DB round-trip.
       const result = await client.query(
-        `SELECT u.user_id, u.is_active, u.permitted_businesses, u.default_business
+        `SELECT u.user_id, u.is_active, u.permitted_businesses, u.default_business,
+                r.role_name
          FROM shared.users u
-         WHERE u.user_id = $1 AND u.is_active = true`,
+         LEFT JOIN shared.user_roles ur ON ur.user_id = u.user_id
+         LEFT JOIN shared.roles r       ON r.role_id  = ur.role_id
+         WHERE u.user_id = $1 AND u.is_active = true
+         LIMIT 1`,
         [decoded.user_id],
       );
 
@@ -44,6 +51,7 @@ async function verifyToken(req, res, next) {
       req.user = {
         user_id: decoded.user_id,
         role_id: decoded.role_id,
+        role_name: user.role_name || null,
         current_business: decoded.current_business || user.default_business,
         permitted_businesses: user.permitted_businesses,
         session_id: decoded.jti,

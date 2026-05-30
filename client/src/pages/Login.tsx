@@ -24,7 +24,18 @@ const QUOTES = [
 
 export default function Login() {
   const navigate = useNavigate();
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser    = useAuthStore((s) => s.setUser);
+  const hydrate    = useAuthStore((s) => s.hydrate);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const user       = useAuthStore((s) => s.user);
+
+  // If the user is already authenticated, redirect home.
+  // Wait for hydration before deciding — avoids a false redirect
+  // when user=null before localStorage is read on first render.
+  useEffect(() => {
+    if (!isHydrated) { hydrate(); return; }
+    if (user) navigate('/', { replace: true });
+  }, [isHydrated, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [splashVisible, setSplashVisible] = useState(true);
   const [splashProgress, setSplashProgress] = useState(0);

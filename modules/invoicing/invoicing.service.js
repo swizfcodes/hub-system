@@ -135,15 +135,20 @@ async function postInvoiceJournal(client, business, invoice) {
   const rev = await journalService.getAccountId(client, "4100");
   const vat = await journalService.getAccountId(client, "2210");
 
-  // Refuse silently if the COA is mis-seeded — the AR/Revenue pair is
-  // the minimum we need to produce a balanced entry. (VAT is optional;
-  // a zero-VAT invoice still produces a valid two-line entry.)
+  // The AR/Revenue pair is the minimum needed for a balanced entry.
+  // Do NOT silently skip — a missing COA means this invoice would be
+  // created without any accounting entry, corrupting the P&L and AR aging.
+  // Throw so the entire invoice creation transaction rolls back and the
+  // caller sees a clear error rather than silent data corruption.
   if (!ar || !rev) {
-    logger.warn(
-      `[invoicing] postInvoiceJournal skipped — missing COA accounts: ` +
-        `ar=${ar ? "ok" : "missing 1310"} rev=${rev ? "ok" : "missing 4100"}`,
+    throw Object.assign(
+      new Error(
+        `Chart of Accounts misconfigured for ${business}: ` +
+          `missing account ${!ar ? "1310 (Accounts Receivable)" : "4100 (Sales Revenue)"}. ` +
+          `Please contact your system administrator to seed the COA.`,
+      ),
+      { status: 500 },
     );
-    return;
   }
 
   // Build the journal:
