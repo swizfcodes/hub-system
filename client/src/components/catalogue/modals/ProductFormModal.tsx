@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ImagePlus, X, AlertCircle } from 'lucide-react';
+import { ImagePlus, X } from 'lucide-react';
 import { Modal } from '@components/ui/Modal';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';

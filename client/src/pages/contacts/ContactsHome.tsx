@@ -14,7 +14,7 @@ import { ContactRailRow } from '@components/contacts/shell/ContactRailRow';
 import { ContactCard } from '@components/contacts/shell/ContactCard';
 import { QuickAddModal } from '@components/contacts/modals/QuickAddModal';
 import { listContacts } from '@services/contacts/contacts';
-import { CONTACT_TYPE_META, CONTACT_TYPE_ORDER } from '@lib/constants/contactTypes';
+import { CONTACT_TYPE_META } from '@lib/constants/contactTypes';
 import { useIsDesktop } from '@hooks/useMediaQuery';
 import type { Contact, ContactType } from '@typedefs/contacts';
 import { cn } from '@lib/cn';
@@ -54,7 +54,7 @@ export default function ContactsHome() {
     keepPreviousData: true,
   } as any);
 
-  const contacts   = (data as any)?.data ?? [];
+  const contacts: Contact[]   = (data as any)?.data ?? [];
   const total      = (data as any)?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const counts: Partial<Record<TabKey, number>> = { all: total };

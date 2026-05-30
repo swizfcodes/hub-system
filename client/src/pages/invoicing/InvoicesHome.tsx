@@ -45,7 +45,7 @@ export default function InvoicesHome() {
     keepPreviousData: true,
   } as any);
 
-  const invoices   = (data as any)?.data ?? [];
+  const invoices: Invoice[]   = (data as any)?.data ?? [];
   const total      = (data as any)?.total ?? invoices.length;
   const totalPages = Math.max(1, Math.ceil(total / INVOICE_PAGE_SIZE));
 
