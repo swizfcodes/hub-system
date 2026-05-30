@@ -10,6 +10,13 @@ const { getCachedPermissions, cachePermissions } = require("../config/redis");
 // user context to req. Must run before businessContext.
 async function verifyToken(req, res, next) {
   try {
+    // --- PUBLIC ROUTE BYPASS ---
+    // Allow unauthenticated GET requests to the product image endpoint
+    if (req.method === 'GET' && req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)) {
+      return next();
+    }
+    // ---------------------------
+
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ message: "No token provided" });

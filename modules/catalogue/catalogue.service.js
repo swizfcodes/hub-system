@@ -143,7 +143,16 @@ async function listProducts(business, query, user) {
       page: query.page,
       limit: query.limit,
     });
-    return { data: rows };
+
+    // --- NEW: Map the rows to inject the image_url for the UI Cards ---
+    const mappedRows = rows.map(p => ({
+      ...p,
+      image_url: p.primary_image_document_id 
+        ? `/api/documents/${p.primary_image_document_id}/image` 
+        : null
+    }));
+
+    return { data: mappedRows };
   });
 }
 
@@ -153,20 +162,24 @@ async function getProduct(business, productId) {
     if (!product) {
       throw Object.assign(new Error("Product not found"), { status: 404 });
     }
-    // Attach related collections so the UI's "product detail" screen
-    // doesn't need to fan out into 4 separate calls. Cheap because
-    // they're all small fetches keyed by product_id.
+    
     const [images, suppliers, barcodes, storeProduct] = await Promise.all([
       repo.listProductImages(client, productId),
       repo.listProductSuppliers(client, productId),
       repo.listProductBarcodes(client, productId),
-      // The storefront face, if this product is published to the web.
-      // null for jewelry products and unpublished diffusers products.
       repo.findStoreProductByProductId(client, productId),
     ]);
+
+    // Inject the URLs for the image gallery
+    const mappedImages = images.map(img => ({
+      ...img,
+      url: `/api/documents/${img.document_id}/image`
+    }));
+
     return {
       ...product,
-      images,
+      image_url: product.primary_image_document_id ? `/api/documents/${product.primary_image_document_id}/image` : null,
+      images: mappedImages,
       suppliers,
       barcodes,
       store_product: storeProduct,
@@ -690,7 +703,14 @@ async function listProductImages(business, productId) {
     if (!product) {
       throw Object.assign(new Error("Product not found"), { status: 404 });
     }
-    return { data: await repo.listProductImages(client, productId) };
+    
+    const images = await repo.listProductImages(client, productId);
+    const mappedImages = images.map(img => ({
+      ...img,
+      url: `/api/documents/${img.document_id}/image`
+    }));
+    
+    return { data: mappedImages };
   });
 }
 

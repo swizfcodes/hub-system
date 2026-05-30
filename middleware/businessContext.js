@@ -15,6 +15,13 @@ const businesses = require("../config/businesses");
 // businesses are added/deactivated. Synchronous read — safe on the
 // hot path.
 function setBusinessContext(req, res, next) {
+  // --- PUBLIC ROUTE BYPASS ---
+  // Allow unauthenticated public images to pass without a business context
+  if (req.method === 'GET' && req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)) {
+    return next();
+  }
+  // ---------------------------
+
   const business = req.headers["x-business-line"] || req.user?.current_business;
   const activeList = businesses.getActiveBusinesses();
 
@@ -25,6 +32,7 @@ function setBusinessContext(req, res, next) {
   }
 
   // Verify user is permitted to access this business
+  // (Safe to access req.user here because the public route bypass returned early if no auth was required)
   if (!req.user.permitted_businesses.includes(business)) {
     return res.status(403).json({
       message: `You do not have access to the ${business} business`,

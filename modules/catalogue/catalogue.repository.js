@@ -150,9 +150,11 @@ async function listProducts(
             p.weight_grams, p.barcode, p.custom_fields,
             p.reorder_level, p.reorder_quantity,
             p.is_active, p.is_deleted,
-            p.created_at, p.updated_at
+            p.created_at, p.updated_at,
+            pi.document_id AS primary_image_document_id -- NEW: Fetch primary image ID
      FROM products p
      LEFT JOIN product_categories pc ON pc.category_id = p.category_id
+     LEFT JOIN product_images pi ON pi.product_id = p.product_id AND pi.is_primary = true -- NEW: Join images
      ${whereClause}
      ORDER BY p.created_at DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
@@ -169,12 +171,14 @@ async function findProductById(client, productId) {
             pc.name              AS category_name,
             coa_i.account_name   AS income_account_name,
             coa_inv.account_name AS inventory_account_name,
-            coa_c.account_name   AS cogs_account_name
+            coa_c.account_name   AS cogs_account_name,
+            pi.document_id       AS primary_image_document_id -- NEW: Fetch primary image ID
      FROM products p
      LEFT JOIN product_categories pc     ON pc.category_id    = p.category_id
      LEFT JOIN chart_of_accounts coa_i   ON coa_i.account_id   = p.income_account_id
      LEFT JOIN chart_of_accounts coa_inv ON coa_inv.account_id  = p.inventory_account_id
      LEFT JOIN chart_of_accounts coa_c   ON coa_c.account_id   = p.cogs_account_id
+     LEFT JOIN product_images pi         ON pi.product_id      = p.product_id AND pi.is_primary = true -- NEW: Join images
      WHERE p.product_id = $1`,
     [productId],
   );
@@ -411,7 +415,7 @@ async function listProductImages(client, productId) {
   const { rows } = await client.query(
     `SELECT pi.image_id, pi.product_id, pi.document_id, pi.is_primary,
             pi.display_order, pi.alt_text, pi.created_at,
-            d.mime_type, d.file_size_bytes,
+            d.title AS original_filename, d.mime_type, d.file_size_bytes,
             d.file_path, d.content_hash
      FROM product_images pi
      JOIN shared.documents d ON d.document_id = pi.document_id

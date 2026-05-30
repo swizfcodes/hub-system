@@ -119,11 +119,15 @@ async function uploadDocument(input, user) {
       return { ...existing, deduplicated: true };
     }
 
+    // PATCH: Provide a robust fallback filename so lib/storage.js never crashes
+    // on a missing string when calling .replace()
+    const safeFilename = input.originalFilename || `upload_${Date.now()}`;
+
     // Persist bytes to storage (S3 or local, abstracted via lib/storage).
     const subfolder = `${input.business}/${input.documentType}`;
     const stored = await storage.save(
       input.buffer,
-      input.originalFilename,
+      safeFilename,
       subfolder,
     );
 
@@ -153,7 +157,7 @@ async function uploadDocument(input, user) {
       document_number: documentNumber,
       business: input.business,
       document_type: input.documentType,
-      title: input.title || input.originalFilename,
+      title: input.title || safeFilename, // PATCH: Use the safe fallback here too
       file_path: stored.filePath,
       file_size_bytes: stored.fileSize,
       mime_type: input.mimeType,
