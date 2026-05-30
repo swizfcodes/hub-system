@@ -24,7 +24,7 @@ import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
 import { fmtRelative } from '@lib/format';
-import type { ProductCategory } from '@typedefs/catalogue';
+import type { ProductCategory, LocationType } from '@typedefs/catalogue';
 import { cn } from '@lib/cn';
 
 type View = 'cards' | 'table';
@@ -304,7 +304,7 @@ function LocationsTab({ creating, onClose }: { creating: boolean; onClose: () =>
   });
 
   const [name,         setName]         = useState('');
-  const [locationType, setLocationType] = useState('warehouse');
+  const [locationType, setLocationType] = useState<LocationType>('warehouse');
   const [address,      setAddress]      = useState('');
 
   const createMut = useMutation({
@@ -379,7 +379,7 @@ function LocationsTab({ creating, onClose }: { creating: boolean; onClose: () =>
                 </label>
                 <Select
                   value={locationType}
-                  onChange={(e) => setLocationType(e.target.value)}
+                  onChange={(e) => setLocationType(e.target.value as LocationType)}
                   options={LOCATION_TYPES.map((t) => ({ value: t.value, label: t.label }))}
                 />
               </div>
