@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, Search, LayoutGrid, Rows3, Tag, MapPin, ArchiveX } from 'lucide-react';
+import { Plus, Package, Search, LayoutGrid, Rows3, Tag, MapPin, ArchiveX, Download } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
@@ -18,6 +18,7 @@ import { ProductPrice } from '@components/catalogue/shared/ProductPrice';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
 import { CategoryFormModal } from '@components/catalogue/modals/CategoryFormModal';
 import { listProducts, deleteProduct, restoreProduct } from '@services/catalogue/products';
+import { downloadProductTemplate } from '@lib/downloadProductTemplate';
 import { listCategories, deleteCategory } from '@services/catalogue/categories';
 import { listLocations, createLocation } from '@services/catalogue/locations';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
@@ -140,7 +141,7 @@ function ProductsTab({
 
   return (
     <>
-      <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
+      <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto_auto]">
         <Input
           surface="dark"
           placeholder="Search by name, SKU, description…"
@@ -153,6 +154,14 @@ function ProductsTab({
           onChange={(e) => onCategoryFilterChange(e.target.value)}
           options={[{ value: '', label: 'All categories' }, ...cats.map((c) => ({ value: c.category_id, label: c.name }))]}
         />
+        <button
+          onClick={() => downloadProductTemplate()}
+          title="Download import template"
+          className="inline-flex items-center gap-2 px-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal border-orika-graphite text-orika-smoke hover:text-orika-cream"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Template</span>
+        </button>
         <button
           onClick={() => onToggleInactive(!includeInactive)}
           className={cn(

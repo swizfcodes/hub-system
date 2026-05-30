@@ -38,15 +38,6 @@ export default function AlertsPage() {
           subtitle="Products that need attention: low stock, expiring batches, anything below reorder level."
         />
 
-        <div className="mb-5 rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-4 flex items-start gap-3">
-          <BellRing className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
-          <div className="text-sm text-orika-cream">
-            <strong>Backend pending:</strong> alerts populate from a daily cron checking products against their <code className="font-mono text-orika-gold">reorder_level</code> + a batch-expiry sweep.
-            See <code className="font-mono text-orika-gold">backend/STOCK_PATCH_NOTES.md</code> for the script.
-            <p className="text-xs text-orika-cloud mt-1.5">In-app notification preferences are configurable in Settings → Notifications.</p>
-          </div>
-        </div>
-
         {isLoading ? (
           <div className="space-y-2">{[0,1,2].map((i) => <Skeleton key={i} className="h-16" />)}</div>
         ) : !alerts || alerts.length === 0 ? (

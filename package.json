@@ -13,6 +13,7 @@
     "admin": "node scripts/createAdmin.js",
     "smoke": "node scripts/smokeTest.js",
     "smoke:store": "node scripts/storeSmokeTest.js",
+    "backfill:barcodes": "node scripts/backfillBarcodes.js",
     "test": "jest --runInBand"
   },
   "dependencies": {

@@ -18,6 +18,7 @@ import { getBoard } from '@services/tasks';
 import {
   isToday, fmtTime } from '@lib/constants/schedulingConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { useAuthStore } from '@stores/useAuthStore';
 import { fmtDate } from '@lib/format';
 import { cn } from '@lib/cn';
 import type { CalendarEvent } from '@typedefs/scheduling';
@@ -26,6 +27,7 @@ import { Topbar } from '@components/shell/Topbar';
 export default function WorkspacePage() {
   const navigate         = useNavigate();
   const { active: business }     = useActiveBusiness();
+  const { user }                 = useAuthStore();
 
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showCreateTask,  setShowCreateTask]  = useState(false);
@@ -101,7 +103,7 @@ export default function WorkspacePage() {
       <Topbar title="Workspace" subtitle="Tasks · Notes · Focus" />
       <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
-        title={`Good ${getGreeting()}, ${getFirstName()}`}
+        title={`Good ${getGreeting()}, ${user?.display_name || 'there'}`}
         subtitle={today.toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         crumbs={[{ label: 'Workspace' }]}
         actions={
@@ -330,10 +332,6 @@ function getGreeting(): string {
   return 'evening';
 }
 
-function getFirstName(): string {
-  // This would pull from user context in the real app
-  return 'Mrs. Ayeni';
-}
 
 function StatCard({ icon: Icon, label, value, color, highlight = false }: {
   icon: typeof Calendar; label: string; value: string; color: string; highlight?: boolean;

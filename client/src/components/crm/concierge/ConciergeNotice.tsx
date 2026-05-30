@@ -12,11 +12,9 @@ export function ConciergeNotice() {
         <Sparkles className="w-4 h-4" />
       </div>
       <div className="text-sm">
-        <p className="text-orika-cream font-medium">Concierge profile — backend pending</p>
+        <p className="text-orika-cream font-medium">Concierge profile coming soon</p>
         <p className="text-orika-cloud text-xs mt-1">
-          The <code className="font-mono text-orika-gold">customer_preferences</code> and <code className="font-mono text-orika-gold">customer_milestones</code> tables exist, but the REST endpoints
-          aren't mounted yet. See <strong>backend/CRM_PATCH_NOTES.md</strong> for the routes to add.
-          Once added, this panel populates automatically — no frontend changes needed.
+          Preferences, milestones, and personalised notes for this customer will appear here. This panel will populate once the Concierge module is enabled for your account.
         </p>
       </div>
     </div>

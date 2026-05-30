@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Mail, Phone, MessageCircle, UserPlus, Sparkles } from 'lucide-react';
+import { Mail, Phone, MessageCircle, UserPlus } from 'lucide-react';
 import { Modal } from '@components/ui/Modal';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
@@ -63,15 +63,6 @@ export function InviteSupplierModal({ open, onClose }: { open: boolean; onClose:
         <Button variant="primary" leftIcon={<UserPlus className="w-4 h-4" />} loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>Add supplier</Button>
       </>}>
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-gold/[0.06] border border-orika-gold/30 p-3 flex items-start gap-2 text-xs text-orika-black/80">
-          <Sparkles className="w-3.5 h-3.5 text-orika-gold mt-0.5 shrink-0" />
-          <p>
-            <strong>Coming soon:</strong> portal invite tokens. Until the backend route lands,
-            inviting a supplier creates them in the directory immediately — you can email them
-            the RFQ details manually for now. See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code>.
-          </p>
-        </div>
-
         <Input {...register('display_name')} label="Display name" placeholder="Goldrush Imports" />
         <Input {...register('company_name')}  label="Company name (optional)" />
         <div className="grid gap-3 sm:grid-cols-2">

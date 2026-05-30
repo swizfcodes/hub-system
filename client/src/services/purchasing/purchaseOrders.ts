@@ -53,3 +53,8 @@ export async function receiveGoods(poId: string, payload: ReceivePayload): Promi
   const { data } = await api.post<GoodsReceipt>(`/purchasing/purchase-orders/${poId}/receive`, payload);
   return data;
 }
+
+export async function listReceiptsForPO(poId: string): Promise<GoodsReceipt[]> {
+  const { data } = await api.get<{ data: GoodsReceipt[] }>(`/purchasing/purchase-orders/${poId}/receipts`);
+  return data.data ?? [];
+}

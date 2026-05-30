@@ -9,7 +9,7 @@ import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
 import { EmptyState } from '@components/ui/EmptyState';
-import { listRFQs, listQuotesForRFQ } from '@services/purchasing/rfqs';
+import { listRFQs, listQuotesForRFQ, generatePOFromQuote } from '@services/purchasing/rfqs';
 import { listSuppliers } from '@services/purchasing/suppliers';
 import { fmtDate, fmtRelative, fmtMoney } from '@lib/format';
 import { scoreQuotes } from '@lib/quoteScoring';
@@ -20,6 +20,7 @@ export default function RFQDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showTokens, setShowTokens] = useState(false);
+  const [generatingPO, setGeneratingPO] = useState<string | null>(null);
 
   // Backend doesn't have GET /rfqs/:id — we look up via list + filter.
   const { data: rfqList, isLoading } = useQuery({ queryKey: ['purchasing', 'rfqs', 'all'], queryFn: () => listRFQs({ limit: 200 }) });
@@ -67,19 +68,15 @@ export default function RFQDetail() {
               {rfq.notes && <p className="mt-4 text-sm text-orika-cloud">{rfq.notes}</p>}
             </Card>
 
-            {/* Portal token preview (Q4) */}
+            {/* Portal token info */}
             {showTokens && (
               <Card className="p-4 mb-6 bg-orika-gold/[0.04] border-orika-gold/30">
                 <div className="flex items-start gap-2 text-sm">
                   <Sparkles className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-orika-cream">Each invited supplier receives a unique tokenised URL like:</p>
-                    <code className="block mt-2 px-3 py-2 bg-orika-black/40 rounded-lg font-mono text-xs text-orika-gold">https://hub.orika.com/rfq/&lt;token&gt;</code>
-                    <p className="text-xs text-orika-smoke mt-2">
-                      <strong>Backend pending:</strong> token generation and the public submission endpoint aren't wired yet.
-                      For now, send suppliers the RFQ details over email and enter their responses manually
-                      <em> (when the manual-entry route lands)</em>. See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code>.
-                    </p>
+                    <p className="text-orika-cream">Sending this RFQ generates a unique tokenised URL per supplier:</p>
+                    <code className="block mt-2 px-3 py-2 bg-orika-black/40 rounded-lg font-mono text-xs text-orika-gold">https://app.orikaliving.com/rfq/&lt;token&gt;</code>
+                    <p className="text-xs text-orika-smoke mt-2">Each supplier can only see their own submission form. Click <strong>Send RFQ</strong> to dispatch the tokens.</p>
                   </div>
                 </div>
               </Card>
@@ -113,7 +110,20 @@ export default function RFQDetail() {
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="font-mono text-lg text-orika-gold">{fmtMoney(q.unit_price, q.currency)}</span>
-                            <Button variant="gold" size="sm" leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />} onClick={() => { showToast.info('Coming soon', 'Convert-to-PO endpoint pending — see PROCUREMENT_PATCH_NOTES.'); }}>
+                            <Button variant="gold" size="sm" leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />}
+                              loading={generatingPO === q.quote_id}
+                              onClick={async () => {
+                                setGeneratingPO(q.quote_id);
+                                try {
+                                  const po = await generatePOFromQuote(q.quote_id);
+                                  showToast.success('PO created', `${po.po_number} is ready.`);
+                                  navigate(`/procurement/purchase-orders/${po.po_id}`);
+                                } catch (e: unknown) {
+                                  showToast.error('Failed to generate PO', (e as { message?: string })?.message ?? 'Unknown error');
+                                } finally {
+                                  setGeneratingPO(null);
+                                }
+                              }}>
                               Generate PO
                             </Button>
                           </div>

@@ -21,6 +21,7 @@ import {
   DASHBOARD_SECTIONS, BRAND_OPTIONS, PERIOD_OPTIONS,
   DEFAULT_VISIBLE_SECTIONS, getPeriodParams, type SectionKey, type BrandOption } from '@lib/constants/dashboardConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { useAuthStore } from '@stores/useAuthStore';
 import { useUiStore } from '@stores/useUiStore';
 import { useIsDesktop } from '@hooks/useMediaQuery';
 import { CommandPalette } from '@components/search/CommandPalette';
@@ -110,7 +111,8 @@ export default function DashboardPage() {
     });
   }
 
-  const greeting = getGreeting();
+  const { user } = useAuthStore();
+  const greeting = getGreeting(user?.display_name);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-orika-black">
@@ -305,9 +307,10 @@ export default function DashboardPage() {
   );
 }
 
-function getGreeting(): string {
+function getGreeting(name?: string): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning, Mrs. Ayeni ☀️';
-  if (h < 17) return 'Good afternoon, Mrs. Ayeni 👋';
-  return 'Good evening, Mrs. Ayeni 🌙';
+  const n = name || 'there';
+  if (h < 12) return `Good morning, ${n} ☀️`;
+  if (h < 17) return `Good afternoon, ${n} 👋`;
+  return `Good evening, ${n} 🌙`;
 }

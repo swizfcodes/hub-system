@@ -11,6 +11,7 @@ import { AuditTab } from './tabs/AuditTab';
 import { ConciergeTab } from './tabs/ConciergeTab';
 import { PlaceholderTab } from './tabs/PlaceholderTab';
 import { listDeals } from '@services/crm/deals';
+import { listInvoices } from '@services/invoicing/invoices';
 import { Card } from '@components/ui/Card';
 import { Skeleton } from '@components/ui/Skeleton';
 import { Badge } from '@components/ui/Badge';
@@ -18,7 +19,8 @@ import { StagePill } from '@components/crm/shared/StagePill';
 import { ProbabilityBar } from '@components/crm/shared/ProbabilityBar';
 import { fmtMoney, fmtRelative } from '@lib/format';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, TrendingUp, Plus } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, Plus, Receipt } from 'lucide-react';
+import { fmtDate } from '@lib/format';
 import { EmptyState } from '@components/ui/EmptyState';
 import { Button } from '@components/ui/Button';
 import { NewDealModal } from '@components/crm/modals/NewDealModal';
@@ -59,7 +61,7 @@ export function ContactDetailTabs({ contact, extraTabs = [], extraRenderers = {}
         {active === 'tasks'      && <TasksTab    contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'calendar'   && <CalendarTab contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'deals'      && <DealsTab contactId={contact.contact_id} contactName={contact.display_name} />}
-        {active === 'invoices'   && <PlaceholderTab title="Invoices" description={`Invoices issued to ${contact.display_name} will appear here when the Invoicing module is built.`} linkTo="/invoicing" linkLabel="Open Invoicing" />}
+        {active === 'invoices'   && <ContactInvoicesTab contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'concierge'  && <ConciergeTab contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'notes'      && <NotesTab contact={contact} />}
         {active === 'documents'  && <PlaceholderTab title="Documents" description={`Files linked to ${contact.display_name} (contracts, IDs, photos) will appear here when the Documents module is built.`} linkTo="/documents" linkLabel="Open Documents" />}
@@ -127,6 +129,55 @@ function DealsTab({ contactId, contactName }: { contactId: string; contactName: 
       )}
 
       <NewDealModal open={creating} onClose={() => setCreating(false)} defaultContactId={contactId} />
+    </div>
+  );
+}
+
+function ContactInvoicesTab({ contactId, contactName }: { contactId: string; contactName: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['invoicing', { contactId }],
+    queryFn: () => listInvoices({ contactId, limit: 50 }),
+  });
+  const invoices = data?.data ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+          <Receipt className="w-3.5 h-3.5" /> Invoices · {invoices.length}
+        </h3>
+        <Link to={`/invoicing?contact=${contactId}`}>
+          <Button variant="secondary" size="sm" leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />}>Open Invoicing</Button>
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-16" />)}</div>
+      ) : invoices.length === 0 ? (
+        <EmptyState icon={<Receipt className="w-6 h-6" />} title="No invoices yet" description={`No invoices have been issued to ${contactName}.`} />
+      ) : (
+        <div className="space-y-2">
+          {invoices.map((inv) => (
+            <Link key={inv.invoice_id} to={`/invoicing/${inv.invoice_id}`}>
+              <Card className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-orika-smoke">{inv.invoice_number}</span>
+                      <Badge tone={inv.status === 'paid' ? 'sage' : inv.status === 'overdue' ? 'danger' : 'neutral'} size="xs" dot>{inv.status}</Badge>
+                    </div>
+                    <div className="text-[0.65rem] text-orika-smoke mt-1">Due {fmtDate(inv.due_date)}</div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-mono text-sm text-orika-gold">{fmtMoney(inv.total_amount, 'NGN')}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke" />
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

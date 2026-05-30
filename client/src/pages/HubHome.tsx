@@ -4,6 +4,8 @@ import { useGreeting } from '@hooks/useGreeting';
 import { useAuthStore } from '@stores/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesData, getFinanceData } from '@services/dashboard/dashboard';
+import { getAuditFeed } from '@services/audit';
+import { fmtRelative } from '@lib/format';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useBusinessStore } from '@stores/useBusinessStore';
 import { AppGrid } from '@components/hub/AppGrid';
@@ -33,6 +35,13 @@ export default function HubHome() {
     queryFn:  () => getFinanceData({ year, month }),
     enabled:  !!business,
     staleTime: 5 * 60_000,
+  });
+
+  const { data: auditFeed = [] } = useQuery({
+    queryKey: ['audit', 'feed', business],
+    queryFn:  () => getAuditFeed({ business: business ?? undefined, limit: 10 }),
+    enabled:  !!business,
+    staleTime: 60_000,
   });
 
   // Derived KPI values — show real data when available, fallback to "—"
@@ -141,15 +150,31 @@ export default function HubHome() {
           <AppGrid modules={HUB_MODULES} badges={badges} />
         </section>
 
-        {/* Recent activity strip — placeholder for now */}
+        {/* Recent activity strip */}
         <section>
           <div className="flex items-center gap-4 mb-5">
             <div className="text-[0.65rem] tracking-[0.18em] uppercase text-orika-smoke">Recent Activity</div>
             <div className="flex-1 h-px bg-gradient-to-r from-orika-graphite to-transparent" />
           </div>
-          <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-6 text-center">
-            <p className="text-sm text-orika-smoke">Your recent activity will appear here once the audit feed is wired in.</p>
-          </div>
+          {auditFeed.length === 0 ? (
+            <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-6 text-center">
+              <p className="text-sm text-orika-smoke">No recent activity yet.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 divide-y divide-orika-graphite/50">
+              {auditFeed.map((entry) => (
+                <div key={entry.log_id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orika-gold/60 shrink-0" />
+                  <span className="text-xs text-orika-cream truncate flex-1">
+                    <span className="font-medium">{entry.user_name}</span>
+                    {' '}{entry.action}{' '}
+                    <span className="text-orika-smoke">{entry.table_name.replace(/_/g, ' ')}</span>
+                  </span>
+                  <span className="text-[0.65rem] text-orika-smoke shrink-0">{fmtRelative(entry.occurred_at)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </>

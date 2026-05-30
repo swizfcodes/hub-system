@@ -380,8 +380,8 @@ function StockPlaceholderTab({ productName }: { productName: string }) {
   return (
     <EmptyState
       icon={<BookOpen className="w-6 h-6" />}
-      title="Stock module coming next"
-      description={`On-hand quantities, movement history, reservations, transfers and adjustments for ${productName} will surface here when the Stock module ships.`}
+      title="Stock details not available here"
+      description={`On-hand quantities, movement history, reservations and adjustments for ${productName} are managed in the Stock module.`}
     />
   );
 }
@@ -399,12 +399,10 @@ function AccountingPlaceholderTab({ product }: { product: Product }) {
           <Map label="Sales revenue"     value={product.income_account_id ?? `Default from ${product.category_name ?? 'category'}`} />
         </div>
       </Card>
-      <div className="rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-4 flex items-start gap-3">
-        <BookOpen className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
+      <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-4 flex items-start gap-3">
+        <BookOpen className="w-4 h-4 text-orika-smoke mt-0.5 shrink-0" />
         <div className="text-xs text-orika-cloud">
-          <strong className="text-orika-cream">Backend pending:</strong> account ID columns are not yet on the products table.
-          See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code> for the migration + service update.
-          Once added, you can override the category default per product right here.
+          Per-product GL account overrides are not yet configurable. The category defaults apply. Contact your administrator to update account mappings.
         </div>
       </div>
     </div>

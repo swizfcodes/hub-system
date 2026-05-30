@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Receipt, Sparkles } from 'lucide-react';
+import { Plus, Receipt } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
@@ -27,14 +27,6 @@ export default function BillsPage() {
           crumbs={[{ label: 'Hub', to: '/' }, { label: 'Procurement', to: '/procurement' }, { label: 'Bills' }]}
           actions={<Link to="/procurement/bills/new"><Button variant="gold" leftIcon={<Plus className="w-4 h-4" />}>New bill</Button></Link>}
         />
-
-        <div className="mb-5 rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-4 flex items-start gap-3">
-          <Sparkles className="w-4 h-4 text-orika-gold shrink-0 mt-0.5" />
-          <div className="text-sm text-orika-cream">
-            <strong>Backend pending.</strong> The <code className="font-mono text-orika-gold">supplier_invoices</code> table exists but the routes aren't yet exposed.
-            Once mounted (see <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code>), this page lights up with full CRUD + 3-way match.
-          </div>
-        </div>
 
         {isLoading ? (
           <div className="space-y-2">{[0,1,2].map((i) => <Skeleton key={i} className="h-16" />)}</div>

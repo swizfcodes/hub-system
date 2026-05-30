@@ -19,10 +19,6 @@ export async function createRFQ(payload: CreateRFQPayload): Promise<RFQ> {
   return data;
 }
 
-/**
- * Backend gap: list supplier quotes for an RFQ — endpoint not exposed yet.
- * Returns an empty array gracefully so the UI can render the empty state.
- */
 export async function listQuotesForRFQ(rfqId: string): Promise<SupplierQuote[]> {
   try {
     const { data } = await api.get<{ data: SupplierQuote[] } | SupplierQuote[]>(`/purchasing/rfqs/${rfqId}/quotes`);
@@ -33,12 +29,13 @@ export async function listQuotesForRFQ(rfqId: string): Promise<SupplierQuote[]> 
   }
 }
 
-/**
- * Backend gap: send an RFQ (transition draft → sent + dispatch tokens).
- * Frontend stub for now.
- */
 export async function sendRFQ(rfqId: string): Promise<RFQ> {
   const { data } = await api.post<RFQ>(`/purchasing/rfqs/${rfqId}/send`);
+  return data;
+}
+
+export async function generatePOFromQuote(quoteId: string): Promise<import('@typedefs/purchasing').PurchaseOrder> {
+  const { data } = await api.post<import('@typedefs/purchasing').PurchaseOrder>(`/purchasing/quotes/${quoteId}/generate-po`);
   return data;
 }
 

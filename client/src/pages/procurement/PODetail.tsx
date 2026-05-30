@@ -8,7 +8,7 @@ import { Skeleton } from '@components/ui/Skeleton';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 import { Badge } from '@components/ui/Badge';
-import { getPO } from '@services/purchasing/purchaseOrders';
+import { getPO, listReceiptsForPO } from '@services/purchasing/purchaseOrders';
 import { fmtDate, fmtDateTime, fmtMoney } from '@lib/format';
 import { ReceiveGoodsModal } from '@components/procurement/grn/ReceiveGoodsModal';
 import type { POStatus } from '@typedefs/purchasing';
@@ -24,6 +24,7 @@ export default function PODetail() {
   const [receiving, setReceiving] = useState(false);
 
   const { data: po, isLoading } = useQuery({ queryKey: ['purchasing', 'po', id], queryFn: () => getPO(id!), enabled: !!id });
+  const { data: receipts = [] } = useQuery({ queryKey: ['purchasing', 'po', id, 'receipts'], queryFn: () => listReceiptsForPO(id!), enabled: !!id });
 
   const isReceivable = po && ['sent', 'acknowledged', 'partially_received'].includes(po.status);
   const totalReceived = po?.lines?.reduce((s, l) => s + (l.quantity_received ?? 0), 0) ?? 0;
@@ -84,13 +85,23 @@ export default function PODetail() {
                 </div>
               </Card>
 
-              {/* Receipts placeholder - we know GRN exists but GET endpoint not exposed */}
+              {/* Goods receipts */}
               <Card className="p-5">
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2"><Truck className="w-3.5 h-3.5" /> Goods receipts</h3>
-                <p className="text-xs text-orika-cloud">{po.status === 'received' ? 'All ordered goods have been received.' : po.status === 'partially_received' ? 'Some goods received; rest pending.' : 'No goods received yet.'}</p>
-                <p className="text-[0.65rem] text-orika-smoke mt-2">
-                  <strong>Backend pending:</strong> a per-PO GRN list endpoint is needed to surface individual receipts here.
-                </p>
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2"><Truck className="w-3.5 h-3.5" /> Goods receipts · {receipts.length}</h3>
+                {receipts.length === 0 ? (
+                  <p className="text-xs text-orika-cloud">{po.status === 'received' ? 'All ordered goods have been received.' : po.status === 'partially_received' ? 'Some goods received; remainder pending.' : 'No goods received yet.'}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {receipts.map((r) => (
+                      <div key={r.receipt_id} className="flex items-center gap-3 text-xs py-2 border-b border-orika-graphite/40 last:border-0">
+                        <ArrowDownToLine className="w-3.5 h-3.5 text-orika-gold shrink-0" />
+                        <span className="text-orika-cream flex-1">Received {fmtDate(r.received_date)}</span>
+                        {r.notes && <span className="text-orika-smoke truncate max-w-xs">{r.notes}</span>}
+                        <span className="text-orika-smoke shrink-0">{r.lines?.length ?? 0} line(s)</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </Card>
 
               {po.notes && (

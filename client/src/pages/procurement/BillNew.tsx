@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Sparkles, AlertTriangle, Check } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, Check } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { Breadcrumbs } from '@components/ui/Breadcrumbs';
 import { Button } from '@components/ui/Button';
@@ -35,14 +35,6 @@ export default function BillNew() {
           <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">Supplier bill · 3-way match</p>
           <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">Match <span className="italic text-orika-gold">PO + GRN + Bill</span></h1>
         </header>
-
-        <Card className="p-4 mb-6 bg-orika-gold/[0.04] border-orika-gold/30 flex items-start gap-2">
-          <Sparkles className="w-4 h-4 text-orika-gold shrink-0 mt-0.5" />
-          <p className="text-sm text-orika-cream">
-            <strong>Backend pending.</strong> The full match interface here writes to <code className="font-mono text-orika-gold">supplier_invoices</code> once
-            the endpoints are mounted. See <code className="font-mono text-orika-gold">backend/PROCUREMENT_PATCH_NOTES.md</code>.
-          </p>
-        </Card>
 
         {isLoading ? <Skeleton className="h-96" /> : !po ? (
           <Card className="p-6 text-center">
