@@ -59,6 +59,7 @@ jobs:
             # client build needs devDependencies (vite, tailwind, the
             # react plugin) — so a plain npm install here, NOT --omit=dev.
             cd client
+            rm -rf node_modules package-lock.json
             npm install
             npm run build
             cd ..
