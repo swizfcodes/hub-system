@@ -6,7 +6,8 @@ const router = express.Router();
 const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
-const service = require("./catalogue.service");
+const service  = require("./catalogue.service");
+const { buildTemplate } = require("./template");
 
 // ─────────────────────────────────────────────────────────────
 // modules/catalogue/catalogue.routes
@@ -114,6 +115,23 @@ router.delete(
       res.json(
         await service.deleteCategory(req.business, req.params.id, req.user),
       );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── PRODUCT IMPORT TEMPLATE ─────────────────────────────────
+
+router.get(
+  "/products/import-template",
+  can("catalogue", "view"),
+  async (req, res, next) => {
+    try {
+      const buffer = await buildTemplate();
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", 'attachment; filename="orika_product_import_template.xlsx"');
+      res.send(buffer);
     } catch (err) {
       next(err);
     }

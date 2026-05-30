@@ -172,6 +172,68 @@ router.get(
 );
 
 /**
+ * Personal activity feed — authenticated user's own recent actions.
+ * No audit:view permission required; user_id is always scoped to the
+ * caller so they can only see their own activity.
+ *
+ * Query params:
+ *   business — optional business key filter
+ *   from     — ISO timestamp lower bound (default: 24h ago)
+ *   limit    — max rows, default 20, max 50
+ */
+router.get(
+  "/my-feed",
+  query("business").optional().isString(),
+  query("from").optional().isISO8601(),
+  query("limit").optional().isInt({ min: 1, max: 50 }),
+  validate,
+  async (req, res, next) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+      const from  = req.query.from || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      const conditions = ["user_id = $1", "occurred_at >= $2::timestamptz"];
+      const params     = [req.user.user_id, from];
+
+      if (req.query.business) {
+        params.push(req.query.business);
+        conditions.push(`business = $${params.length}`);
+      }
+
+      params.push(limit);
+      const { rows } = await pool.query(
+        `SELECT log_id, occurred_at, user_name, business, module,
+                action, table_name, record_id
+         FROM shared.audit_log
+         WHERE ${conditions.join(" AND ")}
+         ORDER BY occurred_at DESC
+         LIMIT $${params.length}`,
+        params,
+      );
+
+      // If nothing in the window, return the last N events regardless of age
+      // so the feed never shows empty on a quiet day.
+      if (rows.length === 0) {
+        const { rows: fallback } = await pool.query(
+          `SELECT log_id, occurred_at, user_name, business, module,
+                  action, table_name, record_id
+           FROM shared.audit_log
+           WHERE user_id = $1
+           ORDER BY occurred_at DESC
+           LIMIT $2`,
+          [req.user.user_id, limit],
+        );
+        return res.json({ data: fallback, window: "all_time" });
+      }
+
+      res.json({ data: rows, window: "24h" });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
  * Lightweight activity feed — used by the Hub dashboard and
  * SmartComm sidebars. Returns a flat chronological slice of
  * recent audit events filtered by module and/or business.

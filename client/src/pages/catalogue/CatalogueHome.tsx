@@ -155,7 +155,7 @@ function ProductsTab({
           options={[{ value: '', label: 'All categories' }, ...cats.map((c) => ({ value: c.category_id, label: c.name }))]}
         />
         <button
-          onClick={() => downloadProductTemplate()}
+          onClick={() => downloadProductTemplate().catch(() => {})}
           title="Download import template"
           className="inline-flex items-center gap-2 px-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal border-orika-graphite text-orika-smoke hover:text-orika-cream"
         >

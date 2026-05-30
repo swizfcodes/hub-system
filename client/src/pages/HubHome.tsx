@@ -4,7 +4,7 @@ import { useGreeting } from '@hooks/useGreeting';
 import { useAuthStore } from '@stores/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesData, getFinanceData } from '@services/dashboard/dashboard';
-import { getAuditFeed } from '@services/audit';
+import { getMyAuditFeed } from '@services/audit';
 import { fmtRelative } from '@lib/format';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { useBusinessStore } from '@stores/useBusinessStore';
@@ -37,12 +37,13 @@ export default function HubHome() {
     staleTime: 5 * 60_000,
   });
 
-  const { data: auditFeed = [] } = useQuery({
-    queryKey: ['audit', 'feed', business],
-    queryFn:  () => getAuditFeed({ business: business ?? undefined, limit: 10 }),
-    enabled:  !!business,
+  const { data: auditResult } = useQuery({
+    queryKey: ['audit', 'my-feed', business],
+    queryFn:  () => getMyAuditFeed({ business: business ?? undefined, limit: 20 }),
     staleTime: 60_000,
   });
+  const auditFeed   = auditResult?.data   ?? [];
+  const auditWindow = auditResult?.window ?? '24h';
 
   // Derived KPI values — show real data when available, fallback to "—"
   const todayRevenue   = salesData?.revenue?.total_amount;
@@ -154,6 +155,7 @@ export default function HubHome() {
         <section>
           <div className="flex items-center gap-4 mb-5">
             <div className="text-[0.65rem] tracking-[0.18em] uppercase text-orika-smoke">Recent Activity</div>
+            <span className="text-[0.6rem] text-orika-smoke/60">{auditWindow === '24h' ? 'Last 24 hours' : 'All time'}</span>
             <div className="flex-1 h-px bg-gradient-to-r from-orika-graphite to-transparent" />
           </div>
           {auditFeed.length === 0 ? (

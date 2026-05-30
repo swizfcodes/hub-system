@@ -11,11 +11,17 @@ export interface AuditFeedEntry {
   record_id?: string;
 }
 
-export async function getAuditFeed(params: { business?: string; module?: string; limit?: number } = {}): Promise<AuditFeedEntry[]> {
+export interface AuditFeedResult {
+  data: AuditFeedEntry[];
+  /** '24h' if results are from the last 24 hours, 'all_time' if fallback */
+  window: '24h' | 'all_time';
+}
+
+export async function getMyAuditFeed(params: { business?: string; limit?: number } = {}): Promise<AuditFeedResult> {
   try {
-    const { data } = await api.get<{ data: AuditFeedEntry[] }>('/audit/feed', { params });
-    return data.data ?? [];
+    const { data } = await api.get<AuditFeedResult>('/audit/my-feed', { params });
+    return data;
   } catch {
-    return [];
+    return { data: [], window: '24h' };
   }
 }
