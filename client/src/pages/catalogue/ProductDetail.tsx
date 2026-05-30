@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Pencil, Archive, RotateCw, Image as ImageIcon, Truck, Hash, BookOpen, ExternalLink, Plus, Star, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Archive, RotateCw, Image as ImageIcon, Truck, Hash, BookOpen, Plus, Star, Trash2, Copy, Check } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { Breadcrumbs } from '@components/ui/Breadcrumbs';
 import { Skeleton } from '@components/ui/Skeleton';
@@ -16,7 +16,7 @@ import { ConfirmationModal } from '@components/ui/ConfirmationModal';
 import { ProductImage } from '@components/catalogue/shared/ProductImage';
 import { ProductPrice } from '@components/catalogue/shared/ProductPrice';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
-import { getProduct, deleteProduct, restoreProduct, listImages, uploadImage, setPrimaryImage, deleteImage, listBarcodes, addBarcode, deleteBarcode, listProductSuppliers, unlinkSupplier } from '@services/catalogue/products';
+import { getProduct, deleteProduct, restoreProduct, getShareUrl, listImages, uploadImage, setPrimaryImage, deleteImage, listBarcodes, addBarcode, deleteBarcode, listProductSuppliers, unlinkSupplier } from '@services/catalogue/products';
 import { listSuppliers } from '@services/purchasing/suppliers';
 import { linkSupplier } from '@services/catalogue/products';
 import { showToast } from '@hooks/useToast';
@@ -41,6 +41,18 @@ export default function ProductDetail() {
   const [tab, setTab] = useState('overview');
   const [editing, setEditing] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function handleShareUrl() {
+    try {
+      const { url } = await getShareUrl(id!);
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast.error('Could not copy share URL');
+    }
+  }
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['catalogue', 'product', id],
@@ -91,9 +103,9 @@ export default function ProductDetail() {
                   ) : (
                     <Button variant="danger" size="sm" leftIcon={<Archive className="w-3.5 h-3.5" />} onClick={() => setArchiveOpen(true)}>Archive</Button>
                   )}
-                  <Link to={`/catalogue/${product.product_id}/share`} className="inline-flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-cream">
-                    Share URL <ExternalLink className="w-3 h-3" />
-                  </Link>
+                  <button onClick={handleShareUrl} className="inline-flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-cream">
+                    {copied ? <><Check className="w-3 h-3 text-green-400" /> Copied!</> : <><Copy className="w-3 h-3" /> Share URL</>}
+                  </button>
                 </div>
               </div>
             </header>

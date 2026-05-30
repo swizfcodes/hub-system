@@ -144,12 +144,11 @@ async function listProducts(business, query, user) {
       limit: query.limit,
     });
 
-    // --- NEW: Map the rows to inject the image_url for the UI Cards ---
     const mappedRows = rows.map(p => ({
       ...p,
-      image_url: p.primary_image_document_id 
-        ? `/api/documents/${p.primary_image_document_id}/image` 
-        : null
+      primary_image_url: p.primary_image_document_id
+        ? `/api/documents/${p.primary_image_document_id}/image`
+        : null,
     }));
 
     return { data: mappedRows };
@@ -178,7 +177,7 @@ async function getProduct(business, productId) {
 
     return {
       ...product,
-      image_url: product.primary_image_document_id ? `/api/documents/${product.primary_image_document_id}/image` : null,
+      primary_image_url: product.primary_image_document_id ? `/api/documents/${product.primary_image_document_id}/image` : null,
       images: mappedImages,
       suppliers,
       barcodes,
