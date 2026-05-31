@@ -126,6 +126,7 @@ router.use(
   protect,
   require("../modules/accounting/accounting.routes"),
 );
+router.use("/tax", protect, require("../modules/tax/tax.routes"));
 router.use("/stock", protect, require("../modules/stock/stock.routes"));
 router.use(
   "/purchasing",

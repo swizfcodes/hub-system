@@ -11,7 +11,7 @@ import { cn } from '@lib/cn';
 const NAV_GROUPS: { label: string; modules: string[] }[] = [
   { label: 'Run',     modules: ['dashboard', 'crm', 'sales', 'pos'] },
   { label: 'Operate', modules: ['logistics', 'stock', 'purchasing', 'catalogue', 'retail-partners'] },
-  { label: 'Finance', modules: ['invoicing', 'accounting', 'expenses', 'reports'] },
+  { label: 'Finance', modules: ['invoicing', 'accounting', 'tax', 'expenses', 'reports'] },
   { label: 'People',  modules: ['staff', 'payroll', 'contacts', 'messaging', 'loyalty'] },
   { label: 'Grow',    modules: ['campaigns', 'social', 'calendar', 'tasks'] },
   { label: 'System',  modules: ['settings', 'security', 'documents'] },

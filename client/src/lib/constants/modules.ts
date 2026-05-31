@@ -2,7 +2,7 @@ import {
   LayoutGrid, Users, ShoppingBag, CreditCard, Truck, Package, Factory,
   FileText, BookOpen, Wallet, UserCog, Megaphone, MessageCircle, Calendar,
   CheckSquare, BarChart3, Mail, Heart, Building2, Settings, ShieldCheck,
-  Share2, Vault,
+  Share2, Vault, Landmark,
 } from 'lucide-react';
 
 export interface AppModule {
@@ -26,6 +26,7 @@ export const HUB_MODULES: AppModule[] = [
   { key: 'purchasing',      label: 'Procurement',    description: 'RFQ · PO · GRN · Bills',              icon: Factory,       route: '/procurement',       badgeKey: 'pending_pos',   accent: 'sage',  group: 'ops' },
   { key: 'invoicing',       label: 'Invoices',       description: 'Issue & track invoices',              icon: FileText,      route: '/invoicing',         badgeKey: 'overdue',       accent: 'gold',  group: 'finance' },
   { key: 'accounting',      label: 'Accounting',     description: 'Chart of accounts, ledgers',          icon: BookOpen,      route: '/accounting',        accent: 'gold',  group: 'finance' },
+  { key: 'tax',             label: 'Tax Center',     description: 'VAT, WHT, PAYE & CIT filing',          icon: Landmark,      route: '/tax',               accent: 'gold',  group: 'finance' },
   { key: 'expenses',        label: 'Expenses',       description: 'Submissions & approvals',             icon: Wallet,        route: '/expenses',          badgeKey: 'awaiting_approval', accent: 'gold', group: 'finance' },
   { key: 'payroll',         label: 'Payroll',        description: 'Staff salaries & payslips',           icon: UserCog,       route: '/payroll',           accent: 'gold',  group: 'people' },
   { key: 'staff',           label: 'HR & Staff',     description: 'Team profiles & directory',           icon: Users,         route: '/staff',             accent: 'rose',  group: 'people' },

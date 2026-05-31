@@ -197,7 +197,7 @@ async function confirmOrder(business, orderId, user) {
         contactId = existing.contact_id;
       } else {
         const { rows: [newContact] } = await client.query(
-          `INSERT INTO shared.contacts (display_name, primary_phone, primary_email, contact_type, visible_to)
+          `INSERT INTO shared.contacts (display_name, primary_phone, email, contact_type, visible_to)
            VALUES ($1, $2, $3, ARRAY['customer']::text[], ARRAY[$4])
            RETURNING contact_id`,
           [order.customer_name, order.customer_phone, order.customer_email || null, business]
