@@ -68,11 +68,9 @@ router.use(
   const docService = require("../shared/documents/documents.service");
   router.get("/documents/:id/image", async (req, res, next) => {
     try {
-      const { buffer, mime_type, document } = await docService.downloadDocument(
-        req.params.id,
-        null,
-      );
-      if (document.document_type !== "product_image") {
+      const { buffer, mime_type, document_type } =
+        await docService.getImageForPublic(req.params.id);
+      if (document_type !== "product_image") {
         return res.status(404).end();
       }
       res.set({

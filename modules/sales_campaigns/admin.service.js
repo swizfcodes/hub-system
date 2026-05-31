@@ -341,7 +341,10 @@ const validate = require('../../middleware/validateBody');
 const { can }  = require('../../middleware/permissions');
 const svc      = module.exports; // self-reference
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+// 20 MB inbound cap — large originals are accepted then compressed to WebP
+// server-side (see documentsService.uploadDocument → lib/images/optimizeImage),
+// so the stored/served hero ends up a fraction of the upload size.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 // Campaigns CRUD
 router.get('/',       can('sales_campaigns','view'),   async (req,res,next) => { try { res.json(await svc.listCampaigns(req.business, req.query)); } catch(e) { next(e); }});

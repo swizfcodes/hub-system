@@ -528,6 +528,13 @@ export default function CampaignBuilder() {
               <p className="text-sm font-semibold text-orika-cream flex items-center gap-2">
                 <Share2 className="h-4 w-4 text-orika-gold" /> Share your campaign
               </p>
+              {existing.status !== 'live' && (
+                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+                  This campaign is <strong>{existing.status}</strong>. The link below will show
+                  “Not Available” to visitors until you publish it
+                  {existing.status === 'scheduled' ? ' and its start date is reached' : ''}.
+                </div>
+              )}
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2">
                 <Link className="h-3.5 w-3.5 text-orika-smoke shrink-0" />
                 <p className="text-xs text-orika-cloud flex-1 truncate">{publicUrl}</p>
@@ -542,7 +549,7 @@ export default function CampaignBuilder() {
                   const sub   = existing.subheadline ? `\n${existing.subheadline}` : '';
                   const body  = existing.body_copy ? `\n\n${existing.body_copy}` : '';
                   const disc  = existing.discount_type === 'percentage' && existing.discount_value
-                    ? `\n\n🏷️ Get ${existing.discount_value}% off your order!`
+                    ? `\n\n🏷️ Get ${Number(existing.discount_value)}% off your order!`
                     : existing.discount_type === 'fixed_amount' && existing.discount_value
                     ? `\n\n🏷️ Save ₦${Number(existing.discount_value).toLocaleString()} on your order!`
                     : '';

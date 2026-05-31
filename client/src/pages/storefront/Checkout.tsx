@@ -41,6 +41,13 @@ export default function Checkout() {
 
   const fulfilmentType = watch('fulfilment_type');
   const paymentMethod  = watch('payment_method');
+  // The account the customer actually picked — fall back to the first
+  // (or the primary) so the transfer screen never renders the wrong details.
+  const selectedBankId = watch('bank_account_id');
+  const selectedAccount =
+    bankAccounts.find(a => a.id === selectedBankId) ??
+    bankAccounts.find(a => a.is_primary) ??
+    bankAccounts[0];
 
   // If cart is empty, go back
   useEffect(() => {
@@ -320,25 +327,23 @@ export default function Checkout() {
             </div>
 
             {/* Selected bank account */}
-            {bankAccounts.find(a => a.id === /* from form */ bankAccounts[0]?.id) && (
+            {selectedAccount && (
               <div className="rounded-2xl border border-white/8 bg-white/5 p-5 space-y-3">
                 <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Transfer to this account</p>
-                {bankAccounts.map(acct => (
-                  <div key={acct.id} className="space-y-2">
-                    <DetailRow label="Bank" value={acct.bank_name} />
-                    <DetailRow label="Account name" value={acct.account_name} />
-                    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Account number</p>
-                        <p className="font-mono text-white font-bold text-lg">{acct.account_number}</p>
-                      </div>
-                      <button onClick={() => copyAccountNumber(acct.account_number)}
-                        className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors">
-                        {copiedAccount === acct.account_number ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
-                      </button>
+                <div className="space-y-2">
+                  <DetailRow label="Bank" value={selectedAccount.bank_name} />
+                  <DetailRow label="Account name" value={selectedAccount.account_name} />
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p className="text-xs text-gray-500">Account number</p>
+                      <p className="font-mono text-white font-bold text-lg">{selectedAccount.account_number}</p>
                     </div>
+                    <button onClick={() => copyAccountNumber(selectedAccount.account_number)}
+                      className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors">
+                      {copiedAccount === selectedAccount.account_number ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+                    </button>
                   </div>
-                )).slice(0, 1)}
+                </div>
                 <div className="flex items-center justify-between rounded-xl bg-amber-400/10 border border-amber-400/20 px-4 py-3">
                   <p className="text-xs text-amber-300">Transfer exactly</p>
                   <p className="text-xl font-black text-amber-400">{fmtMoney(order.total_amount)}</p>

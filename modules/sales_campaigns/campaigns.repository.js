@@ -337,9 +337,12 @@ async function getStorefrontCampaign(client, slug) {
                 'description',       p.description,
                 'image_url',         COALESCE(
                                        cp.campaign_image_url,
-                                       CASE WHEN p.primary_image_document_id IS NOT NULL
-                                            THEN '/api/documents/' || p.primary_image_document_id || '/image'
-                                            ELSE NULL END
+                                       (SELECT '/api/documents/' || pi.document_id || '/image'
+                                          FROM product_images pi
+                                         WHERE pi.product_id = p.product_id
+                                           AND pi.is_primary = true
+                                         ORDER BY pi.display_order
+                                         LIMIT 1)
                                      ),
                 'selling_price',     p.selling_price,
                 'campaign_price',    cp.campaign_price,

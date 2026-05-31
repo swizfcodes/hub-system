@@ -186,7 +186,7 @@ export default function LandingPage() {
           <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
             {campaign.discount_type !== 'none' && campaign.discount_value && (
               <div className={cn('inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold mb-6', TEMPLATE_BADGE[T])}>
-                🔥 {campaign.discount_type === 'percentage' ? `${campaign.discount_value}% OFF` : `₦${campaign.discount_value?.toLocaleString()} OFF`}
+                🔥 {campaign.discount_type === 'percentage' ? `${Number(campaign.discount_value)}% OFF` : `₦${Number(campaign.discount_value).toLocaleString()} OFF`}
               </div>
             )}
 
