@@ -29,6 +29,15 @@ import {
 import type { CampaignProduct } from '@typedefs/salesCampaign';
 import { cn } from '@lib/cn';
 
+// Derive a URL-safe slug from a campaign name (used to auto-create a draft when
+// someone uploads a hero image before filling in the slug).
+function slugify(s: string): string {
+  return s.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+}
+
 const STEPS = [
   { id: 1, label: 'Details',  desc: 'Name, template & copy' },
   { id: 2, label: 'Products', desc: 'What you\'re selling'   },
@@ -50,16 +59,37 @@ export default function CampaignBuilder() {
   const [heroUploading, setHeroUploading] = useState(false);
   const heroInputRef = useRef<HTMLInputElement>(null);
 
+  // Create the campaign as a draft on the fly when one doesn't exist yet (e.g.
+  // the user drops in a hero image before pressing Save). We only need a name —
+  // the slug is auto-derived if it's still blank. Returns the id, or null with a
+  // gentle nudge if there isn't enough to create one.
+  async function ensureCampaignId(): Promise<string | null> {
+    if (campaignId) return campaignId;
+    const values = getValues();
+    const name = (values.campaign_name ?? '').trim();
+    if (name.length < 2) {
+      showToast.error('Add a campaign name first, then add your image');
+      return null;
+    }
+    let slug = values.slug;
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+      slug = slugify(name);
+      setValue('slug', slug, { shouldValidate: true });
+    }
+    const created = await createCampaign({ ...values, slug });
+    setCampaignId(created.campaign_id);
+    navigate(`/sales-campaigns/${created.campaign_id}`, { replace: true });
+    return created.campaign_id;
+  }
+
   async function handleHeroUpload(file: File) {
-    if (!campaignId) return showToast.error('Save the campaign details first');
     setHeroUploading(true);
     try {
-      const { url } = await uploadHeroImage(campaignId, file);
-      // Reflect the new URL in the form field
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__heroUrl = url; // temp signal — reset below
-      await updateCampaign(campaignId, { hero_image_url: url });
-      qc.invalidateQueries({ queryKey: ['sales-campaign', campaignId] });
+      const cid = await ensureCampaignId();
+      if (!cid) return; // nudge already shown
+      const { url } = await uploadHeroImage(cid, file);
+      await updateCampaign(cid, { hero_image_url: url });
+      qc.invalidateQueries({ queryKey: ['sales-campaign', cid] });
       showToast.success('Hero image uploaded');
     } catch (e: any) {
       showToast.error(e.message ?? 'Upload failed');
@@ -76,7 +106,7 @@ export default function CampaignBuilder() {
     enabled:  !!campaignId && !isNew,
   });
 
-  const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<CampaignFormValues>({
+  const { register, handleSubmit, control, watch, reset, getValues, setValue, formState: { errors } } = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       template: 'editorial', discount_type: 'none', is_evergreen: false,
