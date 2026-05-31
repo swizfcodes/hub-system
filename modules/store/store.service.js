@@ -31,6 +31,34 @@ const repo = require("./store.repository");
 const STORE_BUSINESS = "diffusers";
 const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
 
+// Scents are derived from published products, but the ERP captures no
+// presentation styling (no swatch/ink). This palette — keyed by the six
+// scent_family enum values — gives each derived scent its colour, mirroring
+// the storefront's design defaults. A store.scents row, if one ever exists,
+// overrides these (the repo returns its swatch/ink and we keep them).
+const SCENT_FAMILY_STYLE = {
+  "Fresh & Marine": { swatch: "#B8C9D6", ink: "#2B3A45" },
+  "Citrus & Green": { swatch: "#D8DEB0", ink: "#3A4022" },
+  "Oud & Floral": { swatch: "#2B2820", ink: "#F2EDE4" },
+  "Spice & Amber": { swatch: "#D9A76A", ink: "#3B2A15" },
+  "Woody & Deep": { swatch: "#9B4A2E", ink: "#F2EDE4" },
+  "Floral & Musk": { swatch: "#C5A0A7", ink: "#3B1F26" },
+};
+const SCENT_STYLE_FALLBACK = { swatch: "#2B2820", ink: "#F2EDE4" };
+
+// Fill swatch/ink from the family palette when the row didn't carry them
+// (i.e. no store.scents override). Leaves any explicit values untouched.
+function applyScentStyle(scent) {
+  if (!scent) return scent;
+  if (scent.swatch && scent.ink) return scent;
+  const style = SCENT_FAMILY_STYLE[scent.family] || SCENT_STYLE_FALLBACK;
+  return {
+    ...scent,
+    swatch: scent.swatch || style.swatch,
+    ink: scent.ink || style.ink,
+  };
+}
+
 // ── PUBLIC: PRODUCTS ─────────────────────────────────────────
 
 async function getActiveProducts() {
@@ -76,7 +104,8 @@ async function getRelatedProducts(family, excludeId, limit) {
 
 async function getScents() {
   return withStoreContext(async (client) => {
-    return { data: await repo.listScents(client) };
+    const rows = await repo.listScents(client);
+    return { data: rows.map(applyScentStyle) };
   });
 }
 
@@ -86,7 +115,7 @@ async function getScentBySlug(slug) {
     if (!scent) {
       throw Object.assign(new Error("Scent not found"), { status: 404 });
     }
-    return scent;
+    return applyScentStyle(scent);
   });
 }
 

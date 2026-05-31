@@ -134,6 +134,29 @@ async function deactivateBusiness(client, businessKey) {
   return row || null;
 }
 
+/**
+ * Atomically grant a user access to a business by appending the key to
+ * shared.users.permitted_businesses — but only if it isn't already there
+ * (NOT ('*' = ANY(...)) guards the owner wildcard; the array containment
+ * check avoids duplicates). Returns the updated user row, or the unchanged
+ * row if the key was already permitted.
+ */
+async function grantBusinessToUser(client, userId, businessKey) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE shared.users
+     SET permitted_businesses = array_append(permitted_businesses, $2)
+     WHERE user_id = $1
+       AND NOT (permitted_businesses @> ARRAY[$2]::TEXT[])
+       AND NOT ('*' = ANY(permitted_businesses))
+     RETURNING user_id, default_business, permitted_businesses`,
+    [userId, businessKey],
+  );
+  return row || null;
+}
+
+
 // ─────────────────────────────────────────────────────────────
 // BANK ACCOUNTS
 // ─────────────────────────────────────────────────────────────
@@ -665,6 +688,7 @@ module.exports = {
   insertBusiness,
   updateBusiness,
   deactivateBusiness,
+  grantBusinessToUser,
   // bank accounts
   listBankAccounts,
   findBankAccountById,

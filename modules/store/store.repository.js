@@ -28,7 +28,15 @@ const PRODUCT_SELECT = `
     sp.scent_family,
     sp.format,
     sp.size_ml,
-    sp.images,
+    -- Images derived LIVE from the ERP gallery (product_images → documents),
+    -- primary first then display_order. Falls back to the legacy
+    -- store.products.images array only if the gallery is empty (e.g. seeded
+    -- products with explicit URLs). Paths are relative to the API origin;
+    -- the storefront resolves them against NEXT_PUBLIC_API_URL.
+    COALESCE(
+      NULLIF(img.urls, '{}'),
+      sp.images
+    ) AS images,
     sp.top_notes,
     sp.heart_notes,
     sp.base_notes,
@@ -48,28 +56,38 @@ const PRODUCT_SELECT = `
     FROM diffusers.stock_movements sm
     WHERE sm.product_id = sp.product_id
   ) st ON true
+  LEFT JOIN LATERAL (
+    SELECT array_agg(
+             '/api/documents/' || pi.document_id || '/image'
+             ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+           ) AS urls
+    FROM diffusers.product_images pi
+    WHERE pi.product_id = sp.product_id
+  ) img ON true
 `;
 
 // ── PRODUCTS (public reads) ──────────────────────────────────
 
 async function listActiveProducts(client) {
+  // No stock filter — out-of-stock products are shown with a "Sold Out"
+  // badge on the storefront, never hidden. in_stock/stock_qty in
+  // PRODUCT_SELECT still tell the UI which to badge.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC`,
   );
   return rows;
 }
 
 async function listFeaturedProducts(client, format, limit) {
+  // No stock filter — see listActiveProducts.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
        AND sp.format = $1
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC
      LIMIT $2`,
     [format, limit],
@@ -101,13 +119,13 @@ async function findStoreProductsByIds(client, ids) {
 }
 
 async function listRelatedProducts(client, family, excludeId, limit) {
+  // No stock filter — see listActiveProducts.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
        AND sp.scent_family = $1
        AND sp.id != $2
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC
      LIMIT $3`,
     [family, excludeId, limit],
@@ -117,17 +135,102 @@ async function listRelatedProducts(client, family, excludeId, limit) {
 
 // ── SCENTS / SIGNATURES ──────────────────────────────────────
 
+// Scents shown on the storefront are derived from what's actually been
+// published to store.products — every distinct scent_family that has at
+// least one published product appears, REGARDLESS of stock. (Stock only
+// matters on the stockist/availability surfaces, never here.) Each family
+// is enriched with presentation copy/styling from store.scents when a row
+// exists; otherwise sensible fallbacks are used so a freshly-uploaded
+// product's scent still renders. store.scents alone is NOT the source of
+// truth — products drive which scents appear.
 async function listScents(client) {
   const { rows } = await client.query(
-    `SELECT * FROM store.scents ORDER BY display_order, name`,
+    `SELECT
+       p.scent_family                                   AS family,
+       COALESCE(s.name, p.scent_family::text)           AS name,
+       COALESCE(
+         s.slug,
+         lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+       )                                                AS slug,
+       COALESCE(s.tagline, '')                          AS tagline,
+       COALESCE(s.description, '')                      AS description,
+       COALESCE(s.top_notes,   p.top_notes,   '{}')     AS top_notes,
+       COALESCE(s.heart_notes, p.heart_notes, '{}')     AS heart_notes,
+       COALESCE(s.base_notes,  p.base_notes,  '{}')     AS base_notes,
+       COALESCE(s.swatch, NULL)                         AS swatch,
+       COALESCE(s.ink,    NULL)                          AS ink,
+       COALESCE(
+         s.image,
+         NULLIF(p.gallery_image, ''),
+         NULLIF(p.images[1], '')
+       )                                                AS image,
+       COALESCE(s.display_order, 0)                     AS display_order
+     FROM (
+       -- One representative published product per scent family.
+       -- DISTINCT ON keeps the most recent product's notes/image as the
+       -- fallback when store.scents has no styling row for that family.
+       SELECT DISTINCT ON (sp.scent_family)
+              sp.scent_family, sp.top_notes, sp.heart_notes, sp.base_notes, sp.images,
+              (SELECT '/api/documents/' || pi.document_id || '/image'
+               FROM diffusers.product_images pi
+               WHERE pi.product_id = sp.product_id
+               ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+               LIMIT 1)                                 AS gallery_image
+       FROM store.products sp
+       WHERE sp.is_published = true
+       ORDER BY sp.scent_family, sp.created_at DESC
+     ) p
+     LEFT JOIN store.scents s ON s.family = p.scent_family
+     ORDER BY display_order, name`,
   );
   return rows;
 }
 
 async function findScentBySlug(client, slug) {
+  // Mirror listScents (product-derived, store.scents-enriched) but for a
+  // single slug — so any scent visible in the list is fetchable by slug.
   const {
     rows: [row],
-  } = await client.query(`SELECT * FROM store.scents WHERE slug = $1`, [slug]);
+  } = await client.query(
+    `SELECT
+       p.scent_family                                   AS family,
+       COALESCE(s.name, p.scent_family::text)           AS name,
+       COALESCE(
+         s.slug,
+         lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+       )                                                AS slug,
+       COALESCE(s.tagline, '')                          AS tagline,
+       COALESCE(s.description, '')                      AS description,
+       COALESCE(s.top_notes,   p.top_notes,   '{}')     AS top_notes,
+       COALESCE(s.heart_notes, p.heart_notes, '{}')     AS heart_notes,
+       COALESCE(s.base_notes,  p.base_notes,  '{}')     AS base_notes,
+       COALESCE(s.swatch, NULL)                         AS swatch,
+       COALESCE(s.ink,    NULL)                          AS ink,
+       COALESCE(
+         s.image,
+         NULLIF(p.gallery_image, ''),
+         NULLIF(p.images[1], '')
+       )                                                AS image,
+       COALESCE(s.display_order, 0)                     AS display_order
+     FROM (
+       SELECT DISTINCT ON (sp.scent_family)
+              sp.scent_family, sp.top_notes, sp.heart_notes, sp.base_notes, sp.images,
+              (SELECT '/api/documents/' || pi.document_id || '/image'
+               FROM diffusers.product_images pi
+               WHERE pi.product_id = sp.product_id
+               ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+               LIMIT 1)                                 AS gallery_image
+       FROM store.products sp
+       WHERE sp.is_published = true
+       ORDER BY sp.scent_family, sp.created_at DESC
+     ) p
+     LEFT JOIN store.scents s ON s.family = p.scent_family
+     WHERE COALESCE(
+       s.slug,
+       lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+     ) = $1`,
+    [slug],
+  );
   return row || null;
 }
 
