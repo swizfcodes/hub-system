@@ -26,6 +26,7 @@ const { can } = require("../../middleware/permissions");
 const config = require("../../config/config");
 const logger = require("../../config/logger");
 const storage = require("../../lib/storage");
+const { optimizeImage } = require("../../lib/images/optimizeImage");
 
 // ── Multer (memory storage — we hand the buffer to lib/storage) ─
 const ALLOWED_MIME = new Set([
@@ -99,9 +100,23 @@ router.post(
       }
       // Use the business_key in the filename so files are easy to
       // identify in a flat S3 listing or local directory.
-      const ext = path.extname(req.file.originalname).toLowerCase() || ".png";
+      let outBuffer = req.file.buffer;
+      let ext = path.extname(req.file.originalname).toLowerCase() || ".png";
+      // Compress raster logos to WebP. SVGs are vector — leave them as-is.
+      if (req.file.mimetype !== "image/svg+xml") {
+        const opt = await optimizeImage(req.file.buffer, {
+          mimeType: req.file.mimetype,
+          maxWidth: 1024,
+          maxHeight: 1024,
+          quality: 85,
+        });
+        if (opt.optimised) {
+          outBuffer = opt.buffer;
+          ext = `.${opt.extension}`;
+        }
+      }
       const safe = `${req.body.business_key}${ext}`;
-      const result = await storage.save(req.file.buffer, safe, "logos");
+      const result = await storage.save(outBuffer, safe, "logos");
 
       const url = publicUrlFor(result.filePath);
       logger.info(

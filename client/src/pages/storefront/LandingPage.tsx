@@ -5,12 +5,37 @@ import { getStorefrontPage, trackEvent, submitLead } from '@services/salesCampai
 import type { SalesCampaign, CampaignProduct, CartItem } from '@typedefs/salesCampaign';
 import { fmtMoney } from '@lib/format';
 import { cn } from '@lib/cn';
+import { DEFAULT_CAMPAIGN_SECTIONS, DEFAULT_ACCENT } from '@lib/constants/salesCampaignConstants';
 
 // ── Storefront session ID (persists for analytics) ────────────────────────────
 function getSessionId() {
   let sid = sessionStorage.getItem('sf_sid');
   if (!sid) { sid = crypto.randomUUID(); sessionStorage.setItem('sf_sid', sid); }
   return sid;
+}
+
+// ── Accent theming ────────────────────────────────────────────────────────────
+// The campaign's accent colour drives every CTA, price and highlight via the
+// --acc CSS variable, so the page matches the brand (gold by default) or
+// whatever the builder selected. Scoped to [data-acc] so it can't leak.
+const ACCENT_STYLE = `
+[data-acc] .acc-text{color:var(--acc)!important}
+[data-acc] .acc-bg{background-color:var(--acc)!important}
+[data-acc] .acc-bg:hover{filter:brightness(1.07)}
+[data-acc] .acc-border{border-color:var(--acc)!important}
+[data-acc] .acc-soft{background-color:color-mix(in srgb,var(--acc) 14%,transparent)!important}
+[data-acc] .acc-border-soft{border-color:color-mix(in srgb,var(--acc) 40%,transparent)!important}
+`;
+
+// Apply the campaign-level discount to a unit price (mirrors the checkout maths
+// so the price shown on the card equals what the customer is charged).
+function applyCampaignDiscount(unit: number, campaign: SalesCampaign | null): number {
+  const dv = Number(campaign?.discount_value) || 0;
+  // Only a percentage maps cleanly to a per-unit price that equals the checkout
+  // total. Fixed-amount discounts are applied once per order at checkout, so we
+  // leave the unit price unchanged here rather than show less than we charge.
+  if (dv && campaign?.discount_type === 'percentage') return Math.max(0, unit * (1 - dv / 100));
+  return unit;
 }
 
 export default function LandingPage() {
@@ -75,21 +100,31 @@ export default function LandingPage() {
           : i
         );
       }
+      const unit = applyCampaignDiscount(Number(product.effective_price), campaign);
       return [...prev, {
         campaign_product_id: product.id,
         product_id:   product.product_id,
         product_name: product.product_name,
         image_url:    product.image_url,
         quantity:     1,
-        unit_price:   product.effective_price,
-        line_total:   product.effective_price,
+        unit_price:   unit,
+        list_price:   Number(product.selling_price),
+        line_total:   unit,
       }];
     });
     trackEvent(business!, slug!, { event_type: 'add_to_cart', product_id: product.product_id, source, session_id: getSessionId() });
-  }, [business, slug, source]);
+  }, [business, slug, source, campaign]);
 
   const removeFromCart = useCallback((id: string) => {
     setCart(prev => prev.filter(i => i.campaign_product_id !== id));
+  }, []);
+
+  // Increment an item already in the cart (keeps its discounted unit price).
+  const incrementItem = useCallback((id: string) => {
+    setCart(prev => prev.map(i => i.campaign_product_id === id
+      ? { ...i, quantity: i.quantity + 1, line_total: (i.quantity + 1) * i.unit_price }
+      : i,
+    ));
   }, []);
 
   const cartTotal = cart.reduce((sum, i) => sum + i.line_total, 0);
@@ -123,18 +158,21 @@ export default function LandingPage() {
   // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-2 border-amber-400 border-t-transparent rounded-full" />
+      <div className="animate-spin h-8 w-8 border-2 border-[#C9A86C] border-t-transparent rounded-full" />
     </div>
   );
 
   // ── Error / Not found ────────────────────────────────────────────────────────
   if (error || !campaign) return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 text-center">
-      <AlertTriangle className="h-10 w-10 text-amber-400 mb-4" />
+      <AlertTriangle className="h-10 w-10 text-[#C9A86C] mb-4" />
       <h1 className="text-2xl font-bold text-white mb-2">Not Available</h1>
       <p className="text-gray-400 mb-6">{error ?? 'This campaign could not be found.'}</p>
     </div>
   );
+
+  // Brand accent for this campaign (gold by default), used to theme the page.
+  const accent = campaign.accent_color || DEFAULT_ACCENT;
 
   // ── Expired page ─────────────────────────────────────────────────────────────
   if (campaign.status === 'expired') return (
@@ -145,10 +183,11 @@ export default function LandingPage() {
       <p className="text-6xl mb-6">✦</p>
       <h1 className="text-3xl font-bold text-white mb-2">{campaign.campaign_name}</h1>
       <p className="text-gray-400 mb-8 max-w-md">This offer has ended. Visit our store to discover our latest collections.</p>
-      {campaign.store_location && <p className="text-amber-400/80 text-sm mb-6">{campaign.store_location}</p>}
+      {campaign.store_location && <p className="text-sm mb-6" style={{ color: accent }}>{campaign.store_location}</p>}
       {campaign.redirect_url && (
         <a href={campaign.redirect_url}
-          className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-black font-semibold px-6 py-3 rounded-full transition-colors">
+          className="inline-flex items-center gap-2 text-[#0A0908] font-semibold px-6 py-3 rounded-full transition-transform hover:scale-105"
+          style={{ backgroundColor: accent }}>
           Visit Our Shop
         </a>
       )}
@@ -162,12 +201,18 @@ export default function LandingPage() {
   );
 
   const T = campaign.template ?? 'editorial';
-  const sections = campaign.sections ?? {};
+  // Fall back to the default section set when a campaign has no sections
+  // configured — otherwise every block is gated off and the page renders blank.
+  const sections =
+    campaign.sections && Object.keys(campaign.sections).length > 0
+      ? campaign.sections
+      : DEFAULT_CAMPAIGN_SECTIONS;
   const products = (campaign.products ?? []).filter(p => p.quantity_available > 0 || !p.show_stock_count);
 
   // ── RENDER (template-aware) ───────────────────────────────────────────────────
   return (
-    <div className={cn('min-h-screen', TEMPLATE_BG[T])}>
+    <div className={cn('min-h-screen', TEMPLATE_BG[T])} data-acc style={{ ['--acc' as string]: accent } as React.CSSProperties}>
+      <style>{ACCENT_STYLE}</style>
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       {sections.hero && (
         <section className={cn('relative', T === 'editorial' ? 'min-h-[80vh]' : 'py-20')}>
@@ -177,32 +222,37 @@ export default function LandingPage() {
                 src={campaign.hero_image_url}
                 alt=""
                 className="w-full h-full object-cover"
-                style={{ opacity: T === 'minimal' ? 0.15 : T === 'editorial' ? 0.55 : 0.35 }}
+                style={{ opacity: T === 'minimal' ? 0.28 : T === 'editorial' ? 1 : 0.9 }}
               />
               <div className={cn('absolute inset-0', TEMPLATE_HERO_OVERLAY[T])} />
+              {/* Extra scrim on dark templates so the headline always reads */}
+              {T !== 'minimal' && <div className="absolute inset-0 bg-black/25" />}
             </div>
           )}
 
           <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
             {campaign.discount_type !== 'none' && campaign.discount_value && (
-              <div className={cn('inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold mb-6', TEMPLATE_BADGE[T])}>
-                🔥 {campaign.discount_type === 'percentage' ? `${campaign.discount_value}% OFF` : `₦${campaign.discount_value?.toLocaleString()} OFF`}
+              <div className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold mb-6 border acc-border acc-text acc-soft">
+                🔥 {campaign.discount_type === 'percentage' ? `${Number(campaign.discount_value)}% OFF` : `₦${Number(campaign.discount_value).toLocaleString()} OFF`}
               </div>
             )}
 
-            <h1 className={cn('font-bold leading-tight mb-4', TEMPLATE_H1[T])}>
+            <h1
+              className={cn('mb-5 leading-[1.05]', TEMPLATE_H1[T])}
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                textShadow: T === 'minimal' ? 'none' : '0 2px 30px rgba(0,0,0,0.6)',
+              }}
+            >
               {campaign.headline ?? campaign.campaign_name}
             </h1>
 
             {campaign.subheadline && (
-              <p className={cn('text-lg mb-4 max-w-2xl mx-auto', TEMPLATE_SUB[T])}>
+              <p
+                className={cn('text-lg sm:text-xl mb-4 max-w-2xl mx-auto', TEMPLATE_SUB[T])}
+                style={{ textShadow: T === 'minimal' ? 'none' : '0 1px 16px rgba(0,0,0,0.55)' }}
+              >
                 {campaign.subheadline}
-              </p>
-            )}
-
-            {campaign.body_copy && (
-              <p className={cn('text-base mb-8 max-w-xl mx-auto', TEMPLATE_BODY[T])}>
-                {campaign.body_copy}
               </p>
             )}
 
@@ -223,7 +273,7 @@ export default function LandingPage() {
               )}
               {sections.products && products.length > 0 && (
                 <a href="#products"
-                  className={cn('inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-full transition-colors', TEMPLATE_SHOP_BTN[T])}>
+                  className="inline-flex items-center gap-2 font-semibold px-7 py-3 rounded-full transition acc-bg text-[#0A0908] hover:scale-105">
                   Shop Now <ChevronDown className="h-4 w-4" />
                 </a>
               )}
@@ -232,11 +282,29 @@ export default function LandingPage() {
         </section>
       )}
 
+      {/* ── STORY / DESCRIPTION ────────────────────────────────────────────── */}
+      {campaign.body_copy && (
+        <section className={cn('px-6 py-16 sm:py-24', TEMPLATE_SECTION_BG[T])}>
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <div className="mx-auto h-px w-16" style={{ backgroundColor: accent }} />
+            <p
+              className={cn('text-xl sm:text-2xl leading-relaxed', TEMPLATE_SUB[T])}
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
+              {campaign.body_copy}
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* ── PRODUCTS GRID ──────────────────────────────────────────────────── */}
       {sections.products && products.length > 0 && (
         <section id="products" className="py-16 px-6">
           <div className="max-w-6xl mx-auto">
-            <h2 className={cn('text-2xl font-bold text-center mb-10', TEMPLATE_H2[T])}>
+            <h2
+              className={cn('text-3xl sm:text-4xl text-center mb-12', TEMPLATE_H2[T])}
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
               {campaign.discount_type !== 'none' ? 'Featured Offers' : 'Featured Pieces'}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -245,6 +313,7 @@ export default function LandingPage() {
                   key={product.id}
                   product={product}
                   template={T}
+                  campaign={campaign}
                   cartQuantity={cart.find(i => i.campaign_product_id === product.id)?.quantity ?? 0}
                   onAddToCart={() => addToCart(product)}
                   onRemove={() => setCart(prev => {
@@ -292,7 +361,7 @@ export default function LandingPage() {
                 </div>
                 <button
                   type="submit" disabled={submittingLead}
-                  className={cn('w-full font-semibold py-3 rounded-full transition-colors', TEMPLATE_SUBMIT_BTN[T])}
+                  className="w-full font-semibold py-3 rounded-full transition acc-bg text-[#0A0908] disabled:opacity-60"
                 >
                   {submittingLead ? 'Sending...' : 'Send Enquiry'}
                 </button>
@@ -307,7 +376,7 @@ export default function LandingPage() {
         <div className="fixed bottom-6 right-6 z-50">
           <button
             onClick={() => setCartOpen(true)}
-            className="relative bg-amber-400 hover:bg-amber-300 text-black font-bold p-4 rounded-full shadow-2xl shadow-amber-400/40 transition-all hover:scale-105"
+            className="relative acc-bg text-[#0A0908] font-bold p-4 rounded-full shadow-2xl shadow-black/40 transition-all hover:scale-105"
           >
             <ShoppingCart className="h-6 w-6" />
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold h-5 w-5 rounded-full flex items-center justify-center">
@@ -334,7 +403,12 @@ export default function LandingPage() {
                   {item.image_url && <img src={item.image_url} alt="" className="h-14 w-14 rounded-xl object-cover shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <p className={cn('text-sm font-medium truncate', TEMPLATE_H2[T])}>{item.product_name}</p>
-                    <p className="text-xs text-amber-400">{fmtMoney(item.line_total)}</p>
+                    <p className="text-xs">
+                      <span className="acc-text font-semibold">{fmtMoney(item.line_total)}</span>
+                      {item.list_price && item.list_price > item.unit_price && (
+                        <span className="line-through text-gray-500 ml-1.5">{fmtMoney(item.list_price * item.quantity)}</span>
+                      )}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => removeFromCart(item.campaign_product_id)}
@@ -342,7 +416,7 @@ export default function LandingPage() {
                       <Minus className="h-3.5 w-3.5 text-gray-300" />
                     </button>
                     <span className={cn('w-6 text-center text-sm font-medium', TEMPLATE_H2[T])}>{item.quantity}</span>
-                    <button onClick={() => addToCart({ id: item.campaign_product_id, product_id: item.product_id, product_name: item.product_name, image_url: item.image_url, effective_price: item.unit_price, quantity_available: 99, show_stock_count: false, low_stock_threshold: 5, selling_price: item.unit_price, display_order: 0 } as any)}
+                    <button onClick={() => incrementItem(item.campaign_product_id)}
                       className="p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
                       <Plus className="h-3.5 w-3.5 text-gray-300" />
                     </button>
@@ -357,7 +431,7 @@ export default function LandingPage() {
               </div>
               <button
                 onClick={goToCheckout}
-                className="w-full bg-amber-400 hover:bg-amber-300 text-black font-bold py-4 rounded-full transition-colors text-sm"
+                className="w-full acc-bg text-[#0A0908] font-bold py-4 rounded-full transition text-sm"
               >
                 Proceed to Checkout
               </button>
@@ -371,13 +445,19 @@ export default function LandingPage() {
 
 // ── Product Card ──────────────────────────────────────────────────────────────
 
-function ProductCard({ product, template, cartQuantity, onAddToCart, onRemove }: {
-  product: CampaignProduct; template: string; cartQuantity: number;
+function ProductCard({ product, template, campaign, cartQuantity, onAddToCart, onRemove }: {
+  product: CampaignProduct; template: string; campaign: SalesCampaign; cartQuantity: number;
   onAddToCart: () => void; onRemove: () => void;
 }) {
   const isLow     = product.show_stock_count && product.quantity_available <= product.low_stock_threshold;
   const isSoldOut = product.quantity_available <= 0;
   const T = template;
+  // Original (list) price vs. the price after this campaign's discount.
+  const listPrice   = Number(product.selling_price);
+  const nowPrice    = applyCampaignDiscount(Number(product.effective_price), campaign);
+  const hasDiscount = nowPrice < listPrice - 0.005;
+  const saveAmount  = Math.max(0, listPrice - nowPrice);
+  const pctOff      = listPrice > 0 ? Math.round((saveAmount / listPrice) * 100) : 0;
 
   return (
     <div className={cn('rounded-2xl overflow-hidden transition-transform hover:-translate-y-1', TEMPLATE_CARD[T])}>
@@ -385,7 +465,7 @@ function ProductCard({ product, template, cartQuantity, onAddToCart, onRemove }:
         <div className="relative aspect-square overflow-hidden">
           <img src={product.image_url} alt={product.product_name} className="w-full h-full object-cover" />
           {product.campaign_label && (
-            <div className="absolute top-3 left-3 bg-amber-400 text-black text-xs font-bold px-2.5 py-1 rounded-full">
+            <div className="absolute top-3 left-3 acc-bg text-[#0A0908] text-xs font-bold px-2.5 py-1 rounded-full">
               {product.campaign_label}
             </div>
           )}
@@ -405,10 +485,21 @@ function ProductCard({ product, template, cartQuantity, onAddToCart, onRemove }:
 
         <div className="flex items-end justify-between mb-4">
           <div>
-            {product.campaign_price && product.campaign_price < product.selling_price && (
-              <p className={cn('text-xs line-through', TEMPLATE_BODY[T])}>{fmtMoney(product.selling_price)}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xl font-bold acc-text leading-none">{fmtMoney(nowPrice)}</p>
+              {hasDiscount && pctOff > 0 && (
+                <span className="text-[11px] font-semibold text-red-500 bg-red-500/10 border border-red-500/30 rounded-full px-2 py-0.5 leading-none">
+                  {pctOff}% OFF
+                </span>
+              )}
+            </div>
+            {hasDiscount && (
+              <p className="text-xs text-gray-500 mt-1.5">
+                <span className="line-through">{fmtMoney(listPrice)}</span>
+                <span className="mx-1.5">·</span>
+                <span>Save {fmtMoney(saveAmount)}</span>
+              </p>
             )}
-            <p className="text-lg font-bold text-amber-400">{fmtMoney(product.effective_price)}</p>
           </div>
           {product.show_stock_count && !isLow && (
             <p className={cn('text-xs', TEMPLATE_BODY[T])}>{product.quantity_available} left</p>
@@ -425,14 +516,14 @@ function ProductCard({ product, template, cartQuantity, onAddToCart, onRemove }:
               <Minus className="h-4 w-4 text-gray-300" />
             </button>
             <span className={cn('font-bold', TEMPLATE_H2[T])}>{cartQuantity}</span>
-            <button onClick={onAddToCart} className="p-2 rounded-xl bg-amber-400 hover:bg-amber-300 transition-colors">
-              <Plus className="h-4 w-4 text-black" />
+            <button onClick={onAddToCart} className="p-2 rounded-xl acc-bg transition">
+              <Plus className="h-4 w-4 text-[#0A0908]" />
             </button>
           </div>
         ) : (
           <button
             onClick={onAddToCart}
-            className="w-full py-3 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-sm transition-colors"
+            className="w-full py-3 rounded-full acc-bg text-[#0A0908] font-semibold text-sm transition"
           >
             Add to Cart
           </button>
@@ -488,9 +579,9 @@ const TEMPLATE_BG: Record<string, string> = {
   bold:      'bg-[#0d0011]',
 };
 const TEMPLATE_HERO_OVERLAY: Record<string, string> = {
-  minimal:   'bg-gradient-to-b from-transparent to-white',
-  editorial: 'bg-gradient-to-b from-black/30 via-black/30 to-[#0a0a0a]',
-  bold:      'bg-gradient-to-b from-black/50 to-[#0d0011]',
+  minimal:   'bg-gradient-to-b from-white/40 via-white/30 to-white',
+  editorial: 'bg-gradient-to-b from-black/75 via-black/55 to-[#0a0a0a]',
+  bold:      'bg-gradient-to-b from-black/75 via-purple-950/55 to-[#0d0011]',
 };
 const TEMPLATE_H1: Record<string, string> = {
   minimal:   'text-4xl sm:text-6xl text-gray-900',
@@ -512,20 +603,10 @@ const TEMPLATE_BODY: Record<string, string> = {
   editorial: 'text-gray-400',
   bold:      'text-gray-400',
 };
-const TEMPLATE_BADGE: Record<string, string> = {
-  minimal:   'bg-amber-100 text-amber-700',
-  editorial: 'border border-amber-400/50 text-amber-400 bg-amber-400/10',
-  bold:      'bg-purple-500/30 text-purple-200 border border-purple-500/50',
-};
 const TEMPLATE_CARD: Record<string, string> = {
   minimal:   'bg-white border border-gray-100 shadow-md',
   editorial: 'bg-white/5 border border-white/10',
   bold:      'bg-purple-900/30 border border-purple-500/20',
-};
-const TEMPLATE_SHOP_BTN: Record<string, string> = {
-  minimal:   'bg-gray-900 text-white hover:bg-gray-700',
-  editorial: 'border border-white/30 text-white hover:bg-white/10',
-  bold:      'border border-purple-400/50 text-purple-200 hover:bg-purple-500/20',
 };
 const TEMPLATE_SECTION_BG: Record<string, string> = {
   minimal:   'bg-gray-50',
@@ -533,19 +614,14 @@ const TEMPLATE_SECTION_BG: Record<string, string> = {
   bold:      'bg-[#110018]',
 };
 const TEMPLATE_INPUT: Record<string, string> = {
-  minimal:   'border border-gray-200 bg-white text-gray-900 focus:border-amber-400',
-  editorial: 'border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-amber-400',
-  bold:      'border border-purple-500/30 bg-purple-900/20 text-white placeholder-gray-600 focus:border-amber-400',
+  minimal:   'border border-gray-200 bg-white text-gray-900 focus:border-[#C9A86C]',
+  editorial: 'border border-white/10 bg-white/5 text-white placeholder-gray-600 focus:border-[#C9A86C]',
+  bold:      'border border-purple-500/30 bg-purple-900/20 text-white placeholder-gray-600 focus:border-[#C9A86C]',
 };
 const TEMPLATE_LABEL: Record<string, string> = {
   minimal:   'text-gray-700',
   editorial: 'text-gray-300',
   bold:      'text-gray-300',
-};
-const TEMPLATE_SUBMIT_BTN: Record<string, string> = {
-  minimal:   'bg-gray-900 text-white hover:bg-gray-700',
-  editorial: 'bg-amber-400 text-black hover:bg-amber-300',
-  bold:      'bg-purple-600 text-white hover:bg-purple-500',
 };
 const TEMPLATE_TIMER_CARD: Record<string, string> = {
   minimal:   'bg-gray-100',

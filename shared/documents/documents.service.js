@@ -5,6 +5,7 @@ const { withSharedContext, nextDocumentNumber } = require("../../config/db");
 const storage = require("../../lib/storage");
 const auditService = require("../audit/audit.service");
 const repo = require("./documents.repository");
+const { optimizeImage, OPTIMISABLE } = require("../../lib/images/optimizeImage");
 
 // ─────────────────────────────────────────────────────────────
 // DOCUMENTS SERVICE — Module 12: Documents & Signatures
@@ -101,10 +102,41 @@ async function uploadDocument(input, user) {
     );
   }
 
-  // Compute SHA-256 BEFORE writing — this is the canonical hash.
+  // ── Optimise display images before hashing/storage ───────────
+  // Campaign heroes and catalogue product images are converted to WebP
+  // (auto-oriented, resized, compressed) so a multi-MB JPEG doesn't time
+  // out on upload or bloat the public landing pages. Legal / identity
+  // documents (PDFs, certificates, payslips, …) are left byte-for-byte
+  // intact so the tamper-proof record still reflects exactly what was
+  // uploaded.
+  let fileBuffer = input.buffer;
+  let fileMimeType = input.mimeType;
+  let fileOriginalName = input.originalFilename;
+  if (
+    input.documentType === "product_image" &&
+    OPTIMISABLE.has(String(input.mimeType).toLowerCase())
+  ) {
+    const opt = await optimizeImage(input.buffer, {
+      mimeType: input.mimeType,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      quality: 82,
+    });
+    if (opt.optimised) {
+      fileBuffer = opt.buffer;
+      fileMimeType = opt.mimeType;
+      const base = (input.originalFilename || `upload_${Date.now()}`).replace(
+        /\.[^.]+$/,
+        "",
+      );
+      fileOriginalName = `${base}.${opt.extension}`;
+    }
+  }
+
+  // Compute SHA-256 of the (possibly optimised) bytes — canonical hash.
   const contentHash = crypto
     .createHash("sha256")
-    .update(input.buffer)
+    .update(fileBuffer)
     .digest("hex");
 
   return withSharedContext(async (client) => {
@@ -121,15 +153,11 @@ async function uploadDocument(input, user) {
 
     // PATCH: Provide a robust fallback filename so lib/storage.js never crashes
     // on a missing string when calling .replace()
-    const safeFilename = input.originalFilename || `upload_${Date.now()}`;
+    const safeFilename = fileOriginalName || `upload_${Date.now()}`;
 
     // Persist bytes to storage (S3 or local, abstracted via lib/storage).
     const subfolder = `${input.business}/${input.documentType}`;
-    const stored = await storage.save(
-      input.buffer,
-      safeFilename,
-      subfolder,
-    );
+    const stored = await storage.save(fileBuffer, safeFilename, subfolder);
 
     // Cross-check: storage's hash must equal what we computed.
     if (stored.sha256 !== contentHash) {
@@ -160,7 +188,7 @@ async function uploadDocument(input, user) {
       title: input.title || safeFilename, // PATCH: Use the safe fallback here too
       file_path: stored.filePath,
       file_size_bytes: stored.fileSize,
-      mime_type: input.mimeType,
+      mime_type: fileMimeType,
       content_hash: contentHash,
       reference_type: input.referenceType,
       reference_id: input.referenceId,
@@ -294,6 +322,34 @@ async function verifyDocument(documentId, user) {
       stored_hash: doc.content_hash,
       actual_hash: actualHash,
       verified_at: new Date().toISOString(),
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUBLIC IMAGE READ (no auth, no audit)
+//
+// Used by the unauthenticated /documents/:id/image route that serves
+// product images + campaign heroes to public landing/catalogue pages.
+// These hits can be very high-volume (a shared WhatsApp link), so unlike
+// downloadDocument() this path deliberately skips the per-request SHA-256
+// re-hash and the audit-log INSERT — anonymous image views don't need an
+// audit trail, and writing one per <img> load is a real bottleneck. The
+// route already restricts what it will serve to document_type ===
+// 'product_image'. Responses are sent with a long immutable Cache-Control.
+// ─────────────────────────────────────────────────────────────
+
+async function getImageForPublic(documentId) {
+  return withSharedContext(async (client) => {
+    const doc = await repo.findById(client, documentId);
+    if (!doc) {
+      throw Object.assign(new Error("Document not found"), { status: 404 });
+    }
+    const buffer = await storage.get(doc.file_path);
+    return {
+      buffer,
+      mime_type: doc.mime_type,
+      document_type: doc.document_type,
     };
   });
 }
@@ -450,6 +506,7 @@ async function archiveGeneratedDocument({
 module.exports = {
   uploadDocument,
   downloadDocument,
+  getImageForPublic,
   verifyDocument,
   listDocuments,
   getDocument,

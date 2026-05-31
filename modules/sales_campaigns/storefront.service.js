@@ -9,6 +9,7 @@ const logger         = require('../../config/logger');
 const crypto         = require('crypto');
 const config         = require('../../config/config');
 const axios          = require('axios');
+const businesses     = require('../../config/businesses');
 
 // ── LANDING PAGE DATA ─────────────────────────────────────────────────────────
 
@@ -42,11 +43,17 @@ async function getPage(business, slug) {
 // ── ANALYTICS TRACKING ────────────────────────────────────────────────────────
 
 async function trackEvent(business, slug, { event_type, product_id, source, session_id }, req) {
+  // `business` is interpolated into the schema-qualified table name below,
+  // so it MUST be an allow-listed tenant key — never raw user input. This
+  // both blocks SQL injection via the schema name and silently ignores
+  // analytics pings for unknown tenants.
+  if (!businesses.isValidBusiness(business)) return;
+
   // Hash the IP for privacy (no raw IPs stored)
   const ipHash = crypto.createHash('sha256').update(req.ip || '').digest('hex').slice(0, 16);
 
   return withSharedContext(async (client) => {
-    // Find campaign_id from slug — must be done in business context though
+    // Find campaign_id from slug — business is validated above
     const { rows: [camp] } = await client.query(
       `SELECT campaign_id FROM ${business}.sales_campaigns WHERE slug = $1`, [slug]
     );

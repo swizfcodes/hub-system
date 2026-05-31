@@ -23,7 +23,8 @@ import {
   addBankAccount, removeBankAccount,
 } from '@services/salesCampaign';
 import {
-  campaignSchema, CAMPAIGN_TEMPLATE_META, type CampaignFormValues,
+  campaignSchema, CAMPAIGN_TEMPLATE_META, DEFAULT_CAMPAIGN_SECTIONS,
+  CAMPAIGN_ACCENTS, DEFAULT_ACCENT, type CampaignFormValues,
 } from '@lib/constants/salesCampaignConstants';
 import type { CampaignProduct } from '@typedefs/salesCampaign';
 import { cn } from '@lib/cn';
@@ -79,6 +80,7 @@ export default function CampaignBuilder() {
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       template: 'editorial', discount_type: 'none', is_evergreen: false,
+      accent_color: DEFAULT_ACCENT,
     },
   });
 
@@ -92,6 +94,7 @@ export default function CampaignBuilder() {
         subheadline:     existing.subheadline ?? '',
         body_copy:       existing.body_copy ?? '',
         hero_image_url:  existing.hero_image_url ?? '',
+        accent_color:    existing.accent_color ?? DEFAULT_ACCENT,
         discount_type:   existing.discount_type ?? 'none',
         discount_value:  existing.discount_value ?? undefined,
         start_date:      existing.start_date?.slice(0, 10) ?? '',
@@ -158,6 +161,13 @@ export default function CampaignBuilder() {
   const publicUrl = campaignId
     ? `${window.location.origin}/c/${business}/${existing?.slug ?? ''}`
     : null;
+
+  // Older campaigns can have an empty sections object; fall back to defaults so
+  // the toggles render — and so saving one persists the full set, not just it.
+  const effectiveSections =
+    existing?.sections && Object.keys(existing.sections).length
+      ? existing.sections
+      : DEFAULT_CAMPAIGN_SECTIONS;
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-6">
@@ -241,6 +251,34 @@ export default function CampaignBuilder() {
                 )} />
               ))}
             </div>
+          </div>
+
+          {/* Accent colour */}
+          <div>
+            <p className="text-sm font-medium text-orika-cream mb-3">Accent colour</p>
+            <Controller name="accent_color" control={control} render={({ field }) => (
+              <div className="flex flex-wrap items-center gap-2.5">
+                {CAMPAIGN_ACCENTS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => field.onChange(c.value)}
+                    className={cn(
+                      'h-9 w-9 rounded-full border-2 transition-all',
+                      (field.value ?? DEFAULT_ACCENT) === c.value
+                        ? 'border-orika-cream scale-110'
+                        : 'border-transparent hover:scale-105',
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+                <span className="text-xs text-orika-smoke ml-1">
+                  {CAMPAIGN_ACCENTS.find(c => c.value === (field.value ?? DEFAULT_ACCENT))?.label ?? 'Custom'}
+                </span>
+              </div>
+            )} />
+            <p className="text-[11px] text-orika-smoke/60 mt-2">Used for buttons, prices and highlights on your campaign page.</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -487,14 +525,14 @@ export default function CampaignBuilder() {
           <div>
             <p className="text-sm font-semibold text-orika-cream mb-3">Page sections</p>
             <div className="grid sm:grid-cols-2 gap-2">
-              {Object.entries(existing.sections ?? {}).map(([key, val]) => (
+              {Object.entries(effectiveSections).map(([key, val]) => (
                 <SectionToggle
                   key={key}
                   sectionKey={key}
                   enabled={val as boolean}
                   onToggle={async (newVal) => {
                     await updateCampaign(campaignId, {
-                      sections: { ...existing.sections, [key]: newVal } as any,
+                      sections: { ...effectiveSections, [key]: newVal } as any,
                     });
                     qc.invalidateQueries({ queryKey: ['sales-campaign', campaignId] });
                   }}
@@ -528,6 +566,13 @@ export default function CampaignBuilder() {
               <p className="text-sm font-semibold text-orika-cream flex items-center gap-2">
                 <Share2 className="h-4 w-4 text-orika-gold" /> Share your campaign
               </p>
+              {existing.status !== 'live' && (
+                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+                  This campaign is <strong>{existing.status}</strong>. The link below will show
+                  “Not Available” to visitors until you publish it
+                  {existing.status === 'scheduled' ? ' and its start date is reached' : ''}.
+                </div>
+              )}
               <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2">
                 <Link className="h-3.5 w-3.5 text-orika-smoke shrink-0" />
                 <p className="text-xs text-orika-cloud flex-1 truncate">{publicUrl}</p>
@@ -542,7 +587,7 @@ export default function CampaignBuilder() {
                   const sub   = existing.subheadline ? `\n${existing.subheadline}` : '';
                   const body  = existing.body_copy ? `\n\n${existing.body_copy}` : '';
                   const disc  = existing.discount_type === 'percentage' && existing.discount_value
-                    ? `\n\n🏷️ Get ${existing.discount_value}% off your order!`
+                    ? `\n\n🏷️ Get ${Number(existing.discount_value)}% off your order!`
                     : existing.discount_type === 'fixed_amount' && existing.discount_value
                     ? `\n\n🏷️ Save ₦${Number(existing.discount_value).toLocaleString()} on your order!`
                     : '';

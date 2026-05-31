@@ -9,6 +9,17 @@ import { fmtMoney } from '@lib/format';
 import type { SalesCampaign, CartItem, CampaignOrderResult, CampaignBankAccount } from '@typedefs/salesCampaign';
 import { cn } from '@lib/cn';
 
+// Accent theming — matches the landing page. Drives CTAs/prices via --acc.
+const ACCENT_STYLE = `
+[data-acc] .acc-text{color:var(--acc)!important}
+[data-acc] .acc-bg{background-color:var(--acc)!important}
+[data-acc] .acc-bg:hover{filter:brightness(1.07)}
+[data-acc] .acc-border{border-color:var(--acc)!important}
+[data-acc] .acc-soft{background-color:color-mix(in srgb,var(--acc) 14%,transparent)!important}
+[data-acc] .acc-border-soft{border-color:color-mix(in srgb,var(--acc) 40%,transparent)!important}
+[data-acc] .acc-ring{accent-color:var(--acc)}
+`;
+
 type CheckoutStep = 'details' | 'payment' | 'proof' | 'done';
 
 export default function Checkout() {
@@ -32,6 +43,7 @@ export default function Checkout() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const subtotal      = cart.reduce((s, i) => s + i.line_total, 0);
+  const totalSave     = cart.reduce((s, i) => s + Math.max(0, ((i.list_price ?? i.unit_price) - i.unit_price) * i.quantity), 0);
   const bankAccounts: CampaignBankAccount[] = campaign?.bank_accounts ?? [];
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<CheckoutFormValues>({
@@ -41,6 +53,14 @@ export default function Checkout() {
 
   const fulfilmentType = watch('fulfilment_type');
   const paymentMethod  = watch('payment_method');
+  // The account the customer actually picked — fall back to the first
+  // (or the primary) so the transfer screen never renders the wrong details.
+  const selectedBankId = watch('bank_account_id');
+  const selectedAccount =
+    bankAccounts.find(a => a.id === selectedBankId) ??
+    bankAccounts.find(a => a.is_primary) ??
+    bankAccounts[0];
+  const accent = campaign?.accent_color || '#C9A86C';
 
   // If cart is empty, go back
   useEffect(() => {
@@ -129,7 +149,8 @@ export default function Checkout() {
   if (!cart.length) return null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white" data-acc style={{ ['--acc' as string]: accent } as React.CSSProperties}>
+      <style>{ACCENT_STYLE}</style>
       {/* Header */}
       <div className="border-b border-white/8 px-4 py-4 flex items-center gap-4 max-w-2xl mx-auto">
         <button onClick={() => step === 'details' ? navigate(-1) : setStep('details')}
@@ -160,9 +181,20 @@ export default function Checkout() {
                     <p className="text-sm text-white truncate">{item.product_name}</p>
                     <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-semibold text-amber-400">{fmtMoney(item.line_total)}</p>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold acc-text">{fmtMoney(item.line_total)}</p>
+                    {item.list_price && item.list_price > item.unit_price && (
+                      <p className="text-[11px] line-through text-gray-500">{fmtMoney(item.list_price * item.quantity)}</p>
+                    )}
+                  </div>
                 </div>
               ))}
+              {totalSave > 0 && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-500">You save</span>
+                  <span className="text-gray-400">{fmtMoney(totalSave)}</span>
+                </div>
+              )}
               <div className="border-t border-white/8 pt-3 flex justify-between">
                 <span className="text-gray-400 text-sm">Total</span>
                 <span className="text-xl font-bold text-white">{fmtMoney(subtotal)}</span>
@@ -195,7 +227,7 @@ export default function Checkout() {
                   <Controller key={ft} name="fulfilment_type" control={control} render={({ field }) => (
                     <button type="button" onClick={() => field.onChange(ft)}
                       className={cn('rounded-xl border p-4 text-left transition-all',
-                        field.value === ft ? 'border-amber-400 bg-amber-400/10' : 'border-white/10 bg-white/5'
+                        field.value === ft ? 'acc-border acc-soft' : 'border-white/10 bg-white/5'
                       )}>
                       <p className="text-sm font-semibold text-white capitalize">{ft}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -270,21 +302,21 @@ export default function Checkout() {
                     {bankAccounts.map(acct => (
                       <Controller key={acct.id} name="bank_account_id" control={control} render={({ field }) => (
                         <label className={cn('flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition-all',
-                          field.value === acct.id ? 'border-amber-400 bg-amber-400/10' : 'border-white/10')}>
+                          field.value === acct.id ? 'acc-border acc-soft' : 'border-white/10')}>
                           <input type="radio" value={acct.id} checked={field.value === acct.id}
-                            onChange={() => field.onChange(acct.id)} className="accent-amber-400" />
+                            onChange={() => field.onChange(acct.id)} className="acc-ring" />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-white">{acct.account_name}</p>
                             <p className="text-xs text-gray-400">{acct.bank_name}</p>
                             <p className="text-xs text-gray-400 font-mono">{acct.account_number}</p>
                           </div>
                           {acct.is_primary && (
-                            <span className="text-xs bg-amber-400/20 text-amber-400 px-2 py-0.5 rounded-full">Primary</span>
+                            <span className="text-xs acc-soft acc-text px-2 py-0.5 rounded-full">Primary</span>
                           )}
                         </label>
                       )} />
                     ))}
-                    <div className="rounded-lg bg-amber-400/10 border border-amber-400/20 px-3 py-2 text-xs text-amber-300">
+                    <div className="rounded-lg acc-soft border acc-border-soft px-3 py-2 text-xs acc-text">
                       ⚠ Transfer exactly <strong>{fmtMoney(subtotal)}</strong> and upload your receipt on the next screen. Your items will be reserved immediately.
                     </div>
                   </div>
@@ -300,7 +332,7 @@ export default function Checkout() {
             )}
 
             <button type="submit" disabled={placing}
-              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-50 text-black font-bold py-4 rounded-full transition-colors text-sm">
+              className="w-full acc-bg disabled:opacity-50 text-black font-bold py-4 rounded-full transition-colors text-sm">
               {placing ? 'Placing Order…' : paymentMethod === 'paystack' ? `Pay ${fmtMoney(subtotal)} with Paystack` : `Place Order — ${fmtMoney(subtotal)}`}
             </button>
 
@@ -316,32 +348,30 @@ export default function Checkout() {
             <div className="text-center py-4">
               <p className="text-4xl mb-3">🏦</p>
               <h2 className="text-xl font-bold text-white mb-1">Complete Your Transfer</h2>
-              <p className="text-gray-400 text-sm">Order <span className="text-amber-400 font-mono">{order.order_number}</span> is reserved for you.</p>
+              <p className="text-gray-400 text-sm">Order <span className="acc-text font-mono">{order.order_number}</span> is reserved for you.</p>
             </div>
 
             {/* Selected bank account */}
-            {bankAccounts.find(a => a.id === /* from form */ bankAccounts[0]?.id) && (
+            {selectedAccount && (
               <div className="rounded-2xl border border-white/8 bg-white/5 p-5 space-y-3">
                 <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Transfer to this account</p>
-                {bankAccounts.map(acct => (
-                  <div key={acct.id} className="space-y-2">
-                    <DetailRow label="Bank" value={acct.bank_name} />
-                    <DetailRow label="Account name" value={acct.account_name} />
-                    <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Account number</p>
-                        <p className="font-mono text-white font-bold text-lg">{acct.account_number}</p>
-                      </div>
-                      <button onClick={() => copyAccountNumber(acct.account_number)}
-                        className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors">
-                        {copiedAccount === acct.account_number ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
-                      </button>
+                <div className="space-y-2">
+                  <DetailRow label="Bank" value={selectedAccount.bank_name} />
+                  <DetailRow label="Account name" value={selectedAccount.account_name} />
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                    <div>
+                      <p className="text-xs text-gray-500">Account number</p>
+                      <p className="font-mono text-white font-bold text-lg">{selectedAccount.account_number}</p>
                     </div>
+                    <button onClick={() => copyAccountNumber(selectedAccount.account_number)}
+                      className="flex items-center gap-1 text-xs acc-text hover:opacity-80 transition-colors">
+                      {copiedAccount === selectedAccount.account_number ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+                    </button>
                   </div>
-                )).slice(0, 1)}
-                <div className="flex items-center justify-between rounded-xl bg-amber-400/10 border border-amber-400/20 px-4 py-3">
-                  <p className="text-xs text-amber-300">Transfer exactly</p>
-                  <p className="text-xl font-black text-amber-400">{fmtMoney(order.total_amount)}</p>
+                </div>
+                <div className="flex items-center justify-between rounded-xl acc-soft border acc-border-soft px-4 py-3">
+                  <p className="text-xs acc-text">Transfer exactly</p>
+                  <p className="text-xl font-black acc-text">{fmtMoney(order.total_amount)}</p>
                 </div>
               </div>
             )}
@@ -357,7 +387,7 @@ export default function Checkout() {
             <div className="space-y-3">
               <p className="text-sm font-semibold text-gray-300">Upload Payment Receipt</p>
 
-              <label className="block rounded-2xl border-2 border-dashed border-white/15 hover:border-amber-400/40 transition-colors p-8 text-center cursor-pointer">
+              <label className="block rounded-2xl border-2 border-dashed border-white/15 hover:border-[#C9A86C] transition-colors p-8 text-center cursor-pointer">
                 <Upload className="h-8 w-8 text-gray-500 mx-auto mb-2" />
                 <p className="text-sm text-gray-400">{proofFile ? proofFile.name : 'Click to upload receipt screenshot'}</p>
                 <p className="text-xs text-gray-600 mt-1">PNG, JPG or PDF</p>
@@ -382,7 +412,7 @@ export default function Checkout() {
               <button
                 disabled={submittingProof || (!proofFile && !proofUrl)}
                 onClick={handleProofUpload}
-                className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold py-4 rounded-full transition-colors text-sm"
+                className="w-full acc-bg disabled:opacity-40 text-black font-bold py-4 rounded-full transition-colors text-sm"
               >
                 {submittingProof ? 'Uploading…' : 'Submit Payment Proof'}
               </button>
@@ -412,7 +442,7 @@ export default function Checkout() {
             </div>
 
             <div className="rounded-2xl border border-white/8 bg-white/5 p-5 text-left space-y-2">
-              <DetailRow label="Order number" value={<span className="font-mono text-amber-400">{order.order_number}</span>} />
+              <DetailRow label="Order number" value={<span className="font-mono acc-text">{order.order_number}</span>} />
               <DetailRow label="Total" value={fmtMoney(order.total_amount)} />
               <DetailRow label="Status" value="Verifying payment" />
             </div>
@@ -447,7 +477,7 @@ export default function Checkout() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const INPUT_CLASS = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-amber-400/60 transition-colors';
+const INPUT_CLASS = 'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A86C] transition-colors';
 
 function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -466,14 +496,14 @@ function PaymentOption({ value, current, onChange, label, desc, icon }: {
   return (
     <button type="button" onClick={() => onChange(value)}
       className={cn('w-full rounded-xl border p-4 text-left transition-all flex items-center gap-4',
-        current === value ? 'border-amber-400 bg-amber-400/10' : 'border-white/10 bg-white/5 hover:border-white/20')}>
+        current === value ? 'acc-border acc-soft' : 'border-white/10 bg-white/5 hover:border-white/20')}>
       <span className="text-2xl shrink-0">{icon}</span>
       <div className="flex-1">
         <p className="text-sm font-semibold text-white">{label}</p>
         <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
       </div>
       <div className={cn('h-4 w-4 rounded-full border-2 shrink-0 transition-colors',
-        current === value ? 'border-amber-400 bg-amber-400' : 'border-white/20')} />
+        current === value ? 'acc-border acc-bg' : 'border-white/20')} />
     </button>
   );
 }

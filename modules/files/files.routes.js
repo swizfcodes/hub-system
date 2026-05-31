@@ -22,6 +22,7 @@ const rateLimit = require("express-rate-limit");
 const config = require("../../config/config");
 const logger = require("../../config/logger");
 const storage = require("../../lib/storage");
+const { optimizeImage } = require("../../lib/images/optimizeImage");
 
 const router = express.Router();
 
@@ -75,11 +76,25 @@ router.post("/upload", uploadLimiter, upload.single("file"), async (req, res) =>
     return res.status(400).json({ message: "No file uploaded" });
   }
   try {
-    const ext = path.extname(req.file.originalname).toLowerCase() || "";
+    let outBuffer = req.file.buffer;
+    let ext = path.extname(req.file.originalname).toLowerCase() || "";
+    // Compress receipt images to WebP (PDFs pass through untouched).
+    if (req.file.mimetype !== "application/pdf") {
+      const opt = await optimizeImage(req.file.buffer, {
+        mimeType: req.file.mimetype,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 80,
+      });
+      if (opt.optimised) {
+        outBuffer = opt.buffer;
+        ext = `.${opt.extension}`;
+      }
+    }
     // Random filename so customers can't enumerate /uploads listing.
     const id = require("crypto").randomBytes(16).toString("hex");
     const safe = `${id}${ext}`;
-    const result = await storage.save(req.file.buffer, safe, "proofs");
+    const result = await storage.save(outBuffer, safe, "proofs");
 
     const url = publicUrlFor(result.filePath);
     logger.info(
