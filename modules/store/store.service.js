@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
-const { withStoreContext, withBusinessContext } = require("../../config/db");
+const { withStoreContext, withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
 const paystackService = require("../../integrations/paystack/paystack.service");
 const journalService = require("../accounting/journal.service");
@@ -39,10 +39,10 @@ const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
 const SCENT_FAMILY_STYLE = {
   "Fresh & Marine": { swatch: "#B8C9D6", ink: "#2B3A45" },
   "Citrus & Green": { swatch: "#D8DEB0", ink: "#3A4022" },
-  "Oud & Floral": { swatch: "#2B2820", ink: "#F2EDE4" },
-  "Spice & Amber": { swatch: "#D9A76A", ink: "#3B2A15" },
-  "Woody & Deep": { swatch: "#9B4A2E", ink: "#F2EDE4" },
-  "Floral & Musk": { swatch: "#C5A0A7", ink: "#3B1F26" },
+  "Oud & Floral":   { swatch: "#2B2820", ink: "#F2EDE4" },
+  "Spice & Amber":  { swatch: "#D9A76A", ink: "#3B2A15" },
+  "Woody & Deep":   { swatch: "#9B4A2E", ink: "#F2EDE4" },
+  "Floral & Musk":  { swatch: "#C5A0A7", ink: "#3B1F26" },
 };
 const SCENT_STYLE_FALLBACK = { swatch: "#2B2820", ink: "#F2EDE4" };
 
@@ -199,23 +199,22 @@ async function createOrder({ delivery_address, items }) {
 
     // Resolve the buyer. A web customer is both a store.customers row
     // and a shared.contacts row — create whichever is missing so the
-    // buyer always shows up in the ERP CRM.
+    // buyer always shows up in the ERP CRM. We need the contact_id in
+    // all cases (the ERP sales_order requires it), so resolve it first.
+    let contact = await repo.findContactByEmail(client, delivery_address.email);
+    if (!contact) {
+      contact = await repo.insertContact(client, {
+        displayName: delivery_address.full_name,
+        email: delivery_address.email,
+        phone: delivery_address.phone,
+      });
+    }
+
     let customer = await repo.findCustomerByEmail(
       client,
       delivery_address.email,
     );
     if (!customer) {
-      let contact = await repo.findContactByEmail(
-        client,
-        delivery_address.email,
-      );
-      if (!contact) {
-        contact = await repo.insertContact(client, {
-          displayName: delivery_address.full_name,
-          email: delivery_address.email,
-          phone: delivery_address.phone,
-        });
-      }
       customer = await repo.insertCustomer(client, {
         contactId: contact.contact_id,
         email: delivery_address.email,
@@ -230,6 +229,12 @@ async function createOrder({ delivery_address, items }) {
       deliveryAddress: delivery_address,
       items: lineItems,
     });
+
+    // NOTE: the ERP sales_order is intentionally NOT created here. A web
+    // order only becomes a real ERP sale once payment succeeds (see
+    // verifyAndFulfil), so ERP Sales never accumulates abandoned/unpaid
+    // orders. The buyer's contact + customer records ARE created above so
+    // they appear in CRM regardless of whether they complete payment.
 
     const reference = `orika_${order.id}`;
     await repo.setOrderPaystackRef(client, order.id, reference);
@@ -437,6 +442,56 @@ async function verifyAndFulfil(reference) {
       throw Object.assign(new Error("Order was concurrently fulfilled"), {
         status: 409,
       });
+    }
+
+    // 7b. Create the ERP sales order — now that payment has succeeded.
+    //     Born already paid + fulfilled (source='web'), so ERP Sales only
+    //     ever contains real, completed sales — abandoned/unpaid checkouts
+    //     never reach the ERP. Linked back to store.orders. Same
+    //     transaction: stock, journals, and the sales order all commit
+    //     together or not at all.
+    try {
+      const addr = order.delivery_address || {};
+      let contact = addr.email
+        ? await repo.findContactByEmail(client, addr.email)
+        : null;
+      if (!contact) {
+        // Fallback — buyer's contact should exist from createOrder, but
+        // create it defensively so a missing contact never blocks a paid
+        // order from reaching Sales.
+        contact = await repo.insertContact(client, {
+          displayName: addr.full_name || addr.email || "Web customer",
+          email: addr.email,
+          phone: addr.phone,
+        });
+      }
+      const orderNumber = await nextDocumentNumber(
+        client,
+        STORE_BUSINESS,
+        "sales_order",
+      );
+      const salesOrder = await repo.insertSalesOrderForWeb(client, {
+        orderNumber,
+        contactId: contact.contact_id,
+        totalNaira: Number(order.total_kobo) / 100,
+      });
+      await repo.insertSalesOrderLinesForWeb(client, {
+        orderId: salesOrder.order_id,
+        lineItems: lines,
+      });
+      await repo.linkStoreOrderToSalesOrder(
+        client,
+        order.id,
+        salesOrder.order_id,
+      );
+      await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
+    } catch (err) {
+      // A failure here must abort the whole fulfilment — we never want a
+      // paid order with stock/journals but no sales record.
+      logger.error(
+        `[store] sales order creation failed for ${order.id}: ${err.message}`,
+      );
+      throw err;
     }
 
     // Bump the customer's lifetime order count.

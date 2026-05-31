@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Invoice {{invoice_number}}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:40px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
+  .brand{font-size:22px;font-weight:700;letter-spacing:4px}
+  .brand-sub{font-size:10px;letter-spacing:2px;color:#888;margin-top:2px}
+  .doc-title{text-align:right}
+  .doc-title h1{font-size:28px;font-weight:300;letter-spacing:2px}
+  .doc-title .num{font-size:14px;font-weight:600;color:#b8922a;margin-top:4px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#f5f0e8;color:#b8922a;border:1px solid #e0d5c0;margin-left:6px}
+  hr{border:none;border-top:1px solid #e0d5c0;margin:20px 0}
+  .parties{display:flex;justify-content:space-between;margin-bottom:28px}
+  .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:5px}
+  .val{font-size:14px;font-weight:600}
+  .sub{font-size:12px;color:#555;margin-top:2px}
+  .dates{display:flex;gap:36px}
+  .date-block{text-align:right}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  thead tr{background:#1a1a1a;color:#fff}
+  thead th{padding:9px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:left}
+  thead th.c{text-align:center} thead th.r{text-align:right}
+  tbody td{padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#333}
+  tbody tr.even td{background:#faf8f4}
+  td.c{text-align:center} td.r{text-align:right}
+  .totals{display:flex;justify-content:flex-end;margin-bottom:28px}
+  .totals-table{width:270px}
+  .totals-table td{padding:5px 12px;color:#555;border:none}
+  .totals-table td:last-child{text-align:right;font-weight:500;color:#1a1a1a}
+  .totals-table .total-row td{font-size:15px;font-weight:700;color:#1a1a1a;border-top:2px solid #b8922a;padding-top:9px}
+  .section-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin:24px 0 10px}
+  .footer{margin-top:36px;padding-top:18px;border-top:1px solid #e0d5c0;font-size:12px;color:#555}
+  .pay-link{margin-top:10px;word-break:break-all;color:#b8922a}
+  .instructions{margin-top:6px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">{{biz.display_name}}</div>
+      <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+    </div>
+    <div class="doc-title">
+      <h1>INVOICE <span class="badge">{{status}}</span></h1>
+      <div class="num">{{invoice_number}}</div>
+    </div>
+  </div>
+
+  <div class="parties">
+    <div>
+      <div class="lbl">Billed To</div>
+      <div class="val">{{contact_name}}</div>
+      <div class="sub">{{email}}</div>
+      <div class="sub">{{primary_phone}}</div>
+    </div>
+    <div class="dates">
+      <div class="date-block">
+        <div class="lbl">Issue Date</div>
+        <div class="val">{{issue_date_fmt}}</div>
+      </div>
+      <div class="date-block">
+        <div class="lbl">Due Date</div>
+        <div class="val">{{due_date_fmt}}</div>
+      </div>
+    </div>
+  </div>
+
+  <hr/>
+
+  <table>
+    <thead>
+      <tr><th>Description</th><th class="c">Qty</th><th class="r">Unit Price</th><th class="r">Amount</th></tr>
+    </thead>
+    <tbody>{{lines_html}}</tbody>
+  </table>
+
+  <div class="totals">
+    <table class="totals-table">
+      <tr><td>Subtotal</td><td>₦{{subtotal_fmt}}</td></tr>
+      <tr><td>Discount</td><td>₦{{discount_total_fmt}}</td></tr>
+      <tr><td>VAT</td><td>₦{{vat_amount_fmt}}</td></tr>
+      <tr class="total-row"><td>Total ({{currency}})</td><td>₦{{total_amount_fmt}}</td></tr>
+      <tr><td>Amount Paid</td><td>₦{{amount_paid_fmt}}</td></tr>
+    </table>
+  </div>
+
+  <div class="section-title">Payments Received</div>
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Method</th><th>Reference</th><th class="r">Amount</th></tr>
+    </thead>
+    <tbody>{{payments_html}}</tbody>
+  </table>
+
+  <div class="footer">
+    <div class="lbl">Payment Instructions</div>
+    <div class="instructions">{{payment_instructions}}</div>
+    <div class="pay-link">Pay online: {{paystack_payment_url}}</div>
+  </div>
+</body>
+</html>

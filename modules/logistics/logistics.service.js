@@ -426,7 +426,14 @@ async function markReturned(business, deliveryId, { notes }, user) {
 
 async function generatePackingSlip(business, deliveryId) {
   const delivery = await getDelivery(business, deliveryId);
-  return renderToPDF("packing-slip", { delivery, business });
+  const { getBusinessConfig } = require("../../config/businesses");
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  delivery.items_html = (delivery.items || []).filter(Boolean).map((item, i) =>
+    `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${item.description || ''}</td><td class="c">${item.quantity}</td></tr>`
+  ).join('');
+  delivery.dispatched_at_fmt = fmtDate(delivery.dispatched_at);
+  delivery.created_at_fmt    = fmtDate(delivery.created_at);
+  return renderToPDF("packing-slip", { delivery, business, biz: getBusinessConfig(business) || {} });
 }
 
 module.exports = {

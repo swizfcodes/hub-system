@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Invoice {{invoice_number}}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 40px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 40px;
+      }
+      .brand {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: #1a1a1a;
+      }
+      .brand-sub {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .invoice-meta {
+        text-align: right;
+      }
+      .invoice-meta h1 {
+        font-size: 28px;
+        font-weight: 300;
+        letter-spacing: 2px;
+        color: #1a1a1a;
+      }
+      .invoice-meta .num {
+        font-size: 14px;
+        font-weight: 600;
+        color: #b8922a;
+        margin-top: 4px;
+      }
+      .divider {
+        border: none;
+        border-top: 1px solid #e0d5c0;
+        margin: 24px 0;
+      }
+      .parties {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 32px;
+      }
+      .party-label {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 6px;
+      }
+      .party-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+      .party-detail {
+        font-size: 12px;
+        color: #555;
+        margin-top: 2px;
+      }
+      .dates {
+        display: flex;
+        gap: 40px;
+      }
+      .date-block {
+        text-align: right;
+      }
+      .date-label {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 3px;
+      }
+      .date-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 24px;
+      }
+      thead tr {
+        background: #1a1a1a;
+        color: #fff;
+      }
+      thead th {
+        padding: 10px 12px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 600;
+        text-align: left;
+      }
+      thead th.c {
+        text-align: center;
+      }
+      thead th.r {
+        text-align: right;
+      }
+      tbody tr td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0ebe0;
+        font-size: 13px;
+        color: #333;
+      }
+      tbody tr.even td {
+        background: #faf8f4;
+      }
+      td.c {
+        text-align: center;
+      }
+      td.r {
+        text-align: right;
+      }
+      .totals {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 32px;
+      }
+      .totals-table {
+        width: 280px;
+      }
+      .totals-table tr td {
+        padding: 6px 12px;
+        font-size: 13px;
+        color: #555;
+        border: none;
+      }
+      .totals-table tr td:last-child {
+        text-align: right;
+        font-weight: 500;
+        color: #1a1a1a;
+      }
+      .totals-table tr.total-row td {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1a1a1a;
+        border-top: 2px solid #b8922a;
+        padding-top: 10px;
+      }
+      .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e0d5c0;
+      }
+      .payment-url {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #555;
+      }
+      .payment-url a {
+        color: #b8922a;
+        text-decoration: none;
+        word-break: break-all;
+      }
+      .instructions {
+        font-size: 12px;
+        color: #555;
+        margin-top: 8px;
+        white-space: pre-wrap;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: #f5f0e8;
+        color: #b8922a;
+        border: 1px solid #e0d5c0;
+        margin-left: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <div class="brand">{{biz.display_name}}</div>
+        <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+      </div>
+      <div class="invoice-meta">
+        <h1>INVOICE <span class="status-badge">{{status}}</span></h1>
+        <div class="num">{{invoice_number}}</div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div>
+        <div class="party-label">Billed To</div>
+        <div class="party-name">{{contact_name}}</div>
+        <div class="party-detail">{{contact_email}}</div>
+        <div class="party-detail">{{contact_phone}}</div>
+      </div>
+      <div class="dates">
+        <div class="date-block">
+          <div class="date-label">Issue Date</div>
+          <div class="date-value">{{issue_date_fmt}}</div>
+        </div>
+        <div class="date-block">
+          <div class="date-label">Due Date</div>
+          <div class="date-value">{{due_date_fmt}}</div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="c">Qty</th>
+          <th class="r">Unit Price</th>
+          <th class="r">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{lines_html}}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <table class="totals-table">
+        <tr>
+          <td>Subtotal</td>
+          <td>₦{{subtotal_fmt}}</td>
+        </tr>
+        <tr>
+          <td>Discount</td>
+          <td>₦{{discount_total_fmt}}</td>
+        </tr>
+        <tr>
+          <td>VAT</td>
+          <td>₦{{vat_amount_fmt}}</td>
+        </tr>
+        <tr class="total-row">
+          <td>Total ({{currency}})</td>
+          <td>₦{{total_amount_fmt}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      <div class="party-label">Payment Instructions</div>
+      <div class="instructions">{{payment_instructions}}</div>
+      <div class="payment-url">
+        Pay online:
+        <a href="{{paystack_payment_url}}">{{paystack_payment_url}}</a>
+      </div>
+    </div>
+  </body>
+</html>

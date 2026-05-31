@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Receipt {{transaction_number}}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 12px;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 24px;
+        max-width: 320px;
+      }
+      .brand {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+      .brand-name {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 4px;
+      }
+      .brand-sub {
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: #888;
+        margin-top: 2px;
+      }
+      hr {
+        border: none;
+        border-top: 1px dashed #ccc;
+        margin: 12px 0;
+      }
+      .meta {
+        margin-bottom: 12px;
+      }
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+        font-size: 11px;
+      }
+      .meta-row .k {
+        color: #888;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+      }
+      thead th {
+        padding: 6px 4px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        font-weight: 600;
+        text-align: left;
+        border-bottom: 1px solid #1a1a1a;
+      }
+      thead th.c {
+        text-align: center;
+      }
+      thead th.r {
+        text-align: right;
+      }
+      tbody td {
+        padding: 5px 4px;
+        font-size: 11px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      tbody tr.even td {
+        background: #fafafa;
+      }
+      td.c {
+        text-align: center;
+      }
+      td.r {
+        text-align: right;
+      }
+      .totals {
+        margin: 8px 0;
+      }
+      .totals .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+        font-size: 11px;
+      }
+      .totals .row.bold {
+        font-weight: 700;
+        font-size: 13px;
+        border-top: 1px solid #1a1a1a;
+        padding-top: 6px;
+        margin-top: 4px;
+      }
+      .payments {
+        margin: 10px 0;
+        font-size: 11px;
+        color: #555;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 16px;
+        font-size: 10px;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="brand">
+      <div class="brand-name">{{biz.display_name}}</div>
+      <div class="brand-sub">{{business}}</div>
+    </div>
+
+    <hr />
+
+    <div class="meta">
+      <div class="meta-row">
+        <span class="k">Receipt</span><span>{{transaction_number}}</span>
+      </div>
+      <div class="meta-row">
+        <span class="k">Date</span><span>{{transaction_date}}</span>
+      </div>
+      <div class="meta-row">
+        <span class="k">Customer</span><span>{{contact_name}}</span>
+      </div>
+    </div>
+
+    <hr />
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th class="c">Qty</th>
+          <th class="r">Price</th>
+          <th class="r">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{lines_html}}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>{{subtotal}}</span></div>
+      <div class="row">
+        <span>Discount</span><span>{{discount_total}}</span>
+      </div>
+      <div class="row"><span>VAT</span><span>{{vat_amount}}</span></div>
+      <div class="row bold">
+        <span>TOTAL</span><span>{{total_amount}}</span>
+      </div>
+      <div class="row"><span>Paid</span><span>{{amount_paid}}</span></div>
+      <div class="row"><span>Change</span><span>{{change_given}}</span></div>
+    </div>
+
+    <hr />
+
+    <div class="payments">{{payments}}</div>
+
+    <div class="footer">
+      <p>Thank you for shopping with Orika Living.</p>
+      <p style="margin-top: 4px">
+        Every vessel a quiet statement — rooted in nature.
+      </p>
+    </div>
+  </body>
+</html>

@@ -292,12 +292,81 @@ async function insertContact(client, { displayName, email, phone }) {
     rows: [row],
   } = await client.query(
     `INSERT INTO shared.contacts
-       (display_name, email, phone, contact_type)
+       (display_name, email, primary_phone, contact_type)
      VALUES ($1, $2, $3, ARRAY['customer']::text[])
      RETURNING contact_id`,
     [displayName, email, phone || null],
   );
   return row;
+}
+
+// ── ERP SALES-ORDER BRIDGE ───────────────────────────────────
+// Web orders become real diffusers.sales_orders so they flow the
+// ERP sales pipeline and show in ERP Sales. These run from store
+// context, so diffusers.* is explicitly qualified. source='web'
+// distinguishes them from manually-created orders.
+
+async function insertSalesOrderForWeb(
+  client,
+  { orderNumber, contactId, totalNaira },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO diffusers.sales_orders
+       (order_number, contact_id, status, fulfilment_type,
+        total_amount, amount_paid, source, created_by)
+     VALUES ($1, $2, 'confirmed', 'delivery', $3, 0, 'web', NULL)
+     RETURNING order_id, order_number`,
+    [orderNumber, contactId, totalNaira],
+  );
+  return row;
+}
+
+async function insertSalesOrderLinesForWeb(client, { orderId, lineItems }) {
+  for (const item of lineItems) {
+    const lineTotal = (Number(item.price_kobo) / 100) * item.quantity;
+    await client.query(
+      `INSERT INTO diffusers.order_lines
+         (order_id, product_id, description, quantity, unit_price,
+          line_total, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+      [
+        orderId,
+        item.erp_product_id,
+        item.name,
+        item.quantity,
+        Number(item.price_kobo) / 100,
+        lineTotal,
+      ],
+    );
+  }
+}
+
+async function linkStoreOrderToSalesOrder(client, storeOrderId, salesOrderId) {
+  await client.query(
+    `UPDATE store.orders SET sales_order_id = $2 WHERE id = $1`,
+    [storeOrderId, salesOrderId],
+  );
+}
+
+// Settle the linked sales order on payment: mark it fully paid and
+// flip its lines to fulfilled, mirroring a completed ERP sale.
+async function settleSalesOrderForWeb(client, salesOrderId) {
+  await client.query(
+    `UPDATE diffusers.sales_orders
+       SET amount_paid = total_amount,
+           status = 'fulfilled',
+           updated_at = now()
+     WHERE order_id = $1`,
+    [salesOrderId],
+  );
+  await client.query(
+    `UPDATE diffusers.order_lines
+       SET status = 'fulfilled'
+     WHERE order_id = $1`,
+    [salesOrderId],
+  );
 }
 
 // ── ORDERS ───────────────────────────────────────────────────
@@ -461,6 +530,11 @@ module.exports = {
   incrementCustomerOrders,
   findContactByEmail,
   insertContact,
+  // web → ERP sales-order bridge
+  insertSalesOrderForWeb,
+  insertSalesOrderLinesForWeb,
+  linkStoreOrderToSalesOrder,
+  settleSalesOrderForWeb,
   // orders
   insertOrder,
   setOrderPaystackRef,

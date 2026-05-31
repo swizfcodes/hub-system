@@ -428,6 +428,23 @@ async function generatePDF(business, invoiceId) {
   const inv = await getById(business, invoiceId);
   if (!inv)
     throw Object.assign(new Error("Invoice not found"), { status: 404 });
+  const { getBusinessConfig } = require("../../config/businesses");
+  const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  inv.biz = getBusinessConfig(business) || {};
+  inv.subtotal_fmt       = fmt(inv.subtotal);
+  inv.discount_total_fmt = fmt(inv.discount_total);
+  inv.vat_amount_fmt     = fmt(inv.vat_amount);
+  inv.total_amount_fmt   = fmt(inv.total_amount);
+  inv.amount_paid_fmt    = fmt(inv.amount_paid);
+  inv.issue_date_fmt     = fmtDate(inv.issue_date);
+  inv.due_date_fmt       = fmtDate(inv.due_date);
+  inv.lines_html = (inv.lines || []).filter(Boolean).map((l, i) =>
+    `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${l.description || ''}</td><td class="c">${l.quantity}</td><td class="r">₦${fmt(l.unit_price)}</td><td class="r">₦${fmt(l.line_total)}</td></tr>`
+  ).join('');
+  inv.payments_html = (inv.payments || []).filter(Boolean).map((p) =>
+    `<tr><td>${fmtDate(p.paid_at)}</td><td>${p.payment_method || ''}</td><td>${p.reference || ''}</td><td class="r">₦${fmt(p.amount)}</td></tr>`
+  ).join('');
   return renderToPDF("invoices", inv);
 }
 

@@ -159,13 +159,21 @@ async function generateDeliveryNotePDF({
     );
     if (!rows.length) return;
 
+    const delivery = rows[0];
+    const { getBusinessConfig } = require("../../../config/businesses");
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    delivery.items_html = (delivery.items || []).filter(Boolean).map((item, i) =>
+      `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${item.description || ''}</td><td class="c">${item.quantity}</td></tr>`
+    ).join('');
+    delivery.delivered_at_fmt = fmtDate(delivery.delivered_at);
     await renderToPDF("delivery-note", {
-      delivery: rows[0],
+      delivery,
       customer_name,
       driver_name,
       customer_signature,
       driver_signature,
       business,
+      biz: getBusinessConfig(business) || {},
     });
   } catch (err) {
     logger.error(`[sign] delivery-note PDF failed for ${deliveryId}`, err);

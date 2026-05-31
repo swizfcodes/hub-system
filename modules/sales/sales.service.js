@@ -255,6 +255,16 @@ async function cancelQuotation(business, quotationId, user) {
 
 async function generateQuotationPDF(business, quotationId) {
   const q = await getQuotation(business, quotationId);
+  const { getBusinessConfig } = require("../../config/businesses");
+  const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  q.biz = getBusinessConfig(business) || {};
+  q.total_amount_fmt = fmt(q.total_amount);
+  q.valid_until_fmt  = fmtDate(q.valid_until);
+  q.created_at_fmt   = fmtDate(q.created_at);
+  q.lines_html = (q.lines || []).filter(Boolean).map((l, i) =>
+    `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${l.description || ''}</td><td class="c">${l.quantity}</td><td class="r">₦${fmt(l.unit_price)}</td><td class="r">₦${fmt(l.line_total)}</td></tr>`
+  ).join('');
   return renderToPDF("quotations", q);
 }
 
@@ -362,6 +372,28 @@ async function generateInvoiceFromOrder(
       );
     }
 
+    const { getBusinessConfig } = require("../../config/businesses");
+    const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    invoice.biz             = getBusinessConfig(business) || {};
+    invoice.contact_name    = order.contact_name  || '';
+    invoice.contact_email   = order.email         || '';
+    invoice.contact_phone   = order.primary_phone || '';
+    invoice.subtotal_fmt        = fmt(invoice.subtotal);
+    invoice.discount_total_fmt  = fmt(invoice.discount_total);
+    invoice.vat_amount_fmt      = fmt(invoice.vat_amount);
+    invoice.total_amount_fmt    = fmt(invoice.total_amount);
+    invoice.issue_date_fmt      = fmtDate(invoice.issue_date);
+    invoice.due_date_fmt        = fmtDate(invoice.due_date);
+    invoice.lines_html = (order.lines || []).filter(Boolean).map((l, i) =>
+      `<tr class="${i % 2 === 0 ? 'even' : ''}">
+        <td>${l.description || ''}</td>
+        <td class="c">${l.quantity}</td>
+        <td class="r">₦${fmt(l.unit_price)}</td>
+        <td class="r">₦${fmt(l.line_total)}</td>
+      </tr>`
+    ).join('');
+
     const pdf = await renderToPDF("invoice", invoice);
     await repo.archiveDocument(client, {
       business,
@@ -385,7 +417,7 @@ async function generateInvoiceFromOrder(
 }
 
 async function handToLogistics(business, orderId, data, user) {
-  return withBusinessContext(business, async (client) => {
+  const result = await withBusinessContext(business, async (client) => {
     const order = await repo.findOrderById(client, orderId);
     if (!order)
       throw Object.assign(new Error("Order not found"), { status: 404 });
@@ -396,6 +428,22 @@ async function handToLogistics(business, orderId, data, user) {
     });
     return { message: "Order handed to logistics", order: updated };
   });
+
+  const logisticsService = require("../logistics/logistics.service");
+  await logisticsService.createDelivery(
+    business,
+    {
+      reference_type: "sales_order",
+      reference_id: orderId,
+      contact_id: result.order.contact_id,
+      delivery_address: data.delivery_address,
+      courier: data.courier_preference,
+      delivery_fee: data.delivery_fee || 0,
+    },
+    user,
+  );
+
+  return result;
 }
 
 async function cancelOrder(business, orderId, user) {
@@ -439,6 +487,8 @@ async function getReceipt(business, receiptId) {
 
 async function generateReceiptPDF(business, receiptId) {
   const r = await getReceipt(business, receiptId);
+  const { getBusinessConfig } = require("../../config/businesses");
+  r.biz = getBusinessConfig(business) || {};
   return renderToPDF("receipt", r);
 }
 

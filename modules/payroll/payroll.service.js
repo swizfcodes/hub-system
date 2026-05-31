@@ -260,6 +260,8 @@ async function getPayslip(business, payslipId, user) {
 
 async function generatePayslipPDF(business, payslipId, user) {
   const payslip = await getPayslip(business, payslipId, user);
+  const { getBusinessConfig } = require("../../config/businesses");
+  payslip.biz = getBusinessConfig(business) || {};
   return renderToPDF("payslips", payslip);
 }
 

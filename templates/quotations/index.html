@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quotation {{quotation_number}}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 40px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 36px;
+      }
+      .brand {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 4px;
+      }
+      .brand-sub {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .doc-title {
+        text-align: right;
+      }
+      .doc-title h1 {
+        font-size: 28px;
+        font-weight: 300;
+        letter-spacing: 2px;
+      }
+      .doc-title .num {
+        font-size: 14px;
+        font-weight: 600;
+        color: #b8922a;
+        margin-top: 4px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        background: #f5f0e8;
+        color: #b8922a;
+        border: 1px solid #e0d5c0;
+        margin-left: 6px;
+      }
+      hr {
+        border: none;
+        border-top: 1px solid #e0d5c0;
+        margin: 20px 0;
+      }
+      .parties {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+      .lbl {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 5px;
+      }
+      .val {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .sub {
+        font-size: 12px;
+        color: #555;
+        margin-top: 2px;
+      }
+      .dates {
+        display: flex;
+        gap: 36px;
+      }
+      .date-block {
+        text-align: right;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      thead tr {
+        background: #1a1a1a;
+        color: #fff;
+      }
+      thead th {
+        padding: 9px 12px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 600;
+        text-align: left;
+      }
+      thead th.c {
+        text-align: center;
+      }
+      thead th.r {
+        text-align: right;
+      }
+      tbody td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #f0ebe0;
+        color: #333;
+      }
+      tbody tr.even td {
+        background: #faf8f4;
+      }
+      td.c {
+        text-align: center;
+      }
+      td.r {
+        text-align: right;
+      }
+      .totals {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 28px;
+      }
+      .totals-table {
+        width: 270px;
+      }
+      .totals-table td {
+        padding: 5px 12px;
+        color: #555;
+        border: none;
+      }
+      .totals-table td:last-child {
+        text-align: right;
+        font-weight: 500;
+        color: #1a1a1a;
+      }
+      .totals-table .total-row td {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1a1a1a;
+        border-top: 2px solid #b8922a;
+        padding-top: 9px;
+      }
+      .footer {
+        margin-top: 36px;
+        padding-top: 18px;
+        border-top: 1px solid #e0d5c0;
+        font-size: 12px;
+        color: #555;
+      }
+      .validity {
+        background: #faf8f4;
+        border: 1px solid #e0d5c0;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-top: 16px;
+        font-size: 12px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <div class="brand">{{biz.display_name}}</div>
+        <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+      </div>
+      <div class="doc-title">
+        <h1>QUOTATION <span class="badge">{{status}}</span></h1>
+        <div class="num">{{quotation_number}}</div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div>
+        <div class="lbl">Prepared For</div>
+        <div class="val">{{contact_name}}</div>
+        <div class="sub">{{email}}</div>
+        <div class="sub">{{primary_phone}}</div>
+      </div>
+      <div class="dates">
+        <div class="date-block">
+          <div class="lbl">Date</div>
+          <div class="val">{{created_at_fmt}}</div>
+        </div>
+        <div class="date-block">
+          <div class="lbl">Valid Until</div>
+          <div class="val">{{valid_until_fmt}}</div>
+        </div>
+      </div>
+    </div>
+
+    <hr />
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="c">Qty</th>
+          <th class="r">Unit Price</th>
+          <th class="r">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{lines_html}}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <table class="totals-table">
+        <tr class="total-row">
+          <td>Total (NGN)</td>
+          <td>₦{{total_amount_fmt}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      <p>
+        This quotation is valid until <strong>{{valid_until_fmt}}</strong>.
+        Prices are subject to change after this date.
+      </p>
+      <div class="validity">
+        To accept this quotation, please contact us — bola@orikaliving.com
+      </div>
+    </div>
+  </body>
+</html>

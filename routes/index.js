@@ -79,6 +79,7 @@ router.use(
         "Content-Type": mime_type,
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Length": buffer.length,
+        "Cross-Origin-Resource-Policy": "cross-origin",
       });
       res.send(buffer);
     } catch (e) {

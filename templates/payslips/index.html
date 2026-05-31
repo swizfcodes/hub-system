@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Payslip — {{display_name}}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:40px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
+  .brand{font-size:22px;font-weight:700;letter-spacing:4px}
+  .brand-sub{font-size:10px;letter-spacing:2px;color:#888;margin-top:2px}
+  .doc-title{text-align:right}
+  .doc-title h1{font-size:26px;font-weight:300;letter-spacing:2px}
+  .doc-title .period{font-size:13px;font-weight:600;color:#b8922a;margin-top:4px}
+  hr{border:none;border-top:1px solid #e0d5c0;margin:20px 0}
+  .employee-card{background:#faf8f4;border:1px solid #e0d5c0;border-radius:8px;padding:20px;margin-bottom:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:4px}
+  .val{font-size:13px;font-weight:600}
+  .sub{font-size:12px;color:#555;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  thead tr{background:#1a1a1a;color:#fff}
+  thead th{padding:9px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:left}
+  thead th.r{text-align:right}
+  tbody td{padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#333}
+  tbody td.r{text-align:right}
+  tbody tr.sub-total td{background:#f5f0e8;font-weight:600}
+  .net-box{background:#1a1a1a;color:#fff;border-radius:8px;padding:20px;text-align:center;margin:24px 0}
+  .net-box .net-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.6;margin-bottom:8px}
+  .net-box .net-amt{font-size:34px;font-weight:700;color:#b8922a}
+  .bank-box{background:#faf8f4;border:1px solid #e0d5c0;border-radius:6px;padding:14px 18px;font-size:12px;color:#555;margin-top:12px}
+  .bank-box strong{display:block;margin-bottom:4px;color:#1a1a1a}
+  .footer{margin-top:36px;padding-top:18px;border-top:1px solid #e0d5c0;font-size:11px;color:#888;text-align:center}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">{{biz.display_name}}</div>
+      <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+    </div>
+    <div class="doc-title">
+      <h1>PAYSLIP</h1>
+      <div class="period">{{run_number}} &nbsp;·&nbsp; {{period_month}}/{{period_year}}</div>
+    </div>
+  </div>
+
+  <div class="employee-card">
+    <div>
+      <div class="lbl">Employee</div>
+      <div class="val">{{display_name}}</div>
+      <div class="sub">{{job_title}}</div>
+    </div>
+    <div>
+      <div class="lbl">Employee No.</div>
+      <div class="val">{{employee_number}}</div>
+    </div>
+    <div>
+      <div class="lbl">Email</div>
+      <div class="sub">{{email}}</div>
+    </div>
+    <div>
+      <div class="lbl">Pay Run</div>
+      <div class="val">{{run_number}}</div>
+      <div class="sub">{{period_month}} / {{period_year}}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Description</th><th class="r">Amount (₦)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Gross Salary</td><td class="r">{{gross_salary}}</td></tr>
+      <tr class="sub-total"><td>Gross Earnings</td><td class="r">{{gross_salary}}</td></tr>
+      <tr><td>PAYE Tax</td><td class="r">{{paye_deduction}}</td></tr>
+      <tr><td>Pension (Employee)</td><td class="r">{{pension_employee}}</td></tr>
+      <tr><td>NHF</td><td class="r">{{nhf_deduction}}</td></tr>
+      <tr><td>Advance Recovery</td><td class="r">{{advance_recovery}}</td></tr>
+      <tr class="sub-total"><td>Total Deductions</td><td class="r">{{total_deductions}}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="net-box">
+    <div class="net-lbl">Net Pay</div>
+    <div class="net-amt">₦{{net_salary}}</div>
+  </div>
+
+  <div class="bank-box">
+    <strong>Payment to Bank Account</strong>
+    {{bank_name}} &nbsp;·&nbsp; {{bank_account_number}}
+  </div>
+
+  <div class="footer">This is a computer-generated payslip and does not require a signature.</div>
+</body>
+</html>

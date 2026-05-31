@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Receipt {{receipt_number}}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 40px;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 36px;
+      }
+      .brand {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 4px;
+      }
+      .brand-sub {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #888;
+        margin-top: 2px;
+      }
+      .doc-title {
+        text-align: right;
+      }
+      .doc-title h1 {
+        font-size: 28px;
+        font-weight: 300;
+        letter-spacing: 2px;
+      }
+      .doc-title .num {
+        font-size: 14px;
+        font-weight: 600;
+        color: #b8922a;
+        margin-top: 4px;
+      }
+      hr {
+        border: none;
+        border-top: 1px solid #e0d5c0;
+        margin: 20px 0;
+      }
+      .lbl {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 5px;
+      }
+      .val {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .sub {
+        font-size: 12px;
+        color: #555;
+        margin-top: 2px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+      .amount-box {
+        background: #1a1a1a;
+        color: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+        margin: 28px 0;
+      }
+      .amount-box .amt-lbl {
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        opacity: 0.6;
+        margin-bottom: 8px;
+      }
+      .amount-box .amt {
+        font-size: 36px;
+        font-weight: 700;
+        color: #b8922a;
+      }
+      .method-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #f5f0e8;
+        border: 1px solid #e0d5c0;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #b8922a;
+        margin-top: 8px;
+      }
+      .footer {
+        margin-top: 36px;
+        padding-top: 18px;
+        border-top: 1px solid #e0d5c0;
+        font-size: 12px;
+        color: #888;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div>
+        <div class="brand">{{biz.display_name}}</div>
+        <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+      </div>
+      <div class="doc-title">
+        <h1>RECEIPT</h1>
+        <div class="num">{{receipt_number}}</div>
+      </div>
+    </div>
+
+    <hr />
+
+    <div class="grid">
+      <div>
+        <div class="lbl">Received From</div>
+        <div class="val">{{contact_name}}</div>
+      </div>
+      <div>
+        <div class="lbl">Invoice</div>
+        <div class="val">{{invoice_number}}</div>
+      </div>
+      <div>
+        <div class="lbl">Date</div>
+        <div class="val">{{created_at}}</div>
+      </div>
+      <div>
+        <div class="lbl">Reference</div>
+        <div class="val">{{payment_reference}}</div>
+      </div>
+    </div>
+
+    <div class="amount-box">
+      <div class="amt-lbl">Amount Received</div>
+      <div class="amt">₦{{amount}}</div>
+      <div class="method-badge">{{payment_method}}</div>
+    </div>
+
+    <div style="font-size: 12px; color: #555; margin-top: 12px">{{notes}}</div>
+
+    <div class="footer">
+      Thank you for your payment. This is an official receipt.
+    </div>
+  </body>
+</html>
