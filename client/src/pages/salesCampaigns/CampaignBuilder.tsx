@@ -24,7 +24,7 @@ import {
 } from '@services/salesCampaign';
 import {
   campaignSchema, CAMPAIGN_TEMPLATE_META, DEFAULT_CAMPAIGN_SECTIONS,
-  type CampaignFormValues,
+  CAMPAIGN_ACCENTS, DEFAULT_ACCENT, type CampaignFormValues,
 } from '@lib/constants/salesCampaignConstants';
 import type { CampaignProduct } from '@typedefs/salesCampaign';
 import { cn } from '@lib/cn';
@@ -80,6 +80,7 @@ export default function CampaignBuilder() {
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       template: 'editorial', discount_type: 'none', is_evergreen: false,
+      accent_color: DEFAULT_ACCENT,
     },
   });
 
@@ -93,6 +94,7 @@ export default function CampaignBuilder() {
         subheadline:     existing.subheadline ?? '',
         body_copy:       existing.body_copy ?? '',
         hero_image_url:  existing.hero_image_url ?? '',
+        accent_color:    existing.accent_color ?? DEFAULT_ACCENT,
         discount_type:   existing.discount_type ?? 'none',
         discount_value:  existing.discount_value ?? undefined,
         start_date:      existing.start_date?.slice(0, 10) ?? '',
@@ -249,6 +251,34 @@ export default function CampaignBuilder() {
                 )} />
               ))}
             </div>
+          </div>
+
+          {/* Accent colour */}
+          <div>
+            <p className="text-sm font-medium text-orika-cream mb-3">Accent colour</p>
+            <Controller name="accent_color" control={control} render={({ field }) => (
+              <div className="flex flex-wrap items-center gap-2.5">
+                {CAMPAIGN_ACCENTS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => field.onChange(c.value)}
+                    className={cn(
+                      'h-9 w-9 rounded-full border-2 transition-all',
+                      (field.value ?? DEFAULT_ACCENT) === c.value
+                        ? 'border-orika-cream scale-110'
+                        : 'border-transparent hover:scale-105',
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+                <span className="text-xs text-orika-smoke ml-1">
+                  {CAMPAIGN_ACCENTS.find(c => c.value === (field.value ?? DEFAULT_ACCENT))?.label ?? 'Custom'}
+                </span>
+              </div>
+            )} />
+            <p className="text-[11px] text-orika-smoke/60 mt-2">Used for buttons, prices and highlights on your campaign page.</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">

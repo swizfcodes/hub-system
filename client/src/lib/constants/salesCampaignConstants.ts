@@ -20,6 +20,18 @@ export const DEFAULT_CAMPAIGN_SECTIONS: Record<string, boolean> = {
   stock_indicator: true,
 };
 
+// Brand-aligned accent colours, selectable per campaign. Gold (#C9A86C) is the
+// house colour and the default; the rest are tasteful, on-brand alternatives.
+export const DEFAULT_ACCENT = '#C9A86C';
+export const CAMPAIGN_ACCENTS: { label: string; value: string }[] = [
+  { label: 'Gold',      value: '#C9A86C' },
+  { label: 'Champagne', value: '#D9BC87' },
+  { label: 'Rose',      value: '#C2728A' },
+  { label: 'Emerald',   value: '#2D6A4F' },
+  { label: 'Royal',     value: '#6C5CE7' },
+  { label: 'Sky',       value: '#2D9CDB' },
+];
+
 export const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
   pending:          { label: 'Awaiting proof',     color: '#F97316' },
   proof_submitted:  { label: 'Verifying payment',  color: '#C9A86C' },
@@ -31,8 +43,8 @@ export const ORDER_STATUS_META: Record<string, { label: string; color: string }>
 };
 
 export const NIGERIAN_STATES = [
-  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
-  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo',
+  'Abia', 'Abuja', 'Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
+  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Gombe','Imo',
   'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
   'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
   'Yobe','Zamfara',
@@ -47,6 +59,7 @@ export const campaignSchema = z.object({
   subheadline:    z.string().optional().or(z.literal('')),
   body_copy:      z.string().optional().or(z.literal('')),
   hero_image_url: z.string().optional().or(z.literal('')),
+  accent_color:   z.string().optional().or(z.literal('')),
   discount_type:  z.enum(['percentage','fixed_amount','none']).default('none'),
   discount_value: z.number().min(0).optional(),
   start_date:     z.string().optional().or(z.literal('')),

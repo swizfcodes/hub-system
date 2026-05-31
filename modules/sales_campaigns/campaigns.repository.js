@@ -109,8 +109,8 @@ async function insertCampaign(client, data) {
        (campaign_name, slug, template, status, headline, subheadline, body_copy,
         hero_image_url, discount_type, discount_value, sections,
         start_date, end_date, is_evergreen, whatsapp_number, inquiry_email,
-        store_location, redirect_url, created_by)
-     VALUES ($1,$2,$3,'draft',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        store_location, redirect_url, created_by, accent_color)
+     VALUES ($1,$2,$3,'draft',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
      RETURNING *`,
     [
       data.campaign_name, data.slug, data.template || 'editorial',
@@ -125,6 +125,7 @@ async function insertCampaign(client, data) {
       data.start_date || null, data.end_date || null, data.is_evergreen || false,
       data.whatsapp_number || null, data.inquiry_email || null,
       data.store_location || null, data.redirect_url || null, data.created_by,
+      data.accent_color || '#C9A86C',
     ]
   );
   return campaign;
@@ -134,7 +135,7 @@ async function updateCampaign(client, campaignId, fields) {
   const sets = [], values = [];
   const allowed = [
     'campaign_name','slug','template','status','headline','subheadline','body_copy',
-    'hero_image_url','discount_type','discount_value','sections','start_date','end_date',
+    'hero_image_url','accent_color','discount_type','discount_value','sections','start_date','end_date',
     'is_evergreen','whatsapp_number','inquiry_email','store_location','redirect_url','qr_code_url',
   ];
   for (const key of allowed) {
@@ -341,6 +342,7 @@ async function getStorefrontCampaign(client, slug) {
   const { rows: [campaign] } = await client.query(
     `SELECT sc.campaign_id, sc.campaign_name, sc.slug, sc.template, sc.status,
             sc.headline, sc.subheadline, sc.body_copy, sc.hero_image_url,
+            sc.accent_color,
             sc.discount_type, sc.discount_value, sc.sections,
             sc.start_date, sc.end_date, sc.is_evergreen,
             sc.whatsapp_number, sc.store_location, sc.redirect_url,

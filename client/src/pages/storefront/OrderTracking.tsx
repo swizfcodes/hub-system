@@ -89,7 +89,7 @@ export default function OrderTrackingPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-2 border-amber-400 border-t-transparent rounded-full" />
+      <div className="animate-spin h-8 w-8 border-2 border-[#C9A86C] border-t-transparent rounded-full" />
     </div>
   );
 
@@ -115,7 +115,7 @@ export default function OrderTrackingPage() {
       {/* Header */}
       <div className="border-b border-white/8 px-4 py-5 text-center">
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Order Tracking</p>
-        <p className="font-mono text-amber-400 text-xl font-bold">{order.order_number}</p>
+        <p className="font-mono text-[#C9A86C] text-xl font-bold">{order.order_number}</p>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-8 space-y-8">
@@ -146,10 +146,10 @@ export default function OrderTrackingPage() {
                     <div className={cn(
                       'relative z-10 h-10 w-10 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                       isPast    ? 'bg-green-500/20 border-green-500/60'   : '',
-                      isCurrent ? 'bg-amber-400/20 border-amber-400'       : '',
+                      isCurrent ? 'bg-[#C9A86C]/20 border-[#C9A86C]'       : '',
                       !isPast && !isCurrent ? 'bg-white/5 border-white/15' : '',
                     )}>
-                      <Icon className={cn('h-4 w-4', isPast ? 'text-green-400' : isCurrent ? 'text-amber-400' : 'text-gray-600')} />
+                      <Icon className={cn('h-4 w-4', isPast ? 'text-green-400' : isCurrent ? 'text-[#C9A86C]' : 'text-gray-600')} />
                     </div>
                     <div>
                       <p className={cn('text-sm font-medium', isCurrent ? 'text-white' : isPast ? 'text-gray-400' : 'text-gray-600')}>
@@ -178,7 +178,7 @@ export default function OrderTrackingPage() {
         {isPickup && order.pickup_location && ['confirmed','ready_for_pickup'].includes(order.status) && (
           <div className="rounded-2xl border border-white/8 bg-white/5 px-5 py-4">
             <div className="flex items-center gap-3 mb-2">
-              <Store className="h-5 w-5 text-amber-400" />
+              <Store className="h-5 w-5 text-[#C9A86C]" />
               <p className="font-semibold text-white">Pickup Location</p>
             </div>
             <p className="text-sm text-gray-300">{order.pickup_location}</p>
@@ -197,7 +197,7 @@ export default function OrderTrackingPage() {
                   <p className="text-sm text-white">{item.product_name}</p>
                   <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                 </div>
-                <p className="text-sm font-semibold text-amber-400">{fmtMoney(item.line_total)}</p>
+                <p className="text-sm font-semibold text-[#C9A86C]">{fmtMoney(item.line_total)}</p>
               </div>
             ))}
           </div>
@@ -209,13 +209,13 @@ export default function OrderTrackingPage() {
 
         {/* Proof upload — only if still pending */}
         {order.status === 'pending' && !proofDone && (
-          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-5 space-y-4">
-            <p className="font-semibold text-amber-400">Upload Your Payment Receipt</p>
+          <div className="rounded-2xl border border-[#C9A86C]/20 bg-[#C9A86C]/5 p-5 space-y-4">
+            <p className="font-semibold text-[#C9A86C]">Upload Your Payment Receipt</p>
             <p className="text-sm text-gray-400">
               Already transferred? Upload your bank receipt so we can confirm your order.
             </p>
 
-            <label className="block rounded-xl border border-dashed border-white/15 hover:border-amber-400/30 transition-colors p-6 text-center cursor-pointer">
+            <label className="block rounded-xl border border-dashed border-white/15 hover:border-[#C9A86C]/30 transition-colors p-6 text-center cursor-pointer">
               <Upload className="h-6 w-6 text-gray-500 mx-auto mb-2" />
               <p className="text-sm text-gray-400">{proofFile ? proofFile.name : 'Click to upload receipt'}</p>
               <input type="file" accept="image/*,.pdf" className="hidden"
@@ -224,7 +224,7 @@ export default function OrderTrackingPage() {
 
             <input type="url" value={proofUrl} onChange={e => setProofUrl(e.target.value)}
               placeholder="Or paste screenshot URL here"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-amber-400/60"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A86C]/60"
             />
 
             {proofError && <p className="text-sm text-red-400">{proofError}</p>}
@@ -232,7 +232,7 @@ export default function OrderTrackingPage() {
             <button
               disabled={submitting || (!proofFile && !proofUrl)}
               onClick={submitProof}
-              className="w-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold py-3 rounded-full transition-colors text-sm"
+              className="w-full bg-[#C9A86C] hover:brightness-110 disabled:opacity-40 text-black font-bold py-3 rounded-full transition-colors text-sm"
             >
               {submitting ? 'Submitting…' : 'Submit Payment Proof'}
             </button>

@@ -53,6 +53,7 @@ export interface SalesCampaign {
   subheadline?:    string | null;
   body_copy?:      string | null;
   hero_image_url?: string | null;
+  accent_color?:   string | null;
   discount_type?:  DiscountType | null;
   discount_value?: number | null;
   sections:        CampaignSections;
@@ -79,7 +80,8 @@ export interface CartItem {
   product_name:        string;
   image_url?:          string | null;
   quantity:            number;
-  unit_price:          number;
+  unit_price:          number;   // price charged (after discount)
+  list_price?:         number;   // original price before discount (for strike-through)
   line_total:          number;
 }
 
