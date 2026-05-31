@@ -1,5 +1,17 @@
 'use strict';
 
+// Default landing-page sections — applied when a campaign is created without
+// an explicit `sections` payload, so the public page always has blocks to
+// render (an empty {} would make the landing page render nothing).
+const DEFAULT_CAMPAIGN_SECTIONS = {
+  hero: true,
+  countdown: true,
+  products: true,
+  inquiry_form: true,
+  whatsapp_button: true,
+  stock_indicator: true,
+};
+
 // ── CAMPAIGNS ─────────────────────────────────────────────────────────────────
 
 async function listCampaigns(client, { status, limit = 20, offset = 0 }) {
@@ -104,7 +116,12 @@ async function insertCampaign(client, data) {
       data.campaign_name, data.slug, data.template || 'editorial',
       data.headline || null, data.subheadline || null, data.body_copy || null,
       data.hero_image_url || null, data.discount_type || 'none',
-      data.discount_value || null, JSON.stringify(data.sections || {}),
+      data.discount_value || null,
+      JSON.stringify(
+        data.sections && Object.keys(data.sections).length
+          ? data.sections
+          : DEFAULT_CAMPAIGN_SECTIONS,
+      ),
       data.start_date || null, data.end_date || null, data.is_evergreen || false,
       data.whatsapp_number || null, data.inquiry_email || null,
       data.store_location || null, data.redirect_url || null, data.created_by,

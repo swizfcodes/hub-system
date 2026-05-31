@@ -5,6 +5,7 @@ import { getStorefrontPage, trackEvent, submitLead } from '@services/salesCampai
 import type { SalesCampaign, CampaignProduct, CartItem } from '@typedefs/salesCampaign';
 import { fmtMoney } from '@lib/format';
 import { cn } from '@lib/cn';
+import { DEFAULT_CAMPAIGN_SECTIONS } from '@lib/constants/salesCampaignConstants';
 
 // ── Storefront session ID (persists for analytics) ────────────────────────────
 function getSessionId() {
@@ -162,7 +163,12 @@ export default function LandingPage() {
   );
 
   const T = campaign.template ?? 'editorial';
-  const sections = campaign.sections ?? {};
+  // Fall back to the default section set when a campaign has no sections
+  // configured — otherwise every block is gated off and the page renders blank.
+  const sections =
+    campaign.sections && Object.keys(campaign.sections).length > 0
+      ? campaign.sections
+      : DEFAULT_CAMPAIGN_SECTIONS;
   const products = (campaign.products ?? []).filter(p => p.quantity_available > 0 || !p.show_stock_count);
 
   // ── RENDER (template-aware) ───────────────────────────────────────────────────

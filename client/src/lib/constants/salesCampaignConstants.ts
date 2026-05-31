@@ -7,6 +7,19 @@ export const CAMPAIGN_TEMPLATE_META = {
   bold:      { label: 'Bold',      desc: 'High contrast + countdown — maximum urgency'     },
 } as const;
 
+// Which landing-page sections show by default. Used as a fallback whenever a
+// campaign's `sections` is empty/missing (older campaigns were created before
+// sections were seeded), so the public page and the builder toggles always
+// have something to render. Mirrors the DB default on sales_campaigns.sections.
+export const DEFAULT_CAMPAIGN_SECTIONS: Record<string, boolean> = {
+  hero:            true,
+  countdown:       true,
+  products:        true,
+  inquiry_form:    true,
+  whatsapp_button: true,
+  stock_indicator: true,
+};
+
 export const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
   pending:          { label: 'Awaiting proof',     color: '#F97316' },
   proof_submitted:  { label: 'Verifying payment',  color: '#C9A86C' },

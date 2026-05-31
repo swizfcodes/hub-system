@@ -23,7 +23,8 @@ import {
   addBankAccount, removeBankAccount,
 } from '@services/salesCampaign';
 import {
-  campaignSchema, CAMPAIGN_TEMPLATE_META, type CampaignFormValues,
+  campaignSchema, CAMPAIGN_TEMPLATE_META, DEFAULT_CAMPAIGN_SECTIONS,
+  type CampaignFormValues,
 } from '@lib/constants/salesCampaignConstants';
 import type { CampaignProduct } from '@typedefs/salesCampaign';
 import { cn } from '@lib/cn';
@@ -158,6 +159,13 @@ export default function CampaignBuilder() {
   const publicUrl = campaignId
     ? `${window.location.origin}/c/${business}/${existing?.slug ?? ''}`
     : null;
+
+  // Older campaigns can have an empty sections object; fall back to defaults so
+  // the toggles render — and so saving one persists the full set, not just it.
+  const effectiveSections =
+    existing?.sections && Object.keys(existing.sections).length
+      ? existing.sections
+      : DEFAULT_CAMPAIGN_SECTIONS;
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-6">
@@ -487,14 +495,14 @@ export default function CampaignBuilder() {
           <div>
             <p className="text-sm font-semibold text-orika-cream mb-3">Page sections</p>
             <div className="grid sm:grid-cols-2 gap-2">
-              {Object.entries(existing.sections ?? {}).map(([key, val]) => (
+              {Object.entries(effectiveSections).map(([key, val]) => (
                 <SectionToggle
                   key={key}
                   sectionKey={key}
                   enabled={val as boolean}
                   onToggle={async (newVal) => {
                     await updateCampaign(campaignId, {
-                      sections: { ...existing.sections, [key]: newVal } as any,
+                      sections: { ...effectiveSections, [key]: newVal } as any,
                     });
                     qc.invalidateQueries({ queryKey: ['sales-campaign', campaignId] });
                   }}
