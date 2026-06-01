@@ -623,8 +623,8 @@ async function tagContactAsSubscriber(client, { email, fullName }) {
   const {
     rows: [created],
   } = await client.query(
-    `INSERT INTO shared.contacts (display_name, email, contact_type)
-     VALUES ($1, $2, ARRAY['subscriber']::text[])
+    `INSERT INTO shared.contacts (display_name, primary_phone, email, contact_type)
+     VALUES ($1, '', $2, ARRAY['subscriber']::text[])
      RETURNING contact_id`,
     [fullName || email, email.toLowerCase()],
   );

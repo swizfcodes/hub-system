@@ -193,6 +193,27 @@ router.patch(
   },
 );
 
+router.post(
+  "/enquiries/:id/reply",
+  param("id").isUUID(),
+  body("message").notEmpty(),
+  validate,
+  can("campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await storeService.replyToEnquiry(
+          req.params.id,
+          req.body.message,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.get(
   "/:id",
   param("id").isUUID(),

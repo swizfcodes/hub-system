@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
-const { withStoreContext, withBusinessContext, nextDocumentNumber } = require("../../config/db");
+const { withStoreContext, withBusinessContext, withSharedContext, nextDocumentNumber } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
 const paystackService = require("../../integrations/paystack/paystack.service");
 const journalService = require("../accounting/journal.service");
@@ -705,6 +705,96 @@ async function setEnquiryStatus(id, status) {
   });
 }
 
+// Reply to an enquiry THROUGH the messaging layer (SmatComm), so the reply
+// is threaded in the customer's conversation and dispatched out via the
+// email channel to their inbox — never opening an external mail client.
+//
+// Flow: find the enquiry → find/create a shared.contacts row for the
+// enquirer's email → find/create a customer_thread channel keyed to that
+// email (metadata.source='email', external_id=<email>) → send through
+// messaging.sendMessage, whose customer_thread dispatch routes via the SMTP
+// adapter to the customer's inbox. Then flip the enquiry to 'replied'.
+async function replyToEnquiry(enquiryId, message, user) {
+  if (!message || !message.trim()) {
+    throw Object.assign(new Error("Reply message is required"), { status: 400 });
+  }
+
+  // 1. Load the enquiry (store schema).
+  const enquiry = await withStoreContext(async (client) => {
+    const { rows } = await client.query(
+      `SELECT id, name, email, phone, type FROM store.enquiries WHERE id = $1`,
+      [enquiryId],
+    );
+    return rows[0] || null;
+  });
+  if (!enquiry) {
+    throw Object.assign(new Error("Enquiry not found"), { status: 404 });
+  }
+
+  // 2. Find/create contact + customer_thread channel (shared schema),
+  //    mirroring how inbound email threads are created.
+  const channelId = await withSharedContext(async (client) => {
+    // Contact by email.
+    let { rows: c } = await client.query(
+      `SELECT contact_id FROM shared.contacts WHERE lower(email) = lower($1) LIMIT 1`,
+      [enquiry.email],
+    );
+    let contactId = c[0]?.contact_id;
+    if (!contactId) {
+      const ins = await client.query(
+        `INSERT INTO shared.contacts (contact_type, display_name, primary_phone, email, source)
+         VALUES (ARRAY['customer'], $1, $2, $3, 'enquiry')
+         RETURNING contact_id`,
+        [enquiry.name || enquiry.email, enquiry.phone, enquiry.email.toLowerCase()],
+      );
+      contactId = ins.rows[0].contact_id;
+    }
+
+    // Existing email customer_thread for this contact?
+    const { rows: ch } = await client.query(
+      `SELECT c.channel_id
+       FROM shared.message_channels c
+       JOIN shared.channel_members m ON m.channel_id = c.channel_id
+       WHERE c.channel_type = 'customer_thread'
+         AND m.contact_id = $1
+         AND c.metadata->>'source' = 'email'
+       LIMIT 1`,
+      [contactId],
+    );
+    if (ch[0]) return ch[0].channel_id;
+
+    // Create one, keyed to the enquirer's email (source/external_id is
+    // what the customer_thread dispatch reads to route via SMTP).
+    const created = await client.query(
+      `INSERT INTO shared.message_channels (channel_type, name, metadata)
+       VALUES ('customer_thread', $1, $2)
+       RETURNING channel_id`,
+      [
+        `Thread: ${enquiry.name || enquiry.email}`,
+        JSON.stringify({ source: "email", external_id: enquiry.email }),
+      ],
+    );
+    const newId = created.rows[0].channel_id;
+    await client.query(
+      `INSERT INTO shared.channel_members (channel_id, contact_id) VALUES ($1, $2)`,
+      [newId, contactId],
+    );
+    return newId;
+  });
+
+  // 3. Send through messaging — this writes the message AND dispatches
+  //    externally (SMTP → customer's inbox) for customer_thread channels.
+  const messagingService = require("../../shared/messaging/messaging.service");
+  await messagingService.sendMessage(channelId, { content: message }, user);
+
+  // 4. Mark the enquiry replied.
+  await withStoreContext(async (client) => {
+    await repo.updateEnquiryStatus(client, enquiryId, "replied");
+  });
+
+  return { ok: true, channel_id: channelId };
+}
+
 module.exports = {
   // public reads
   getActiveProducts,
@@ -727,4 +817,5 @@ module.exports = {
   submitEnquiry,
   listEnquiries,
   setEnquiryStatus,
+  replyToEnquiry,
 };
