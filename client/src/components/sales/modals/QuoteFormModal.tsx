@@ -11,6 +11,7 @@
  * its own instance — searching line 2 does not affect line 1 or line 3.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useForm, useFieldArray, Controller, type UseFormReturn, type FieldArrayWithId } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -81,6 +82,9 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
   const [query,   setQuery]   = useState('');
   const [isOpen,  setIsOpen]  = useState(false);
   const wrapRef               = useRef<HTMLDivElement>(null);
+  // Track the input's viewport rect so we can portal the dropdown with
+  // position:fixed — this escapes the modal's overflow-y-auto clipping.
+  const [dropRect, setDropRect] = useState<DOMRect | null>(null);
 
   const { data: results = [] } = useQuery({
     queryKey: ['products-search-line', lineIndex, query],
@@ -94,7 +98,23 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
     enabled: query.trim().length >= 2,
   });
 
-  // Close dropdown on outside click
+  // Recompute dropdown anchor whenever it's open (handles modal scroll).
+  useEffect(() => {
+    if (!isOpen) return;
+    function updateRect() {
+      if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+    }
+    updateRect();
+    // Listen on capture phase to catch scroll inside the modal.
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [isOpen]);
+
+  // Close dropdown on outside click.
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -111,6 +131,52 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
     setIsOpen(false);
   }
 
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+    setIsOpen(true);
+    if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+  }
+
+  // Portaled dropdown — rendered at document.body level so it escapes
+  // the modal's overflow-y-auto container and is never clipped.
+  const showDropdown = isOpen && query.trim().length >= 2 && dropRect;
+  const dropdown = showDropdown ? ReactDOM.createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top:   dropRect.bottom + 4,
+        left:  dropRect.left,
+        width: dropRect.width,
+        zIndex: 9999,
+      }}
+      className="rounded-lg border border-white/10 bg-orika-charcoal shadow-xl"
+    >
+      {results.length > 0 ? (
+        results.map((p: { product_id: string; name: string; sku?: string; selling_price: number }) => (
+          <button
+            key={p.product_id}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
+            className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+          >
+            <div>
+              <p className="text-xs font-medium text-orika-cream">{p.name}</p>
+              {p.sku && <p className="text-[10px] text-orika-smoke">{p.sku}</p>}
+            </div>
+            <span className="text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0">
+              {fmtMoney(p.selling_price, currency)}
+            </span>
+          </button>
+        ))
+      ) : (
+        <div className="px-3 py-3">
+          <p className="text-xs text-orika-smoke">No products found for &ldquo;{query}&rdquo;</p>
+        </div>
+      )}
+    </div>,
+    document.body,
+  ) : null;
+
   return (
     <div ref={wrapRef} className="relative sm:col-span-2">
       <label className="mb-1 block text-xs text-orika-smoke">Search Catalogue</label>
@@ -119,37 +185,18 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
         <input
           type="text"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
-          onFocus={() => query.length >= 2 && setIsOpen(true)}
+          onChange={handleChange}
+          onFocus={() => {
+            if (query.length >= 2) {
+              setIsOpen(true);
+              if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+            }
+          }}
           placeholder="Type product name or SKU..."
           className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
         />
       </div>
-      {isOpen && query.trim().length >= 2 && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-xl">
-          {results.map((p: { product_id: string; name: string; sku?: string; selling_price: number }) => (
-            <button
-              key={p.product_id}
-              type="button"
-              onClick={() => handleSelect(p)}
-              className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
-            >
-              <div>
-                <p className="text-xs font-medium text-orika-cream">{p.name}</p>
-                {p.sku && <p className="text-[10px] text-orika-smoke">{p.sku}</p>}
-              </div>
-              <span className="text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0">
-                {fmtMoney(p.selling_price, currency)}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-      {isOpen && query.trim().length >= 2 && results.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-xl px-3 py-3">
-          <p className="text-xs text-orika-smoke">No products found for &ldquo;{query}&rdquo;</p>
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }
