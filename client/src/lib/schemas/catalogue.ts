@@ -25,14 +25,16 @@ export const productCreateSchema = z
     description: z.string().max(2000).optional().or(z.literal("")),
     web: webSchema,
     category_id: z.string().uuid().optional().or(z.literal("")),
-    cost_price: z.number().min(0).default(0),
-    selling_price: z.number().min(0).default(0),
-    min_selling_price: z.number().min(0).optional(),
+    // coerce: pg NUMERIC columns arrive as strings; empty inputs give NaN via
+    // valueAsNumber. z.coerce.number() handles both without silent failures.
+    cost_price: z.coerce.number().min(0).default(0),
+    selling_price: z.coerce.number().min(0).default(0),
+    min_selling_price: z.coerce.number().min(0).optional(),
     currency: z.string().length(3).default("NGN"),
-    weight_grams: z.number().min(0).optional(),
+    weight_grams: z.coerce.number().min(0).optional(),
     custom_fields: z.record(z.string(), z.unknown()).default({}),
-    reorder_level: z.number().int().min(0).default(0),
-    reorder_quantity: z.number().int().min(0).default(0),
+    reorder_level: z.coerce.number().int().min(0).default(0),
+    reorder_quantity: z.coerce.number().int().min(0).default(0),
     // Accounting overrides (backend-pending — see PROCUREMENT_PATCH_NOTES.md)
     income_account_id: z.string().uuid().optional().or(z.literal("")),
     inventory_account_id: z.string().uuid().optional().or(z.literal("")),

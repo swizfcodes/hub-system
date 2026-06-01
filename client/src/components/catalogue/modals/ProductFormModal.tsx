@@ -15,6 +15,7 @@ import { CURRENCIES } from '@lib/constants/currencies';
 import { SCENT_FAMILIES } from '@lib/constants/scent-families';
 import { showToast } from '@hooks/useToast';
 import { api, errMsg } from '@services/api';
+import type { FieldErrors } from 'react-hook-form';
 import type { Product } from '@typedefs/catalogue';
 
 const PRODUCT_FORMATS = [
@@ -96,14 +97,14 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
       name: editing.name,
       description: editing.description ?? '',
       category_id: editing.category_id ?? '',
-      cost_price: editing.cost_price,
-      selling_price: editing.selling_price,
-      min_selling_price: editing.min_selling_price ?? undefined,
+      cost_price: Number(editing.cost_price) || 0,
+      selling_price: Number(editing.selling_price) || 0,
+      min_selling_price: editing.min_selling_price != null ? Number(editing.min_selling_price) : undefined,
       currency: editing.currency,
-      weight_grams: editing.weight_grams ?? undefined,
+      weight_grams: editing.weight_grams != null ? Number(editing.weight_grams) : undefined,
       custom_fields: editing.custom_fields ?? {},
-      reorder_level: editing.reorder_level,
-      reorder_quantity: editing.reorder_quantity,
+      reorder_level: Number(editing.reorder_level) || 0,
+      reorder_quantity: Number(editing.reorder_quantity) || 0,
       // pre-fill web block if already published
       web: existingWeb ? {
         slug: existingWeb.slug,
@@ -130,10 +131,15 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
         const web = (editing as any)?.store_product;
         reset({
           sku: editing.sku, name: editing.name, description: editing.description ?? '',
-          category_id: editing.category_id ?? '', cost_price: editing.cost_price, selling_price: editing.selling_price,
-          min_selling_price: editing.min_selling_price ?? undefined, currency: editing.currency,
-          weight_grams: editing.weight_grams ?? undefined, custom_fields: editing.custom_fields ?? {},
-          reorder_level: editing.reorder_level, reorder_quantity: editing.reorder_quantity,
+          category_id: editing.category_id ?? '',
+          cost_price: Number(editing.cost_price) || 0,
+          selling_price: Number(editing.selling_price) || 0,
+          min_selling_price: editing.min_selling_price != null ? Number(editing.min_selling_price) : undefined,
+          currency: editing.currency,
+          weight_grams: editing.weight_grams != null ? Number(editing.weight_grams) : undefined,
+          custom_fields: editing.custom_fields ?? {},
+          reorder_level: Number(editing.reorder_level) || 0,
+          reorder_quantity: Number(editing.reorder_quantity) || 0,
           web: web ? {
             slug: web.slug,
             scent_family: web.scent_family,
@@ -230,7 +236,18 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
       description={editing ? undefined : 'A primary barcode is generated automatically. Edit any time.'}
       footer={<>
         <Button variant="outline-light" onClick={handleClose}>Cancel</Button>
-        <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>
+        <Button
+          variant="primary"
+          loading={isSubmitting || mutation.isPending}
+          onClick={handleSubmit(
+            (v) => mutation.mutate(v),
+            (errs: FieldErrors<ProductCreateValues>) => {
+              const first = Object.values(errs)[0];
+              const msg = (first as { message?: string })?.message ?? 'Please check the form for errors';
+              showToast.error('Validation error', msg);
+            },
+          )}
+        >
           {editing ? 'Save changes' : 'Create product'}
         </Button>
       </>}>
