@@ -36,7 +36,7 @@ router.patch(
   "/terminals/:id",
   param("id").isUUID(),
   body("name").optional().isString(),
-  body("location_id").optional().isUUID(),
+  body("location_id").optional({ checkFalsy: true }).isUUID(),
   body("is_active").optional().isBoolean(),
   validate,
   can("pos", "edit"),

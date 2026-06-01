@@ -33,7 +33,7 @@ router.post(
     "expense",
   ]),
   body("account_subtype").optional().isString(),
-  body("parent_account_id").optional().isUUID(),
+  body("parent_account_id").optional({ checkFalsy: true }).isUUID(),
   body("description").optional().isString(),
   validate,
   can("accounting", "create"),
@@ -57,7 +57,7 @@ router.patch(
     .optional()
     .isIn(["asset", "liability", "equity", "income", "expense"]),
   body("account_subtype").optional().isString(),
-  body("parent_account_id").optional().isUUID(),
+  body("parent_account_id").optional({ checkFalsy: true }).isUUID(),
   body("description").optional().isString(),
   body("is_active").optional().isBoolean(),
   validate,

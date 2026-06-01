@@ -281,7 +281,7 @@ router.post(
   "/purchase-orders/:id/receive",
   param("id").isUUID(),
   body("lines").isArray({ min: 1 }),
-  body("receiving_location_id").optional().isUUID(),
+  body("receiving_location_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("purchasing", "edit"),
   async (req, res, next) => {
@@ -341,7 +341,7 @@ router.post(
   body("due_date").isISO8601(),
   body("amount").isFloat({ min: 0.01 }),
   body("currency").notEmpty(),
-  body("po_id").optional().isUUID(),
+  body("po_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("purchasing", "create"),
   async (req, res, next) => {

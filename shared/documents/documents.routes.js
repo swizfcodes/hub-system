@@ -145,7 +145,7 @@ router.post(
   body("document_type").isString().notEmpty(),
   body("title").optional().isString(),
   body("reference_type").optional().isString(),
-  body("reference_id").optional().isUUID(),
+  body("reference_id").optional({ checkFalsy: true }).isUUID(),
   body("tags").optional().isString(), // comma-separated in multipart
   validate,
   can("documents", "create"),
