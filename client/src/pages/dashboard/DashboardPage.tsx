@@ -116,8 +116,10 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-orika-black">
-      {/* Top nav */}
-      <div className="flex items-center justify-between border-b border-white/5 px-4 sm:px-8 py-3 flex-shrink-0">
+      {/* Top nav — stacks into two breathing rows on mobile, inline on desktop */}
+      <div className="flex flex-col gap-2 border-b border-white/5 px-4 sm:px-8 py-3 flex-shrink-0 sm:flex-row sm:items-center sm:justify-between">
+        {/* Row 1: menu + tabs */}
+        <div className="flex items-center gap-2">
         {/* Mobile menu toggle */}
         {!isDesktop && (
           <button
@@ -155,10 +157,12 @@ export default function DashboardPage() {
             </button>
           ))}
         </div>
+        </div>
 
-        {/* Dashboard controls (only on dashboard tab) */}
+        {/* Row 2: dashboard controls — own row on mobile (scrolls if tight),
+            right-aligned inline on desktop, so the bar never feels crammed. */}
         {activeTab === 'dashboard' && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
             {/* Brand toggle */}
             <div className="flex rounded-lg border border-white/10 bg-orika-charcoal overflow-hidden">
               {BRAND_OPTIONS.map((b) => (

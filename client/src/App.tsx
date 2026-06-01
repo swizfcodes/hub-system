@@ -84,6 +84,9 @@ const AcctReportsPage     = lazy(() => import('@pages/accounting/AccountingPages
 const ReconciliationPage  = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReconciliationPage })));
 const FiscalPeriodsPage   = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.FiscalPeriodsPage })));
 
+// Tax
+const TaxCenter           = lazy(() => import('@pages/tax/TaxCenter'));
+
 // Expenses
 const ExpensesHome  = lazy(() => import('@pages/expenses/ExpensesHome'));
 const ExpenseDetail = lazy(() => import('@pages/expenses/ExpenseDetail'));
@@ -263,6 +266,9 @@ export default function App() {
           <Route path="/accounting/reports"        element={<AcctReportsPage />} />
           <Route path="/accounting/reconciliation" element={<ReconciliationPage />} />
           <Route path="/accounting/periods"        element={<FiscalPeriodsPage />} />
+
+          {/* Tax */}
+          <Route path="/tax"                       element={<TaxCenter />} />
 
           {/* Expenses */}
           <Route path="/expenses"     element={<ExpensesHome />} />

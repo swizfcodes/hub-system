@@ -88,7 +88,7 @@ async function submitLead(business, slug, data, req) {
         contactId = existing.contact_id;
       } else {
         const { rows: [newContact] } = await client.query(
-          `INSERT INTO shared.contacts (display_name, primary_phone, primary_email, contact_type, visible_to)
+          `INSERT INTO shared.contacts (display_name, primary_phone, email, contact_type, visible_to)
            VALUES ($1,$2,$3,ARRAY['customer']::text[],ARRAY[$4]) RETURNING contact_id`,
           [data.name || data.phone, data.phone, data.email || null, business]
         );

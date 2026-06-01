@@ -122,6 +122,12 @@ function start() {
     "*/5 * * * *",
     require("./updateCampaignStatuses"),
   );
+  // Task reminders — notify the assignee when remind_at has passed.
+  register(
+    "sendTaskReminders",
+    "*/5 * * * *",
+    require("./sendTaskReminders"),
+  );
 
   jobs.forEach(({ name, task }) => {
     task.start();

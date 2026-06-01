@@ -67,11 +67,16 @@ router.post(
   body("title").isString().notEmpty(),
   body("status").optional().isString(),
   body("priority").optional().isString(),
-  body("assigned_to").optional().isUUID(),
-  body("due_at").optional().isISO8601(),
-  body("parent_task_id").optional().isUUID(),
-  body("reference_type").optional().isString(),
-  body("reference_id").optional().isUUID(),
+  // checkFalsy → empty strings from the form are treated as "not provided"
+  // (the previous .optional() only skipped undefined, so '' failed isUUID/isISO8601
+  // and the whole create 400'd).
+  body("assigned_to").optional({ checkFalsy: true }).isUUID(),
+  body("due_at").optional({ checkFalsy: true }).isISO8601(),
+  body("reminder_minutes").optional({ checkFalsy: true }).isInt({ min: 0 }),
+  body("is_personal").optional().isBoolean(),
+  body("parent_task_id").optional({ checkFalsy: true }).isUUID(),
+  body("reference_type").optional({ checkFalsy: true }).isString(),
+  body("reference_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("tasks", "create"),
   async (req, res, next) => {
@@ -88,8 +93,10 @@ router.patch(
   param("id").isUUID(),
   body("status").optional().isString(),
   body("priority").optional().isString(),
-  body("assigned_to").optional({ nullable: true }).isUUID(),
-  body("due_at").optional({ nullable: true }).isISO8601(),
+  body("assigned_to").optional({ nullable: true, checkFalsy: true }).isUUID(),
+  body("due_at").optional({ nullable: true, checkFalsy: true }).isISO8601(),
+  body("reminder_minutes").optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }),
+  body("is_personal").optional().isBoolean(),
   validate,
   can("tasks", "edit"),
   async (req, res, next) => {

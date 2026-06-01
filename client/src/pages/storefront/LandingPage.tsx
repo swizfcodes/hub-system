@@ -337,7 +337,7 @@ export default function LandingPage() {
         <section className={cn('py-16 px-6', TEMPLATE_SECTION_BG[T])}>
           <div className="max-w-md mx-auto">
             <h2 className={cn('text-2xl font-bold text-center mb-3', TEMPLATE_H2[T])}>Make an Enquiry</h2>
-            <p className={cn('text-center mb-8', TEMPLATE_BODY[T])}>We'll get back to you within the hour.</p>
+            <p className={cn('text-center mb-8', TEMPLATE_BODY[T])}>We'll get back to you soon.</p>
             {leadSent ? (
               <div className="text-center py-8">
                 <p className="text-4xl mb-3">✓</p>

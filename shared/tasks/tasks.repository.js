@@ -193,8 +193,9 @@ async function insert(client, data) {
     `INSERT INTO shared.tasks
        (business, title, description, status, priority,
         assigned_to, due_at, parent_task_id,
-        reference_type, reference_id, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        reference_type, reference_id, created_by,
+        reminder_minutes, remind_at, calendar_event_id, is_personal)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
       data.business,
@@ -208,6 +209,10 @@ async function insert(client, data) {
       data.reference_type || null,
       data.reference_id || null,
       data.created_by,
+      data.reminder_minutes ?? null,
+      data.remind_at || null,
+      data.calendar_event_id || null,
+      data.is_personal || false,
     ],
   );
   return row;
@@ -224,6 +229,11 @@ async function update(client, taskId, fields) {
     "parent_task_id",
     "reference_type",
     "reference_id",
+    "reminder_minutes",
+    "remind_at",
+    "reminder_sent",
+    "calendar_event_id",
+    "is_personal",
   ];
   const sets = [];
   const values = [];
@@ -318,6 +328,37 @@ async function deleteSubtask(client, subtaskId) {
   return result.rowCount > 0;
 }
 
+// ── REMINDERS (used by jobs/sendTaskReminders) ───────────────
+
+async function findDueReminders(client) {
+  const { rows } = await client.query(
+    `SELECT task_id, business, title, due_at, assigned_to, created_by
+     FROM shared.tasks
+     WHERE remind_at IS NOT NULL
+       AND reminder_sent = false
+       AND is_deleted = false
+       AND status NOT IN ('done', 'cancelled')
+       AND remind_at <= now()
+     ORDER BY remind_at ASC
+     LIMIT 200`,
+  );
+  return rows;
+}
+
+async function markReminderSent(client, taskId) {
+  await client.query(
+    `UPDATE shared.tasks SET reminder_sent = true WHERE task_id = $1`,
+    [taskId],
+  );
+}
+
+async function setCalendarEvent(client, taskId, eventId) {
+  await client.query(
+    `UPDATE shared.tasks SET calendar_event_id = $2 WHERE task_id = $1`,
+    [taskId, eventId],
+  );
+}
+
 module.exports = {
   listTasks,
   findById,
@@ -329,4 +370,7 @@ module.exports = {
   insertSubtask,
   setSubtaskDone,
   deleteSubtask,
+  findDueReminders,
+  markReminderSent,
+  setCalendarEvent,
 };

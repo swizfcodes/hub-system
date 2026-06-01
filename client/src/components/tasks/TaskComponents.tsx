@@ -227,6 +227,21 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
 
 // ── TaskFormModal ─────────────────────────────────────────────────────────────
 
+const TASK_REMINDER_OPTIONS = [
+  { value: '',     label: 'No reminder' },
+  { value: '0',    label: 'At due time' },
+  { value: '15',   label: '15 minutes before' },
+  { value: '60',   label: '1 hour before' },
+  { value: '1440', label: '1 day before' },
+];
+
+// ISO (UTC) → value for an <input type="datetime-local"> in local wall-clock time.
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
 interface TaskFormModalProps {
   open:        boolean;
   onClose:     () => void;
@@ -250,16 +265,34 @@ export function TaskFormModal({
       status:      (existing?.status ?? defaultStatus) as any,
       priority:    existing?.priority ?? 'normal',
       assigned_to: existing?.assigned_to ?? '',
-      due_at:      existing?.due_at ? existing.due_at.split('T')[0] : '',
+      due_at:      existing?.due_at ? toLocalInput(existing.due_at) : '',
+      reminder_minutes: existing?.reminder_minutes != null ? String(existing.reminder_minutes) : '',
       is_personal: existing?.is_personal ?? false,
     },
   });
 
   const mutation = useMutation({
-    mutationFn: (values: CreateTaskValues) =>
-      isEdit
-        ? updateTask(existing!.task_id, values)
-        : createTask({ ...values, business: business! }),
+    mutationFn: (values: CreateTaskValues) => {
+      // Empty optionals must be dropped (undefined) on create, or sent as null
+      // on edit (to clear). due_at is converted from local time to ISO.
+      const blank = isEdit ? null : undefined;
+      const payload = {
+        title:        values.title,
+        description:  values.description || blank,
+        status:       values.status,
+        priority:     values.priority,
+        is_personal:  values.is_personal,
+        assigned_to:  values.assigned_to ? values.assigned_to : blank,
+        due_at:       values.due_at ? new Date(values.due_at).toISOString() : blank,
+        reminder_minutes:
+          values.reminder_minutes === '' || values.reminder_minutes == null
+            ? blank
+            : Number(values.reminder_minutes),
+      };
+      return isEdit
+        ? updateTask(existing!.task_id, payload)
+        : createTask({ ...payload, business: business! });
+    },
     onSuccess: () => {
       showToast.success(isEdit ? 'Task updated' : 'Task created');
       qc.invalidateQueries({ queryKey: ['task-board'] });
@@ -327,15 +360,21 @@ export function TaskFormModal({
 
         <div className="grid grid-cols-2 gap-3">
           <Controller name="due_at" control={form.control} render={({ field }) => (
-            <Input {...field} label="Due Date" type="date" surface="light" />
+            <Input {...field} label="Due Date & Time" type="datetime-local" surface="light"
+              hint="Adds it to your calendar" />
           )} />
-          {isManager && !isPersonal && (
-            <Controller name="assigned_to" control={form.control} render={({ field }) => (
-              <Input {...field} label="Assign To (User ID)" placeholder="UUID of assignee"
-                surface="light" hint="Manager/owner can assign to any staff" />
-            )} />
-          )}
+          <Controller name="reminder_minutes" control={form.control} render={({ field }) => (
+            <Select label="Reminder" options={TASK_REMINDER_OPTIONS}
+              value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value)} surface="light" />
+          )} />
         </div>
+
+        {isManager && !isPersonal && (
+          <Controller name="assigned_to" control={form.control} render={({ field }) => (
+            <Input {...field} label="Assign To (User ID)" placeholder="UUID of assignee"
+              surface="light" hint="Manager/owner can assign to any staff" />
+          )} />
+        )}
 
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="checkbox" {...form.register('is_personal')} className="rounded" />
