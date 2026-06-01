@@ -26,7 +26,20 @@ export type RecipientStatus =
 
 // ── Audience filter (server compiles to a WHERE clause) ──────────────────────
 
+export interface AudienceInclude {
+  contact_type?:          string[];
+  priority_level?:        string[];
+  tag_names?:             string[];
+  purchased_within_days?: number;
+  min_lifetime_spend?:    number;
+  category_ids?:          string[];
+  birthday_within_days?:  number;
+}
+
 export interface AudienceFilter {
+  // Nested shape consumed by the backend audience compiler.
+  include?:             AudienceInclude;
+  // Flat convenience fields used by parts of the builder UI.
   contact_type?:        string[];
   priority_level?:      string;
   tags?:                string[];

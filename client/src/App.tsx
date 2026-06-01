@@ -84,9 +84,6 @@ const AcctReportsPage     = lazy(() => import('@pages/accounting/AccountingPages
 const ReconciliationPage  = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReconciliationPage })));
 const FiscalPeriodsPage   = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.FiscalPeriodsPage })));
 
-// Tax
-const TaxCenter           = lazy(() => import('@pages/tax/TaxCenter'));
-
 // Expenses
 const ExpensesHome  = lazy(() => import('@pages/expenses/ExpensesHome'));
 const ExpenseDetail = lazy(() => import('@pages/expenses/ExpenseDetail'));
@@ -134,6 +131,8 @@ const CampaignsHome    = lazy(() => import('@pages/campaigns/CampaignsHome'));
 const CampaignBuilder  = lazy(() => import('@pages/campaigns/CampaignBuilder'));
 const CampaignDetail   = lazy(() => import('@pages/campaigns/CampaignDetail'));
 const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'));
+const SubscribersHome  = lazy(() => import('@pages/campaigns/SubscribersHome'));
+const EnquiriesHome    = lazy(() => import('@pages/campaigns/EnquiriesHome'));
 
 // SmartComm Messaging
 const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
@@ -267,9 +266,6 @@ export default function App() {
           <Route path="/accounting/reconciliation" element={<ReconciliationPage />} />
           <Route path="/accounting/periods"        element={<FiscalPeriodsPage />} />
 
-          {/* Tax */}
-          <Route path="/tax"                       element={<TaxCenter />} />
-
           {/* Expenses */}
           <Route path="/expenses"     element={<ExpensesHome />} />
           <Route path="/expenses/:id" element={<ExpenseDetail />} />
@@ -292,6 +288,8 @@ export default function App() {
               React Router will match "new" as a campaign id. */}
           <Route path="/campaigns"          element={<CampaignsHome    />} />
           <Route path="/campaigns/new"      element={<CampaignBuilder  />} />
+          <Route path="/campaigns/subscribers" element={<SubscribersHome />} />
+          <Route path="/campaigns/enquiries" element={<EnquiriesHome />} />
           <Route path="/campaigns/settings" element={<CampaignSettings />} />
           <Route path="/campaigns/:id"      element={<CampaignDetail   />} />
           <Route path="/campaigns/:id/edit" element={<CampaignBuilder  />} />

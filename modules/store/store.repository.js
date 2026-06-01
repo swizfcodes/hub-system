@@ -471,6 +471,61 @@ async function insertEnquiry(client, e) {
   return row;
 }
 
+// List enquiries for the ERP inbox (filter by status/type, search
+// name/email/message). Business-agnostic store schema.
+async function listEnquiries(client, { search, status, type } = {}) {
+  const where = [];
+  const params = [];
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+  if (type) {
+    params.push(type);
+    where.push(`type = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${search.toLowerCase()}%`);
+    const i = params.length;
+    where.push(
+      `(lower(name) LIKE $${i} OR lower(email) LIKE $${i} OR lower(message) LIKE $${i})`,
+    );
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const { rows } = await client.query(
+    `SELECT id, name, email, phone, type, message, status, created_at
+     FROM store.enquiries
+     ${whereSql}
+     ORDER BY created_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+async function enquiryCounts(client) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT
+       count(*)::int AS total,
+       count(*) FILTER (WHERE status = 'new')::int AS new,
+       count(*) FILTER (WHERE status = 'replied')::int AS replied,
+       count(*) FILTER (WHERE status = 'closed')::int AS closed
+     FROM store.enquiries`,
+  );
+  return row;
+}
+
+async function updateEnquiryStatus(client, id, status) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE store.enquiries SET status = $2 WHERE id = $1 RETURNING *`,
+    [id, status],
+  );
+  return row || null;
+}
+
 // ── NEWSLETTER ───────────────────────────────────────────────
 
 async function findSubscriber(client, email) {
@@ -482,6 +537,43 @@ async function findSubscriber(client, email) {
     [email],
   );
   return row || null;
+}
+
+// List newsletter subscribers for the ERP (search + active filter).
+// Business-agnostic — store schema is shared across the storefront.
+async function listSubscribers(client, { search, status } = {}) {
+  const where = [];
+  const params = [];
+  if (search) {
+    params.push(`%${search.toLowerCase()}%`);
+    where.push(`lower(email) LIKE $${params.length}`);
+  }
+  if (status === "active") where.push(`unsubscribed_at IS NULL`);
+  if (status === "unsubscribed") where.push(`unsubscribed_at IS NOT NULL`);
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const { rows } = await client.query(
+    `SELECT email, subscribed_at, unsubscribed_at, source,
+            (unsubscribed_at IS NULL) AS is_active
+     FROM store.newsletter_subscribers
+     ${whereSql}
+     ORDER BY subscribed_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+async function subscriberCounts(client) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT
+       count(*)::int AS total,
+       count(*) FILTER (WHERE unsubscribed_at IS NULL)::int AS active,
+       count(*) FILTER (WHERE unsubscribed_at IS NOT NULL)::int AS unsubscribed
+     FROM store.newsletter_subscribers`,
+  );
+  return row;
 }
 
 async function upsertSubscriber(client, { email, source }) {
@@ -497,6 +589,59 @@ async function upsertSubscriber(client, { email, source }) {
     [email.toLowerCase(), source || "footer"],
   );
   return row;
+}
+
+// Tag a contact as a newsletter subscriber so the campaign engine can
+// target them (audience_filter contact_type: ['subscriber']). If a
+// contact with this email already exists, ADD 'subscriber' to its
+// contact_type array (so an existing customer becomes
+// ['customer','subscriber']); otherwise create a new subscriber contact.
+// Idempotent — re-subscribing or backfilling won't duplicate the tag.
+async function tagContactAsSubscriber(client, { email, fullName }) {
+  const {
+    rows: [existing],
+  } = await client.query(
+    `SELECT contact_id, contact_type FROM shared.contacts
+     WHERE lower(email) = lower($1)`,
+    [email],
+  );
+
+  if (existing) {
+    // Add 'subscriber' only if not already present.
+    await client.query(
+      `UPDATE shared.contacts
+         SET contact_type = (
+           SELECT ARRAY(SELECT DISTINCT unnest(contact_type || ARRAY['subscriber']::text[]))
+         )
+       WHERE contact_id = $1
+         AND NOT (contact_type @> ARRAY['subscriber']::text[])`,
+      [existing.contact_id],
+    );
+    return existing.contact_id;
+  }
+
+  const {
+    rows: [created],
+  } = await client.query(
+    `INSERT INTO shared.contacts (display_name, email, contact_type)
+     VALUES ($1, $2, ARRAY['subscriber']::text[])
+     RETURNING contact_id`,
+    [fullName || email, email.toLowerCase()],
+  );
+  return created.contact_id;
+}
+
+// Remove the 'subscriber' tag so newsletter campaigns stop targeting them.
+// Other contact types (e.g. 'customer') are preserved. The store
+// newsletter_subscribers row is marked unsubscribed separately.
+async function untagContactSubscriber(client, email) {
+  await client.query(
+    `UPDATE shared.contacts
+       SET contact_type = array_remove(contact_type, 'subscriber')
+     WHERE lower(email) = lower($1)
+       AND contact_type @> ARRAY['subscriber']::text[]`,
+    [email],
+  );
 }
 
 async function unsubscribeByToken(client, token) {
@@ -544,8 +689,15 @@ module.exports = {
   setOrderStatus,
   // enquiries
   insertEnquiry,
+  listEnquiries,
+  enquiryCounts,
+  updateEnquiryStatus,
   // newsletter
   findSubscriber,
+  listSubscribers,
+  subscriberCounts,
   upsertSubscriber,
+  tagContactAsSubscriber,
+  untagContactSubscriber,
   unsubscribeByToken,
 };

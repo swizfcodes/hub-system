@@ -140,11 +140,13 @@ export function AudienceBuilder({ value, onChange, campaignType, onPreviewCount 
   }
 
   function toggleContactType(type: string) {
-    const current = value.contact_type ?? [];
+    // Write to include.contact_type — the shape the backend audience
+    // compiler actually reads (the flat value.contact_type was ignored).
+    const current = value.include?.contact_type ?? [];
     const next = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];
-    update({ contact_type: next });
+    update({ include: { ...(value.include ?? {}), contact_type: next } });
   }
 
   function addTag(tag: string) {
@@ -164,12 +166,41 @@ export function AudienceBuilder({ value, onChange, campaignType, onPreviewCount 
       {/* Live count */}
       <AudiencePreviewBar count={preview.count} loading={preview.loading} campaignType={campaignType} />
 
+      {/* Quick pick — the common "email my newsletter subscribers" case in one tap */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">Quick Audiences</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...value,
+                // The backend audience compiler reads include.contact_type;
+                // unsubscribed contacts are excluded automatically, and our
+                // unsubscribe flow strips the 'subscriber' tag, so opt-outs
+                // are doubly excluded.
+                include: { ...(value.include ?? {}), contact_type: ['subscriber'] },
+              })
+            }
+            className={cn(
+              'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+              value.include?.contact_type?.length === 1 &&
+                value.include.contact_type[0] === 'subscriber'
+                ? 'border-orika-gold bg-orika-gold/10 text-orika-gold'
+                : 'border-white/10 text-orika-smoke hover:border-white/25',
+            )}
+          >
+            Newsletter subscribers
+          </button>
+        </div>
+      </div>
+
       {/* Contact type chips */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">Contact Type</p>
         <div className="flex flex-wrap gap-2">
           {CONTACT_TYPE_OPTIONS.map((opt) => {
-            const selected = (value.contact_type ?? []).includes(opt.value);
+            const selected = (value.include?.contact_type ?? []).includes(opt.value);
             return (
               <button key={opt.value} type="button" onClick={() => toggleContactType(opt.value)}
                 className={cn(

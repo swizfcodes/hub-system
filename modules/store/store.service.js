@@ -552,6 +552,42 @@ function verifyWebhookSignature(rawBody, signature) {
 
 // ── NEWSLETTER ───────────────────────────────────────────────
 
+// ── NEWSLETTER SUBSCRIBERS (ERP read views) ──────────────────
+
+async function listSubscribers(opts = {}) {
+  return withStoreContext(async (client) => {
+    const [data, counts] = await Promise.all([
+      repo.listSubscribers(client, opts),
+      repo.subscriberCounts(client),
+    ]);
+    return { data, counts };
+  });
+}
+
+// CSV export of subscribers (respects the same search/status filter).
+async function exportSubscribersCsv(opts = {}) {
+  return withStoreContext(async (client) => {
+    const rows = await repo.listSubscribers(client, opts);
+    const header = "email,status,source,subscribed_at,unsubscribed_at";
+    const csv = [header]
+      .concat(
+        rows.map((r) =>
+          [
+            r.email,
+            r.is_active ? "active" : "unsubscribed",
+            r.source || "",
+            r.subscribed_at ? new Date(r.subscribed_at).toISOString() : "",
+            r.unsubscribed_at ? new Date(r.unsubscribed_at).toISOString() : "",
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(","),
+        ),
+      )
+      .join("\n");
+    return csv;
+  });
+}
+
 async function subscribeNewsletter({ email, source }) {
   if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
     throw Object.assign(new Error("A valid email is required"), {
@@ -560,6 +596,19 @@ async function subscribeNewsletter({ email, source }) {
   }
   return withStoreContext(async (client) => {
     const sub = await repo.upsertSubscriber(client, { email, source });
+
+    // Mirror the subscriber into shared.contacts tagged 'subscriber' so
+    // the campaign engine can target them (audience contact_type:
+    // ['subscriber']). Best-effort: a CRM hiccup shouldn't fail the
+    // public subscribe.
+    try {
+      await repo.tagContactAsSubscriber(client, { email: sub.email });
+    } catch (err) {
+      logger.warn(
+        `[store] subscriber contact tagging failed for ${sub.email}: ${err.message}`,
+      );
+    }
+
     try {
       await sendEmail({
         to: sub.email,
@@ -581,6 +630,15 @@ async function unsubscribeNewsletter(token) {
       throw Object.assign(
         new Error("Invalid or already-used unsubscribe link"),
         { status: 404 },
+      );
+    }
+    // Stop newsletter campaigns from targeting them by removing the
+    // 'subscriber' tag (other contact types, e.g. customer, are kept).
+    try {
+      await repo.untagContactSubscriber(client, row.email);
+    } catch (err) {
+      logger.warn(
+        `[store] subscriber contact untagging failed for ${row.email}: ${err.message}`,
       );
     }
     return { ok: true };
@@ -617,6 +675,36 @@ async function submitEnquiry(data) {
   });
 }
 
+// ── ENQUIRIES (ERP inbox) ────────────────────────────────────
+
+const ENQUIRY_STATUSES = ["new", "read", "replied", "closed"];
+
+async function listEnquiries(opts = {}) {
+  return withStoreContext(async (client) => {
+    const [data, counts] = await Promise.all([
+      repo.listEnquiries(client, opts),
+      repo.enquiryCounts(client),
+    ]);
+    return { data, counts };
+  });
+}
+
+async function setEnquiryStatus(id, status) {
+  if (!ENQUIRY_STATUSES.includes(status)) {
+    throw Object.assign(
+      new Error(`status must be one of: ${ENQUIRY_STATUSES.join(", ")}`),
+      { status: 400 },
+    );
+  }
+  return withStoreContext(async (client) => {
+    const row = await repo.updateEnquiryStatus(client, id, status);
+    if (!row) {
+      throw Object.assign(new Error("Enquiry not found"), { status: 404 });
+    }
+    return row;
+  });
+}
+
 module.exports = {
   // public reads
   getActiveProducts,
@@ -634,5 +722,9 @@ module.exports = {
   // newsletter + enquiries
   subscribeNewsletter,
   unsubscribeNewsletter,
+  listSubscribers,
+  exportSubscribersCsv,
   submitEnquiry,
+  listEnquiries,
+  setEnquiryStatus,
 };
