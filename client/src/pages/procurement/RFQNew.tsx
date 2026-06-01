@@ -105,7 +105,7 @@ export default function RFQNew() {
                                 currency="NGN"
                                 label="Product (optional)"
                                 instanceKey={i}
-                                value={field.value}
+                                value={field.value ?? ''}
                                 onChange={field.onChange}
                               />
                             </div>
