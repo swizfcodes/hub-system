@@ -17,9 +17,10 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { api } from '@services/api';
 import { fmtMoney } from '@lib/format';
+import { cn } from '@lib/cn';
 
 export interface CatalogueProduct {
   product_id:    string;
@@ -191,5 +192,94 @@ export function CatalogueSearchInput({
       </div>
       {dropdown}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ProductSelectField
+//
+// Wraps CatalogueSearchInput for react-hook-form Controller usage.
+// Shows a removable chip once a product is selected; search input otherwise.
+// Handles pre-filled product_id by fetching the product name automatically.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ProductSelectFieldProps {
+  value:        string;           // current product_id from form
+  onChange:     (id: string) => void;
+  currency:     string;
+  label?:       string;
+  instanceKey?: string | number;
+  surface?:     'dark' | 'light';
+  error?:       string;
+}
+
+export function ProductSelectField({
+  value,
+  onChange,
+  currency,
+  label,
+  instanceKey = 0,
+  surface = 'dark',
+  error,
+}: ProductSelectFieldProps) {
+  const [selectedName, setSelectedName] = useState('');
+  const isDark = surface === 'dark';
+
+  // When a product_id is pre-filled (e.g. from props), fetch its name once.
+  const { data: preloaded } = useQuery({
+    queryKey: ['catalogue-product-name', value],
+    queryFn:  async () => {
+      const { data } = await api.get<CatalogueProduct>(`/catalogue/products/${value}`);
+      return data;
+    },
+    enabled:   !!value && !selectedName,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => {
+    if (preloaded && !selectedName) setSelectedName(preloaded.name);
+  }, [preloaded, selectedName]);
+
+  function clear() { onChange(''); setSelectedName(''); }
+
+  const labelCls = isDark
+    ? 'mb-1 block text-xs text-orika-smoke'
+    : 'mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted';
+
+  if (value) {
+    // Selected state — show chip
+    const chipCls = isDark
+      ? 'flex items-center gap-2 rounded-lg border border-orika-gold/40 bg-orika-gold/10 px-3 py-2'
+      : 'flex items-center gap-2 rounded-xl border border-orika-black/20 bg-orika-cloud/20 px-3 py-2.5';
+    const nameCls2 = isDark ? 'text-xs font-medium text-orika-cream flex-1 truncate' : 'text-sm font-medium text-orika-black flex-1 truncate';
+
+    return (
+      <div>
+        {label && <label className={labelCls}>{label}</label>}
+        <div className={chipCls}>
+          <span className={nameCls2}>{selectedName || 'Product selected'}</span>
+          <button type="button" onClick={clear} className={cn('transition-colors', isDark ? 'text-orika-smoke hover:text-red-400' : 'text-text-on-light-muted hover:text-state-danger')} aria-label="Remove product">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {error && <p className="mt-1 text-xs text-state-danger">{error}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <CatalogueSearchInput
+        surface={surface}
+        currency={currency}
+        label={label}
+        instanceKey={instanceKey}
+        onSelect={(p) => {
+          onChange(p.product_id);
+          setSelectedName(p.name);
+        }}
+      />
+      {error && <p className="mt-1 text-xs text-state-danger">{error}</p>}
+    </>
   );
 }

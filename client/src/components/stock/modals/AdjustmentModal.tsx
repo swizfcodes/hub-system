@@ -9,11 +9,11 @@ import { Select } from '@components/ui/Select';
 import { Textarea } from '@components/ui/Textarea';
 import { adjustmentSchema, ADJUSTMENT_TYPES, type AdjustmentValues } from '@lib/schemas/stock';
 import { createAdjustment } from '@services/stock/adjustments';
-import { listProducts } from '@services/catalogue/products';
 import { listLocations } from '@services/catalogue/locations';
 import { getOnHand } from '@services/stock/onHand';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
+import { ProductSelectField } from '@components/shared/CatalogueSearchInput';
 
 interface Props {
   open: boolean;
@@ -32,7 +32,6 @@ const TYPE_LABELS: Record<typeof ADJUSTMENT_TYPES[number], string> = {
 
 export function AdjustmentModal({ open, onClose, productId, locationId }: Props) {
   const qc = useQueryClient();
-  const { data: products } = useQuery({ queryKey: ['catalogue', 'products', 'all'], queryFn: () => listProducts({ limit: 200 }) });
   const { data: locations = [] } = useQuery({ queryKey: ['catalogue', 'locations'], queryFn: () => listLocations(false) });
 
   const form = useForm<AdjustmentValues>({
@@ -91,11 +90,15 @@ export function AdjustmentModal({ open, onClose, productId, locationId }: Props)
         <Controller
           control={control}
           name="product_id"
-          render={({ field }) => (
-            <Select {...field} label="Product"
-              placeholder="Pick a product"
-              options={(products?.data ?? []).map((p) => ({ value: p.product_id, label: `${p.name} · ${p.sku}` }))}
-              error={errors.product_id?.message} />
+          render={({ field, fieldState }) => (
+            <ProductSelectField
+              surface="dark"
+              currency="NGN"
+              label="Product"
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
         <Controller
