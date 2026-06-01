@@ -151,3 +151,89 @@ export async function getFollowUpSuggestions(id: string): Promise<FollowUpSugges
     return [];
   }
 }
+
+// ── Newsletter subscribers ───────────────────────────────────────────────
+
+export interface Subscriber {
+  email:           string;
+  subscribed_at:   string;
+  unsubscribed_at: string | null;
+  source:          string;
+  is_active:       boolean;
+}
+
+export interface SubscriberList {
+  data:   Subscriber[];
+  counts: { total: number; active: number; unsubscribed: number };
+}
+
+export async function listSubscribers(params: {
+  search?: string;
+  status?: 'active' | 'unsubscribed';
+} = {}): Promise<SubscriberList> {
+  const { data } = await api.get<SubscriberList>('/campaigns/subscribers', {
+    params,
+  });
+  return data;
+}
+
+// Returns the CSV export URL (caller can open it; auth is via the api client).
+export function subscribersExportUrl(params: {
+  search?: string;
+  status?: string;
+} = {}): string {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v) as [string, string][],
+  ).toString();
+  return `/campaigns/subscribers/export${qs ? `?${qs}` : ''}`;
+}
+
+// ── Storefront enquiries ─────────────────────────────────────────────────
+
+export type EnquiryStatus = 'new' | 'read' | 'replied' | 'closed';
+
+export interface Enquiry {
+  id:         string;
+  name:       string;
+  email:      string;
+  phone:      string;
+  type:       string;
+  message:    string;
+  status:     EnquiryStatus;
+  created_at: string;
+}
+
+export interface EnquiryList {
+  data:   Enquiry[];
+  counts: { total: number; new: number; replied: number; closed: number };
+}
+
+export async function listEnquiries(params: {
+  search?: string;
+  status?: EnquiryStatus;
+  type?:   string;
+} = {}): Promise<EnquiryList> {
+  const { data } = await api.get<EnquiryList>('/campaigns/enquiries', { params });
+  return data;
+}
+
+export async function setEnquiryStatus(
+  id: string,
+  status: EnquiryStatus,
+): Promise<Enquiry> {
+  const { data } = await api.patch<Enquiry>(`/campaigns/enquiries/${id}/status`, {
+    status,
+  });
+  return data;
+}
+
+export async function replyToEnquiry(
+  id: string,
+  message: string,
+): Promise<{ ok: boolean; channel_id: string }> {
+  const { data } = await api.post<{ ok: boolean; channel_id: string }>(
+    `/campaigns/enquiries/${id}/reply`,
+    { message },
+  );
+  return data;
+}

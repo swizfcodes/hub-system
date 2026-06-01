@@ -28,7 +28,15 @@ const PRODUCT_SELECT = `
     sp.scent_family,
     sp.format,
     sp.size_ml,
-    sp.images,
+    -- Images derived LIVE from the ERP gallery (product_images → documents),
+    -- primary first then display_order. Falls back to the legacy
+    -- store.products.images array only if the gallery is empty (e.g. seeded
+    -- products with explicit URLs). Paths are relative to the API origin;
+    -- the storefront resolves them against NEXT_PUBLIC_API_URL.
+    COALESCE(
+      NULLIF(img.urls, '{}'),
+      sp.images
+    ) AS images,
     sp.top_notes,
     sp.heart_notes,
     sp.base_notes,
@@ -48,28 +56,38 @@ const PRODUCT_SELECT = `
     FROM diffusers.stock_movements sm
     WHERE sm.product_id = sp.product_id
   ) st ON true
+  LEFT JOIN LATERAL (
+    SELECT array_agg(
+             '/api/documents/' || pi.document_id || '/image'
+             ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+           ) AS urls
+    FROM diffusers.product_images pi
+    WHERE pi.product_id = sp.product_id
+  ) img ON true
 `;
 
 // ── PRODUCTS (public reads) ──────────────────────────────────
 
 async function listActiveProducts(client) {
+  // No stock filter — out-of-stock products are shown with a "Sold Out"
+  // badge on the storefront, never hidden. in_stock/stock_qty in
+  // PRODUCT_SELECT still tell the UI which to badge.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC`,
   );
   return rows;
 }
 
 async function listFeaturedProducts(client, format, limit) {
+  // No stock filter — see listActiveProducts.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
        AND sp.format = $1
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC
      LIMIT $2`,
     [format, limit],
@@ -101,13 +119,13 @@ async function findStoreProductsByIds(client, ids) {
 }
 
 async function listRelatedProducts(client, family, excludeId, limit) {
+  // No stock filter — see listActiveProducts.
   const { rows } = await client.query(
     `${PRODUCT_SELECT}
      WHERE sp.is_published = true
        AND dp.is_deleted = false
        AND sp.scent_family = $1
        AND sp.id != $2
-       AND COALESCE(st.qty, 0) > 0
      ORDER BY sp.created_at DESC
      LIMIT $3`,
     [family, excludeId, limit],
@@ -117,17 +135,102 @@ async function listRelatedProducts(client, family, excludeId, limit) {
 
 // ── SCENTS / SIGNATURES ──────────────────────────────────────
 
+// Scents shown on the storefront are derived from what's actually been
+// published to store.products — every distinct scent_family that has at
+// least one published product appears, REGARDLESS of stock. (Stock only
+// matters on the stockist/availability surfaces, never here.) Each family
+// is enriched with presentation copy/styling from store.scents when a row
+// exists; otherwise sensible fallbacks are used so a freshly-uploaded
+// product's scent still renders. store.scents alone is NOT the source of
+// truth — products drive which scents appear.
 async function listScents(client) {
   const { rows } = await client.query(
-    `SELECT * FROM store.scents ORDER BY display_order, name`,
+    `SELECT
+       p.scent_family                                   AS family,
+       COALESCE(s.name, p.scent_family::text)           AS name,
+       COALESCE(
+         s.slug,
+         lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+       )                                                AS slug,
+       COALESCE(s.tagline, '')                          AS tagline,
+       COALESCE(s.description, '')                      AS description,
+       COALESCE(s.top_notes,   p.top_notes,   '{}')     AS top_notes,
+       COALESCE(s.heart_notes, p.heart_notes, '{}')     AS heart_notes,
+       COALESCE(s.base_notes,  p.base_notes,  '{}')     AS base_notes,
+       COALESCE(s.swatch, NULL)                         AS swatch,
+       COALESCE(s.ink,    NULL)                          AS ink,
+       COALESCE(
+         s.image,
+         NULLIF(p.gallery_image, ''),
+         NULLIF(p.images[1], '')
+       )                                                AS image,
+       COALESCE(s.display_order, 0)                     AS display_order
+     FROM (
+       -- One representative published product per scent family.
+       -- DISTINCT ON keeps the most recent product's notes/image as the
+       -- fallback when store.scents has no styling row for that family.
+       SELECT DISTINCT ON (sp.scent_family)
+              sp.scent_family, sp.top_notes, sp.heart_notes, sp.base_notes, sp.images,
+              (SELECT '/api/documents/' || pi.document_id || '/image'
+               FROM diffusers.product_images pi
+               WHERE pi.product_id = sp.product_id
+               ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+               LIMIT 1)                                 AS gallery_image
+       FROM store.products sp
+       WHERE sp.is_published = true
+       ORDER BY sp.scent_family, sp.created_at DESC
+     ) p
+     LEFT JOIN store.scents s ON s.family = p.scent_family
+     ORDER BY display_order, name`,
   );
   return rows;
 }
 
 async function findScentBySlug(client, slug) {
+  // Mirror listScents (product-derived, store.scents-enriched) but for a
+  // single slug — so any scent visible in the list is fetchable by slug.
   const {
     rows: [row],
-  } = await client.query(`SELECT * FROM store.scents WHERE slug = $1`, [slug]);
+  } = await client.query(
+    `SELECT
+       p.scent_family                                   AS family,
+       COALESCE(s.name, p.scent_family::text)           AS name,
+       COALESCE(
+         s.slug,
+         lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+       )                                                AS slug,
+       COALESCE(s.tagline, '')                          AS tagline,
+       COALESCE(s.description, '')                      AS description,
+       COALESCE(s.top_notes,   p.top_notes,   '{}')     AS top_notes,
+       COALESCE(s.heart_notes, p.heart_notes, '{}')     AS heart_notes,
+       COALESCE(s.base_notes,  p.base_notes,  '{}')     AS base_notes,
+       COALESCE(s.swatch, NULL)                         AS swatch,
+       COALESCE(s.ink,    NULL)                          AS ink,
+       COALESCE(
+         s.image,
+         NULLIF(p.gallery_image, ''),
+         NULLIF(p.images[1], '')
+       )                                                AS image,
+       COALESCE(s.display_order, 0)                     AS display_order
+     FROM (
+       SELECT DISTINCT ON (sp.scent_family)
+              sp.scent_family, sp.top_notes, sp.heart_notes, sp.base_notes, sp.images,
+              (SELECT '/api/documents/' || pi.document_id || '/image'
+               FROM diffusers.product_images pi
+               WHERE pi.product_id = sp.product_id
+               ORDER BY pi.is_primary DESC, pi.display_order, pi.image_id
+               LIMIT 1)                                 AS gallery_image
+       FROM store.products sp
+       WHERE sp.is_published = true
+       ORDER BY sp.scent_family, sp.created_at DESC
+     ) p
+     LEFT JOIN store.scents s ON s.family = p.scent_family
+     WHERE COALESCE(
+       s.slug,
+       lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+     ) = $1`,
+    [slug],
+  );
   return row || null;
 }
 
@@ -189,12 +292,81 @@ async function insertContact(client, { displayName, email, phone }) {
     rows: [row],
   } = await client.query(
     `INSERT INTO shared.contacts
-       (display_name, email, phone, contact_type)
+       (display_name, email, primary_phone, contact_type)
      VALUES ($1, $2, $3, ARRAY['customer']::text[])
      RETURNING contact_id`,
     [displayName, email, phone || null],
   );
   return row;
+}
+
+// ── ERP SALES-ORDER BRIDGE ───────────────────────────────────
+// Web orders become real diffusers.sales_orders so they flow the
+// ERP sales pipeline and show in ERP Sales. These run from store
+// context, so diffusers.* is explicitly qualified. source='web'
+// distinguishes them from manually-created orders.
+
+async function insertSalesOrderForWeb(
+  client,
+  { orderNumber, contactId, totalNaira },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO diffusers.sales_orders
+       (order_number, contact_id, status, fulfilment_type,
+        total_amount, amount_paid, source, created_by)
+     VALUES ($1, $2, 'confirmed', 'delivery', $3, 0, 'web', NULL)
+     RETURNING order_id, order_number`,
+    [orderNumber, contactId, totalNaira],
+  );
+  return row;
+}
+
+async function insertSalesOrderLinesForWeb(client, { orderId, lineItems }) {
+  for (const item of lineItems) {
+    const lineTotal = (Number(item.price_kobo) / 100) * item.quantity;
+    await client.query(
+      `INSERT INTO diffusers.order_lines
+         (order_id, product_id, description, quantity, unit_price,
+          line_total, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+      [
+        orderId,
+        item.erp_product_id,
+        item.name,
+        item.quantity,
+        Number(item.price_kobo) / 100,
+        lineTotal,
+      ],
+    );
+  }
+}
+
+async function linkStoreOrderToSalesOrder(client, storeOrderId, salesOrderId) {
+  await client.query(
+    `UPDATE store.orders SET sales_order_id = $2 WHERE id = $1`,
+    [storeOrderId, salesOrderId],
+  );
+}
+
+// Settle the linked sales order on payment: mark it fully paid and
+// flip its lines to fulfilled, mirroring a completed ERP sale.
+async function settleSalesOrderForWeb(client, salesOrderId) {
+  await client.query(
+    `UPDATE diffusers.sales_orders
+       SET amount_paid = total_amount,
+           status = 'fulfilled',
+           updated_at = now()
+     WHERE order_id = $1`,
+    [salesOrderId],
+  );
+  await client.query(
+    `UPDATE diffusers.order_lines
+       SET status = 'fulfilled'
+     WHERE order_id = $1`,
+    [salesOrderId],
+  );
 }
 
 // ── ORDERS ───────────────────────────────────────────────────
@@ -299,6 +471,61 @@ async function insertEnquiry(client, e) {
   return row;
 }
 
+// List enquiries for the ERP inbox (filter by status/type, search
+// name/email/message). Business-agnostic store schema.
+async function listEnquiries(client, { search, status, type } = {}) {
+  const where = [];
+  const params = [];
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
+  }
+  if (type) {
+    params.push(type);
+    where.push(`type = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${search.toLowerCase()}%`);
+    const i = params.length;
+    where.push(
+      `(lower(name) LIKE $${i} OR lower(email) LIKE $${i} OR lower(message) LIKE $${i})`,
+    );
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const { rows } = await client.query(
+    `SELECT id, name, email, phone, type, message, status, created_at
+     FROM store.enquiries
+     ${whereSql}
+     ORDER BY created_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+async function enquiryCounts(client) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT
+       count(*)::int AS total,
+       count(*) FILTER (WHERE status = 'new')::int AS new,
+       count(*) FILTER (WHERE status = 'replied')::int AS replied,
+       count(*) FILTER (WHERE status = 'closed')::int AS closed
+     FROM store.enquiries`,
+  );
+  return row;
+}
+
+async function updateEnquiryStatus(client, id, status) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE store.enquiries SET status = $2 WHERE id = $1 RETURNING *`,
+    [id, status],
+  );
+  return row || null;
+}
+
 // ── NEWSLETTER ───────────────────────────────────────────────
 
 async function findSubscriber(client, email) {
@@ -310,6 +537,43 @@ async function findSubscriber(client, email) {
     [email],
   );
   return row || null;
+}
+
+// List newsletter subscribers for the ERP (search + active filter).
+// Business-agnostic — store schema is shared across the storefront.
+async function listSubscribers(client, { search, status } = {}) {
+  const where = [];
+  const params = [];
+  if (search) {
+    params.push(`%${search.toLowerCase()}%`);
+    where.push(`lower(email) LIKE $${params.length}`);
+  }
+  if (status === "active") where.push(`unsubscribed_at IS NULL`);
+  if (status === "unsubscribed") where.push(`unsubscribed_at IS NOT NULL`);
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const { rows } = await client.query(
+    `SELECT email, subscribed_at, unsubscribed_at, source,
+            (unsubscribed_at IS NULL) AS is_active
+     FROM store.newsletter_subscribers
+     ${whereSql}
+     ORDER BY subscribed_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+async function subscriberCounts(client) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT
+       count(*)::int AS total,
+       count(*) FILTER (WHERE unsubscribed_at IS NULL)::int AS active,
+       count(*) FILTER (WHERE unsubscribed_at IS NOT NULL)::int AS unsubscribed
+     FROM store.newsletter_subscribers`,
+  );
+  return row;
 }
 
 async function upsertSubscriber(client, { email, source }) {
@@ -325,6 +589,59 @@ async function upsertSubscriber(client, { email, source }) {
     [email.toLowerCase(), source || "footer"],
   );
   return row;
+}
+
+// Tag a contact as a newsletter subscriber so the campaign engine can
+// target them (audience_filter contact_type: ['subscriber']). If a
+// contact with this email already exists, ADD 'subscriber' to its
+// contact_type array (so an existing customer becomes
+// ['customer','subscriber']); otherwise create a new subscriber contact.
+// Idempotent — re-subscribing or backfilling won't duplicate the tag.
+async function tagContactAsSubscriber(client, { email, fullName }) {
+  const {
+    rows: [existing],
+  } = await client.query(
+    `SELECT contact_id, contact_type FROM shared.contacts
+     WHERE lower(email) = lower($1)`,
+    [email],
+  );
+
+  if (existing) {
+    // Add 'subscriber' only if not already present.
+    await client.query(
+      `UPDATE shared.contacts
+         SET contact_type = (
+           SELECT ARRAY(SELECT DISTINCT unnest(contact_type || ARRAY['subscriber']::text[]))
+         )
+       WHERE contact_id = $1
+         AND NOT (contact_type @> ARRAY['subscriber']::text[])`,
+      [existing.contact_id],
+    );
+    return existing.contact_id;
+  }
+
+  const {
+    rows: [created],
+  } = await client.query(
+    `INSERT INTO shared.contacts (display_name, primary_phone, email, contact_type)
+     VALUES ($1, '', $2, ARRAY['subscriber']::text[])
+     RETURNING contact_id`,
+    [fullName || email, email.toLowerCase()],
+  );
+  return created.contact_id;
+}
+
+// Remove the 'subscriber' tag so newsletter campaigns stop targeting them.
+// Other contact types (e.g. 'customer') are preserved. The store
+// newsletter_subscribers row is marked unsubscribed separately.
+async function untagContactSubscriber(client, email) {
+  await client.query(
+    `UPDATE shared.contacts
+       SET contact_type = array_remove(contact_type, 'subscriber')
+     WHERE lower(email) = lower($1)
+       AND contact_type @> ARRAY['subscriber']::text[]`,
+    [email],
+  );
 }
 
 async function unsubscribeByToken(client, token) {
@@ -358,6 +675,11 @@ module.exports = {
   incrementCustomerOrders,
   findContactByEmail,
   insertContact,
+  // web → ERP sales-order bridge
+  insertSalesOrderForWeb,
+  insertSalesOrderLinesForWeb,
+  linkStoreOrderToSalesOrder,
+  settleSalesOrderForWeb,
   // orders
   insertOrder,
   setOrderPaystackRef,
@@ -367,8 +689,15 @@ module.exports = {
   setOrderStatus,
   // enquiries
   insertEnquiry,
+  listEnquiries,
+  enquiryCounts,
+  updateEnquiryStatus,
   // newsletter
   findSubscriber,
+  listSubscribers,
+  subscriberCounts,
   upsertSubscriber,
+  tagContactAsSubscriber,
+  untagContactSubscriber,
   unsubscribeByToken,
 };

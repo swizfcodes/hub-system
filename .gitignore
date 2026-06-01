@@ -40,3 +40,4 @@ test-fail.txt
 test-fail2.txt
 scripts/seedStorefrontProducts.js
 BACKEND_ENDPOINTS_DOCUMENTATION.md
+scripts/stockUpStoreProduct.js

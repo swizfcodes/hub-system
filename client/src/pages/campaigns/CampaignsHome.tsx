@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Send, XCircle, BarChart2 } from 'lucide-react';
+import { Plus, Eye, Send, XCircle, BarChart2, Users, Inbox } from 'lucide-react';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
 import { Tabs } from '@components/ui/Tabs';
@@ -82,10 +82,20 @@ export default function CampaignsHome() {
         subtitle="Email and WhatsApp campaigns. Reach the right customers with the right message."
         crumbs={[{ label: 'Hub', to: '/' }, { label: 'Campaigns' }]}
         actions={
-          <Button onClick={() => navigate('/campaigns/new')}>
-            <Plus className="h-4 w-4" />
-            New Campaign
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => navigate('/campaigns/subscribers')}>
+              <Users className="h-4 w-4" />
+              Subscribers
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/campaigns/enquiries')}>
+              <Inbox className="h-4 w-4" />
+              Enquiries
+            </Button>
+            <Button onClick={() => navigate('/campaigns/new')}>
+              <Plus className="h-4 w-4" />
+              New Campaign
+            </Button>
+          </>
         }
       />
 

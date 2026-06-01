@@ -39,6 +39,13 @@ router.get(
         "Content-Type": mime_type,
         "Cache-Control": "public, max-age=31536000, immutable",
         "Content-Length": buffer.length,
+        // This is a PUBLIC product image embedded by the storefront, which
+        // runs on a different origin. Helmet sets a global CORP of
+        // 'same-origin' that would make the browser refuse to render it
+        // cross-origin (ERR_BLOCKED_BY_RESPONSE.NotSameOrigin). Relax CORP
+        // for this one public route only — all private documents keep the
+        // strict global policy.
+        "Cross-Origin-Resource-Policy": "cross-origin",
       });
       res.send(buffer);
     } catch (e) {

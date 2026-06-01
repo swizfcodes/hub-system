@@ -52,6 +52,16 @@ async function createBusiness(data, user) {
       });
     }
     const row = await repo.insertBusiness(client, data);
+
+    // Grant the creating user access to the new business so it appears in
+    // their switcher immediately. Owner accounts (permitted_businesses = ['*'])
+    // are skipped by the repo's wildcard guard. The caller's token still
+    // carries the old permitted list, so the frontend must refresh /auth/me
+    // (or switch-business) after this returns.
+    if (user?.user_id) {
+      await repo.grantBusinessToUser(client, user.user_id, data.business_key);
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name,
@@ -111,9 +121,14 @@ async function createBusinessWithSchema(data, user) {
   });
 
   // Log under the new business's audit trail — including the bootstrap
-  // action so a compliance review can answer "who provisioned this?"
-  await withSharedContext((client) =>
-    auditService.log(client, {
+  // action so a compliance review can answer "who provisioned this?".
+  // Also grant the creating user access to the new business so it shows
+  // in their switcher (the repo skips owner '*' accounts automatically).
+  await withSharedContext(async (client) => {
+    if (user?.user_id) {
+      await repo.grantBusinessToUser(client, user.user_id, row.business_key);
+    }
+    await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name,
       business: row.business_key,
@@ -126,8 +141,8 @@ async function createBusinessWithSchema(data, user) {
         sensitive: true,
         reason: "new business provisioning — schema + tables + seed data",
       },
-    }),
-  );
+    });
+  });
 
   return row;
 }

@@ -45,10 +45,11 @@ export const PRIORITY_OPTIONS: SelectOption[] = [
 ];
 
 export const CONTACT_TYPE_OPTIONS = [
-  { value: 'customer', label: 'Customer'       },
-  { value: 'supplier', label: 'Supplier'       },
-  { value: 'partner',  label: 'Partner'        },
-  { value: 'lead',     label: 'Lead'           },
+  { value: 'customer',   label: 'Customer'   },
+  { value: 'subscriber', label: 'Subscriber' },
+  { value: 'supplier',   label: 'Supplier'   },
+  { value: 'partner',    label: 'Partner'    },
+  { value: 'lead',       label: 'Lead'       },
 ];
 
 // WhatsApp daily limit — matches env var WA_DAILY_LIMIT

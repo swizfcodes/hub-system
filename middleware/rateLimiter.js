@@ -16,4 +16,14 @@ const webhooks = rateLimit({
   message: { message: "Webhook rate limit exceeded" },
 });
 
-module.exports = { general, webhooks };
+// Tighter limiter for unauthenticated public image endpoints
+const publicImages = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // 2 req/sec per IP — generous for product images
+  message: { message: "Too many image requests" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip,
+});
+
+module.exports = { general, webhooks, publicImages };
