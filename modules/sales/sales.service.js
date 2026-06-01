@@ -39,7 +39,7 @@ async function createQuotation(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
-    const vatRate = getVatRate(business);
+    const vatRate = data.apply_vat === false ? 0 : getVatRate(business);
     for (const l of data.lines) {
       const lt = l.unit_price * l.quantity;
       const disc = l.discount_amount || (lt * (l.discount_pct || 0)) / 100;

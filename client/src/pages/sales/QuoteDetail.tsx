@@ -11,7 +11,8 @@ import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
 import { LineItemsTable } from '@components/sales/shared/LineItemsTable';
 import { SendQuoteModal } from '@components/sales/modals/SalesModals';
 import { ConfirmQuoteModal } from '@components/sales/modals/SalesModals';
-import { getQuotation, quotationPdfUrl, cancelQuotation } from '@services/sales/quotations';
+import { getQuotation, cancelQuotation } from '@services/sales/quotations';
+import { api } from '@services/api';
 import { fmtDate, fmtMoney, fmtDateTime } from '@lib/format';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
@@ -26,8 +27,27 @@ export default function QuoteDetail() {
   const qc           = useQueryClient();
   const { currency } = useActiveBusiness();
 
-  const [showSend,    setShowSend]    = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSend,       setShowSend]       = useState(false);
+  const [showConfirm,    setShowConfirm]    = useState(false);
+  const [pdfLoading,     setPdfLoading]     = useState(false);
+
+  async function handlePdfPreview() {
+    if (!id || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const response = await api.get(`/sales/quotations/${id}/pdf`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url  = URL.createObjectURL(blob);
+      const win  = window.open(url, '_blank');
+      // Revoke after the tab has had time to load the blob
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      if (!win) showToast.error('Pop-up blocked — please allow pop-ups for this site.');
+    } catch (err) {
+      showToast.error(errMsg(err, 'Could not load PDF'));
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ['quotation', id],
@@ -75,7 +95,6 @@ export default function QuoteDetail() {
   const canSend     = isDraft || isSent;
   const canConfirm  = isDraft || isSent;
   const canCancel   = !isConfirmed && !isClosed;
-  const pdfUrl      = quotationPdfUrl(quote.quotation_id);
 
   const statusSteps: QuoteStatus[] = ['draft', 'sent', 'viewed', 'confirmed'];
 
@@ -232,15 +251,14 @@ export default function QuoteDetail() {
               </Button>
             )}
 
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud transition-colors hover:border-orika-gold/30 hover:text-orika-gold"
+            <button
+              onClick={handlePdfPreview}
+              disabled={pdfLoading}
+              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud transition-colors hover:border-orika-gold/30 hover:text-orika-gold disabled:opacity-50"
             >
               <FileDown className="h-4 w-4" />
-              Preview PDF
-            </a>
+              {pdfLoading ? 'Loading…' : 'Preview PDF'}
+            </button>
 
             {quote.deal_id && (
               <a
