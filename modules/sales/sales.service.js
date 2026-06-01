@@ -14,7 +14,7 @@ const repo = require("./sales.repository");
 
 async function listQuotations(
   business,
-  { page = 1, limit = 50, status, contactId } = {},
+  { page = 1, limit = 50, status, contactId, contact_id, deal_id } = {},
   user,
   scope,
 ) {
@@ -22,7 +22,8 @@ async function listQuotations(
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listQuotations(client, {
       status,
-      contactId,
+      contactId: contactId || contact_id || null,
+      dealId: deal_id || null,
       scope,
       userId: user.user_id,
       limit: parseInt(limit),

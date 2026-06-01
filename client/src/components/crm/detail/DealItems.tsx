@@ -1,58 +1,122 @@
-import { Link } from 'react-router-dom';
-import { Package, ArrowUpRight, Sparkles } from 'lucide-react';
-import { EmptyState } from '@components/ui/EmptyState';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Package, Plus, ArrowUpRight } from 'lucide-react';
 import { Button } from '@components/ui/Button';
+import { EmptyState } from '@components/ui/EmptyState';
+import { Skeleton } from '@components/ui/Skeleton';
+import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
+import { QuoteFormModal } from '@components/sales/modals/QuoteFormModal';
+import { listQuotations } from '@services/sales/quotations';
+import { fmtMoney, fmtDate } from '@lib/format';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 
-/**
- * Items / Quotations panel on the deal page.
- *
- * Backend status: per the schema review, deal-level line items live in
- * quotations (Sales module). A quotation can be issued against a deal
- * to formalise the line items, then confirmed to become a sales order.
- *
- * For now we render an actionable placeholder. When the Sales module
- * frontend ships, this becomes a list of quotations attached to the
- * deal (we'll need a `crm_deal_id` column on quotations to query —
- * flagged in backend/CRM_PATCH_NOTES.md).
- */
-export function DealItems({ dealId, contactId }: { dealId: string; contactId: string }) {
+export function DealItems({
+  dealId,
+  contactId,
+  contactName,
+}: {
+  dealId: string;
+  contactId: string;
+  contactName?: string;
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { currency } = useActiveBusiness();
+  const [showNew, setShowNew] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['deal-quotations', dealId],
+    queryFn: () => listQuotations({ deal_id: dealId, limit: 50 }),
+    enabled: !!dealId,
+  });
+
+  const quotations = data?.data ?? [];
+
   return (
     <div className="space-y-4">
-      <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
-        <Package className="w-3.5 h-3.5" /> Items & Quotations
-      </h3>
-
-      <div className="rounded-2xl border border-orika-gold/20 bg-orika-gold/[0.03] p-5">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orika-gold/15 text-orika-gold flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-orika-cream">
-              Line items on a deal are tracked through <strong>quotations</strong> in the Sales module.
-              Issue a quotation to lock-in the items, total, and validity period — confirm it later to convert this deal into a sales order.
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Link to={`/sales/quotations/new?deal_id=${dealId}&contact_id=${contactId}`}>
-                <Button variant="gold" size="sm">Create quotation</Button>
-              </Link>
-              <Link to={`/sales/quotations?contact_id=${contactId}`} className="inline-flex items-center gap-1 text-xs text-orika-smoke hover:text-orika-cream transition-colors">
-                View this contact's quotations <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <p className="text-[0.65rem] text-orika-smoke mt-3">
-              <strong>Backend note:</strong> attaching quotations to a specific deal requires adding a
-              <code className="mx-1 px-1.5 py-0.5 rounded bg-orika-black/40 font-mono text-orika-gold">crm_deal_id</code>
-              column on the quotations table. This panel will surface them automatically once that's done.
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center justify-between">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+          <Package className="w-3.5 h-3.5" /> Items & Quotations
+        </h3>
+        <Button
+          size="sm"
+          variant="secondary"
+          leftIcon={<Plus className="w-3.5 h-3.5" />}
+          onClick={() => setShowNew(true)}
+        >
+          New quotation
+        </Button>
       </div>
 
-      <EmptyState
-        icon={<Package className="w-6 h-6" />}
-        title="No quotations yet"
-        description="Create the first quotation for this deal once the Sales module is wired."
+      {isLoading ? (
+        <div className="space-y-2">
+          {[0, 1].map((i) => (
+            <Skeleton key={i} className="h-14 rounded-lg" />
+          ))}
+        </div>
+      ) : quotations.length === 0 ? (
+        <EmptyState
+          icon={<Package className="w-6 h-6" />}
+          title="No quotations yet"
+          description="Create a quotation to lock in items, totals, and validity — then confirm it to convert this deal into a sales order."
+          action={
+            <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowNew(true)}>
+              Create quotation
+            </Button>
+          }
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-white/5">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/5 bg-orika-graphite/40">
+                {['Number', 'Amount', 'Valid Until', 'Status', ''].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {quotations.map((q) => (
+                <tr
+                  key={q.quotation_id}
+                  onClick={() => navigate(`/sales/quotations/${q.quotation_id}`)}
+                  className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
+                >
+                  <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
+                    {q.quotation_number}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    {fmtMoney(q.total_amount, q.currency ?? currency)}
+                  </td>
+                  <td className="px-4 py-3 text-orika-cloud">{fmtDate(q.valid_until)}</td>
+                  <td className="px-4 py-3">
+                    <SalesStatusBadge entity="quotation" status={q.status} size="sm" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke inline" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <QuoteFormModal
+        open={showNew}
+        onClose={() => setShowNew(false)}
+        prefill={{ contact_id: contactId, contact_name: contactName ?? '', deal_id: dealId }}
+        onCreated={(id) => {
+          setShowNew(false);
+          queryClient.invalidateQueries({ queryKey: ['deal-quotations', dealId] });
+          navigate(`/sales/quotations/${id}`);
+        }}
       />
     </div>
   );
