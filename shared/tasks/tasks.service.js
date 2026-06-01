@@ -5,6 +5,8 @@ const auditService = require("../audit/audit.service");
 const notifService = require("../notifications/notifications.service");
 const { emitToBusiness } = require("../../config/sockets");
 const repo = require("./tasks.repository");
+const calendarRepo = require("../calendar/calendar.repository");
+const logger = require("../../config/logger");
 
 // ─────────────────────────────────────────────────────────────
 // TASKS SERVICE — Module 16: Tasks & To-Do
@@ -86,8 +88,12 @@ async function createTask(data, user) {
 
     const task = await repo.insert(client, {
       ...data,
+      remind_at: computeRemindAt(data.due_at, data.reminder_minutes),
       created_by: user.user_id,
     });
+
+    // Mirror the task onto the calendar so a dated task shows up there.
+    await syncCalendarForTask(client, task, user);
 
     // Notify the assignee if they're not the creator.
     if (task.assigned_to && task.assigned_to !== user.user_id) {
@@ -146,9 +152,25 @@ async function updateTask(taskId, fields, user) {
       );
     }
 
+    // Recompute the reminder (and re-arm it) whenever scheduling changes.
+    if (fields.due_at !== undefined || fields.reminder_minutes !== undefined) {
+      const dueAt = fields.due_at !== undefined ? fields.due_at : before.due_at;
+      const rmins =
+        fields.reminder_minutes !== undefined
+          ? fields.reminder_minutes
+          : before.reminder_minutes;
+      fields.remind_at = computeRemindAt(dueAt, rmins);
+      fields.reminder_sent = false;
+    }
+
     const after = await repo.update(client, taskId, fields);
     if (!after) {
       throw Object.assign(new Error("Task not found"), { status: 404 });
+    }
+
+    // Keep the mirrored calendar event in sync with the task's due date.
+    if (fields.due_at !== undefined || fields.reminder_minutes !== undefined) {
+      await syncCalendarForTask(client, after, user);
     }
 
     // Notify the new assignee on reassignment.
@@ -305,6 +327,50 @@ async function createFromModule({
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
+
+// remind_at = due_at − reminder_minutes (null if either is missing).
+function computeRemindAt(dueAt, reminderMinutes) {
+  if (!dueAt || reminderMinutes === undefined || reminderMinutes === null || reminderMinutes === "") {
+    return null;
+  }
+  const mins = parseInt(reminderMinutes, 10);
+  if (Number.isNaN(mins)) return null;
+  return new Date(new Date(dueAt).getTime() - mins * 60000).toISOString();
+}
+
+// Mirror a dated task onto the calendar (create / update / remove the event).
+// Best-effort: a calendar hiccup must never block the task write.
+async function syncCalendarForTask(client, task, user) {
+  try {
+    if (task.due_at) {
+      if (task.calendar_event_id) {
+        await calendarRepo.update(client, task.calendar_event_id, {
+          title: task.title,
+          start_at: task.due_at,
+          end_at: task.due_at,
+        });
+      } else {
+        const ev = await calendarRepo.insert(client, {
+          business: task.business,
+          title: task.title,
+          event_type: "task",
+          start_at: task.due_at,
+          end_at: task.due_at,
+          reference_type: "task",
+          reference_id: task.task_id,
+          created_by: user?.user_id || task.created_by || null,
+        });
+        await repo.setCalendarEvent(client, task.task_id, ev.event_id);
+        task.calendar_event_id = ev.event_id;
+      }
+    } else if (task.calendar_event_id) {
+      // Due date cleared — drop the mirrored event.
+      await calendarRepo.softDelete(client, task.calendar_event_id);
+    }
+  } catch (e) {
+    logger.warn(`[tasks] calendar sync failed for ${task.task_id}: ${e.message}`);
+  }
+}
 
 function validateTaskInput(data) {
   if (!data.business) {

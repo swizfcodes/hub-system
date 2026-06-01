@@ -22,6 +22,7 @@ export const createTaskSchema = z.object({
   priority:       z.enum(['low','normal','high','urgent']).default('normal'),
   assigned_to:    z.string().uuid().optional().or(z.literal('')),
   due_at:         z.string().optional().or(z.literal('')),
+  reminder_minutes: z.string().optional().or(z.literal('')),
   reference_type: z.string().optional().or(z.literal('')),
   reference_id:   z.string().uuid().optional().or(z.literal('')),
   is_personal:    z.boolean().optional().default(false),

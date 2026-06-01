@@ -13,6 +13,9 @@ export interface Task {
   priority: TaskPriority;
   assigned_to?: string | null;
   due_at?: string | null;
+  reminder_minutes?: number | null;
+  remind_at?: string | null;
+  calendar_event_id?: string | null;
   parent_task_id?: string | null;
   reference_type?: string | null;
   reference_id?: string | null;
