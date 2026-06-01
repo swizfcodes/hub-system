@@ -68,7 +68,7 @@ router.post(
   body("job_title").isString().notEmpty(),
   body("employment_type").isIn(["full_time", "part_time", "contract"]),
   body("start_date").isISO8601(),
-  body("contact_id").optional().isUUID(),
+  body("contact_id").optional({ checkFalsy: true }).isUUID(),
   body("first_name").optional().isString(),
   body("last_name").optional().isString(),
   body("primary_phone").optional().isString(),

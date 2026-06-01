@@ -21,7 +21,9 @@ export function AppShell() {
   }));
 
   const { pathname } = useLocation();
-  const onCrm = pathname.startsWith('/crm');
+  // Only show the global CRM FAB on the pipeline/list view.
+  // Deal detail (/crm/:id) renders its own LogActivityFab — showing both causes duplicate buttons.
+  const onCrm = pathname === '/crm';
 
   // Re-hydrate user from localStorage on first mount.
   // IMPORTANT: we must wait for hydration to complete before deciding

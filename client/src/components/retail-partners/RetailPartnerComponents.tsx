@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Search } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Badge } from '@components/ui/Badge';
 import { Modal } from '@components/ui/Modal';
 import { Button } from '@components/ui/Button';
@@ -35,7 +35,7 @@ import {
 import { fmtMoney } from '@lib/format';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
-import { api } from '@services/api';
+import { CatalogueSearchInput } from '@components/shared/CatalogueSearchInput';
 import type {
   ArrangementType, ConsignmentStatus, SettlementStatus,
   RetailPartner, ConsignmentStock,
@@ -208,17 +208,7 @@ interface SendConsignmentModalProps {
 export function SendConsignmentModal({ open, onClose, partner, currency = 'NGN' }: SendConsignmentModalProps) {
   const qc = useQueryClient();
   const locations = useLocations();
-  const [productQuery, setProductQuery] = useState('');
-
-  const { data: productResults = [] } = useQuery({
-    queryKey: ['products-search', productQuery],
-    queryFn: async () => {
-      if (productQuery.length < 2) return [];
-      const { data } = await api.get('/catalogue/products', { params: { search: productQuery, limit: 8 } });
-      return data.data ?? [];
-    },
-    enabled: productQuery.length >= 2,
-  });
+  // productQuery state removed — handled inside CatalogueSearchInput
 
   const form = useForm<SendConsignmentValues>({
     resolver: zodResolver(sendConsignmentSchema),
@@ -269,26 +259,17 @@ export function SendConsignmentModal({ open, onClose, partner, currency = 'NGN' 
           <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted mb-2">
             Search & Add Products
           </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
-            <input type="text" value={productQuery} onChange={(e) => setProductQuery(e.target.value)}
-              placeholder="Search catalogue..." className="w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm focus:border-orika-black focus:outline-none" />
-          </div>
-          {productQuery.length >= 2 && productResults.length > 0 && (
-            <div className="mt-1 rounded-xl border border-orika-cloud/30 bg-white shadow-lg max-h-40 overflow-y-auto">
-              {productResults.map((p: any) => (
-                <button key={p.product_id} type="button"
-                  onClick={() => {
-                    append({ product_id: p.product_id, quantity: 1, agreed_price: p.selling_price });
-                    setProductQuery('');
-                  }}
-                  className="flex w-full items-center justify-between px-4 py-2.5 hover:bg-orika-cloud/20 text-left transition-colors">
-                  <span className="text-sm text-orika-black">{p.name}</span>
-                  <span className="text-sm font-semibold text-orika-black tabular-nums">{fmtMoney(p.selling_price, currency)}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <CatalogueSearchInput
+            surface="light"
+            currency={currency}
+            label=""
+            placeholder="Search catalogue…"
+            onSelect={(p) => append({
+              product_id:   p.product_id,
+              quantity:     1,
+              agreed_price: parseFloat(String(p.selling_price)) || 0,
+            })}
+          />
         </div>
 
         {/* Line items */}

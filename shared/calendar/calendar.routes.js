@@ -75,7 +75,7 @@ router.post(
   body("description").optional().isString(),
   body("recurrence_rule").optional().isString(),
   body("reference_type").optional().isString(),
-  body("reference_id").optional().isUUID(),
+  body("reference_id").optional({ checkFalsy: true }).isUUID(),
   body("force").optional().isBoolean(),
   validate,
   can("calendar", "create"),
@@ -158,8 +158,8 @@ router.get(
 router.post(
   "/events/:id/participants",
   param("id").isUUID(),
-  body("user_id").optional().isUUID(),
-  body("contact_id").optional().isUUID(),
+  body("user_id").optional({ checkFalsy: true }).isUUID(),
+  body("contact_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("calendar", "edit"),
   async (req, res, next) => {

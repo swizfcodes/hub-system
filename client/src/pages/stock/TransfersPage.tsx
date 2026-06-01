@@ -19,11 +19,11 @@ import { Skeleton } from '@components/ui/Skeleton';
 import { EmptyState } from '@components/ui/EmptyState';
 import { listTransfers, createTransfer, dispatchTransfer, receiveTransfer, cancelTransfer } from '@services/stock/transfers';
 import { listLocations } from '@services/catalogue/locations';
-import { listProducts } from '@services/catalogue/products';
 import { transferCreateSchema, type TransferCreateValues } from '@lib/schemas/stock';
 import { fmtRelative } from '@lib/format';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
+import { ProductSelectField } from '@components/shared/CatalogueSearchInput';
 import type { TransferStatus } from '@typedefs/stock';
 
 const STATUS_TONE: Record<TransferStatus, 'gold' | 'sage' | 'rose' | 'neutral' | 'danger'> = {
@@ -114,8 +114,6 @@ export default function TransfersPage() {
 function CreateTransferModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const { data: locations = [] } = useQuery({ queryKey: ['catalogue', 'locations'], queryFn: () => listLocations(false) });
-  const { data: productsResp } = useQuery({ queryKey: ['catalogue', 'products', 'all'], queryFn: () => listProducts({ limit: 200 }) });
-  const products = productsResp?.data ?? [];
 
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm<TransferCreateValues>({
     resolver: zodResolver(transferCreateSchema),
@@ -157,9 +155,16 @@ function CreateTransferModal({ open, onClose }: { open: boolean; onClose: () => 
           <div className="space-y-2">
             {fields.map((f, i) => (
               <div key={f.id} className="grid grid-cols-[1fr_100px_auto] gap-2 items-end">
-                <Controller control={control} name={`lines.${i}.product_id`} render={({ field }) => (
-                  <Select {...field} label={`Line ${i + 1}`} placeholder="Pick a product"
-                    options={products.map((p) => ({ value: p.product_id, label: `${p.name} · ${p.sku}` }))} />
+                <Controller control={control} name={`lines.${i}.product_id`} render={({ field, fieldState }) => (
+                  <ProductSelectField
+                    surface="dark"
+                    currency="NGN"
+                    label={`Line ${i + 1}`}
+                    instanceKey={i}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={fieldState.error?.message}
+                  />
                 )} />
                 <Input {...register(`lines.${i}.quantity` as const, { valueAsNumber: true })} type="number" min={1} label="Qty" />
                 {fields.length > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}><Trash2 className="w-3.5 h-3.5" /></Button>}

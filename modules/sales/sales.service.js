@@ -14,7 +14,7 @@ const repo = require("./sales.repository");
 
 async function listQuotations(
   business,
-  { page = 1, limit = 50, status, contactId } = {},
+  { page = 1, limit = 50, status, contactId, contact_id, deal_id } = {},
   user,
   scope,
 ) {
@@ -22,7 +22,8 @@ async function listQuotations(
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listQuotations(client, {
       status,
-      contactId,
+      contactId: contactId || contact_id || null,
+      dealId: deal_id || null,
       scope,
       userId: user.user_id,
       limit: parseInt(limit),
@@ -38,7 +39,7 @@ async function createQuotation(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
-    const vatRate = getVatRate(business);
+    const vatRate = data.apply_vat === false ? 0 : getVatRate(business);
     for (const l of data.lines) {
       const lt = l.unit_price * l.quantity;
       const disc = l.discount_amount || (lt * (l.discount_pct || 0)) / 100;
@@ -255,17 +256,68 @@ async function cancelQuotation(business, quotationId, user) {
 
 async function generateQuotationPDF(business, quotationId) {
   const q = await getQuotation(business, quotationId);
-  const { getBusinessConfig } = require("../../config/businesses");
-  const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
-  q.biz = getBusinessConfig(business) || {};
-  q.total_amount_fmt = fmt(q.total_amount);
-  q.valid_until_fmt  = fmtDate(q.valid_until);
-  q.created_at_fmt   = fmtDate(q.created_at);
-  q.lines_html = (q.lines || []).filter(Boolean).map((l, i) =>
-    `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${l.description || ''}</td><td class="c">${l.quantity}</td><td class="r">₦${fmt(l.unit_price)}</td><td class="r">₦${fmt(l.line_total)}</td></tr>`
-  ).join('');
-  return renderToPDF("quotations", q);
+
+  const currency = q.currency || "NGN";
+  const fmtAmt = (n) =>
+    `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const lines = Array.isArray(q.lines) ? q.lines.filter(Boolean) : [];
+  const linesHtml = lines
+    .map(
+      (l, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+      <td class="c-num">${i + 1}</td>
+      <td class="c-desc">${esc(l.description)}</td>
+      <td class="c-qty">${l.quantity}</td>
+      <td class="c-price">${fmtAmt(l.unit_price)}</td>
+      <td class="c-disc">${l.discount_pct > 0 ? l.discount_pct + "%" : "—"}</td>
+      <td class="c-total">${fmtAmt(l.line_total)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const showDiscount = Number(q.discount_total) > 0;
+
+  const templateData = {
+    quotation_number:       q.quotation_number,
+    status:                 (q.status || "draft").toUpperCase(),
+    issue_date:             fmtDate(q.created_at),
+    valid_until:            fmtDate(q.valid_until),
+    contact_name:           esc(q.contact_name || "—"),
+    email:                  esc(q.email || "—"),
+    primary_phone:          esc(q.primary_phone || "—"),
+    payment_terms:          esc(q.payment_terms || "—"),
+    notes:                  esc(q.notes || ""),
+    terms_conditions:       esc(q.terms_conditions || ""),
+    lines_html:             linesHtml,
+    subtotal:               fmtAmt(q.subtotal),
+    discount_total:         fmtAmt(q.discount_total),
+    vat_amount:             fmtAmt(q.vat_amount),
+    total_amount:           fmtAmt(q.total_amount),
+    // Conditional visibility helpers
+    discount_row_style:     showDiscount ? "" : "display:none",
+    notes_section_style:    q.notes ? "" : "display:none",
+    terms_section_style:    q.terms_conditions ? "" : "display:none",
+  };
+
+  return renderToPDF("quotations", templateData);
 }
 
 // ─── Sales KPIs ───────────────────────────────────────────────────────────────
@@ -372,29 +424,66 @@ async function generateInvoiceFromOrder(
       );
     }
 
-    const { getBusinessConfig } = require("../../config/businesses");
-    const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
-    invoice.biz             = getBusinessConfig(business) || {};
-    invoice.contact_name    = order.contact_name  || '';
-    invoice.contact_email   = order.email         || '';
-    invoice.contact_phone   = order.primary_phone || '';
-    invoice.subtotal_fmt        = fmt(invoice.subtotal);
-    invoice.discount_total_fmt  = fmt(invoice.discount_total);
-    invoice.vat_amount_fmt      = fmt(invoice.vat_amount);
-    invoice.total_amount_fmt    = fmt(invoice.total_amount);
-    invoice.issue_date_fmt      = fmtDate(invoice.issue_date);
-    invoice.due_date_fmt        = fmtDate(invoice.due_date);
-    invoice.lines_html = (order.lines || []).filter(Boolean).map((l, i) =>
-      `<tr class="${i % 2 === 0 ? 'even' : ''}">
-        <td>${l.description || ''}</td>
-        <td class="c">${l.quantity}</td>
-        <td class="r">₦${fmt(l.unit_price)}</td>
-        <td class="r">₦${fmt(l.line_total)}</td>
-      </tr>`
-    ).join('');
+    // Fetch full order data (has contact_name and lines)
+    const fullOrder = order; // already fetched above via repo.findOrderById
+    const currency = invoice.currency || "NGN";
+    const fmtAmt = (n) =>
+      `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    const fmtDate = (d) =>
+      d
+        ? new Date(d).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "—";
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
 
-    const pdf = await renderToPDF("invoice", invoice);
+    const orderLines = Array.isArray(fullOrder.lines)
+      ? fullOrder.lines.filter(Boolean)
+      : [];
+    const linesHtml = orderLines
+      .map(
+        (l, i) => `
+      <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+        <td class="c-num">${i + 1}</td>
+        <td class="c-desc">${esc(l.description)}</td>
+        <td class="c-qty">${Number(l.quantity || 0)}</td>
+        <td class="c-price">${fmtAmt(l.unit_price)}</td>
+        <td class="c-total">${fmtAmt(l.line_total)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    const invoiceTemplateData = {
+      invoice_number:        esc(invoice.invoice_number),
+      status:                esc((invoice.status || "draft").toUpperCase()),
+      issue_date:            fmtDate(invoice.issue_date),
+      due_date:              fmtDate(invoice.due_date),
+      contact_name:          esc(fullOrder.contact_name || "—"),
+      email:                 esc(fullOrder.email || "—"),
+      primary_phone:         esc(fullOrder.primary_phone || "—"),
+      order_number:          esc(fullOrder.order_number || "—"),
+      payment_instructions:  esc(invoice.payment_instructions || ""),
+      paystack_payment_url:  esc(invoice.paystack_payment_url || ""),
+      lines_html:            linesHtml,
+      subtotal:              fmtAmt(invoice.subtotal),
+      vat_amount:            fmtAmt(invoice.vat_amount),
+      total_amount:          fmtAmt(invoice.total_amount),
+      // Conditional visibility
+      payment_instructions_style: invoice.payment_instructions ? "" : "display:none",
+      paystack_link_style:        invoice.paystack_payment_url ? "" : "display:none",
+    };
+
+    const pdf = await renderToPDF("invoice", invoiceTemplateData);
     await repo.archiveDocument(client, {
       business,
       document_type: "invoice",
@@ -487,9 +576,40 @@ async function getReceipt(business, receiptId) {
 
 async function generateReceiptPDF(business, receiptId) {
   const r = await getReceipt(business, receiptId);
-  const { getBusinessConfig } = require("../../config/businesses");
-  r.biz = getBusinessConfig(business) || {};
-  return renderToPDF("receipt", r);
+
+  const currency = r.currency || "NGN";
+  const fmtAmt = (n) =>
+    `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const templateData = {
+    receipt_number:   esc(r.receipt_number || r.receipt_id || "—"),
+    invoice_number:   esc(r.invoice_number || "—"),
+    contact_name:     esc(r.contact_name || "—"),
+    issued_at:        fmtDate(r.issued_at),
+    payment_method:   esc(r.payment_method || "—"),
+    amount:           fmtAmt(r.amount),
+    notes:            esc(r.notes || ""),
+    notes_style:      r.notes ? "" : "display:none",
+  };
+
+  return renderToPDF("receipt", templateData);
 }
 
 // ─── Discount approvals ───────────────────────────────────────────────────────

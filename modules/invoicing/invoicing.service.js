@@ -428,24 +428,91 @@ async function generatePDF(business, invoiceId) {
   const inv = await getById(business, invoiceId);
   if (!inv)
     throw Object.assign(new Error("Invoice not found"), { status: 404 });
-  const { getBusinessConfig } = require("../../config/businesses");
-  const fmt = (n) => Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
-  inv.biz = getBusinessConfig(business) || {};
-  inv.subtotal_fmt       = fmt(inv.subtotal);
-  inv.discount_total_fmt = fmt(inv.discount_total);
-  inv.vat_amount_fmt     = fmt(inv.vat_amount);
-  inv.total_amount_fmt   = fmt(inv.total_amount);
-  inv.amount_paid_fmt    = fmt(inv.amount_paid);
-  inv.issue_date_fmt     = fmtDate(inv.issue_date);
-  inv.due_date_fmt       = fmtDate(inv.due_date);
-  inv.lines_html = (inv.lines || []).filter(Boolean).map((l, i) =>
-    `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${l.description || ''}</td><td class="c">${l.quantity}</td><td class="r">₦${fmt(l.unit_price)}</td><td class="r">₦${fmt(l.line_total)}</td></tr>`
-  ).join('');
-  inv.payments_html = (inv.payments || []).filter(Boolean).map((p) =>
-    `<tr><td>${fmtDate(p.paid_at)}</td><td>${p.payment_method || ''}</td><td>${p.reference || ''}</td><td class="r">₦${fmt(p.amount)}</td></tr>`
-  ).join('');
-  return renderToPDF("invoices", inv);
+
+  const currency = inv.currency || "NGN";
+  const fmtAmt = (n) =>
+    `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  // Pre-render lines array → HTML rows
+  const lines = Array.isArray(inv.lines) ? inv.lines.filter(Boolean) : [];
+  const linesHtml = lines
+    .map(
+      (l, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+      <td class="c-num">${i + 1}</td>
+      <td class="c-desc">${esc(l.description)}</td>
+      <td class="c-qty">${Number(l.quantity || 0)}</td>
+      <td class="c-price">${fmtAmt(l.unit_price)}</td>
+      <td class="c-disc">${Number(l.discount_amount || 0) > 0 ? fmtAmt(l.discount_amount) : "—"}</td>
+      <td class="c-vat">${Number(l.vat_amount || 0) > 0 ? fmtAmt(l.vat_amount) : "—"}</td>
+      <td class="c-total">${fmtAmt(l.line_total)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  // Pre-render payments array → HTML rows
+  const payments = Array.isArray(inv.payments) ? inv.payments.filter(Boolean) : [];
+  const paymentsHtml = payments
+    .map(
+      (p) => `
+    <tr>
+      <td>${fmtDate(p.payment_date)}</td>
+      <td>${esc(p.payment_method || "")}</td>
+      <td>${esc(p.reference || "—")}</td>
+      <td class="p-amount">${fmtAmt(p.amount)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const showDiscount = Number(inv.discount_total || 0) > 0;
+  const showPayments = payments.length > 0;
+  const showNotes = !!inv.notes;
+  const showPaymentInstructions = !!inv.payment_instructions;
+
+  const templateData = {
+    invoice_number:           esc(inv.invoice_number),
+    invoice_type:             esc((inv.invoice_type || "standard").toUpperCase()),
+    status:                   esc((inv.status || "draft").toUpperCase()),
+    issue_date:               fmtDate(inv.issue_date),
+    due_date:                 fmtDate(inv.due_date),
+    contact_name:             esc(inv.contact_name || "—"),
+    email:                    esc(inv.email || "—"),
+    primary_phone:            esc(inv.primary_phone || "—"),
+    notes:                    esc(inv.notes || ""),
+    payment_instructions:     esc(inv.payment_instructions || ""),
+    lines_html:               linesHtml,
+    payments_html:            paymentsHtml,
+    subtotal:                 fmtAmt(inv.subtotal),
+    discount_total:           fmtAmt(inv.discount_total),
+    vat_amount:               fmtAmt(inv.vat_amount),
+    total_amount:             fmtAmt(inv.total_amount),
+    amount_paid:              fmtAmt(inv.amount_paid),
+    amount_outstanding:       fmtAmt(inv.amount_outstanding),
+    // Conditional visibility helpers
+    discount_row_style:            showDiscount ? "" : "display:none",
+    payments_section_style:        showPayments ? "" : "display:none",
+    notes_section_style:           showNotes ? "" : "display:none",
+    payment_instructions_style:    showPaymentInstructions ? "" : "display:none",
+  };
+
+  return renderToPDF("invoices", templateData);
 }
 
 // ─────────────────────────────────────────────────────────────

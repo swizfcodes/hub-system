@@ -89,8 +89,8 @@ router.post(
 router.post(
   "/channels/:id/members",
   param("id").isUUID(),
-  body("user_id").optional().isUUID(),
-  body("contact_id").optional().isUUID(),
+  body("user_id").optional({ checkFalsy: true }).isUUID(),
+  body("contact_id").optional({ checkFalsy: true }).isUUID(),
   body("role").optional().isIn(["member", "admin"]),
   validate,
   can("messaging", "edit"),
@@ -108,8 +108,8 @@ router.post(
 router.delete(
   "/channels/:id/members",
   param("id").isUUID(),
-  body("user_id").optional().isUUID(),
-  body("contact_id").optional().isUUID(),
+  body("user_id").optional({ checkFalsy: true }).isUUID(),
+  body("contact_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("messaging", "edit"),
   async (req, res, next) => {
@@ -151,7 +151,7 @@ router.post(
   body("message_type")
     .optional()
     .isIn(["text", "image", "document", "voice_note"]),
-  body("reply_to_id").optional().isUUID(),
+  body("reply_to_id").optional({ checkFalsy: true }).isUUID(),
   body("attachments").optional().isArray(),
   validate,
   can("messaging", "create"),
@@ -185,7 +185,7 @@ router.delete(
 router.post(
   "/channels/:id/mark-read",
   param("id").isUUID(),
-  body("up_to_message_id").optional().isUUID(),
+  body("up_to_message_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("messaging", "view"),
   async (req, res, next) => {

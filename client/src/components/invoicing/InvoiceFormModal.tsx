@@ -10,11 +10,11 @@
  * Selecting a product appends a new line — it does NOT overwrite an existing
  * line's field, which was the previous behaviour.
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, useFieldArray, Controller, type UseFormReturn, type FieldArrayWithId } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '@components/ui/Modal';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
@@ -26,7 +26,8 @@ import { INVOICE_TYPE_OPTIONS } from '@lib/constants/invoicingConstants';
 import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { fmtMoney } from '@lib/format';
 import { showToast } from '@hooks/useToast';
-import { errMsg, api } from '@services/api';
+import { errMsg } from '@services/api';
+import { CatalogueSearchInput } from '@components/shared/CatalogueSearchInput';
 import type { Contact } from '@typedefs/contacts';
 import { cn } from '@lib/cn';
 
@@ -62,88 +63,7 @@ interface Props {
 // MODULE-LEVEL STEP COMPONENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Product search — isolated state, appends a new line on select ─────────────
-
-interface ProductAddRowProps {
-  currency: string;
-  onAdd: (p: { product_id: string; name: string; selling_price: number }) => void;
-}
-
-function ProductAddRow({ currency, onAdd }: ProductAddRowProps) {
-  const [query,  setQuery]  = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapRef             = useRef<HTMLDivElement>(null);
-
-  const { data: results = [] } = useQuery({
-    queryKey: ['invoice-product-search', query],
-    queryFn: async () => {
-      if (query.trim().length < 2) return [];
-      const { data } = await api.get('/catalogue/products', {
-        params: { search: query.trim(), limit: 8 },
-      });
-      return data.data ?? [];
-    },
-    enabled: query.trim().length >= 2,
-  });
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setIsOpen(false);
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  function handleSelect(p: { product_id: string; name: string; selling_price: number }) {
-    onAdd(p);
-    setQuery('');
-    setIsOpen(false);
-  }
-
-  return (
-    <div ref={wrapRef} className="relative space-y-1">
-      <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted">
-        Add from Catalogue
-      </label>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
-          onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder="Type product name or SKU..."
-          className="w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-orika-black shadow-sm focus:border-orika-black focus:outline-none focus:ring-1 focus:ring-orika-black"
-        />
-      </div>
-      {isOpen && query.trim().length >= 2 && results.length > 0 && (
-        <div className="absolute z-50 w-full rounded-xl border border-orika-cloud/30 bg-white shadow-lg">
-          {results.map((p: { product_id: string; name: string; sku?: string; selling_price: number }) => (
-            <button
-              key={p.product_id}
-              type="button"
-              onClick={() => handleSelect(p)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-orika-cloud/20 transition-colors"
-            >
-              <div>
-                <p className="text-sm font-medium text-orika-black">{p.name}</p>
-                {p.sku && <p className="text-xs text-text-on-light-muted">{p.sku}</p>}
-              </div>
-              <span className="text-sm font-semibold text-orika-black tabular-nums ml-4 shrink-0">
-                {fmtMoney(p.selling_price, currency)}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-      {isOpen && query.trim().length >= 2 && results.length === 0 && (
-        <div className="absolute z-50 w-full rounded-xl border border-orika-cloud/30 bg-white shadow-lg px-4 py-3">
-          <p className="text-sm text-text-on-light-muted">No products found for &ldquo;{query}&rdquo;</p>
-        </div>
-      )}
-    </div>
-  );
-}
+// ProductAddRow removed — replaced by shared CatalogueSearchInput (surface="light")
 
 // ── Step: Customer ────────────────────────────────────────────────────────────
 
@@ -196,13 +116,15 @@ function StepLines({ form, fields, append, remove, watchedLines, currency }: Ste
   return (
     <div className="space-y-4">
       {/* Product search — appends a new line when a product is selected */}
-      <ProductAddRow
+      <CatalogueSearchInput
+        surface="light"
         currency={currency}
-        onAdd={(p) => append({
+        label="Add from Catalogue"
+        onSelect={(p) => append({
           product_id:      p.product_id,
           description:     p.name,
           quantity:        1,
-          unit_price:      p.selling_price,
+          unit_price:      parseFloat(String(p.selling_price)) || 0,
           discount_amount: 0,
         })}
       />

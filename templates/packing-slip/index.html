@@ -1,174 +1,253 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Packing Slip {{delivery.delivery_number}}</title>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        font-family: "Helvetica Neue", Arial, sans-serif;
-        font-size: 13px;
-        color: #1a1a1a;
-        background: #fff;
-        padding: 40px;
-      }
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 36px;
-      }
-      .brand {
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 4px;
-      }
-      .brand-sub {
-        font-size: 10px;
-        letter-spacing: 2px;
-        color: #888;
-        margin-top: 2px;
-      }
-      .doc-title {
-        text-align: right;
-      }
-      .doc-title h1 {
-        font-size: 26px;
-        font-weight: 300;
-        letter-spacing: 2px;
-      }
-      .doc-title .num {
-        font-size: 14px;
-        font-weight: 600;
-        color: #b8922a;
-        margin-top: 4px;
-      }
-      hr {
-        border: none;
-        border-top: 1px solid #e0d5c0;
-        margin: 20px 0;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        margin-bottom: 28px;
-      }
-      .lbl {
-        font-size: 10px;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        color: #888;
-        margin-bottom: 5px;
-      }
-      .val {
-        font-size: 13px;
-        font-weight: 600;
-      }
-      .sub {
-        font-size: 12px;
-        color: #555;
-        margin-top: 2px;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 20px;
-      }
-      thead tr {
-        background: #1a1a1a;
-        color: #fff;
-      }
-      thead th {
-        padding: 9px 12px;
-        font-size: 11px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-weight: 600;
-        text-align: left;
-      }
-      thead th.c {
-        text-align: center;
-      }
-      tbody td {
-        padding: 9px 12px;
-        border-bottom: 1px solid #f0ebe0;
-        color: #333;
-      }
-      tbody tr.even td {
-        background: #faf8f4;
-      }
-      td.c {
-        text-align: center;
-      }
-      .sign-row {
-        display: flex;
-        gap: 40px;
-        margin-top: 40px;
-      }
-      .sign-box {
-        flex: 1;
-        border-top: 1px solid #aaa;
-        padding-top: 8px;
-        font-size: 11px;
-        color: #888;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <div>
-        <div class="brand">{{biz.display_name}}</div>
-        <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
-      </div>
-      <div class="doc-title">
-        <h1>PACKING SLIP</h1>
-        <div class="num">{{delivery.delivery_number}}</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Packing Slip {{delivery_number}}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 0;
+    }
+
+    :root {
+      --gold:      #C9A86C;
+      --gold-dark: #8A6A30;
+      --charcoal:  #1A1814;
+      --smoke:     #6B6560;
+      --line:      #E5E0D8;
+      --bg-alt:    #F9F7F4;
+    }
+
+    .page { max-width: 794px; margin: 0 auto; padding: 48px 56px; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 28px;
+      border-bottom: 2px solid var(--gold);
+      margin-bottom: 32px;
+    }
+
+    .brand-block .brand-name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .brand-block .brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-top: 2px;
+    }
+
+    .doc-block { text-align: right; }
+    .doc-block .doc-label {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .doc-block .doc-number {
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      color: var(--gold-dark);
+      margin-top: 4px;
+    }
+    .doc-block .doc-date {
+      font-size: 11px;
+      color: var(--smoke);
+      margin-top: 4px;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .meta-block .meta-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .meta-block .meta-value { color: var(--charcoal); font-weight: 600; font-size: 13px; }
+    .meta-block .meta-sub   { color: var(--smoke);    font-size: 11.5px; margin-top: 2px; }
+
+    .detail-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
+    .detail-label { color: var(--smoke); font-size: 11px; }
+    .detail-val   { color: var(--charcoal); font-size: 11px; font-weight: 500; }
+
+    .section-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 8px;
+    }
+
+    table.lines {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 32px;
+    }
+    table.lines thead tr { background: var(--charcoal); color: #fff; }
+    table.lines thead th {
+      padding: 9px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    table.lines thead th.right { text-align: right; }
+    table.lines tbody tr.row-even { background: #fff; }
+    table.lines tbody tr.row-odd  { background: var(--bg-alt); }
+    table.lines td {
+      padding: 9px 10px;
+      font-size: 12px;
+      color: var(--charcoal);
+      vertical-align: top;
+    }
+    table.lines td.c-num { width: 36px; color: var(--smoke); font-size: 11px; }
+    table.lines td.c-qty { width: 60px; text-align: right; font-weight: 600; }
+
+    /* ── Waybill callout ── */
+    .waybill-callout {
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .waybill-callout .wc-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      white-space: nowrap;
+    }
+    .waybill-callout .wc-value {
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      color: var(--charcoal);
+      letter-spacing: 0.08em;
+    }
+
+    .instructions {
+      font-size: 11.5px;
+      color: var(--smoke);
+      line-height: 1.6;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-top: 8px;
+    }
+
+    .page-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .page-footer .footer-brand {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--smoke);
+    }
+    .page-footer .footer-note { font-size: 10px; color: var(--smoke); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="brand-block">
+      <div class="brand-name">Orika Hub</div>
+      <div class="brand-sub">Where luxury meets intelligence</div>
+    </div>
+    <div class="doc-block">
+      <div class="doc-label">Packing Slip</div>
+      <div class="doc-number">{{delivery_number}}</div>
+      <div class="doc-date">{{created_at}}</div>
+    </div>
+  </div>
+
+  <!-- ── Waybill callout ── -->
+  <div class="waybill-callout" style="{{waybill_style}}">
+    <span class="wc-label">Waybill No.</span>
+    <span class="wc-value">{{waybill_number}}</span>
+  </div>
+
+  <!-- ── Meta row ── -->
+  <div class="meta-row">
+    <div class="meta-block">
+      <div class="meta-heading">Ship To</div>
+      <div class="meta-value">{{contact_name}}</div>
+      <div class="meta-sub">{{primary_phone}}</div>
+      <div class="meta-sub">{{delivery_address}}</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-heading">Shipment Details</div>
+      <div class="detail-grid">
+        <span class="detail-label">Courier</span>        <span class="detail-val">{{courier}}</span>
+        <span class="detail-label">Dispatched</span>     <span class="detail-val">{{dispatched_at}}</span>
       </div>
     </div>
+  </div>
 
-    <div class="grid">
-      <div>
-        <div class="lbl">Deliver To</div>
-        <div class="val">{{delivery.contact_name}}</div>
-        <div class="sub">{{delivery.primary_phone}}</div>
-      </div>
-      <div>
-        <div class="lbl">Delivery Address</div>
-        <div class="sub">{{delivery.delivery_address}}</div>
-      </div>
-      <div>
-        <div class="lbl">Courier</div>
-        <div class="val">{{delivery.courier}}</div>
-      </div>
-      <div>
-        <div class="lbl">Dispatched</div>
-        <div class="val">{{delivery.dispatched_at_fmt}}</div>
-      </div>
-    </div>
+  <!-- ── Items ── -->
+  <div class="section-heading">Items in this Shipment</div>
+  <table class="lines">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th class="right">Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{items_html}}
+    </tbody>
+  </table>
 
-    <hr />
+  <div class="instructions">
+    Please check all items on receipt. If anything is missing or damaged, contact us immediately. Keep this slip for your records.
+  </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Item Description</th>
-          <th class="c">Qty</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{delivery.items_html}}
-      </tbody>
-    </table>
+  <!-- ── Page footer ── -->
+  <div class="page-footer">
+    <span class="footer-brand">Orika Hub</span>
+    <span class="footer-note">Packing Slip {{delivery_number}} · {{created_at}}</span>
+  </div>
 
-    <div class="sign-row">
-      <div class="sign-box">Packed by</div>
-      <div class="sign-box">Checked by</div>
-      <div class="sign-box">Received by</div>
-    </div>
-  </body>
+</div>
+</body>
 </html>

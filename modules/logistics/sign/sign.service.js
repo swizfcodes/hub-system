@@ -160,21 +160,60 @@ async function generateDeliveryNotePDF({
     if (!rows.length) return;
 
     const delivery = rows[0];
-    const { getBusinessConfig } = require("../../../config/businesses");
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
-    delivery.items_html = (delivery.items || []).filter(Boolean).map((item, i) =>
-      `<tr class="${i % 2 === 0 ? 'even' : ''}"><td>${item.description || ''}</td><td class="c">${item.quantity}</td></tr>`
-    ).join('');
-    delivery.delivered_at_fmt = fmtDate(delivery.delivered_at);
-    await renderToPDF("delivery-note", {
-      delivery,
-      customer_name,
-      driver_name,
-      customer_signature,
-      driver_signature,
-      business,
-      biz: getBusinessConfig(business) || {},
-    });
+    const fmtDate = (d) =>
+      d
+        ? new Date(d).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "—";
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    const items = Array.isArray(delivery.items) ? delivery.items.filter(Boolean) : [];
+    const itemsHtml = items
+      .map(
+        (item, i) => `
+      <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+        <td class="c-num">${i + 1}</td>
+        <td class="c-desc">${esc(item.description)}</td>
+        <td class="c-qty">${Number(item.quantity || 0)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    const addrRaw = delivery.delivery_address;
+    let addressStr = "—";
+    if (addrRaw) {
+      try {
+        const addrObj = typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
+        addressStr = [addrObj.line1, addrObj.line2, addrObj.city, addrObj.state]
+          .filter(Boolean)
+          .join(", ");
+      } catch {
+        addressStr = String(addrRaw);
+      }
+    }
+
+    const noteTemplateData = {
+      delivery_number:    esc(delivery.delivery_number || "—"),
+      contact_name:       esc(delivery.contact_name || "—"),
+      delivery_address:   esc(addressStr),
+      courier:            esc(delivery.courier || "—"),
+      signed_at:          fmtDate(delivery.signed_at || new Date()),
+      items_html:         itemsHtml,
+      customer_name:      esc(customer_name || "—"),
+      driver_name:        esc(driver_name || "—"),
+      customer_signature: customer_signature || "",
+      driver_signature:   driver_signature || "",
+    };
+
+    await renderToPDF("delivery-note", noteTemplateData);
   } catch (err) {
     logger.error(`[sign] delivery-note PDF failed for ${deliveryId}`, err);
   }

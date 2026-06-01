@@ -1,95 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>Payslip — {{display_name}}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:40px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
-  .brand{font-size:22px;font-weight:700;letter-spacing:4px}
-  .brand-sub{font-size:10px;letter-spacing:2px;color:#888;margin-top:2px}
-  .doc-title{text-align:right}
-  .doc-title h1{font-size:26px;font-weight:300;letter-spacing:2px}
-  .doc-title .period{font-size:13px;font-weight:600;color:#b8922a;margin-top:4px}
-  hr{border:none;border-top:1px solid #e0d5c0;margin:20px 0}
-  .employee-card{background:#faf8f4;border:1px solid #e0d5c0;border-radius:8px;padding:20px;margin-bottom:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:4px}
-  .val{font-size:13px;font-weight:600}
-  .sub{font-size:12px;color:#555;margin-top:2px}
-  table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  thead tr{background:#1a1a1a;color:#fff}
-  thead th{padding:9px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:left}
-  thead th.r{text-align:right}
-  tbody td{padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#333}
-  tbody td.r{text-align:right}
-  tbody tr.sub-total td{background:#f5f0e8;font-weight:600}
-  .net-box{background:#1a1a1a;color:#fff;border-radius:8px;padding:20px;text-align:center;margin:24px 0}
-  .net-box .net-lbl{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.6;margin-bottom:8px}
-  .net-box .net-amt{font-size:34px;font-weight:700;color:#b8922a}
-  .bank-box{background:#faf8f4;border:1px solid #e0d5c0;border-radius:6px;padding:14px 18px;font-size:12px;color:#555;margin-top:12px}
-  .bank-box strong{display:block;margin-bottom:4px;color:#1a1a1a}
-  .footer{margin-top:36px;padding-top:18px;border-top:1px solid #e0d5c0;font-size:11px;color:#888;text-align:center}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payslip — {{display_name}} — {{period_label}}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 0;
+    }
+
+    :root {
+      --gold:      #C9A86C;
+      --gold-dark: #8A6A30;
+      --charcoal:  #1A1814;
+      --smoke:     #6B6560;
+      --line:      #E5E0D8;
+      --bg-alt:    #F9F7F4;
+      --green:     #27ae60;
+      --red:       #e74c3c;
+    }
+
+    .page { max-width: 794px; margin: 0 auto; padding: 48px 56px; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 28px;
+      border-bottom: 2px solid var(--gold);
+      margin-bottom: 32px;
+    }
+
+    .brand-block .brand-name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .brand-block .brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-top: 2px;
+    }
+
+    .doc-block { text-align: right; }
+    .doc-block .doc-label {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .doc-block .doc-period {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gold-dark);
+      margin-top: 4px;
+    }
+    .doc-block .doc-ref {
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      color: var(--smoke);
+      margin-top: 4px;
+    }
+
+    /* ── Employee info ── */
+    .employee-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 24px;
+    }
+    .ec-field .ec-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 2px;
+    }
+    .ec-field .ec-value {
+      font-size: 13px;
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+
+    /* ── Two-column earnings / deductions ── */
+    .payslip-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .pay-section-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .pay-section-heading.earnings  { color: var(--green); }
+    .pay-section-heading.deductions { color: var(--red); }
+
+    table.pay-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.pay-table tr {
+      border-bottom: 1px solid var(--line);
+    }
+    table.pay-table tr:last-child { border-bottom: none; }
+    table.pay-table td {
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    table.pay-table td.p-label { color: var(--smoke); }
+    table.pay-table td.p-value {
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+    table.pay-table tr.subtotal-row td {
+      font-weight: 700;
+      color: var(--charcoal);
+      padding-top: 10px;
+      border-top: 2px solid var(--line);
+    }
+
+    /* ── Net pay hero ── */
+    .net-pay-hero {
+      background: var(--charcoal);
+      color: #fff;
+      border-radius: 8px;
+      padding: 24px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .net-pay-hero .np-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .net-pay-hero .np-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+    }
+
+    /* ── Bank details ── */
+    .bank-section {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-bottom: 24px;
+    }
+    .bank-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 8px;
+    }
+    .bank-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 3px 16px;
+    }
+    .bank-label { color: var(--smoke); font-size: 11px; }
+    .bank-val   { color: var(--charcoal); font-size: 11px; font-weight: 500; }
+
+    .confidential {
+      text-align: center;
+      font-size: 10px;
+      color: var(--smoke);
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+
+    .page-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .page-footer .footer-brand {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--smoke);
+    }
+    .page-footer .footer-note { font-size: 10px; color: var(--smoke); }
+  </style>
 </head>
 <body>
+<div class="page">
+
+  <!-- ── Header ── -->
   <div class="header">
-    <div>
-      <div class="brand">{{biz.display_name}}</div>
-      <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+    <div class="brand-block">
+      <div class="brand-name">Orika Hub</div>
+      <div class="brand-sub">Where luxury meets intelligence</div>
     </div>
-    <div class="doc-title">
-      <h1>PAYSLIP</h1>
-      <div class="period">{{run_number}} &nbsp;·&nbsp; {{period_month}}/{{period_year}}</div>
+    <div class="doc-block">
+      <div class="doc-label">Payslip</div>
+      <div class="doc-period">{{period_label}}</div>
+      <div class="doc-ref">{{run_number}}</div>
     </div>
   </div>
 
+  <!-- ── Employee card ── -->
   <div class="employee-card">
-    <div>
-      <div class="lbl">Employee</div>
-      <div class="val">{{display_name}}</div>
-      <div class="sub">{{job_title}}</div>
+    <div class="ec-field">
+      <div class="ec-label">Employee</div>
+      <div class="ec-value">{{display_name}}</div>
     </div>
-    <div>
-      <div class="lbl">Employee No.</div>
-      <div class="val">{{employee_number}}</div>
+    <div class="ec-field">
+      <div class="ec-label">Job Title</div>
+      <div class="ec-value">{{job_title}}</div>
     </div>
-    <div>
-      <div class="lbl">Email</div>
-      <div class="sub">{{email}}</div>
+    <div class="ec-field">
+      <div class="ec-label">Employee No.</div>
+      <div class="ec-value">{{employee_number}}</div>
     </div>
-    <div>
-      <div class="lbl">Pay Run</div>
-      <div class="val">{{run_number}}</div>
-      <div class="sub">{{period_month}} / {{period_year}}</div>
+    <div class="ec-field">
+      <div class="ec-label">Days Absent</div>
+      <div class="ec-value">{{days_absent}}</div>
     </div>
   </div>
 
-  <table>
-    <thead>
-      <tr><th>Description</th><th class="r">Amount (₦)</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Gross Salary</td><td class="r">{{gross_salary}}</td></tr>
-      <tr class="sub-total"><td>Gross Earnings</td><td class="r">{{gross_salary}}</td></tr>
-      <tr><td>PAYE Tax</td><td class="r">{{paye_deduction}}</td></tr>
-      <tr><td>Pension (Employee)</td><td class="r">{{pension_employee}}</td></tr>
-      <tr><td>NHF</td><td class="r">{{nhf_deduction}}</td></tr>
-      <tr><td>Advance Recovery</td><td class="r">{{advance_recovery}}</td></tr>
-      <tr class="sub-total"><td>Total Deductions</td><td class="r">{{total_deductions}}</td></tr>
-    </tbody>
-  </table>
+  <!-- ── Earnings & Deductions columns ── -->
+  <div class="payslip-columns">
 
-  <div class="net-box">
-    <div class="net-lbl">Net Pay</div>
-    <div class="net-amt">₦{{net_salary}}</div>
+    <!-- Earnings -->
+    <div>
+      <div class="pay-section-heading earnings">Earnings</div>
+      <table class="pay-table">
+        <tr>
+          <td class="p-label">Basic Salary</td>
+          <td class="p-value">{{basic_salary}}</td>
+        </tr>
+        <tr>
+          <td class="p-label">Housing Allowance</td>
+          <td class="p-value">{{housing_allowance}}</td>
+        </tr>
+        <tr>
+          <td class="p-label">Transport Allowance</td>
+          <td class="p-value">{{transport_allowance}}</td>
+        </tr>
+        <tr style="{{commission_row_style}}">
+          <td class="p-label">Commission</td>
+          <td class="p-value">{{commission_amount}}</td>
+        </tr>
+        <tr class="subtotal-row">
+          <td class="p-label">Gross Salary</td>
+          <td class="p-value">{{gross_salary}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Deductions -->
+    <div>
+      <div class="pay-section-heading deductions">Deductions</div>
+      <table class="pay-table">
+        <tr>
+          <td class="p-label">PAYE Tax</td>
+          <td class="p-value">{{paye_deduction}}</td>
+        </tr>
+        <tr>
+          <td class="p-label">Pension (Employee)</td>
+          <td class="p-value">{{pension_employee}}</td>
+        </tr>
+        <tr>
+          <td class="p-label">NHF</td>
+          <td class="p-value">{{nhf_deduction}}</td>
+        </tr>
+        <tr style="{{advance_row_style}}">
+          <td class="p-label">Advance Recovery</td>
+          <td class="p-value">{{advance_recovery}}</td>
+        </tr>
+        <tr style="{{other_deductions_style}}">
+          <td class="p-label">Other Deductions</td>
+          <td class="p-value">{{other_deductions}}</td>
+        </tr>
+        <tr class="subtotal-row">
+          <td class="p-label">Total Deductions</td>
+          <td class="p-value">{{total_deductions}}</td>
+        </tr>
+      </table>
+    </div>
+
   </div>
 
-  <div class="bank-box">
-    <strong>Payment to Bank Account</strong>
-    {{bank_name}} &nbsp;·&nbsp; {{bank_account_number}}
+  <!-- ── Net pay hero ── -->
+  <div class="net-pay-hero">
+    <span class="np-label">Net Pay</span>
+    <span class="np-value">{{net_salary}}</span>
   </div>
 
-  <div class="footer">This is a computer-generated payslip and does not require a signature.</div>
+  <!-- ── Bank details ── -->
+  <div class="bank-section">
+    <div class="bank-heading">Payment Details</div>
+    <div class="bank-grid">
+      <span class="bank-label">Bank</span>           <span class="bank-val">{{bank_name}}</span>
+      <span class="bank-label">Account Number</span> <span class="bank-val">{{bank_account_number}}</span>
+    </div>
+  </div>
+
+  <!-- ── Confidential notice ── -->
+  <div class="confidential">
+    This payslip is confidential and intended solely for {{display_name}}. Please keep it for your records.
+  </div>
+
+  <!-- ── Page footer ── -->
+  <div class="page-footer">
+    <span class="footer-brand">Orika Hub</span>
+    <span class="footer-note">{{run_number}} · {{period_label}}</span>
+  </div>
+
+</div>
 </body>
 </html>

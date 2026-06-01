@@ -79,7 +79,7 @@ router.post(
   body("description").optional().isString(),
   body("media_paths").optional().isArray(),
   body("video_path").optional().isString(),
-  body("campaign_id").optional().isUUID(),
+  body("campaign_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("social", "create"),
   async (req, res, next) => {

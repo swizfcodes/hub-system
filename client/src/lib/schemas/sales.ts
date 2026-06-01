@@ -8,9 +8,12 @@ import { z } from 'zod';
 export const quoteLineSchema = z.object({
   product_id:   z.string().uuid('Select a product'),
   description:  z.string().min(1, 'Description required').max(300),
-  quantity:     z.number().int().min(1, 'At least 1'),
-  unit_price:   z.number().min(0, 'Price must be 0 or more'),
-  discount_pct: z.number().min(0).max(100),
+  // coerce: HTML inputs and pg NUMERIC columns both return strings; coerce
+  // normalises them to numbers before Zod validates, eliminating the
+  // "Expected number, received string" error on form submission.
+  quantity:     z.coerce.number().int().min(1, 'At least 1'),
+  unit_price:   z.coerce.number().min(0, 'Price must be 0 or more'),
+  discount_pct: z.coerce.number().min(0).max(100),
 });
 export type QuoteLineValues = z.infer<typeof quoteLineSchema>;
 
@@ -27,6 +30,8 @@ export const createQuotationSchema = z.object({
   // Order-level discount
   order_discount_type:  z.enum(['percentage', 'fixed']).optional(),
   order_discount_value: z.number().min(0).optional(),
+  // VAT — omitting or true applies the business VAT rate; false = zero-rated
+  apply_vat: z.boolean().optional(),
   lines: z.array(quoteLineSchema).min(1, 'Add at least one line item'),
 });
 export type CreateQuotationValues = z.infer<typeof createQuotationSchema>;

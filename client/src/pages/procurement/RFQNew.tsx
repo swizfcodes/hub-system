@@ -13,10 +13,10 @@ import { Checkbox } from '@components/ui/Checkbox';
 import { rfqCreateSchema, type RFQCreateValues } from '@lib/schemas/purchasing';
 import { createRFQ } from '@services/purchasing/rfqs';
 import { listSuppliers } from '@services/purchasing/suppliers';
-import { listProducts } from '@services/catalogue/products';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
 import { showToast } from '@hooks/useToast';
 import { errMsg } from '@services/api';
+import { ProductSelectField } from '@components/shared/CatalogueSearchInput';
 
 export default function RFQNew() {
   const navigate = useNavigate();
@@ -25,10 +25,8 @@ export default function RFQNew() {
   const [quickAddLineIndex, setQuickAddLineIndex] = useState<number | null>(null);
 
   const { data: suppliersResp } = useQuery({ queryKey: ['purchasing', 'suppliers'], queryFn: () => listSuppliers({ limit: 200 }) });
-  const { data: productsResp }  = useQuery({ queryKey: ['catalogue', 'products', 'all'], queryFn: () => listProducts({ limit: 200 }) });
 
   const suppliers = suppliersResp?.data ?? [];
-  const products  = productsResp?.data ?? [];
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<RFQCreateValues>({
     resolver: zodResolver(rfqCreateSchema),
@@ -100,17 +98,20 @@ export default function RFQNew() {
                         control={control}
                         name={`lines.${i}.product_id`}
                         render={({ field }) => (
-                          <div>
-                            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-1.5">Product (optional)</div>
-                            <div className="flex gap-1">
-                              <select {...field} className="flex-1 bg-orika-charcoal border border-orika-graphite text-orika-cream rounded-xl py-3 px-3 text-sm">
-                                <option value="">Catalogue product…</option>
-                                {products.map((p) => <option key={p.product_id} value={p.product_id}>{p.name} · {p.sku}</option>)}
-                              </select>
-                              <button type="button" onClick={() => { setQuickAddLineIndex(i); setQuickAddOpen(true); }} className="px-2 rounded-xl bg-orika-gold/20 text-orika-gold hover:bg-orika-gold/30 transition-colors" title="Quick-add new product">
-                                <Plus className="w-4 h-4" />
-                              </button>
+                          <div className="flex gap-1 items-end">
+                            <div className="flex-1">
+                              <ProductSelectField
+                                surface="dark"
+                                currency="NGN"
+                                label="Product (optional)"
+                                instanceKey={i}
+                                value={field.value ?? ''}
+                                onChange={field.onChange}
+                              />
                             </div>
+                            <button type="button" onClick={() => { setQuickAddLineIndex(i); setQuickAddOpen(true); }} className="px-2 py-2 rounded-xl bg-orika-gold/20 text-orika-gold hover:bg-orika-gold/30 transition-colors shrink-0" title="Quick-add new product">
+                              <Plus className="w-4 h-4" />
+                            </button>
                           </div>
                         )}
                       />

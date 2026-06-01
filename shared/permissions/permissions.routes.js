@@ -79,7 +79,7 @@ router.post(
   body("role_name").isString().notEmpty(),
   body("business").optional({ nullable: true }).isString(),
   body("description").optional().isString(),
-  body("clone_from_role_id").optional().isUUID(),
+  body("clone_from_role_id").optional({ checkFalsy: true }).isUUID(),
   validate,
   can("settings", "approve"),
   async (req, res, next) => {

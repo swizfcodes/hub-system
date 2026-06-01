@@ -18,6 +18,7 @@ export interface ListQuotationsParams {
   limit?: number;
   status?: string;
   contactId?: string;
+  deal_id?: string;
 }
 
 export async function listQuotations(

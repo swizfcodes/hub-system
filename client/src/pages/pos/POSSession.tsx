@@ -62,6 +62,9 @@ export default function POSSession() {
 
   const customer = usePOSStore((s) => s.customer);
 
+  // Incremented after seedProductCache completes so ProductSearch re-reads IndexedDB.
+  const [cacheVersion, setCacheVersion] = useState(0);
+
   const [showPayment,   setShowPayment]   = useState(false);
   const [showClose,     setShowClose]     = useState(false);
   const [showParked,    setShowParked]    = useState(false);
@@ -107,6 +110,8 @@ export default function POSSession() {
           available_qty: p.available_qty ?? p.current_quantity ?? 0,
         })),
       );
+      // Signal ProductSearch to re-read the now-populated cache.
+      setCacheVersion((v) => v + 1);
     } catch {
       // Non-fatal — will use stale cache or show 0 stock
     }
@@ -242,7 +247,7 @@ export default function POSSession() {
 
           {/* Product search — takes remaining height */}
           <div className="flex-1 overflow-hidden">
-            <ProductSearch currency={currency} />
+            <ProductSearch currency={currency} cacheVersion={cacheVersion} />
           </div>
         </div>
 

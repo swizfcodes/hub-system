@@ -1,105 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>Invoice {{invoice_number}}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:40px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
-  .brand{font-size:22px;font-weight:700;letter-spacing:4px}
-  .brand-sub{font-size:10px;letter-spacing:2px;color:#888;margin-top:2px}
-  .doc-title{text-align:right}
-  .doc-title h1{font-size:28px;font-weight:300;letter-spacing:2px}
-  .doc-title .num{font-size:14px;font-weight:600;color:#b8922a;margin-top:4px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#f5f0e8;color:#b8922a;border:1px solid #e0d5c0;margin-left:6px}
-  hr{border:none;border-top:1px solid #e0d5c0;margin:20px 0}
-  .parties{display:flex;justify-content:space-between;margin-bottom:28px}
-  .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin-bottom:5px}
-  .val{font-size:14px;font-weight:600}
-  .sub{font-size:12px;color:#555;margin-top:2px}
-  .dates{display:flex;gap:36px}
-  .date-block{text-align:right}
-  table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  thead tr{background:#1a1a1a;color:#fff}
-  thead th{padding:9px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:left}
-  thead th.c{text-align:center} thead th.r{text-align:right}
-  tbody td{padding:9px 12px;border-bottom:1px solid #f0ebe0;color:#333}
-  tbody tr.even td{background:#faf8f4}
-  td.c{text-align:center} td.r{text-align:right}
-  .totals{display:flex;justify-content:flex-end;margin-bottom:28px}
-  .totals-table{width:270px}
-  .totals-table td{padding:5px 12px;color:#555;border:none}
-  .totals-table td:last-child{text-align:right;font-weight:500;color:#1a1a1a}
-  .totals-table .total-row td{font-size:15px;font-weight:700;color:#1a1a1a;border-top:2px solid #b8922a;padding-top:9px}
-  .section-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;margin:24px 0 10px}
-  .footer{margin-top:36px;padding-top:18px;border-top:1px solid #e0d5c0;font-size:12px;color:#555}
-  .pay-link{margin-top:10px;word-break:break-all;color:#b8922a}
-  .instructions{margin-top:6px;white-space:pre-wrap}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice {{invoice_number}}</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 0;
+    }
+
+    /* ── Colour tokens ──────────────────────────────────────── */
+    :root {
+      --gold:      #C9A86C;
+      --gold-dark: #8A6A30;
+      --charcoal:  #1A1814;
+      --smoke:     #6B6560;
+      --line:      #E5E0D8;
+      --bg-alt:    #F9F7F4;
+    }
+
+    /* ── Page wrapper ───────────────────────────────────────── */
+    .page { max-width: 794px; margin: 0 auto; padding: 48px 56px; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 28px;
+      border-bottom: 2px solid var(--gold);
+      margin-bottom: 32px;
+    }
+
+    .brand-block .brand-name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .brand-block .brand-sub {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-top: 2px;
+    }
+
+    .doc-block { text-align: right; }
+    .doc-block .doc-label {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+    }
+    .doc-block .doc-type {
+      font-size: 11px;
+      color: var(--smoke);
+      margin-top: 2px;
+    }
+    .doc-block .doc-number {
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      color: var(--gold-dark);
+      margin-top: 4px;
+    }
+    .doc-block .doc-status {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: var(--gold);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ── Two-column meta row ────────────────────────────────── */
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .meta-block .meta-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .meta-block .meta-value { color: var(--charcoal); font-weight: 600; font-size: 13px; }
+    .meta-block .meta-sub   { color: var(--smoke);    font-size: 11.5px; margin-top: 1px; }
+
+    .detail-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; }
+    .detail-label { color: var(--smoke); font-size: 11px; }
+    .detail-val   { color: var(--charcoal); font-size: 11px; font-weight: 500; }
+
+    /* ── Line items table ───────────────────────────────────── */
+    .section-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 8px;
+    }
+
+    table.lines {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    table.lines thead tr {
+      background: var(--charcoal);
+      color: #fff;
+    }
+    table.lines thead th {
+      padding: 9px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    table.lines thead th.right { text-align: right; }
+
+    table.lines tbody tr.row-even { background: #fff; }
+    table.lines tbody tr.row-odd  { background: var(--bg-alt); }
+
+    table.lines td {
+      padding: 9px 10px;
+      font-size: 12px;
+      color: var(--charcoal);
+      vertical-align: top;
+    }
+    table.lines td.c-num   { width: 32px; color: var(--smoke); font-size: 11px; }
+    table.lines td.c-desc  { }
+    table.lines td.c-qty   { width: 50px;  text-align: center; }
+    table.lines td.c-price { width: 110px; text-align: right; font-family: 'Courier New', monospace; font-size: 11.5px; }
+    table.lines td.c-disc  { width: 100px; text-align: right; color: var(--smoke); font-size: 11px; font-family: 'Courier New', monospace; }
+    table.lines td.c-vat   { width: 100px; text-align: right; color: var(--smoke); font-size: 11px; font-family: 'Courier New', monospace; }
+    table.lines td.c-total { width: 110px; text-align: right; font-family: 'Courier New', monospace; font-size: 11.5px; font-weight: 600; }
+
+    /* ── Totals ─────────────────────────────────────────────── */
+    .totals-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 32px;
+    }
+    .totals-table {
+      width: 300px;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .totals-table .t-label { color: var(--smoke); }
+    .totals-table .t-value { text-align: right; font-family: 'Courier New', monospace; color: var(--charcoal); font-size: 11.5px; }
+    .totals-table tr.total-row {
+      border-top: 2px solid var(--gold);
+    }
+    .totals-table tr.total-row td {
+      padding-top: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--charcoal);
+    }
+    .totals-table .t-value.total-val {
+      color: var(--gold-dark);
+      font-size: 14px;
+    }
+    .totals-table tr.outstanding-row td {
+      color: #c0392b;
+      font-weight: 600;
+    }
+
+    /* ── Payments section ───────────────────────────────────── */
+    .payments-section { margin-bottom: 32px; }
+
+    table.payments-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.payments-table thead tr {
+      background: var(--charcoal);
+      color: #fff;
+    }
+    table.payments-table thead th {
+      padding: 8px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    table.payments-table thead th.right { text-align: right; }
+    table.payments-table td {
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--charcoal);
+      border-bottom: 1px solid var(--line);
+    }
+    table.payments-table td.p-amount {
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      color: #27ae60;
+    }
+
+    /* ── Footer sections ────────────────────────────────────── */
+    .footer-sections {
+      border-top: 1px solid var(--line);
+      padding-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .footer-section-heading {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 6px;
+    }
+    .footer-section-body {
+      font-size: 11.5px;
+      color: var(--smoke);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* ── Page footer ────────────────────────────────────────── */
+    .page-footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .page-footer .footer-brand {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--smoke);
+    }
+    .page-footer .footer-note {
+      font-size: 10px;
+      color: var(--smoke);
+    }
+  </style>
 </head>
 <body>
+<div class="page">
+
+  <!-- ── Header ── -->
   <div class="header">
-    <div>
-      <div class="brand">{{biz.display_name}}</div>
-      <div class="brand-sub">{{biz.legal_name}} · RC {{biz.cac_number}}</div>
+    <div class="brand-block">
+      <div class="brand-name">Orika Hub</div>
+      <div class="brand-sub">Where luxury meets intelligence</div>
     </div>
-    <div class="doc-title">
-      <h1>INVOICE <span class="badge">{{status}}</span></h1>
-      <div class="num">{{invoice_number}}</div>
-    </div>
-  </div>
-
-  <div class="parties">
-    <div>
-      <div class="lbl">Billed To</div>
-      <div class="val">{{contact_name}}</div>
-      <div class="sub">{{email}}</div>
-      <div class="sub">{{primary_phone}}</div>
-    </div>
-    <div class="dates">
-      <div class="date-block">
-        <div class="lbl">Issue Date</div>
-        <div class="val">{{issue_date_fmt}}</div>
-      </div>
-      <div class="date-block">
-        <div class="lbl">Due Date</div>
-        <div class="val">{{due_date_fmt}}</div>
-      </div>
+    <div class="doc-block">
+      <div class="doc-label">Invoice</div>
+      <div class="doc-type">{{invoice_type}}</div>
+      <div class="doc-number">{{invoice_number}}</div>
+      <div class="doc-status">{{status}}</div>
     </div>
   </div>
 
-  <hr/>
+  <!-- ── Meta row: Bill To + Invoice Details ── -->
+  <div class="meta-row">
+    <div class="meta-block">
+      <div class="meta-heading">Bill To</div>
+      <div class="meta-value">{{contact_name}}</div>
+      <div class="meta-sub">{{email}}</div>
+      <div class="meta-sub">{{primary_phone}}</div>
+    </div>
+    <div class="meta-block">
+      <div class="meta-heading">Invoice Details</div>
+      <div class="detail-grid">
+        <span class="detail-label">Issue Date</span>   <span class="detail-val">{{issue_date}}</span>
+        <span class="detail-label">Due Date</span>     <span class="detail-val">{{due_date}}</span>
+      </div>
+    </div>
+  </div>
 
-  <table>
+  <!-- ── Line items ── -->
+  <div class="section-heading">Line Items</div>
+  <table class="lines">
     <thead>
-      <tr><th>Description</th><th class="c">Qty</th><th class="r">Unit Price</th><th class="r">Amount</th></tr>
+      <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th class="right">Qty</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Discount</th>
+        <th class="right">VAT</th>
+        <th class="right">Total</th>
+      </tr>
     </thead>
-    <tbody>{{lines_html}}</tbody>
+    <tbody>
+      {{lines_html}}
+    </tbody>
   </table>
 
-  <div class="totals">
+  <!-- ── Totals ── -->
+  <div class="totals-wrap">
     <table class="totals-table">
-      <tr><td>Subtotal</td><td>₦{{subtotal_fmt}}</td></tr>
-      <tr><td>Discount</td><td>₦{{discount_total_fmt}}</td></tr>
-      <tr><td>VAT</td><td>₦{{vat_amount_fmt}}</td></tr>
-      <tr class="total-row"><td>Total ({{currency}})</td><td>₦{{total_amount_fmt}}</td></tr>
-      <tr><td>Amount Paid</td><td>₦{{amount_paid_fmt}}</td></tr>
+      <tr>
+        <td class="t-label">Subtotal</td>
+        <td class="t-value">{{subtotal}}</td>
+      </tr>
+      <tr style="{{discount_row_style}}">
+        <td class="t-label">Discount</td>
+        <td class="t-value">− {{discount_total}}</td>
+      </tr>
+      <tr>
+        <td class="t-label">VAT</td>
+        <td class="t-value">{{vat_amount}}</td>
+      </tr>
+      <tr class="total-row">
+        <td class="t-label">Total</td>
+        <td class="t-value total-val">{{total_amount}}</td>
+      </tr>
+      <tr>
+        <td class="t-label">Amount Paid</td>
+        <td class="t-value">{{amount_paid}}</td>
+      </tr>
+      <tr class="outstanding-row">
+        <td class="t-label">Outstanding</td>
+        <td class="t-value">{{amount_outstanding}}</td>
+      </tr>
     </table>
   </div>
 
-  <div class="section-title">Payments Received</div>
-  <table>
-    <thead>
-      <tr><th>Date</th><th>Method</th><th>Reference</th><th class="r">Amount</th></tr>
-    </thead>
-    <tbody>{{payments_html}}</tbody>
-  </table>
-
-  <div class="footer">
-    <div class="lbl">Payment Instructions</div>
-    <div class="instructions">{{payment_instructions}}</div>
-    <div class="pay-link">Pay online: {{paystack_payment_url}}</div>
+  <!-- ── Payments received ── -->
+  <div class="payments-section" style="{{payments_section_style}}">
+    <div class="section-heading">Payments Received</div>
+    <table class="payments-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Method</th>
+          <th>Reference</th>
+          <th class="right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{payments_html}}
+      </tbody>
+    </table>
   </div>
+
+  <!-- ── Notes & Payment Instructions ── -->
+  <div class="footer-sections">
+    <div style="{{notes_section_style}}">
+      <div class="footer-section-heading">Notes</div>
+      <div class="footer-section-body">{{notes}}</div>
+    </div>
+    <div style="{{payment_instructions_style}}">
+      <div class="footer-section-heading">Payment Instructions</div>
+      <div class="footer-section-body">{{payment_instructions}}</div>
+    </div>
+  </div>
+
+  <!-- ── Page footer ── -->
+  <div class="page-footer">
+    <span class="footer-brand">Orika Hub</span>
+    <span class="footer-note">Please quote {{invoice_number}} in all correspondence. Due: {{due_date}}.</span>
+  </div>
+
+</div>
 </body>
 </html>

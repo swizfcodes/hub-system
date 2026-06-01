@@ -6,7 +6,7 @@ const storage = require("../../lib/storage");
 
 async function listQuotations(
   client,
-  { status, contactId, scope, userId, limit, offset },
+  { status, contactId, dealId, scope, userId, limit, offset },
 ) {
   const { rows } = await client.query(
     `SELECT q.quotation_id, q.quotation_number, q.status, q.valid_until,
@@ -17,9 +17,10 @@ async function listQuotations(
      WHERE q.is_deleted = false
        AND ($1::TEXT IS NULL OR q.status = $1)
        AND ($2::UUID IS NULL OR q.contact_id = $2)
-       AND ($3 = 'all' OR q.assigned_to = $4)
-     ORDER BY q.created_at DESC LIMIT $5 OFFSET $6`,
-    [status || null, contactId || null, scope, userId, limit, offset],
+       AND ($3::UUID IS NULL OR q.deal_id = $3)
+       AND ($4 = 'all' OR q.assigned_to = $5)
+     ORDER BY q.created_at DESC LIMIT $6 OFFSET $7`,
+    [status || null, contactId || null, dealId || null, scope, userId, limit, offset],
   );
   return rows;
 }

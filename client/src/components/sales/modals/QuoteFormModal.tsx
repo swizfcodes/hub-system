@@ -11,6 +11,7 @@
  * its own instance — searching line 2 does not affect line 1 or line 3.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useForm, useFieldArray, Controller, type UseFormReturn, type FieldArrayWithId } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -76,25 +77,41 @@ interface ProductSearchRowProps {
 }
 
 function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowProps) {
-  // Each line has its own isolated query — typing in line 2 does NOT affect
-  // line 1 or line 3. This was previously a single shared state causing bugs.
-  const [query,   setQuery]   = useState('');
-  const [isOpen,  setIsOpen]  = useState(false);
-  const wrapRef               = useRef<HTMLDivElement>(null);
+  const [query,    setQuery]    = useState('');
+  const [isOpen,   setIsOpen]   = useState(false);
+  const wrapRef                 = useRef<HTMLDivElement>(null);
+  const [dropRect, setDropRect] = useState<DOMRect | null>(null);
 
-  const { data: results = [] } = useQuery({
+  // Fetch on open — empty query = browse all (limit 8), typed query = filter.
+  // No minimum character requirement so products show the moment you click in.
+  const { data: results = [], isFetching } = useQuery({
     queryKey: ['products-search-line', lineIndex, query],
     queryFn: async () => {
-      if (query.trim().length < 2) return [];
-      const { data } = await api.get('/catalogue/products', {
-        params: { search: query.trim(), limit: 10 },
-      });
+      const params: Record<string, string | number> = { limit: 8 };
+      if (query.trim()) params.search = query.trim();
+      const { data } = await api.get('/catalogue/products', { params });
       return data.data ?? [];
     },
-    enabled: query.trim().length >= 2,
+    enabled: isOpen,
+    staleTime: 30_000,
   });
 
-  // Close dropdown on outside click
+  // Recompute anchor on scroll/resize so the dropdown tracks the input.
+  useEffect(() => {
+    if (!isOpen) return;
+    function updateRect() {
+      if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [isOpen]);
+
+  // Close on outside click.
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -111,6 +128,53 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
     setIsOpen(false);
   }
 
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+    setIsOpen(true);
+    if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+  }
+
+  function handleFocus() {
+    setIsOpen(true);
+    if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+  }
+
+  // Portal to document.body — escapes modal's overflow-y-auto clipping.
+  const dropdown = isOpen && dropRect ? ReactDOM.createPortal(
+    <div
+      style={{ position: 'fixed', top: dropRect.bottom + 4, left: dropRect.left, width: dropRect.width, zIndex: 9999 }}
+      className="rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto"
+    >
+      {isFetching && results.length === 0 ? (
+        <div className="px-3 py-3 text-xs text-orika-smoke">Loading…</div>
+      ) : results.length > 0 ? (
+        results.map((p: { product_id: string; name: string; sku?: string; selling_price: number }) => (
+          <button
+            key={p.product_id}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
+            className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+          >
+            <div>
+              <p className="text-xs font-medium text-orika-cream">{p.name}</p>
+              {p.sku && <p className="text-[10px] text-orika-smoke">{p.sku}</p>}
+            </div>
+            <span className="text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0">
+              {fmtMoney(p.selling_price, currency)}
+            </span>
+          </button>
+        ))
+      ) : (
+        <div className="px-3 py-3">
+          <p className="text-xs text-orika-smoke">
+            {query ? `No products found for "${query}"` : 'No active products found'}
+          </p>
+        </div>
+      )}
+    </div>,
+    document.body,
+  ) : null;
+
   return (
     <div ref={wrapRef} className="relative sm:col-span-2">
       <label className="mb-1 block text-xs text-orika-smoke">Search Catalogue</label>
@@ -119,37 +183,13 @@ function ProductSearchRow({ lineIndex, currency, onSelect }: ProductSearchRowPro
         <input
           type="text"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
-          onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder="Type product name or SKU..."
+          onChange={handleChange}
+          onFocus={handleFocus}
+          placeholder="Click to browse or type to filter…"
           className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
         />
       </div>
-      {isOpen && query.trim().length >= 2 && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-xl">
-          {results.map((p: { product_id: string; name: string; sku?: string; selling_price: number }) => (
-            <button
-              key={p.product_id}
-              type="button"
-              onClick={() => handleSelect(p)}
-              className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
-            >
-              <div>
-                <p className="text-xs font-medium text-orika-cream">{p.name}</p>
-                {p.sku && <p className="text-[10px] text-orika-smoke">{p.sku}</p>}
-              </div>
-              <span className="text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0">
-                {fmtMoney(p.selling_price, currency)}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-      {isOpen && query.trim().length >= 2 && results.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-xl px-3 py-3">
-          <p className="text-xs text-orika-smoke">No products found for &ldquo;{query}&rdquo;</p>
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }
@@ -160,6 +200,26 @@ interface StepCustomerProps {
   form:            UseFormReturn<CreateQuotationValues>;
   selectedContact: Contact | null;
   setContact:      (c: Contact | null) => void;
+}
+
+// Quick-pick helpers
+const DATE_SHORTCUTS = [
+  { label: '7d',  days: 7  },
+  { label: '10d', days: 10 },
+  { label: '14d', days: 14 },
+];
+
+const PAYMENT_CHIPS = [
+  { label: '100%',        value: '100% payment upfront'                    },
+  { label: '70/30',       value: '70% upfront, 30% on delivery'            },
+  { label: '50/50',       value: '50% deposit, 50% balance on delivery'    },
+  { label: 'On Delivery', value: 'Full payment on delivery'                },
+];
+
+function addDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
 }
 
 function StepCustomer({ form, selectedContact, setContact }: StepCustomerProps) {
@@ -187,22 +247,62 @@ function StepCustomer({ form, selectedContact, setContact }: StepCustomerProps) 
           </div>
         )}
       />
+
+      {/* ── Valid Until with quick-pick date shortcuts ── */}
       <Controller
         name="valid_until"
         control={form.control}
         render={({ field, fieldState }) => (
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-cloud">Valid Until *</label>
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+              <label className="text-xs font-medium text-orika-cloud">Valid Until *</label>
+              <div className="flex gap-1">
+                {DATE_SHORTCUTS.map(({ label, days }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => field.onChange(addDays(days))}
+                    className={cn(
+                      'px-2 py-0.5 rounded-md text-[0.65rem] font-medium border transition-colors',
+                      field.value === addDays(days)
+                        ? 'bg-orika-gold/20 border-orika-gold text-orika-gold'
+                        : 'border-white/10 text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Input {...field} type="date" error={fieldState.error?.message} />
           </div>
         )}
       />
+
+      {/* ── Payment Terms with quick-pick chips ── */}
       <Controller
         name="payment_terms"
         control={form.control}
         render={({ field }) => (
           <div>
             <label className="mb-1.5 block text-xs font-medium text-orika-cloud">Payment Terms</label>
+            <div className="flex flex-wrap gap-1 mb-2">
+              {PAYMENT_CHIPS.map(({ label, value }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => field.onChange(value)}
+                  className={cn(
+                    'px-2 py-0.5 rounded-md text-[0.65rem] font-medium border transition-colors',
+                    field.value === value
+                      ? 'bg-orika-gold/20 border-orika-gold text-orika-gold'
+                      : 'border-white/10 text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <Input {...field} placeholder="e.g. 50% deposit, balance on delivery" />
           </div>
         )}
@@ -244,7 +344,8 @@ function StepProducts({ form, fields, append, remove, lines, currency }: StepPro
               onSelect={(p) => {
                 form.setValue(`lines.${i}.product_id`,  p.product_id);
                 form.setValue(`lines.${i}.description`, p.name);
-                form.setValue(`lines.${i}.unit_price`,  p.selling_price);
+                // selling_price arrives as a string from pg NUMERIC — coerce to number
+                form.setValue(`lines.${i}.unit_price`,  parseFloat(String(p.selling_price)) || 0);
               }}
             />
 
@@ -358,6 +459,34 @@ function StepPricing({ form, orderDiscType, setOrderDiscType }: StepPricingProps
           />
         </div>
       </div>
+
+      {/* VAT toggle */}
+      <Controller
+        name="apply_vat"
+        control={form.control}
+        render={({ field: f }) => (
+          <label className="flex items-center gap-3 cursor-pointer group select-none">
+            <div
+              onClick={() => f.onChange(!f.value)}
+              className={cn(
+                'relative w-9 h-5 rounded-full transition-colors flex-shrink-0',
+                f.value !== false ? 'bg-orika-gold' : 'bg-orika-graphite border border-white/10',
+              )}
+            >
+              <span className={cn(
+                'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                f.value !== false ? 'translate-x-4' : 'translate-x-0',
+              )} />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-orika-cloud">Apply VAT (7.5%)</p>
+              <p className="text-[0.65rem] text-orika-smoke">
+                {f.value !== false ? 'VAT will be added to the net amount' : 'Zero-rated — no VAT on this quotation'}
+              </p>
+            </div>
+          </label>
+        )}
+      />
       <Controller
         name="notes"
         control={form.control}
@@ -385,16 +514,17 @@ function StepPricing({ form, orderDiscType, setOrderDiscType }: StepPricingProps
 // ── Step: Review ──────────────────────────────────────────────────────────────
 
 interface StepReviewProps {
-  lineSubtotal:  number;
-  orderDisc:     number;
-  netAfterDisc:  number;
-  vat:           number;
-  total:         number;
-  lineCount:     number;
-  currency:      string;
+  lineSubtotal: number;
+  orderDisc:    number;
+  netAfterDisc: number;
+  vat:          number;
+  applyVat:     boolean;
+  total:        number;
+  lineCount:    number;
+  currency:     string;
 }
 
-function StepReview({ lineSubtotal, orderDisc, netAfterDisc, vat, total, lineCount, currency }: StepReviewProps) {
+function StepReview({ lineSubtotal, orderDisc, netAfterDisc, vat, applyVat, total, lineCount, currency }: StepReviewProps) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-orika-cloud">Review the totals before creating the quotation.</p>
@@ -402,7 +532,11 @@ function StepReview({ lineSubtotal, orderDisc, netAfterDisc, vat, total, lineCou
         <TotalRow label="Line Subtotal"  value={fmtMoney(lineSubtotal, currency)} />
         {orderDisc > 0 && <TotalRow label="Order Discount" value={`-${fmtMoney(orderDisc, currency)}`} muted />}
         <TotalRow label="Net"            value={fmtMoney(netAfterDisc, currency)} />
-        <TotalRow label="VAT (7.5%)"     value={fmtMoney(vat, currency)} muted />
+        <TotalRow
+          label={applyVat ? 'VAT (7.5%)' : 'VAT'}
+          value={applyVat ? fmtMoney(vat, currency) : 'Exempt'}
+          muted
+        />
         <div className="border-t border-white/10 pt-2">
           <TotalRow label="Total"        value={fmtMoney(total, currency)} bold />
         </div>
@@ -456,12 +590,13 @@ export function QuoteFormModal({ open, onClose, onCreated, prefill }: Props) {
       contact_id:           prefill?.contact_id ?? '',
       deal_id:              prefill?.deal_id    ?? '',
       assigned_to:          '',
-      valid_until:          '',
-      payment_terms:        '',
+      valid_until:          addDays(7),          // default: 7 days from today
+      payment_terms:        '100% payment upfront', // default payment term
       notes:                '',
       terms_conditions:     '',
       order_discount_type:  'percentage',
       order_discount_value: 0,
+      apply_vat:            true,
       lines: [DEFAULT_LINE],
     },
   });
@@ -482,13 +617,14 @@ export function QuoteFormModal({ open, onClose, onCreated, prefill }: Props) {
   // Derived totals
   const lines          = form.watch('lines');
   const orderDiscValue = form.watch('order_discount_value') ?? 0;
+  const applyVat       = form.watch('apply_vat') !== false; // default true
   const lineSubtotal   = lines.reduce((sum, l) => {
     const gross = (l.unit_price ?? 0) * (l.quantity ?? 0);
     return sum + gross - gross * ((l.discount_pct ?? 0) / 100);
   }, 0);
   const orderDisc    = orderDiscType === 'percentage' ? lineSubtotal * ((orderDiscValue ?? 0) / 100) : (orderDiscValue ?? 0);
   const netAfterDisc = lineSubtotal - orderDisc;
-  const vat          = netAfterDisc * (vatRate ?? 0.075);
+  const vat          = applyVat ? netAfterDisc * (vatRate ?? 0.075) : 0;
   const total        = netAfterDisc + vat;
 
   const stepIndex = STEPS.findIndex((s) => s.key === step);
@@ -549,7 +685,7 @@ export function QuoteFormModal({ open, onClose, onCreated, prefill }: Props) {
           {step === 'customer' && <StepCustomer form={form} selectedContact={selectedContact} setContact={setSelectedContact} />}
           {step === 'products' && <StepProducts {...sharedProductsProps} />}
           {step === 'pricing'  && <StepPricing  form={form} orderDiscType={orderDiscType} setOrderDiscType={setOrderDiscType} />}
-          {step === 'review'   && <StepReview   lineSubtotal={lineSubtotal} orderDisc={orderDisc} netAfterDisc={netAfterDisc} vat={vat} total={total} lineCount={lines.length} currency={currency ?? 'NGN'} />}
+          {step === 'review'   && <StepReview   lineSubtotal={lineSubtotal} orderDisc={orderDisc} netAfterDisc={netAfterDisc} vat={vat} applyVat={applyVat} total={total} lineCount={lines.length} currency={currency ?? 'NGN'} />}
         </>
       )}
 

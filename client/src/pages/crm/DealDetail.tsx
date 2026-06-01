@@ -68,7 +68,7 @@ export default function DealDetail() {
                 <div className="animate-fade-in">
                   {tab === 'timeline' && <DealActivityFeed activities={deal.activities} />}
                   {tab === 'notes'    && <DealNotes dealId={deal.deal_id} />}
-                  {tab === 'items'    && <DealItems dealId={deal.deal_id} contactId={deal.contact_id} />}
+                  {tab === 'items'    && <DealItems dealId={deal.deal_id} contactId={deal.contact_id} contactName={deal.contact_name} />}
                 </div>
               </main>
 
