@@ -11,9 +11,11 @@ import type { POSProduct, POSCategory } from '@typedefs/pos';
 
 interface ProductSearchProps {
   currency?: string;
+  /** Increment to force a re-read from IndexedDB (e.g. after seedProductCache completes). */
+  cacheVersion?: number;
 }
 
-export function ProductSearch({ currency = 'NGN' }: ProductSearchProps) {
+export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSearchProps) {
   const { addLine, isOnline } = usePOSStore((s) => ({
     addLine:  s.addLine,
     isOnline: s.isOnline,
@@ -25,7 +27,9 @@ export function ProductSearch({ currency = 'NGN' }: ProductSearchProps) {
   const [categoryId,  setCategoryId]  = useState<string | null>(null);
   const [stockMap,    setStockMap]    = useState<Map<string, number>>(new Map());
 
-  // Load from cache first, then from API if online
+  // Re-reads IndexedDB whenever cacheVersion changes (triggered by POSSession
+  // after seedProductCache completes). Also runs on first mount to pick up any
+  // products already in the cache from a previous session.
   useEffectPS(() => {
     async function load() {
       const cached = await getCachedProducts();
@@ -43,7 +47,7 @@ export function ProductSearch({ currency = 'NGN' }: ProductSearchProps) {
       setStockMap(map);
     }
     load();
-  }, []);
+  }, [cacheVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Barcode scan: if query looks like a barcode (all digits / starts with SKU prefix), lookup
   useEffectPS(() => {

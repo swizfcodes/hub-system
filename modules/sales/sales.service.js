@@ -256,7 +256,68 @@ async function cancelQuotation(business, quotationId, user) {
 
 async function generateQuotationPDF(business, quotationId) {
   const q = await getQuotation(business, quotationId);
-  return renderToPDF("quotations", q);
+
+  const currency = q.currency || "NGN";
+  const fmtAmt = (n) =>
+    `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const lines = Array.isArray(q.lines) ? q.lines.filter(Boolean) : [];
+  const linesHtml = lines
+    .map(
+      (l, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+      <td class="c-num">${i + 1}</td>
+      <td class="c-desc">${esc(l.description)}</td>
+      <td class="c-qty">${l.quantity}</td>
+      <td class="c-price">${fmtAmt(l.unit_price)}</td>
+      <td class="c-disc">${l.discount_pct > 0 ? l.discount_pct + "%" : "—"}</td>
+      <td class="c-total">${fmtAmt(l.line_total)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const showDiscount = Number(q.discount_total) > 0;
+
+  const templateData = {
+    quotation_number:       q.quotation_number,
+    status:                 (q.status || "draft").toUpperCase(),
+    issue_date:             fmtDate(q.created_at),
+    valid_until:            fmtDate(q.valid_until),
+    contact_name:           esc(q.contact_name || "—"),
+    email:                  esc(q.email || "—"),
+    primary_phone:          esc(q.primary_phone || "—"),
+    payment_terms:          esc(q.payment_terms || "—"),
+    notes:                  esc(q.notes || ""),
+    terms_conditions:       esc(q.terms_conditions || ""),
+    lines_html:             linesHtml,
+    subtotal:               fmtAmt(q.subtotal),
+    discount_total:         fmtAmt(q.discount_total),
+    vat_amount:             fmtAmt(q.vat_amount),
+    total_amount:           fmtAmt(q.total_amount),
+    // Conditional visibility helpers
+    discount_row_style:     showDiscount ? "" : "display:none",
+    notes_section_style:    q.notes ? "" : "display:none",
+    terms_section_style:    q.terms_conditions ? "" : "display:none",
+  };
+
+  return renderToPDF("quotations", templateData);
 }
 
 // ─── Sales KPIs ───────────────────────────────────────────────────────────────
@@ -363,7 +424,66 @@ async function generateInvoiceFromOrder(
       );
     }
 
-    const pdf = await renderToPDF("invoice", invoice);
+    // Fetch full order data (has contact_name and lines)
+    const fullOrder = order; // already fetched above via repo.findOrderById
+    const currency = invoice.currency || "NGN";
+    const fmtAmt = (n) =>
+      `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    const fmtDate = (d) =>
+      d
+        ? new Date(d).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "—";
+    const esc = (s) =>
+      String(s || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+    const orderLines = Array.isArray(fullOrder.lines)
+      ? fullOrder.lines.filter(Boolean)
+      : [];
+    const linesHtml = orderLines
+      .map(
+        (l, i) => `
+      <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+        <td class="c-num">${i + 1}</td>
+        <td class="c-desc">${esc(l.description)}</td>
+        <td class="c-qty">${Number(l.quantity || 0)}</td>
+        <td class="c-price">${fmtAmt(l.unit_price)}</td>
+        <td class="c-total">${fmtAmt(l.line_total)}</td>
+      </tr>`,
+      )
+      .join("");
+
+    const invoiceTemplateData = {
+      invoice_number:        esc(invoice.invoice_number),
+      status:                esc((invoice.status || "draft").toUpperCase()),
+      issue_date:            fmtDate(invoice.issue_date),
+      due_date:              fmtDate(invoice.due_date),
+      contact_name:          esc(fullOrder.contact_name || "—"),
+      email:                 esc(fullOrder.email || "—"),
+      primary_phone:         esc(fullOrder.primary_phone || "—"),
+      order_number:          esc(fullOrder.order_number || "—"),
+      payment_instructions:  esc(invoice.payment_instructions || ""),
+      paystack_payment_url:  esc(invoice.paystack_payment_url || ""),
+      lines_html:            linesHtml,
+      subtotal:              fmtAmt(invoice.subtotal),
+      vat_amount:            fmtAmt(invoice.vat_amount),
+      total_amount:          fmtAmt(invoice.total_amount),
+      // Conditional visibility
+      payment_instructions_style: invoice.payment_instructions ? "" : "display:none",
+      paystack_link_style:        invoice.paystack_payment_url ? "" : "display:none",
+    };
+
+    const pdf = await renderToPDF("invoice", invoiceTemplateData);
     await repo.archiveDocument(client, {
       business,
       document_type: "invoice",
@@ -440,7 +560,40 @@ async function getReceipt(business, receiptId) {
 
 async function generateReceiptPDF(business, receiptId) {
   const r = await getReceipt(business, receiptId);
-  return renderToPDF("receipt", r);
+
+  const currency = r.currency || "NGN";
+  const fmtAmt = (n) =>
+    `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const templateData = {
+    receipt_number:   esc(r.receipt_number || r.receipt_id || "—"),
+    invoice_number:   esc(r.invoice_number || "—"),
+    contact_name:     esc(r.contact_name || "—"),
+    issued_at:        fmtDate(r.issued_at),
+    payment_method:   esc(r.payment_method || "—"),
+    amount:           fmtAmt(r.amount),
+    notes:            esc(r.notes || ""),
+    notes_style:      r.notes ? "" : "display:none",
+  };
+
+  return renderToPDF("receipt", templateData);
 }
 
 // ─── Discount approvals ───────────────────────────────────────────────────────

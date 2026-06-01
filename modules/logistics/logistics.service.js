@@ -426,7 +426,61 @@ async function markReturned(business, deliveryId, { notes }, user) {
 
 async function generatePackingSlip(business, deliveryId) {
   const delivery = await getDelivery(business, deliveryId);
-  return renderToPDF("packing-slip", { delivery, business });
+
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+  const esc = (s) =>
+    String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const items = Array.isArray(delivery.items) ? delivery.items.filter(Boolean) : [];
+  const itemsHtml = items
+    .map(
+      (item, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+      <td class="c-num">${i + 1}</td>
+      <td class="c-desc">${esc(item.description)}</td>
+      <td class="c-qty">${Number(item.quantity || 0)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const addrRaw = delivery.delivery_address;
+  let addressStr = "—";
+  if (addrRaw) {
+    try {
+      const addrObj = typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
+      addressStr = [addrObj.line1, addrObj.line2, addrObj.city, addrObj.state]
+        .filter(Boolean)
+        .join(", ");
+    } catch {
+      addressStr = String(addrRaw);
+    }
+  }
+
+  const templateData = {
+    delivery_number:  esc(delivery.delivery_number || "—"),
+    contact_name:     esc(delivery.contact_name || "—"),
+    primary_phone:    esc(delivery.primary_phone || "—"),
+    delivery_address: esc(addressStr),
+    courier:          esc(delivery.courier || "—"),
+    waybill_number:   esc(delivery.waybill_number || "—"),
+    created_at:       fmtDate(delivery.created_at),
+    dispatched_at:    fmtDate(delivery.dispatched_at),
+    items_html:       itemsHtml,
+    waybill_style:    delivery.waybill_number ? "" : "display:none",
+  };
+
+  return renderToPDF("packing-slip", templateData);
 }
 
 module.exports = {

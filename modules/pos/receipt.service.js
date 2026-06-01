@@ -212,12 +212,29 @@ function buildTemplateData(business, tx) {
     unit_price: formatCurrency(l.unit_price),
     line_total: formatCurrency(l.line_total),
   }));
+
+  // Pre-render lines array → HTML rows for the template
+  const linesHtml = lines
+    .map(
+      (l, i) => `
+    <tr class="${i % 2 === 0 ? "row-even" : "row-odd"}">
+      <td class="c-desc">${escapeHtml(l.description)}</td>
+      <td class="c-qty">${l.quantity}</td>
+      <td class="c-price">${l.unit_price}</td>
+      <td class="c-total">${l.line_total}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const showDiscount = parseFloat(tx.discount_total || 0) > 0;
+  const showChange = parseFloat(tx.change_given || 0) > 0;
+
   return {
-    business: business.toUpperCase(),
-    transaction_number: tx.transaction_number,
+    business: escapeHtml(business.toUpperCase()),
+    transaction_number: escapeHtml(tx.transaction_number),
     transaction_date: formatDate(tx.created_at),
-    contact_name: tx.contact_name || "Walk-in Customer",
-    lines,
+    contact_name: escapeHtml(tx.contact_name || "Walk-in Customer"),
+    lines_html: linesHtml,
     subtotal: formatCurrency(tx.subtotal),
     discount_total: formatCurrency(tx.discount_total),
     vat_amount: formatCurrency(tx.vat_amount),
@@ -230,6 +247,8 @@ function buildTemplateData(business, tx) {
           `${labelForMethod(p.payment_method)}: ${formatCurrency(p.amount)}`,
       )
       .join(" • "),
+    discount_row_style: showDiscount ? "" : "display:none",
+    change_row_style:   showChange ? "" : "display:none",
   };
 }
 

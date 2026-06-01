@@ -5,12 +5,12 @@
  * proper searchable typeaheads. Previous code loaded everything into memory
  * and rendered unsearchable dropdowns — broken past 200 records.
  */
-import { useMemo, useEffect, useState, useRef } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Plus, Trash2, Search } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { Breadcrumbs } from '@components/ui/Breadcrumbs';
 import { Button } from '@components/ui/Button';
@@ -24,72 +24,10 @@ import { createPO } from '@services/purchasing/purchaseOrders';
 import { CURRENCIES } from '@lib/constants/currencies';
 import { fmtMoney } from '@lib/format';
 import { showToast } from '@hooks/useToast';
-import { errMsg, api } from '@services/api';
+import { errMsg } from '@services/api';
+import { CatalogueSearchInput } from '@components/shared/CatalogueSearchInput';
 
-// ── Per-line product search ───────────────────────────────────────────────────
-
-function ProductLineSearch({ onSelect }: {
-  onSelect: (p: { product_id: string; name: string; sku?: string }) => void;
-}) {
-  const [query,   setQuery]   = useState('');
-  const [open,    setOpen]    = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<Array<{ product_id: string; name: string; sku?: string }>>([]);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const debRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debRef.current) clearTimeout(debRef.current);
-    if (query.trim().length < 2) { setResults([]); setOpen(false); return; }
-    setLoading(true);
-    debRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get('/catalogue/products', { params: { search: query.trim(), limit: 8 } });
-        setResults(data.data ?? []);
-        setOpen(true);
-      } finally { setLoading(false); }
-    }, 200);
-  }, [query]);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  return (
-    <div ref={wrapRef} className="relative">
-      <label className="mb-1 block text-[0.65rem] uppercase tracking-widest text-orika-smoke font-medium">
-        Product search (optional)
-      </label>
-      <div className="relative">
-        {loading ? <div className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-orika-gold" />
-                 : <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />}
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Type to search catalogue..."
-          className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-xs text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
-        />
-      </div>
-      {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-lg">
-          {results.map((p) => (
-            <button key={p.product_id} type="button"
-              onClick={() => { onSelect(p); setQuery(''); setOpen(false); }}
-              className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-orika-graphite/40 transition-colors">
-              <span className="text-xs font-medium text-orika-cream">{p.name}</span>
-              {p.sku && <span className="text-[10px] text-orika-smoke ml-2">{p.sku}</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// ProductLineSearch replaced by shared CatalogueSearchInput
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -192,7 +130,11 @@ export default function PONew() {
                   <div className="flex items-start gap-2">
                     <span className="text-[0.6rem] text-orika-smoke font-mono uppercase tracking-widest mt-3 w-7">L{i + 1}</span>
                     <div className="flex-1 space-y-3">
-                      <ProductLineSearch
+                      <CatalogueSearchInput
+                        surface="dark"
+                        currency="NGN"
+                        label="Product search (optional)"
+                        instanceKey={i}
                         onSelect={(p) => {
                           setValue(`lines.${i}.product_id`, p.product_id);
                           setLineDescriptions((d) => ({ ...d, [i]: p.name }));

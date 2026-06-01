@@ -1,0 +1,195 @@
+/**
+ * CatalogueSearchInput — reusable product picker used across all forms.
+ *
+ * Behaviour:
+ *   - Shows up to 8 products immediately on focus (browse mode, no min chars).
+ *   - Filters live as you type.
+ *   - Portals the dropdown to document.body via position:fixed, so it never
+ *     gets clipped by a parent Modal's overflow-y-auto container.
+ *   - Supports dark (default) and light surface themes.
+ *
+ * Usage:
+ *   <CatalogueSearchInput
+ *     currency="NGN"
+ *     onSelect={(p) => form.setValue('product_id', p.product_id)}
+ *   />
+ */
+import { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Search } from 'lucide-react';
+import { api } from '@services/api';
+import { fmtMoney } from '@lib/format';
+
+export interface CatalogueProduct {
+  product_id:    string;
+  name:          string;
+  sku?:          string;
+  selling_price: number;
+}
+
+interface CatalogueSearchInputProps {
+  currency:      string;
+  onSelect:      (p: CatalogueProduct) => void;
+  label?:        string;
+  placeholder?:  string;
+  /** 'dark' = charcoal/gold (POS, PO forms). 'light' = white/black (invoice, consignment modals). */
+  surface?:      'dark' | 'light';
+  /** Unique key per instance — prevents cross-instance query cache collisions. */
+  instanceKey?:  string | number;
+  className?:    string;
+}
+
+export function CatalogueSearchInput({
+  currency,
+  onSelect,
+  label,
+  placeholder = 'Click to browse or type to filter…',
+  surface = 'dark',
+  instanceKey = 0,
+  className = '',
+}: CatalogueSearchInputProps) {
+  const [query,    setQuery]    = useState('');
+  const [isOpen,   setIsOpen]   = useState(false);
+  const wrapRef                 = useRef<HTMLDivElement>(null);
+  const [dropRect, setDropRect] = useState<DOMRect | null>(null);
+
+  // Fetch on open — empty query = browse all (limit 8), typed query = filter.
+  const { data: results = [], isFetching } = useQuery({
+    queryKey: ['catalogue-search', instanceKey, query],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { limit: 8 };
+      if (query.trim()) params.search = query.trim();
+      const { data } = await api.get('/catalogue/products', { params });
+      return (data.data ?? []) as CatalogueProduct[];
+    },
+    enabled: isOpen,
+    staleTime: 30_000,
+  });
+
+  // Recompute dropdown anchor on scroll/resize so it tracks the input.
+  useEffect(() => {
+    if (!isOpen) return;
+    function updateRect() {
+      if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [isOpen]);
+
+  // Close on outside click.
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setIsOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function handleSelect(p: CatalogueProduct) {
+    onSelect(p);
+    setQuery('');
+    setIsOpen(false);
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setQuery(e.target.value);
+    setIsOpen(true);
+    if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+  }
+
+  function handleFocus() {
+    setIsOpen(true);
+    if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
+  }
+
+  const isDark = surface === 'dark';
+
+  // ── Theme tokens ────────────────────────────────────────────────────────────
+  const inputCls = isDark
+    ? 'w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none'
+    : 'w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-orika-black shadow-sm focus:border-orika-black focus:outline-none focus:ring-1 focus:ring-orika-black';
+
+  const iconCls = isDark
+    ? 'absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke pointer-events-none'
+    : 'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke pointer-events-none';
+
+  const dropCls = isDark
+    ? 'rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto'
+    : 'rounded-xl border border-orika-cloud/30 bg-white shadow-lg max-h-56 overflow-y-auto';
+
+  const rowCls = isDark
+    ? 'flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors'
+    : 'flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-orika-cloud/20 transition-colors';
+
+  const nameCls  = isDark ? 'text-xs font-medium text-orika-cream'    : 'text-sm font-medium text-orika-black';
+  const skuCls   = isDark ? 'text-[10px] text-orika-smoke'            : 'text-xs text-text-on-light-muted';
+  const priceCls = isDark ? 'text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0'
+                           : 'text-sm font-semibold text-orika-black tabular-nums ml-4 shrink-0';
+  const msgCls   = isDark ? 'px-3 py-3 text-xs text-orika-smoke'      : 'px-3 py-3 text-sm text-text-on-light-muted';
+
+  const labelCls = isDark
+    ? 'mb-1 block text-xs text-orika-smoke'
+    : 'mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted';
+
+  // ── Portaled dropdown ───────────────────────────────────────────────────────
+  const dropdown = isOpen && dropRect ? ReactDOM.createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top:   dropRect.bottom + 4,
+        left:  dropRect.left,
+        width: dropRect.width,
+        zIndex: 9999,
+      }}
+      className={dropCls}
+    >
+      {isFetching && results.length === 0 ? (
+        <p className={msgCls}>Loading…</p>
+      ) : results.length > 0 ? (
+        results.map((p) => (
+          <button
+            key={p.product_id}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
+            className={rowCls}
+          >
+            <div className="min-w-0">
+              <p className={nameCls}>{p.name}</p>
+              {p.sku && <p className={skuCls}>{p.sku}</p>}
+            </div>
+            <span className={priceCls}>{fmtMoney(p.selling_price, currency)}</span>
+          </button>
+        ))
+      ) : (
+        <p className={msgCls}>
+          {query ? `No products found for "${query}"` : 'No active products found'}
+        </p>
+      )}
+    </div>,
+    document.body,
+  ) : null;
+
+  return (
+    <div ref={wrapRef} className={`relative ${className}`}>
+      {label && <label className={labelCls}>{label}</label>}
+      <div className="relative">
+        <Search className={iconCls} />
+        <input
+          type="text"
+          value={query}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          placeholder={placeholder}
+          className={inputCls}
+        />
+      </div>
+      {dropdown}
+    </div>
+  );
+}
