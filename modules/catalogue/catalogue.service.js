@@ -485,8 +485,8 @@ async function updateProduct(business, productId, data, user) {
             isPublished: data.web.is_published,
           },
         );
-      } else {
-        // No storefront row yet — this is a "publish to store" action.
+      } else if (data.web.is_published || data.web.slug) {
+        // No storefront row yet and the payload actually wants to publish.
         // Require the full web block, same as create.
         validateWebBlock(business, data.web, { requireAll: true });
         const slugDupe = await repo.findStoreProductBySlug(

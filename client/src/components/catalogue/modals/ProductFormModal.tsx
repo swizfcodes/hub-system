@@ -16,6 +16,31 @@ import { SCENT_FAMILIES } from '@lib/constants/scent-families';
 import { showToast } from '@hooks/useToast';
 import { api, errMsg } from '@services/api';
 import type { FieldErrors } from 'react-hook-form';
+
+/** Convert a product name to a URL-safe slug. */
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-');
+}
+
+/** Walk a nested FieldErrors tree and return the first error message found. */
+function firstErrorMessage(errs: Record<string, unknown>): string {
+  for (const val of Object.values(errs)) {
+    if (!val) continue;
+    if (typeof (val as { message?: string }).message === 'string') {
+      return (val as { message: string }).message;
+    }
+    if (typeof val === 'object') {
+      const nested = firstErrorMessage(val as Record<string, unknown>);
+      if (nested) return nested;
+    }
+  }
+  return '';
+}
 import type { Product } from '@typedefs/catalogue';
 
 const PRODUCT_FORMATS = [
@@ -90,7 +115,7 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
 
   const existingWeb = (editing as any)?.store_product;
 
-  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<ProductCreateValues>({
+  const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<ProductCreateValues>({
     resolver: zodResolver(productCreateSchema),
     defaultValues: editing ? {
       sku: editing.sku,
@@ -165,6 +190,18 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
 
   // Watch is_published to show/hide required web fields
   const isPublished = useWatch({ control, name: 'web.is_published' });
+  const productName = useWatch({ control, name: 'name' });
+  const currentSlug = useWatch({ control, name: 'web.slug' });
+
+  // Auto-generate slug from product name when Published is first ticked
+  // and the slug field is still empty. User can override it at any time.
+  useEffect(() => {
+    if (isPublished && !currentSlug && productName) {
+      setValue('web.slug', toSlug(productName), { shouldValidate: false });
+    }
+  // only run when the Published toggle changes, not on every keystroke
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPublished]);
 
   const mutation = useMutation({
     mutationFn: async (v: ProductCreateValues) => {
@@ -173,17 +210,21 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
         .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
         .map((img) => `${API_BASE}/documents/${img.document_id}/image`);
 
-      const web = v.web && isDiffusers ? {
-        slug: v.web.slug,
-        scent_family: v.web.scent_family,
-        format: v.web.format,
-        size_ml: v.web.size_ml,
-        top_notes: v.web.top_notes ? v.web.top_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        heart_notes: v.web.heart_notes ? v.web.heart_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        base_notes: v.web.base_notes ? v.web.base_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        web_description: v.web.web_description || undefined,
+      // Only include the web block when it has meaningful content.
+      // Sending web: { is_published: false } with no slug triggers the backend's
+      // "first-time publish" branch which demands all storefront fields.
+      const hasWebContent = v.web?.is_published || v.web?.slug;
+      const web = hasWebContent && isDiffusers ? {
+        slug: v.web!.slug,
+        scent_family: v.web!.scent_family,
+        format: v.web!.format,
+        size_ml: v.web!.size_ml,
+        top_notes: v.web!.top_notes ? v.web!.top_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+        heart_notes: v.web!.heart_notes ? v.web!.heart_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+        base_notes: v.web!.base_notes ? v.web!.base_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+        web_description: v.web!.web_description || undefined,
         images: imageUrls,
-        is_published: v.web.is_published ?? false,
+        is_published: v.web!.is_published ?? false,
       } : undefined;
 
       const payload = {
@@ -242,8 +283,7 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
           onClick={handleSubmit(
             (v) => mutation.mutate(v),
             (errs: FieldErrors<ProductCreateValues>) => {
-              const first = Object.values(errs)[0];
-              const msg = (first as { message?: string })?.message ?? 'Please check the form for errors';
+              const msg = firstErrorMessage(errs as Record<string, unknown>) || 'Please check the form for errors';
               showToast.error('Validation error', msg);
             },
           )}
