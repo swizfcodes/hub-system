@@ -13,7 +13,7 @@ const NAV_GROUPS: { label: string; modules: string[] }[] = [
   { label: 'Operate', modules: ['logistics', 'stock', 'purchasing', 'catalogue', 'retail-partners'] },
   { label: 'Finance', modules: ['invoicing', 'accounting', 'tax', 'expenses', 'reports'] },
   { label: 'People',  modules: ['staff', 'payroll', 'contacts', 'messaging', 'loyalty'] },
-  { label: 'Grow',    modules: ['campaigns', 'social', 'calendar', 'tasks'] },
+  { label: 'Grow',    modules: ['campaigns', 'sales-campaigns', 'social', 'calendar', 'tasks', 'workspace'] },
   { label: 'System',  modules: ['settings', 'security', 'documents'] },
 ];
 

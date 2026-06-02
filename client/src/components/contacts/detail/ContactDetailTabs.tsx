@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tabs, type Tab } from '@components/ui/Tabs';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ActivityTab } from './tabs/ActivityTab';
@@ -9,9 +9,14 @@ import { NotesTab } from './tabs/NotesTab';
 import { PropertiesTab } from './tabs/PropertiesTab';
 import { AuditTab } from './tabs/AuditTab';
 import { ConciergeTab } from './tabs/ConciergeTab';
-import { PlaceholderTab } from './tabs/PlaceholderTab';
+import { listDocuments, uploadDocument, downloadDocument, deleteDocument } from '@services/documents';
+import { useBusinessStore } from '@stores/useBusinessStore';
+import { showToast } from '@hooks/useToast';
+import { errMsg } from '@services/api';
 import { listDeals } from '@services/crm/deals';
 import { listInvoices } from '@services/invoicing/invoices';
+import { listSuppliers } from '@services/purchasing/suppliers';
+import { listPOs } from '@services/purchasing/purchaseOrders';
 import { Card } from '@components/ui/Card';
 import { Skeleton } from '@components/ui/Skeleton';
 import { Badge } from '@components/ui/Badge';
@@ -19,7 +24,7 @@ import { StagePill } from '@components/crm/shared/StagePill';
 import { ProbabilityBar } from '@components/crm/shared/ProbabilityBar';
 import { fmtMoney, fmtRelative } from '@lib/format';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, TrendingUp, Plus, Receipt } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, Plus, Receipt, FileText, Upload, Download, Trash2, ShoppingCart, Package } from 'lucide-react';
 import { fmtDate } from '@lib/format';
 import { EmptyState } from '@components/ui/EmptyState';
 import { Button } from '@components/ui/Button';
@@ -33,23 +38,33 @@ interface Props {
   extraRenderers?: Record<string, () => React.ReactNode>;
 }
 
-const BASE_TABS: Tab[] = [
-  { key: 'overview',  label: 'Overview' },
-  { key: 'activity',  label: 'Activity' },
-  { key: 'tasks',     label: 'Tasks' },
-  { key: 'calendar',  label: 'Calendar' },
-  { key: 'deals',     label: 'Deals' },
-  { key: 'invoices',  label: 'Invoices' },
-  { key: 'concierge', label: 'Concierge' },
-  { key: 'notes',     label: 'Notes' },
-  { key: 'documents', label: 'Documents' },
-  { key: 'properties',label: 'Properties' },
-  { key: 'audit',     label: 'Audit' },
-];
-
 export function ContactDetailTabs({ contact, extraTabs = [], extraRenderers = {} }: Props) {
   const [active, setActive] = useState('overview');
-  const tabs = [...BASE_TABS.slice(0, 4), ...extraTabs, ...BASE_TABS.slice(4)];
+
+  // Tabs adapt to what the contact actually is. Universal tabs always show;
+  // customer-only (Deals / Invoices / Concierge) and supplier-only (Purchasing)
+  // tabs appear based on contact_type. Staff employment tabs arrive via extraTabs.
+  const types = contact.contact_type ?? [];
+  const isCustomer = types.includes('customer');
+  const isSupplier = types.includes('supplier');
+
+  const tabs: Tab[] = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'activity', label: 'Activity' },
+    { key: 'tasks',    label: 'Tasks' },
+    { key: 'calendar', label: 'Calendar' },
+    ...extraTabs,
+    ...(isCustomer ? [
+      { key: 'deals',     label: 'Deals' },
+      { key: 'invoices',  label: 'Invoices' },
+      { key: 'concierge', label: 'Concierge' },
+    ] : []),
+    ...(isSupplier ? [{ key: 'purchasing', label: 'Purchasing' }] : []),
+    { key: 'notes',      label: 'Notes' },
+    { key: 'documents',  label: 'Documents' },
+    { key: 'properties', label: 'Properties' },
+    { key: 'audit',      label: 'Audit' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -60,11 +75,12 @@ export function ContactDetailTabs({ contact, extraTabs = [], extraRenderers = {}
         {active === 'activity'   && <ActivityTab contactId={contact.contact_id} />}
         {active === 'tasks'      && <TasksTab    contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'calendar'   && <CalendarTab contactId={contact.contact_id} contactName={contact.display_name} />}
-        {active === 'deals'      && <DealsTab contactId={contact.contact_id} contactName={contact.display_name} />}
-        {active === 'invoices'   && <ContactInvoicesTab contactId={contact.contact_id} contactName={contact.display_name} />}
-        {active === 'concierge'  && <ConciergeTab contactId={contact.contact_id} contactName={contact.display_name} />}
+        {active === 'deals'      && isCustomer && <DealsTab contactId={contact.contact_id} contactName={contact.display_name} />}
+        {active === 'invoices'   && isCustomer && <ContactInvoicesTab contactId={contact.contact_id} contactName={contact.display_name} />}
+        {active === 'concierge'  && isCustomer && <ConciergeTab contactId={contact.contact_id} contactName={contact.display_name} />}
+        {active === 'purchasing' && isSupplier && <SupplierPurchasingTab contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'notes'      && <NotesTab contact={contact} />}
-        {active === 'documents'  && <PlaceholderTab title="Documents" description={`Files linked to ${contact.display_name} (contracts, IDs, photos) will appear here when the Documents module is built.`} linkTo="/documents" linkLabel="Open Documents" />}
+        {active === 'documents'  && <ContactDocumentsTab contactId={contact.contact_id} contactName={contact.display_name} />}
         {active === 'properties' && <PropertiesTab contact={contact} />}
         {active === 'audit'      && <AuditTab contactId={contact.contact_id} />}
         {extraRenderers[active]?.()}
@@ -175,6 +191,161 @@ function ContactInvoicesTab({ contactId, contactName }: { contactId: string; con
                 </div>
               </Card>
             </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function poTone(status: string): 'sage' | 'danger' | 'neutral' | 'gold' {
+  if (status === 'received' || status === 'closed' || status === 'completed') return 'sage';
+  if (status === 'cancelled') return 'danger';
+  if (status === 'draft') return 'neutral';
+  return 'gold';
+}
+
+function SupplierPurchasingTab({ contactId, contactName }: { contactId: string; contactName: string }) {
+  const { data: sups, isLoading: loadingSup } = useQuery({
+    queryKey: ['purchasing', 'suppliers', 'lookup'],
+    queryFn: () => listSuppliers({ limit: 200 }),
+  });
+  const supplier = (sups?.data ?? []).find((s) => s.contact_id === contactId);
+
+  const { data: poResp, isLoading: loadingPO } = useQuery({
+    queryKey: ['purchasing', 'pos', 'by-supplier', supplier?.supplier_id],
+    queryFn: () => listPOs({ supplier_id: supplier!.supplier_id, limit: 50 }),
+    enabled: !!supplier?.supplier_id,
+  });
+  const pos = poResp?.data ?? [];
+
+  if (loadingSup) {
+    return <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-16" />)}</div>;
+  }
+
+  if (!supplier) {
+    return (
+      <EmptyState
+        icon={<Package className="w-6 h-6" />}
+        title="No supplier record yet"
+        description={`${contactName} is tagged as a supplier but isn’t set up in Procurement yet.`}
+        action={<Link to="/procurement/suppliers"><Button variant="gold" size="sm">Open Procurement</Button></Link>}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+          <ShoppingCart className="w-3.5 h-3.5" /> Purchase orders · {pos.length}
+        </h3>
+        <Link to={`/procurement/suppliers/${supplier.supplier_id}`}>
+          <Button variant="secondary" size="sm" leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />}>Supplier file</Button>
+        </Link>
+      </div>
+
+      {loadingPO ? (
+        <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-16" />)}</div>
+      ) : pos.length === 0 ? (
+        <EmptyState
+          icon={<ShoppingCart className="w-6 h-6" />}
+          title="No purchase orders yet"
+          description={`No POs have been raised for ${contactName}.`}
+          action={<Link to="/procurement/purchase-orders/new"><Button variant="gold" size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>New PO</Button></Link>}
+        />
+      ) : (
+        <div className="space-y-2">
+          {pos.map((po) => (
+            <Link key={po.po_id} to={`/procurement/purchase-orders/${po.po_id}`}>
+              <Card className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs text-orika-smoke">{po.po_number}</span>
+                    <Badge tone={poTone(po.status)} size="xs" dot>{po.status}</Badge>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-mono text-sm text-orika-gold">{fmtMoney(po.total_amount, 'NGN')}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke" />
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function fmtBytes(n: number): string {
+  if (!n) return '0 B';
+  const u = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.min(u.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  return `${(n / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${u[i]}`;
+}
+
+function ContactDocumentsTab({ contactId, contactName }: { contactId: string; contactName: string }) {
+  const qc = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const business = useBusinessStore((s) => s.active);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['contacts', contactId, 'documents'],
+    queryFn: () => listDocuments({ reference_type: 'contact', reference_id: contactId, limit: 100 }),
+  });
+  const docs = data?.data ?? [];
+
+  const upload = useMutation({
+    mutationFn: (file: File) => uploadDocument({
+      file,
+      business: business ?? '',
+      document_type: 'contact_document',
+      title: file.name,
+      reference_type: 'contact',
+      reference_id: contactId,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contacts', contactId, 'documents'] }); showToast.success('Document uploaded'); },
+    onError: (e) => showToast.error('Upload failed', errMsg(e)),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteDocument(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contacts', contactId, 'documents'] }); showToast.success('Document removed'); },
+    onError: (e) => showToast.error('Could not remove', errMsg(e)),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5" /> Documents · {docs.length}
+        </h3>
+        <input ref={inputRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); if (inputRef.current) inputRef.current.value = ''; }} />
+        <Button variant="gold" size="sm" leftIcon={<Upload className="w-3.5 h-3.5" />} loading={upload.isPending} disabled={!business} onClick={() => inputRef.current?.click()}>
+          Upload
+        </Button>
+      </div>
+
+      {!business && <p className="text-xs text-state-warn">Select a business above to upload documents.</p>}
+
+      {isLoading ? (
+        <div className="space-y-2">{[0, 1].map((i) => <Skeleton key={i} className="h-16" />)}</div>
+      ) : docs.length === 0 ? (
+        <EmptyState icon={<FileText className="w-6 h-6" />} title="No documents yet" description={`Upload contracts, IDs or photos linked to ${contactName}.`} />
+      ) : (
+        <div className="space-y-2">
+          {docs.map((d) => (
+            <Card key={d.document_id} className="p-3.5 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-orika-graphite text-orika-gold flex items-center justify-center shrink-0"><FileText className="w-4 h-4" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-orika-cream truncate">{d.title}</div>
+                <div className="text-[0.6rem] text-orika-smoke mt-0.5">
+                  {fmtBytes(d.file_size_bytes)} · {fmtRelative(d.created_at)}{d.uploaded_by_name ? ` · ${d.uploaded_by_name}` : ''}
+                </div>
+              </div>
+              <button onClick={() => downloadDocument(d).catch(() => showToast.error('Download failed'))} className="p-2 text-orika-smoke hover:text-orika-cream" aria-label="Download"><Download className="w-4 h-4" /></button>
+              <button onClick={() => remove.mutate(d.document_id)} className="p-2 text-orika-smoke hover:text-state-danger" aria-label="Delete"><Trash2 className="w-4 h-4" /></button>
+            </Card>
           ))}
         </div>
       )}
