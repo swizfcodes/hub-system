@@ -15,7 +15,10 @@ export const quickAddSchema = z.object({
   email:          z.string().email('Invalid email').optional().or(z.literal('')),
   visible_to:     z.array(z.string()).min(1, 'Pick at least one business'),
   priority_level: z.enum(PRIORITY_LEVELS).default('regular'),
-  source:         z.enum(CONTACT_SOURCES).optional(),
+  // The "How they found us" select has an empty placeholder option, so an
+  // untouched optional field submits "" — which a bare .optional() enum
+  // rejects and silently blocks save. Accept "" and strip it in the payload.
+  source:         z.enum(CONTACT_SOURCES).optional().or(z.literal('')),
 });
 export type QuickAddValues = z.infer<typeof quickAddSchema>;
 

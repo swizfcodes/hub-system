@@ -56,6 +56,7 @@ export function QuickAddModal({ open, onClose, defaultType, onCreated }: Props) 
       ...v,
       email: v.email || undefined,
       whatsapp_number: v.whatsapp_number || undefined,
+      source: v.source || undefined,
     }),
     onSuccess: (c) => {
       qc.invalidateQueries({ queryKey: ['contacts'] });
@@ -86,13 +87,25 @@ export function QuickAddModal({ open, onClose, defaultType, onCreated }: Props) 
             Open full form
           </Link>
           <Button variant="outline-light" onClick={() => { reset(); onClose(); }}>Cancel</Button>
-          <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>
+          <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit(
+            (v) => mutation.mutate(v),
+            (errs) => {
+              const msg = Object.values(errs).map((e) => (e as { message?: string })?.message).find(Boolean);
+              showToast.error('Check the form', msg || 'Some required fields need attention.');
+            },
+          )}>
             Save & close
           </Button>
         </>
       }
     >
-      <form onSubmit={handleSubmit((v) => mutation.mutate(v))} noValidate className="space-y-4">
+      <form onSubmit={handleSubmit(
+        (v) => mutation.mutate(v),
+        (errs) => {
+          const msg = Object.values(errs).map((e) => (e as { message?: string })?.message).find(Boolean);
+          showToast.error('Check the form', msg || 'Some required fields need attention.');
+        },
+      )} noValidate className="space-y-4">
         <Input
           {...register('display_name')}
           label="Display name"

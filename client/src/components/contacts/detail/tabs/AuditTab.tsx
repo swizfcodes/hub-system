@@ -7,8 +7,11 @@ import { fmtDateTime, fmtRelative } from '@lib/format';
 
 export function AuditTab({ contactId }: { contactId: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['contacts', contactId, 'audit', 'shared.contacts'],
-    queryFn: () => getRecordAudit('shared.contacts', contactId, 100),
+    // The contacts service logs audit rows with table_name "contacts"
+    // (unqualified — same convention as every other module), so query that,
+    // not "shared.contacts", otherwise the trail is always empty.
+    queryKey: ['contacts', contactId, 'audit', 'contacts'],
+    queryFn: () => getRecordAudit('contacts', contactId, 100),
   });
 
   if (isLoading) {
