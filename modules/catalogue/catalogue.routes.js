@@ -7,7 +7,7 @@ const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service  = require("./catalogue.service");
-const { buildTemplate } = require("./template");
+const { buildTemplate, parseImportWorkbook } = require("./template");
 
 // ─────────────────────────────────────────────────────────────
 // modules/catalogue/catalogue.routes
@@ -132,6 +132,32 @@ router.get(
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", 'attachment; filename="orika_product_import_template.xlsx"');
       res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── PRODUCT IMPORT (upload filled template) ─────────────────
+
+router.post(
+  "/products/import",
+  upload.single("file"),
+  can("catalogue", "create"),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "file is required" });
+      }
+      const rows = await parseImportWorkbook(req.file.buffer);
+      if (!rows.length) {
+        return res.status(400).json({
+          message:
+            "No product rows found. Fill rows from row 5 of the Products sheet and try again.",
+        });
+      }
+      const result = await service.importProducts(req.business, rows, req.user);
+      res.status(201).json(result);
     } catch (err) {
       next(err);
     }

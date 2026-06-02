@@ -40,8 +40,40 @@ export async function restoreProduct(id: string): Promise<Product> {
   return data;
 }
 
-export async function getShareUrl(id: string): Promise<{ url: string; sku: string; name: string }> {
-  const { data } = await api.get<{ url: string; sku: string; name: string }>(`/catalogue/products/${id}/share-url`);
+export async function getShareUrl(id: string): Promise<ShareData> {
+  const { data } = await api.get<ShareData>(`/catalogue/products/${id}/share-url`);
+  return data;
+}
+
+export interface ShareData {
+  product_id: string;
+  sku: string;
+  name: string;
+  url: string;
+  published: boolean;
+  price?: number | null;
+  currency?: string | null;
+  image_url?: string | null;
+  message: string;
+}
+
+// ── Bulk import ──
+export interface ImportRowOk { row: number; sku: string; product_id: string; name: string; warning?: string | null }
+export interface ImportRowSkip { row: number; sku: string; reason: string }
+export interface ImportRowErr { row: number; sku?: string; message: string }
+export interface ImportResult {
+  total: number;
+  created: ImportRowOk[];
+  skipped: ImportRowSkip[];
+  errors: ImportRowErr[];
+}
+
+export async function importProducts(file: File): Promise<ImportResult> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post<ImportResult>('/catalogue/products/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data;
 }
 

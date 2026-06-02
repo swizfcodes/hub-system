@@ -45,6 +45,20 @@ async function findCategoryById(client, categoryId) {
   return row || null;
 }
 
+async function findCategoryByName(client, name) {
+  // Case-insensitive match — the import template asks users to type the
+  // category name exactly, but trailing spaces / casing slip through.
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT category_id, name FROM product_categories
+     WHERE lower(btrim(name)) = lower(btrim($1)) AND is_active = true
+     LIMIT 1`,
+    [name],
+  );
+  return row || null;
+}
+
 async function insertCategory(
   client,
   { name, parentCategoryId, description, displayOrder },
@@ -752,6 +766,7 @@ module.exports = {
   // categories
   listCategories,
   findCategoryById,
+  findCategoryByName,
   insertCategory,
   updateCategory,
   countProductsInCategory,

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, Search, LayoutGrid, Rows3, Tag, MapPin, ArchiveX, Download } from 'lucide-react';
+import { Plus, Package, Search, LayoutGrid, Rows3, Tag, MapPin, Download, Upload } from 'lucide-react';
 import { Topbar } from '@components/shell/Topbar';
 import { PageHeader } from '@components/ui/PageHeader';
 import { Button } from '@components/ui/Button';
@@ -17,6 +17,7 @@ import { ProductImage } from '@components/catalogue/shared/ProductImage';
 import { ProductPrice } from '@components/catalogue/shared/ProductPrice';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
 import { CategoryFormModal } from '@components/catalogue/modals/CategoryFormModal';
+import { ImportProductsModal } from '@components/catalogue/modals/ImportProductsModal';
 import { listProducts, deleteProduct, restoreProduct, updateProduct } from '@services/catalogue/products';
 import { downloadProductTemplate } from '@lib/downloadProductTemplate';
 import { listCategories, deleteCategory } from '@services/catalogue/categories';
@@ -29,13 +30,20 @@ import type { ProductCategory, LocationType } from '@typedefs/catalogue';
 import { cn } from '@lib/cn';
 
 type View = 'cards' | 'table';
+type ProductStatusFilter = 'active' | 'inactive' | 'all';
+
+const STATUS_FILTERS: { key: ProductStatusFilter; label: string }[] = [
+  { key: 'active',   label: 'Active' },
+  { key: 'inactive', label: 'Inactive' },
+  { key: 'all',      label: 'All' },
+];
 
 export default function CatalogueHome() {
   const [tab, setTab] = useState<'products' | 'categories' | 'locations'>('products');
   const [view, setView] = useState<View>(() => (localStorage.getItem('orika_catalogue_view') as View) || 'cards');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>('active');
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ProductCategory | null>(null);
@@ -78,7 +86,7 @@ export default function CatalogueHome() {
             view={view} onViewChange={setViewPersist}
             search={search} onSearchChange={setSearch}
             categoryFilter={categoryFilter} onCategoryFilterChange={setCategoryFilter}
-            includeInactive={includeInactive} onToggleInactive={setIncludeInactive}
+            statusFilter={statusFilter} onStatusFilterChange={setStatusFilter}
             onNewProduct={() => setCreatingProduct(true)}
           />
         )}
@@ -96,37 +104,41 @@ export default function CatalogueHome() {
 // ─── PRODUCTS TAB ─────────────────────────────────────────────
 function ProductsTab({
   view, onViewChange, search, onSearchChange, categoryFilter, onCategoryFilterChange,
-  includeInactive, onToggleInactive, onNewProduct,
+  statusFilter, onStatusFilterChange, onNewProduct,
 }: {
   view: View; onViewChange: (v: View) => void;
   search: string; onSearchChange: (s: string) => void;
   categoryFilter: string; onCategoryFilterChange: (s: string) => void;
-  includeInactive: boolean; onToggleInactive: (v: boolean) => void;
+  statusFilter: ProductStatusFilter; onStatusFilterChange: (v: ProductStatusFilter) => void;
   onNewProduct: () => void;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [importing, setImporting] = useState(false);
 
   const { active: business } = useActiveBusiness();
   const { data: catsResp } = useQuery({ queryKey: ['catalogue', 'categories', business], queryFn: () => listCategories(false) });
   const cats = catsResp ?? [];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['catalogue', 'products', business, { search, categoryFilter, includeInactive }],
+    queryKey: ['catalogue', 'products', business, { search, categoryFilter, statusFilter }],
     queryFn: () => listProducts({
       search: search || undefined,
       category_id: categoryFilter || undefined,
-      include_inactive: includeInactive,
+      // 'active' → backend returns active only; 'all'/'inactive' need every row,
+      // then we narrow to inactive client-side (backend has no inactive-only mode).
+      include_inactive: statusFilter !== 'active',
       limit: 200,
     }),
   });
 
   const products = useMemo(() => {
-    const list = data?.data ?? [];
+    let list = data?.data ?? [];
+    if (statusFilter === 'inactive') list = list.filter((p) => !p.is_active);
     const byId: Record<string, string> = {};
     for (const c of cats) byId[c.category_id] = c.name;
     return list.map((p) => ({ ...p, category_name: p.category_id ? byId[p.category_id] : undefined }));
-  }, [data, cats]);
+  }, [data, cats, statusFilter]);
 
   const archive = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
@@ -164,25 +176,35 @@ function ProductsTab({
           onChange={(e) => onCategoryFilterChange(e.target.value)}
           options={[{ value: '', label: 'All categories' }, ...cats.map((c) => ({ value: c.category_id, label: c.name }))]}
         />
-        <button
-          onClick={() => downloadProductTemplate().catch(() => {})}
-          title="Download import template"
-          className="inline-flex items-center gap-2 px-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal border-orika-graphite text-orika-smoke hover:text-orika-cream"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Template</span>
-        </button>
-        <button
-          onClick={() => onToggleInactive(!includeInactive)}
-          className={cn(
-            'inline-flex items-center gap-2 px-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all',
-            includeInactive
-              ? 'bg-state-warn/15 border-state-warn/40 text-state-warn'
-              : 'bg-orika-charcoal border-orika-graphite text-orika-smoke hover:text-orika-cream',
-          )}
-        >
-          <ArchiveX className="w-3.5 h-3.5" /> Inactive
-        </button>
+        <div className="inline-flex rounded-xl border border-orika-graphite overflow-hidden">
+          <button
+            onClick={() => downloadProductTemplate().catch(() => {})}
+            title="Download the Excel import template"
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal text-orika-smoke hover:text-orika-cream border-r border-orika-graphite"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Template</span>
+          </button>
+          <button
+            onClick={() => setImporting(true)}
+            title="Import products from a filled Excel template"
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal text-orika-smoke hover:text-orika-cream"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Import</span>
+          </button>
+        </div>
+        <div className="inline-flex p-0.5 rounded-xl bg-orika-charcoal border border-orika-graphite">
+          {STATUS_FILTERS.map((s) => (
+            <button key={s.key} onClick={() => onStatusFilterChange(s.key)}
+              className={cn(
+                'inline-flex items-center px-3 py-1.5 rounded-lg text-[0.65rem] font-semibold uppercase tracking-wide transition-all',
+                statusFilter === s.key ? 'bg-orika-graphite text-orika-cream' : 'text-orika-smoke hover:text-orika-cream',
+              )}>
+              {s.label}
+            </button>
+          ))}
+        </div>
         <div className="inline-flex p-0.5 rounded-xl bg-orika-charcoal border border-orika-graphite">
           {(['cards', 'table'] as View[]).map((v) => (
             <button key={v} onClick={() => onViewChange(v)}
@@ -265,6 +287,8 @@ function ProductsTab({
           </table>
         </div>
       )}
+
+      <ImportProductsModal open={importing} onClose={() => setImporting(false)} />
     </>
   );
 }

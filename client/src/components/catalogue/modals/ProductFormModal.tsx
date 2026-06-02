@@ -14,8 +14,15 @@ import { listCategories } from '@services/catalogue/categories';
 import { CURRENCIES } from '@lib/constants/currencies';
 import { SCENT_FAMILIES } from '@lib/constants/scent-families';
 import { showToast } from '@hooks/useToast';
+import { toast } from 'sonner';
+import { useActiveBusiness } from '@hooks/useActiveBusiness';
 import { api, errMsg } from '@services/api';
 import type { FieldErrors } from 'react-hook-form';
+
+/** Split a comma-separated notes string into a clean array. */
+function splitNotes(s?: string): string[] {
+  return s ? s.split(',').map((x) => x.trim()).filter(Boolean) : [];
+}
 
 /** Convert a product name to a URL-safe slug. */
 function toSlug(name: string): string {
@@ -60,9 +67,14 @@ interface Props {
   onSaved?: (p: Product) => void;
 }
 
-export function ProductFormModal({ open, onClose, business = 'diffusers', editing, onSaved }: Props) {
+export function ProductFormModal({ open, onClose, business, editing, onSaved }: Props) {
   const qc = useQueryClient();
-  const isDiffusers = business === 'diffusers';
+  // Use the *actual* active business, not a hardcoded default. Previously this
+  // defaulted to 'diffusers' for every caller (none pass the prop), so editing
+  // a jewelry product wrongly showed the storefront block and could 400 on save.
+  const { active } = useActiveBusiness();
+  const effectiveBusiness = business ?? active ?? 'diffusers';
+  const isDiffusers = effectiveBusiness === 'diffusers';
 
   const { data: categories = [] } = useQuery({
     queryKey: ['catalogue', 'categories'],
@@ -73,6 +85,8 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Tracks whether the one-time "publish to website?" nudge has shown this session.
+  const publishPromptShownRef = useRef(false);
 
   // Cleanup object URLs to prevent memory leaks when preview changes or modal closes
   useEffect(() => {
@@ -115,7 +129,7 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
 
   const existingWeb = (editing as any)?.store_product;
 
-  const { register, handleSubmit, reset, control, setValue, formState: { errors, isSubmitting } } = useForm<ProductCreateValues>({
+  const { register, handleSubmit, reset, control, setValue, setFocus, formState: { errors, isSubmitting } } = useForm<ProductCreateValues>({
     resolver: zodResolver(productCreateSchema),
     defaultValues: editing ? {
       sku: editing.sku,
@@ -152,6 +166,7 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
   // Re-sync form when editing prop changes
   useEffect(() => {
     if (open) {
+      publishPromptShownRef.current = false;
       if (editing) {
         const web = (editing as any)?.store_product;
         reset({
@@ -203,6 +218,31 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPublished]);
 
+  // One-time "publish to website?" nudge on first creation (diffusers only).
+  // Fires when the user reaches Reorder qty / Min selling — the moment they're
+  // thinking about how the product sells. Saying yes auto-fills the slug, ticks
+  // Published, and jumps to Size (ml). The manual checkbox below still works.
+  function maybePromptPublish() {
+    if (!isDiffusers || editing) return;        // only brand-new diffusers products
+    if (publishPromptShownRef.current) return;  // once per modal session
+    if (isPublished) return;                     // already opted in
+    publishPromptShownRef.current = true;
+    toast('Publish this product to the Orika Living website?', {
+      description: 'We’ll generate the URL slug, tick Published, and take you to Size (ml).',
+      duration: 12000,
+      action: {
+        label: 'Yes, publish',
+        onClick: () => {
+          setValue('web.is_published', true, { shouldValidate: false });
+          if (productName) setValue('web.slug', toSlug(productName), { shouldValidate: false });
+          // The Size (ml) field only mounts once Published flips on.
+          setTimeout(() => { try { setFocus('web.size_ml'); } catch { /* not mounted yet */ } }, 80);
+        },
+      },
+      cancel: { label: 'Not now', onClick: () => {} },
+    });
+  }
+
   const mutation = useMutation({
     mutationFn: async (v: ProductCreateValues) => {
       // Build image URLs from uploaded product images
@@ -210,22 +250,33 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
         .sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
         .map((img) => `${API_BASE}/documents/${img.document_id}/image`);
 
-      // Only include the web block when it has meaningful content.
-      // Sending web: { is_published: false } with no slug triggers the backend's
-      // "first-time publish" branch which demands all storefront fields.
-      const hasWebContent = v.web?.is_published || v.web?.slug;
-      const web = hasWebContent && isDiffusers ? {
-        slug: v.web!.slug,
-        scent_family: v.web!.scent_family,
-        format: v.web!.format,
-        size_ml: v.web!.size_ml,
-        top_notes: v.web!.top_notes ? v.web!.top_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        heart_notes: v.web!.heart_notes ? v.web!.heart_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        base_notes: v.web!.base_notes ? v.web!.base_notes.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-        web_description: v.web!.web_description || undefined,
-        images: imageUrls,
-        is_published: v.web!.is_published ?? false,
-      } : undefined;
+      // Storefront (web) block — explicit so the three real cases behave and we
+      // never send a half-built block the API rejects (the old silent-fail):
+      //   • publish now      → full validated block (zod guarantees the fields)
+      //   • was published,
+      //     now unchecked     → { is_published:false } to truly unpublish
+      //   • never published   → omit web entirely
+      const wasPublished = !!existingWeb;
+      const publishNow = !!v.web?.is_published;
+      let web: Record<string, unknown> | undefined;
+      if (isDiffusers) {
+        if (publishNow) {
+          web = {
+            slug: v.web!.slug,
+            scent_family: v.web!.scent_family,
+            format: v.web!.format,
+            size_ml: v.web!.size_ml,
+            top_notes: splitNotes(v.web!.top_notes),
+            heart_notes: splitNotes(v.web!.heart_notes),
+            base_notes: splitNotes(v.web!.base_notes),
+            web_description: v.web!.web_description || undefined,
+            images: imageUrls,
+            is_published: true,
+          };
+        } else if (wasPublished) {
+          web = { is_published: false };
+        }
+      }
 
       const payload = {
         ...v,
@@ -334,10 +385,10 @@ export function ProductFormModal({ open, onClose, business = 'diffusers', editin
             options={CURRENCIES.map((c) => ({ value: c.code, label: `${c.symbol} ${c.code}` }))} />
           <Input {...register('cost_price', { valueAsNumber: true })} type="number" step="0.01" label="Cost price" />
           <Input {...register('selling_price', { valueAsNumber: true })} type="number" step="0.01" label="Selling price" />
-          <Input {...register('min_selling_price', { valueAsNumber: true })} type="number" step="0.01" label="Min selling (POS floor)" error={errors.min_selling_price?.message} />
+          <Input {...register('min_selling_price', { valueAsNumber: true })} onFocus={maybePromptPublish} type="number" step="0.01" label="Min selling (POS floor)" error={errors.min_selling_price?.message} />
           <Input {...register('weight_grams', { valueAsNumber: true })} type="number" step="0.01" label="Weight (g)" />
           <Input {...register('reorder_level', { valueAsNumber: true })} type="number" label="Reorder at quantity" hint="Low-stock alert" />
-          <Input {...register('reorder_quantity', { valueAsNumber: true })} type="number" label="Reorder qty" hint="How many to order when triggered" />
+          <Input {...register('reorder_quantity', { valueAsNumber: true })} onFocus={maybePromptPublish} type="number" label="Reorder qty" hint="How many to order when triggered" />
         </div>
 
         {/* ── Storefront / web block (diffusers only) ── */}
