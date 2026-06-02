@@ -24,6 +24,7 @@ import {
   Vault,
   Landmark,
   Sparkles,
+  Layers,
 } from "lucide-react";
 
 export interface AppModule {
@@ -196,6 +197,14 @@ export const HUB_MODULES: AppModule[] = [
     route: "/sales-campaigns",
     accent: "rose",
     group: "ops",
+  },
+  { 
+    key: 'workspace',
+    label: 'Workspace',
+    description: 'Personal notes & scratch area',
+    icon: Layers, route: '/workspace',
+    accent: 'gold',
+    group: 'main' 
   },
   {
     key: "social",
