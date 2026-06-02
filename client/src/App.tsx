@@ -16,6 +16,7 @@ const CurrencyRates         = lazy(() => import('@pages/settings/CurrencyRates')
 const CustomFields          = lazy(() => import('@pages/settings/CustomFields'));
 const PipelineStages        = lazy(() => import('@pages/settings/PipelineStages'));
 const DocumentNumbering     = lazy(() => import('@pages/settings/DocumentNumbering'));
+const StorefrontScents      = lazy(() => import('@pages/settings/StorefrontScents'));
 const PermissionsPage       = lazy(() => import('@pages/settings/Permissions'));
 
 // Contacts module
@@ -193,6 +194,7 @@ export default function App() {
           <Route path="/settings/custom-fields"            element={<CustomFields />} />
           <Route path="/settings/pipeline-stages"          element={<PipelineStages />} />
           <Route path="/settings/document-numbering"       element={<DocumentNumbering />} />
+          <Route path="/settings/storefront-scents"        element={<StorefrontScents />} />
           <Route path="/settings/permissions"              element={<PermissionsPage />} />
 
           {/* Contacts */}

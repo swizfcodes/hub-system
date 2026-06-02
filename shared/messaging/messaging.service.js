@@ -588,7 +588,9 @@ async function getCustomer360(contactId, user) {
         [contactId],
       );
       orders.push(...o.rows);
-    } catch { /* brand may not have sales_orders for this contact */ }
+    } catch {
+      /* brand may not have sales_orders for this contact */
+    }
 
     try {
       const i = await pool.query(
@@ -603,7 +605,9 @@ async function getCustomer360(contactId, user) {
         [contactId],
       );
       invoices.push(...i.rows);
-    } catch { /* may not exist */ }
+    } catch {
+      /* may not exist */
+    }
 
     try {
       const d = await pool.query(
@@ -614,7 +618,9 @@ async function getCustomer360(contactId, user) {
         [contactId],
       );
       deliveries.push(...d.rows);
-    } catch { /* may not exist */ }
+    } catch {
+      /* may not exist */
+    }
   }
 
   return { contact, orders, invoices, deliveries };
