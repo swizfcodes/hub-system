@@ -174,9 +174,23 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
         </div>
 
         {filtered.length === 0 && (
-          <p className="py-8 text-center text-sm text-orika-smoke">
-            {query ? `No products found for "${query}"` : 'No products in this category'}
-          </p>
+          <div className="py-8 text-center text-sm text-orika-smoke">
+            {query ? (
+              `No products found for "${query}"`
+            ) : products.length === 0 ? (
+              <>
+                <p className="text-orika-cloud">No products loaded yet.</p>
+                <p className="mt-1 text-xs">
+                  They may still be syncing, or your account may not have catalogue access.
+                  Make sure products are active, then reopen this session.
+                </p>
+              </>
+            ) : categoryId ? (
+              'No products in this category'
+            ) : (
+              'No active products available'
+            )}
+          </div>
         )}
       </div>
     </div>

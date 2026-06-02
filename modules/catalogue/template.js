@@ -187,4 +187,97 @@ async function buildTemplate() {
   return buffer;
 }
 
-module.exports = { buildTemplate };
+// ── Import parsing ───────────────────────────────────────────────────────────
+
+const SAMPLE_SKU = "ORL-TRIO-001";
+
+/** Extract a clean primitive from an ExcelJS cell value (handles formulas,
+ *  rich text, hyperlinks, dates). */
+function cellVal(cell) {
+  const v = cell ? cell.value : null;
+  if (v === null || v === undefined) return null;
+  if (typeof v === "object") {
+    if (v.result !== undefined) return v.result; // formula cell
+    if (typeof v.text === "string") return v.text; // hyperlink
+    if (Array.isArray(v.richText)) return v.richText.map((t) => t.text).join("");
+    if (v instanceof Date) return v;
+    return null;
+  }
+  return v;
+}
+
+function asText(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+/**
+ * Parse a filled import workbook (the buffer of an uploaded .xlsx) into an
+ * array of normalized row objects keyed by COLUMNS.key, each with a `_row`
+ * (1-based sheet row number) for friendly per-row error messages.
+ *
+ * Tolerant by design: it maps columns by their header text in row 1 (so the
+ * user can reorder columns), skips the locked marker/hint rows, skips the
+ * sample row, and skips fully blank rows.
+ */
+async function parseImportWorkbook(buffer) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+
+  const ws =
+    wb.getWorksheet("Products") || wb.worksheets.find((w) => w.rowCount > 1);
+  if (!ws) {
+    const err = new Error('No "Products" sheet found in the uploaded file.');
+    err.status = 400;
+    throw err;
+  }
+
+  // Map header text (row 1) → our canonical column keys.
+  const headerRow = ws.getRow(1);
+  const colByKey = {};
+  const validKeys = new Set(COLUMNS.map((c) => c.key));
+  headerRow.eachCell((cell, colNumber) => {
+    const key = asText(cellVal(cell)).toLowerCase();
+    if (validKeys.has(key)) colByKey[key] = colNumber;
+  });
+
+  if (colByKey.sku === undefined || colByKey.name === undefined) {
+    const err = new Error(
+      "Could not find the required 'sku' and 'name' columns. Use the official template (Template button) and keep row 1 intact.",
+    );
+    err.status = 400;
+    throw err;
+  }
+
+  const rows = [];
+  for (let r = 4; r <= ws.rowCount; r++) {
+    const row = ws.getRow(r);
+    const get = (key) =>
+      colByKey[key] !== undefined ? cellVal(row.getCell(colByKey[key])) : null;
+
+    const sku = asText(get("sku"));
+    const name = asText(get("name"));
+
+    // Skip the sample row and fully-blank rows.
+    if (!sku && !name) continue;
+    if (sku === SAMPLE_SKU) continue;
+
+    rows.push({
+      _row: r,
+      sku,
+      name,
+      description: asText(get("description")) || null,
+      category_name: asText(get("category_name")) || null,
+      currency: asText(get("currency")) || null,
+      cost_price: get("cost_price"),
+      selling_price: get("selling_price"),
+      min_selling_price: get("min_selling_price"),
+      weight_grams: get("weight_grams"),
+      reorder_level: get("reorder_level"),
+      reorder_quantity: get("reorder_quantity"),
+    });
+  }
+  return rows;
+}
+
+module.exports = { buildTemplate, parseImportWorkbook };

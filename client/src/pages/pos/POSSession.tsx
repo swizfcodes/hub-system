@@ -96,25 +96,42 @@ export default function POSSession() {
   }, [sessionId]);
 
   async function seedProductCache() {
+    // Each source is fetched independently. Previously these were wrapped in a
+    // single Promise.all inside one try/catch, so if ANY one failed (e.g. a
+    // cashier without `stock:view` permission 403s on /stock), the whole block
+    // aborted and NO products were cached — the grid then showed a misleading
+    // "No products in this category". Products are the critical source, so a
+    // failure there is surfaced; stock/categories are best-effort.
     try {
-      const [productsRes, stockRes, catsRes] = await Promise.all([
-        api.get(`/catalogue/products?limit=${PRODUCTS_CACHE_LIMIT}&include_inactive=false`),
-        api.get('/stock'),
-        api.get('/catalogue/categories'),
-      ]);
+      const productsRes = await api.get(
+        `/catalogue/products?limit=${PRODUCTS_CACHE_LIMIT}&include_inactive=false`,
+      );
       await cacheProducts(productsRes.data.data ?? []);
+    } catch (err) {
+      showToast.error('Could not load products for POS', errMsg(err));
+    }
+
+    try {
+      const catsRes = await api.get('/catalogue/categories');
       await cacheCategories(catsRes.data.data ?? []);
+    } catch {
+      // Category filter tabs just won't show — products still sell under "All".
+    }
+
+    try {
+      const stockRes = await api.get('/stock');
       await bulkCacheStock(
         (stockRes.data.data ?? []).map((p: { product_id: string; available_qty?: number; current_quantity?: number }) => ({
           product_id:   p.product_id,
           available_qty: p.available_qty ?? p.current_quantity ?? 0,
         })),
       );
-      // Signal ProductSearch to re-read the now-populated cache.
-      setCacheVersion((v) => v + 1);
     } catch {
-      // Non-fatal — will use stale cache or show 0 stock
+      // Stock unavailable — quantities fall back to 0 / last cached value.
     }
+
+    // Always signal ProductSearch to re-read whatever we managed to cache.
+    setCacheVersion((v) => v + 1);
   }
 
   // X Report

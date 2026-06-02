@@ -2,15 +2,24 @@ import { z } from "zod";
 
 const webSchema = z
   .object({
-    slug: z.string().min(1),
-    scent_family: z.string().min(1),
-    format: z.string().min(1),
-    size_ml: z.number().int().positive(),
-    top_notes: z.string().optional(),
-    heart_notes: z.string().optional(),
-    base_notes: z.string().optional(),
+    // All fields are optional at the type level.
+    // superRefine below enforces the required ones only when is_published = true.
+    slug:            z.string().optional().or(z.literal('')),
+    scent_family:    z.string().optional().or(z.literal('')),
+    format:          z.string().optional().or(z.literal('')),
+    size_ml:         z.coerce.number().int().positive().optional().catch(undefined),
+    top_notes:       z.string().optional(),
+    heart_notes:     z.string().optional(),
+    base_notes:      z.string().optional(),
     web_description: z.string().optional(),
-    is_published: z.boolean().optional(),
+    is_published:    z.boolean().optional(),
+  })
+  .superRefine((web, ctx) => {
+    if (web.is_published !== true) return; // not publishing — nothing required
+    if (!web.slug)         ctx.addIssue({ code: 'custom', path: ['slug'],         message: 'URL slug is required to publish' });
+    if (!web.scent_family) ctx.addIssue({ code: 'custom', path: ['scent_family'], message: 'Scent family is required to publish' });
+    if (!web.format)       ctx.addIssue({ code: 'custom', path: ['format'],       message: 'Format is required to publish' });
+    if (!web.size_ml)      ctx.addIssue({ code: 'custom', path: ['size_ml'],      message: 'Size (ml) is required to publish' });
   })
   .optional();
 
@@ -25,14 +34,16 @@ export const productCreateSchema = z
     description: z.string().max(2000).optional().or(z.literal("")),
     web: webSchema,
     category_id: z.string().uuid().optional().or(z.literal("")),
-    cost_price: z.number().min(0).default(0),
-    selling_price: z.number().min(0).default(0),
-    min_selling_price: z.number().min(0).optional(),
+    // coerce: pg NUMERIC columns arrive as strings; empty inputs give NaN via
+    // valueAsNumber. z.coerce.number() handles both without silent failures.
+    cost_price: z.coerce.number().min(0).default(0).catch(0),
+    selling_price: z.coerce.number().min(0).default(0).catch(0),
+    min_selling_price: z.coerce.number().min(0).optional().catch(undefined),
     currency: z.string().length(3).default("NGN"),
-    weight_grams: z.number().min(0).optional(),
+    weight_grams: z.coerce.number().min(0).optional().catch(undefined),
     custom_fields: z.record(z.string(), z.unknown()).default({}),
-    reorder_level: z.number().int().min(0).default(0),
-    reorder_quantity: z.number().int().min(0).default(0),
+    reorder_level: z.coerce.number().int().min(0).default(0).catch(0),
+    reorder_quantity: z.coerce.number().int().min(0).default(0).catch(0),
     // Accounting overrides (backend-pending — see PROCUREMENT_PATCH_NOTES.md)
     income_account_id: z.string().uuid().optional().or(z.literal("")),
     inventory_account_id: z.string().uuid().optional().or(z.literal("")),

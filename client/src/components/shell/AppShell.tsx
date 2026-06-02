@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { Sidebar } from './Sidebar';
 import { MobileBottomNav } from './MobileBottomNav';
 import { AppMenuFab } from './AppMenuFab';
+import { BusinessSwitchManager } from './BusinessSwitchManager';
 import { CrmQuickActionsFab } from '@components/crm/fab/CrmQuickActionsFab';
 import { useUiStore } from '@stores/useUiStore';
 import { useAuthStore } from '@stores/useAuthStore';
@@ -58,6 +59,9 @@ export function AppShell() {
       <MobileBottomNav />
       <AppMenuFab />
       {onCrm && <CrmQuickActionsFab />}
+
+      {/* Guarded business-context switch: confirm → blurred 5s reload overlay */}
+      <BusinessSwitchManager />
 
       <Toaster
         position="bottom-right"

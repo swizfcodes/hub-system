@@ -485,8 +485,8 @@ async function updateProduct(business, productId, data, user) {
             isPublished: data.web.is_published,
           },
         );
-      } else {
-        // No storefront row yet — this is a "publish to store" action.
+      } else if (data.web.is_published || data.web.slug) {
+        // No storefront row yet and the payload actually wants to publish.
         // Require the full web block, same as create.
         validateWebBlock(business, data.web, { requireAll: true });
         const slugDupe = await repo.findStoreProductBySlug(
@@ -582,6 +582,152 @@ async function restoreProduct(business, productId, user) {
     });
     return row;
   });
+}
+
+// ── PRODUCT IMPORT (bulk from XLSX) ──────────────────────────
+
+function toNum(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : parseFloat(String(v).replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Bulk-create products from parsed import rows. Runs inside the single
+ * withBusinessContext transaction, but each row's writes are wrapped in a
+ * SAVEPOINT so one bad row can't abort the whole batch — good rows still
+ * commit. Returns a per-row report the UI renders.
+ */
+async function importProducts(business, rows, user) {
+  const results = await withBusinessContext(business, async (client) => {
+    const out = {
+      total: rows.length,
+      created: [],
+      skipped: [],
+      errors: [],
+    };
+    const seenSkus = new Set();
+
+    for (const row of rows) {
+      const rn = row._row;
+      const sku = String(row.sku || "").trim();
+      const name = String(row.name || "").trim();
+
+      // ── pre-flight validation (reads only — safe outside the savepoint) ──
+      if (!sku || !name) {
+        out.errors.push({ row: rn, sku, message: "sku and name are required" });
+        continue;
+      }
+      if (seenSkus.has(sku.toLowerCase())) {
+        out.skipped.push({ row: rn, sku, reason: "duplicate SKU within file" });
+        continue;
+      }
+      seenSkus.add(sku.toLowerCase());
+
+      const dupe = await repo.findProductBySku(client, sku);
+      if (dupe) {
+        out.skipped.push({
+          row: rn,
+          sku,
+          reason: dupe.is_deleted
+            ? "SKU was previously deleted — restore it instead"
+            : "SKU already exists",
+        });
+        continue;
+      }
+
+      const costPrice = toNum(row.cost_price) ?? 0;
+      const sellingPrice = toNum(row.selling_price) ?? 0;
+      const minSelling = toNum(row.min_selling_price);
+      if (minSelling != null && minSelling > sellingPrice) {
+        out.errors.push({
+          row: rn,
+          sku,
+          message: "min_selling_price cannot exceed selling_price",
+        });
+        continue;
+      }
+
+      let categoryId = null;
+      let warning = null;
+      if (row.category_name) {
+        const cat = await repo.findCategoryByName(client, row.category_name);
+        if (cat) categoryId = cat.category_id;
+        else warning = `category "${row.category_name}" not found — imported uncategorised`;
+      }
+
+      // Unique barcode (retry on the astronomically unlikely collision).
+      let barcodeValue = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const candidate = generateBarcodeValue(business, sku);
+        if (!(await repo.barcodeExists(client, candidate))) {
+          barcodeValue = candidate;
+          break;
+        }
+      }
+      if (!barcodeValue) {
+        out.errors.push({ row: rn, sku, message: "could not generate a unique barcode" });
+        continue;
+      }
+
+      // ── writes inside a savepoint so a failure is isolated to this row ──
+      try {
+        await client.query("SAVEPOINT import_row");
+        const product = await repo.insertProduct(client, {
+          sku,
+          name,
+          description: row.description || null,
+          categoryId,
+          costPrice,
+          sellingPrice,
+          minSellingPrice: minSelling,
+          currency: (row.currency || "NGN").toUpperCase().slice(0, 3),
+          weightGrams: toNum(row.weight_grams),
+          barcode: barcodeValue,
+          customFields: {},
+          reorderLevel: Math.max(0, Math.round(toNum(row.reorder_level) ?? 0)),
+          reorderQuantity: Math.max(0, Math.round(toNum(row.reorder_quantity) ?? 0)),
+          createdBy: user.user_id,
+        });
+        await repo.insertBarcode(client, {
+          productId: product.product_id,
+          barcodeValue,
+          barcodeType: "CODE128",
+          isPrimary: true,
+        });
+        await client.query("RELEASE SAVEPOINT import_row");
+        out.created.push({ row: rn, sku, product_id: product.product_id, name, warning });
+      } catch (err) {
+        await client.query("ROLLBACK TO SAVEPOINT import_row");
+        out.errors.push({ row: rn, sku, message: err.message });
+      }
+    }
+
+    return out;
+  });
+
+  // Audit on a separate (pool) connection — `auditService.log(null, …)` uses
+  // the pool, and shared.audit_log is schema-qualified, so a logging hiccup
+  // can never abort/roll back the committed import batch.
+  await auditService.log(null, {
+    userId: user.user_id,
+    userName: user.display_name || "staff",
+    business,
+    module: "catalogue",
+    action: "create",
+    table: "products",
+    recordId: user.user_id, // summary entry — no single record
+    after: {
+      import_summary: {
+        created: results.created.length,
+        skipped: results.skipped.length,
+        errors: results.errors.length,
+      },
+    },
+    metadata: { bulk_import: true },
+  });
+
+  return results;
 }
 
 // ── STOCK LOCATIONS ──────────────────────────────────────────
@@ -1028,16 +1174,21 @@ async function deleteBarcode(business, barcodeId, user) {
 // ── CUSTOMER-FACING SHARE URL ────────────────────────────────
 
 /**
- * Build the canonical customer-facing URL for a product. The
- * storefront resolves /p/{sku} → product page. Admins can encode
- * this URL as a QR code (using any external tool) and print it on
- * shelf tags, packaging, or business cards so customers can scan
- * to view a product.
+ * Build the customer-facing share payload for a product.
  *
- * Returns a URL string only. Server-side QR PNG rendering is left
- * out of this round to avoid adding a new dependency (qrcode npm).
- * If you decide later to generate the PNG server-side, this is the
- * function that becomes a wrapper around it.
+ * The storefront (Orika Living, separate Next.js app) resolves products by
+ * SLUG — see modules/store/store.public.routes `/products/:slug`. The old
+ * version pointed at `/p/{sku}` on a placeholder `{business}.example.com`
+ * domain, so shared links 404'd. We now resolve the published slug and build
+ * the link from configurable env vars:
+ *
+ *   STOREFRONT_BASE_URL     e.g. https://www.orikaliving.com   (no trailing /)
+ *   STOREFRONT_PRODUCT_PATH e.g. /products/                    (default)
+ *
+ * Also returns a ready-to-send templated message and the primary image URL so
+ * the front-end share sheet (copy / WhatsApp / email) needs no extra calls.
+ * The OG/link-preview banner itself is rendered by the storefront product
+ * page's meta tags (sourced from store.products.images).
  */
 async function getProductShareUrl(business, productId) {
   return withBusinessContext(business, async (client) => {
@@ -1045,13 +1196,63 @@ async function getProductShareUrl(business, productId) {
     if (!product || product.is_deleted) {
       throw Object.assign(new Error("Product not found"), { status: 404 });
     }
-    const base =
-      process.env.STOREFRONT_BASE_URL || `https://${business}.example.com`;
+    const storeProduct = await repo.findStoreProductByProductId(
+      client,
+      productId,
+    );
+
+    const base = (
+      process.env.STOREFRONT_BASE_URL || `https://${business}.example.com`
+    ).replace(/\/$/, "");
+    const productPath = process.env.STOREFRONT_PRODUCT_PATH || "/products/";
+    const published = !!(storeProduct && storeProduct.is_published);
+    const slug = storeProduct ? storeProduct.slug : null;
+
+    // Prefer the slug-based storefront page. Fall back to the SKU path only
+    // when there's no slug yet (unpublished) so the admin still gets a link.
+    const url = slug
+      ? `${base}${productPath}${slug}`
+      : `${base}${productPath}${product.sku}`;
+
+    const image_url = product.primary_image_document_id
+      ? `/api/documents/${product.primary_image_document_id}/image`
+      : null;
+
+    // Dynamic, friendly share copy. Includes web facets when published.
+    const priceText =
+      product.selling_price != null && Number(product.selling_price) > 0
+        ? `${product.currency || "NGN"} ${Number(
+            product.selling_price,
+          ).toLocaleString()}`
+        : null;
+    const facetBits = [];
+    if (storeProduct) {
+      if (storeProduct.format) facetBits.push(storeProduct.format);
+      if (storeProduct.size_ml) facetBits.push(`${storeProduct.size_ml}ml`);
+      if (storeProduct.scent_family) facetBits.push(storeProduct.scent_family);
+    }
+    const messageLines = [
+      `✨ ${product.name}`,
+      facetBits.length ? facetBits.join(" · ") : null,
+      priceText ? `Price: ${priceText}` : null,
+      product.description ? String(product.description).slice(0, 160) : null,
+      ``,
+      published
+        ? `Shop it here: ${url}`
+        : `Preview: ${url}`,
+    ].filter((l) => l !== null);
+
     return {
       product_id: product.product_id,
       sku: product.sku,
       name: product.name,
-      url: `${base}/p/${product.sku}`,
+      url,
+      slug,
+      published,
+      price: product.selling_price != null ? Number(product.selling_price) : null,
+      currency: product.currency || "NGN",
+      image_url,
+      message: messageLines.join("\n"),
     };
   });
 }
@@ -1070,6 +1271,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   restoreProduct,
+  importProducts,
   getProductShareUrl,
   // locations
   listLocations,

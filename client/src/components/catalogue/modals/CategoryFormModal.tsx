@@ -39,7 +39,19 @@ export function CategoryFormModal({ open, onClose, editing }: { open: boolean; o
       title={editing ? 'Edit category' : 'New category'}
       footer={<>
         <Button variant="outline-light" onClick={() => { reset(); onClose(); }}>Cancel</Button>
-        <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>Save</Button>
+        <Button
+          variant="primary"
+          loading={isSubmitting || mutation.isPending}
+          onClick={handleSubmit(
+            (v) => mutation.mutate(v),
+            (errs) => {
+              const first = Object.values(errs)[0];
+              showToast.error('Validation error', (first as { message?: string })?.message ?? 'Please check the form');
+            },
+          )}
+        >
+          Save
+        </Button>
       </>}>
       <form className="space-y-4">
         <Input {...register('name')} label="Name" error={errors.name?.message} />
