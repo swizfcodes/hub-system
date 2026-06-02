@@ -6,6 +6,7 @@ const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service = require("./campaigns.service");
+const storeService = require("../store/store.service");
 
 // ─── LIST / CRUD ──────────────────────────────────────────────
 
@@ -109,6 +110,104 @@ router.delete(
   async (req, res, next) => {
     try {
       res.json(await service.deleteSegment(req.business, req.params.segmentId));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── NEWSLETTER SUBSCRIBERS (must come BEFORE /:id) ─────
+
+router.get(
+  "/subscribers",
+  can("campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await storeService.listSubscribers({
+          search: req.query.search,
+          status: req.query.status,
+        }),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  "/subscribers/export",
+  can("campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      const csv = await storeService.exportSubscribersCsv({
+        search: req.query.search,
+        status: req.query.status,
+      });
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="newsletter-subscribers.csv"',
+      );
+      res.send(csv);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ─── STOREFRONT ENQUIRIES (must come BEFORE /:id) ───────
+
+router.get(
+  "/enquiries",
+  can("campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await storeService.listEnquiries({
+          search: req.query.search,
+          status: req.query.status,
+          type: req.query.type,
+        }),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.patch(
+  "/enquiries/:id/status",
+  param("id").isUUID(),
+  body("status").isIn(["new", "read", "replied", "closed"]),
+  validate,
+  can("campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await storeService.setEnquiryStatus(req.params.id, req.body.status),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/enquiries/:id/reply",
+  param("id").isUUID(),
+  body("message").notEmpty(),
+  validate,
+  can("campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await storeService.replyToEnquiry(
+          req.params.id,
+          req.body.message,
+          req.user,
+        ),
+      );
     } catch (err) {
       next(err);
     }

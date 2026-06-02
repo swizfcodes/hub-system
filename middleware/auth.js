@@ -8,12 +8,19 @@ const { getCachedPermissions, cachePermissions } = require("../config/redis");
 // ── verifyToken ───────────────────────────────────────────
 // Validates JWT, checks it hasn't been revoked, attaches
 // user context to req. Must run before businessContext.
+const { publicImages: imageRateLimiter } = require("./rateLimiter");
+
 async function verifyToken(req, res, next) {
   try {
     // --- PUBLIC ROUTE BYPASS ---
-    // Allow unauthenticated GET requests to the product image endpoint
-    if (req.method === 'GET' && req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)) {
-      return next();
+    // Allow unauthenticated GET requests to the product image endpoint.
+    // Only serves document_type = product_image (enforced in the route handler).
+    // Rate-limited by imageRateLimiter to prevent enumeration abuse.
+    if (
+      req.method === "GET" &&
+      req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)
+    ) {
+      return imageRateLimiter(req, res, next);
     }
     // ---------------------------
 

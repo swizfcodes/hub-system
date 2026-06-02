@@ -2,6 +2,9 @@ module.exports = {
   displayName: "hub-system-tests",
   testEnvironment: "node",
   testMatch: ["**/tests/**/*.test.js"],
+  moduleNameMapper: {
+    "^bcrypt$": "<rootDir>/node_modules/bcryptjs",
+  },
   collectCoverageFrom: [
     "shared/**/*.js",
     "modules/**/*.js",

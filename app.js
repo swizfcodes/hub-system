@@ -17,12 +17,15 @@ const app = express();
 // ── Security & parsing ────────────────────────────────────
 app.use(
   helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "img-src": [
           "'self'",
           "data:",
+          "blob:",
+          ...config.app.allowedOrigins,
           "https://i.ytimg.com",
           "https://img.youtube.com",
         ],

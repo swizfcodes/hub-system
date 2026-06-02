@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
-const { withStoreContext, withBusinessContext } = require("../../config/db");
+const { withStoreContext, withBusinessContext, withSharedContext, nextDocumentNumber } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
 const paystackService = require("../../integrations/paystack/paystack.service");
 const journalService = require("../accounting/journal.service");
@@ -30,6 +30,34 @@ const repo = require("./store.repository");
 
 const STORE_BUSINESS = "diffusers";
 const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
+
+// Scents are derived from published products, but the ERP captures no
+// presentation styling (no swatch/ink). This palette — keyed by the six
+// scent_family enum values — gives each derived scent its colour, mirroring
+// the storefront's design defaults. A store.scents row, if one ever exists,
+// overrides these (the repo returns its swatch/ink and we keep them).
+const SCENT_FAMILY_STYLE = {
+  "Fresh & Marine": { swatch: "#B8C9D6", ink: "#2B3A45" },
+  "Citrus & Green": { swatch: "#D8DEB0", ink: "#3A4022" },
+  "Oud & Floral":   { swatch: "#2B2820", ink: "#F2EDE4" },
+  "Spice & Amber":  { swatch: "#D9A76A", ink: "#3B2A15" },
+  "Woody & Deep":   { swatch: "#9B4A2E", ink: "#F2EDE4" },
+  "Floral & Musk":  { swatch: "#C5A0A7", ink: "#3B1F26" },
+};
+const SCENT_STYLE_FALLBACK = { swatch: "#2B2820", ink: "#F2EDE4" };
+
+// Fill swatch/ink from the family palette when the row didn't carry them
+// (i.e. no store.scents override). Leaves any explicit values untouched.
+function applyScentStyle(scent) {
+  if (!scent) return scent;
+  if (scent.swatch && scent.ink) return scent;
+  const style = SCENT_FAMILY_STYLE[scent.family] || SCENT_STYLE_FALLBACK;
+  return {
+    ...scent,
+    swatch: scent.swatch || style.swatch,
+    ink: scent.ink || style.ink,
+  };
+}
 
 // ── PUBLIC: PRODUCTS ─────────────────────────────────────────
 
@@ -76,7 +104,8 @@ async function getRelatedProducts(family, excludeId, limit) {
 
 async function getScents() {
   return withStoreContext(async (client) => {
-    return { data: await repo.listScents(client) };
+    const rows = await repo.listScents(client);
+    return { data: rows.map(applyScentStyle) };
   });
 }
 
@@ -86,7 +115,7 @@ async function getScentBySlug(slug) {
     if (!scent) {
       throw Object.assign(new Error("Scent not found"), { status: 404 });
     }
-    return scent;
+    return applyScentStyle(scent);
   });
 }
 
@@ -170,23 +199,22 @@ async function createOrder({ delivery_address, items }) {
 
     // Resolve the buyer. A web customer is both a store.customers row
     // and a shared.contacts row — create whichever is missing so the
-    // buyer always shows up in the ERP CRM.
+    // buyer always shows up in the ERP CRM. We need the contact_id in
+    // all cases (the ERP sales_order requires it), so resolve it first.
+    let contact = await repo.findContactByEmail(client, delivery_address.email);
+    if (!contact) {
+      contact = await repo.insertContact(client, {
+        displayName: delivery_address.full_name,
+        email: delivery_address.email,
+        phone: delivery_address.phone,
+      });
+    }
+
     let customer = await repo.findCustomerByEmail(
       client,
       delivery_address.email,
     );
     if (!customer) {
-      let contact = await repo.findContactByEmail(
-        client,
-        delivery_address.email,
-      );
-      if (!contact) {
-        contact = await repo.insertContact(client, {
-          displayName: delivery_address.full_name,
-          email: delivery_address.email,
-          phone: delivery_address.phone,
-        });
-      }
       customer = await repo.insertCustomer(client, {
         contactId: contact.contact_id,
         email: delivery_address.email,
@@ -201,6 +229,12 @@ async function createOrder({ delivery_address, items }) {
       deliveryAddress: delivery_address,
       items: lineItems,
     });
+
+    // NOTE: the ERP sales_order is intentionally NOT created here. A web
+    // order only becomes a real ERP sale once payment succeeds (see
+    // verifyAndFulfil), so ERP Sales never accumulates abandoned/unpaid
+    // orders. The buyer's contact + customer records ARE created above so
+    // they appear in CRM regardless of whether they complete payment.
 
     const reference = `orika_${order.id}`;
     await repo.setOrderPaystackRef(client, order.id, reference);
@@ -410,6 +444,56 @@ async function verifyAndFulfil(reference) {
       });
     }
 
+    // 7b. Create the ERP sales order — now that payment has succeeded.
+    //     Born already paid + fulfilled (source='web'), so ERP Sales only
+    //     ever contains real, completed sales — abandoned/unpaid checkouts
+    //     never reach the ERP. Linked back to store.orders. Same
+    //     transaction: stock, journals, and the sales order all commit
+    //     together or not at all.
+    try {
+      const addr = order.delivery_address || {};
+      let contact = addr.email
+        ? await repo.findContactByEmail(client, addr.email)
+        : null;
+      if (!contact) {
+        // Fallback — buyer's contact should exist from createOrder, but
+        // create it defensively so a missing contact never blocks a paid
+        // order from reaching Sales.
+        contact = await repo.insertContact(client, {
+          displayName: addr.full_name || addr.email || "Web customer",
+          email: addr.email,
+          phone: addr.phone,
+        });
+      }
+      const orderNumber = await nextDocumentNumber(
+        client,
+        STORE_BUSINESS,
+        "sales_order",
+      );
+      const salesOrder = await repo.insertSalesOrderForWeb(client, {
+        orderNumber,
+        contactId: contact.contact_id,
+        totalNaira: Number(order.total_kobo) / 100,
+      });
+      await repo.insertSalesOrderLinesForWeb(client, {
+        orderId: salesOrder.order_id,
+        lineItems: lines,
+      });
+      await repo.linkStoreOrderToSalesOrder(
+        client,
+        order.id,
+        salesOrder.order_id,
+      );
+      await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
+    } catch (err) {
+      // A failure here must abort the whole fulfilment — we never want a
+      // paid order with stock/journals but no sales record.
+      logger.error(
+        `[store] sales order creation failed for ${order.id}: ${err.message}`,
+      );
+      throw err;
+    }
+
     // Bump the customer's lifetime order count.
     if (order.customer_id) {
       await repo.incrementCustomerOrders(client, order.customer_id);
@@ -468,6 +552,42 @@ function verifyWebhookSignature(rawBody, signature) {
 
 // ── NEWSLETTER ───────────────────────────────────────────────
 
+// ── NEWSLETTER SUBSCRIBERS (ERP read views) ──────────────────
+
+async function listSubscribers(opts = {}) {
+  return withStoreContext(async (client) => {
+    const [data, counts] = await Promise.all([
+      repo.listSubscribers(client, opts),
+      repo.subscriberCounts(client),
+    ]);
+    return { data, counts };
+  });
+}
+
+// CSV export of subscribers (respects the same search/status filter).
+async function exportSubscribersCsv(opts = {}) {
+  return withStoreContext(async (client) => {
+    const rows = await repo.listSubscribers(client, opts);
+    const header = "email,status,source,subscribed_at,unsubscribed_at";
+    const csv = [header]
+      .concat(
+        rows.map((r) =>
+          [
+            r.email,
+            r.is_active ? "active" : "unsubscribed",
+            r.source || "",
+            r.subscribed_at ? new Date(r.subscribed_at).toISOString() : "",
+            r.unsubscribed_at ? new Date(r.unsubscribed_at).toISOString() : "",
+          ]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(","),
+        ),
+      )
+      .join("\n");
+    return csv;
+  });
+}
+
 async function subscribeNewsletter({ email, source }) {
   if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
     throw Object.assign(new Error("A valid email is required"), {
@@ -476,6 +596,19 @@ async function subscribeNewsletter({ email, source }) {
   }
   return withStoreContext(async (client) => {
     const sub = await repo.upsertSubscriber(client, { email, source });
+
+    // Mirror the subscriber into shared.contacts tagged 'subscriber' so
+    // the campaign engine can target them (audience contact_type:
+    // ['subscriber']). Best-effort: a CRM hiccup shouldn't fail the
+    // public subscribe.
+    try {
+      await repo.tagContactAsSubscriber(client, { email: sub.email });
+    } catch (err) {
+      logger.warn(
+        `[store] subscriber contact tagging failed for ${sub.email}: ${err.message}`,
+      );
+    }
+
     try {
       await sendEmail({
         to: sub.email,
@@ -497,6 +630,15 @@ async function unsubscribeNewsletter(token) {
       throw Object.assign(
         new Error("Invalid or already-used unsubscribe link"),
         { status: 404 },
+      );
+    }
+    // Stop newsletter campaigns from targeting them by removing the
+    // 'subscriber' tag (other contact types, e.g. customer, are kept).
+    try {
+      await repo.untagContactSubscriber(client, row.email);
+    } catch (err) {
+      logger.warn(
+        `[store] subscriber contact untagging failed for ${row.email}: ${err.message}`,
       );
     }
     return { ok: true };
@@ -533,6 +675,126 @@ async function submitEnquiry(data) {
   });
 }
 
+// ── ENQUIRIES (ERP inbox) ────────────────────────────────────
+
+const ENQUIRY_STATUSES = ["new", "read", "replied", "closed"];
+
+async function listEnquiries(opts = {}) {
+  return withStoreContext(async (client) => {
+    const [data, counts] = await Promise.all([
+      repo.listEnquiries(client, opts),
+      repo.enquiryCounts(client),
+    ]);
+    return { data, counts };
+  });
+}
+
+async function setEnquiryStatus(id, status) {
+  if (!ENQUIRY_STATUSES.includes(status)) {
+    throw Object.assign(
+      new Error(`status must be one of: ${ENQUIRY_STATUSES.join(", ")}`),
+      { status: 400 },
+    );
+  }
+  return withStoreContext(async (client) => {
+    const row = await repo.updateEnquiryStatus(client, id, status);
+    if (!row) {
+      throw Object.assign(new Error("Enquiry not found"), { status: 404 });
+    }
+    return row;
+  });
+}
+
+// Reply to an enquiry THROUGH the messaging layer (SmatComm), so the reply
+// is threaded in the customer's conversation and dispatched out via the
+// email channel to their inbox — never opening an external mail client.
+//
+// Flow: find the enquiry → find/create a shared.contacts row for the
+// enquirer's email → find/create a customer_thread channel keyed to that
+// email (metadata.source='email', external_id=<email>) → send through
+// messaging.sendMessage, whose customer_thread dispatch routes via the SMTP
+// adapter to the customer's inbox. Then flip the enquiry to 'replied'.
+async function replyToEnquiry(enquiryId, message, user) {
+  if (!message || !message.trim()) {
+    throw Object.assign(new Error("Reply message is required"), { status: 400 });
+  }
+
+  // 1. Load the enquiry (store schema).
+  const enquiry = await withStoreContext(async (client) => {
+    const { rows } = await client.query(
+      `SELECT id, name, email, phone, type FROM store.enquiries WHERE id = $1`,
+      [enquiryId],
+    );
+    return rows[0] || null;
+  });
+  if (!enquiry) {
+    throw Object.assign(new Error("Enquiry not found"), { status: 404 });
+  }
+
+  // 2. Find/create contact + customer_thread channel (shared schema),
+  //    mirroring how inbound email threads are created.
+  const channelId = await withSharedContext(async (client) => {
+    // Contact by email.
+    let { rows: c } = await client.query(
+      `SELECT contact_id FROM shared.contacts WHERE lower(email) = lower($1) LIMIT 1`,
+      [enquiry.email],
+    );
+    let contactId = c[0]?.contact_id;
+    if (!contactId) {
+      const ins = await client.query(
+        `INSERT INTO shared.contacts (contact_type, display_name, primary_phone, email, source)
+         VALUES (ARRAY['customer'], $1, $2, $3, 'enquiry')
+         RETURNING contact_id`,
+        [enquiry.name || enquiry.email, enquiry.phone, enquiry.email.toLowerCase()],
+      );
+      contactId = ins.rows[0].contact_id;
+    }
+
+    // Existing email customer_thread for this contact?
+    const { rows: ch } = await client.query(
+      `SELECT c.channel_id
+       FROM shared.message_channels c
+       JOIN shared.channel_members m ON m.channel_id = c.channel_id
+       WHERE c.channel_type = 'customer_thread'
+         AND m.contact_id = $1
+         AND c.metadata->>'source' = 'email'
+       LIMIT 1`,
+      [contactId],
+    );
+    if (ch[0]) return ch[0].channel_id;
+
+    // Create one, keyed to the enquirer's email (source/external_id is
+    // what the customer_thread dispatch reads to route via SMTP).
+    const created = await client.query(
+      `INSERT INTO shared.message_channels (channel_type, name, metadata)
+       VALUES ('customer_thread', $1, $2)
+       RETURNING channel_id`,
+      [
+        `Thread: ${enquiry.name || enquiry.email}`,
+        JSON.stringify({ source: "email", external_id: enquiry.email }),
+      ],
+    );
+    const newId = created.rows[0].channel_id;
+    await client.query(
+      `INSERT INTO shared.channel_members (channel_id, contact_id) VALUES ($1, $2)`,
+      [newId, contactId],
+    );
+    return newId;
+  });
+
+  // 3. Send through messaging — this writes the message AND dispatches
+  //    externally (SMTP → customer's inbox) for customer_thread channels.
+  const messagingService = require("../../shared/messaging/messaging.service");
+  await messagingService.sendMessage(channelId, { content: message }, user);
+
+  // 4. Mark the enquiry replied.
+  await withStoreContext(async (client) => {
+    await repo.updateEnquiryStatus(client, enquiryId, "replied");
+  });
+
+  return { ok: true, channel_id: channelId };
+}
+
 module.exports = {
   // public reads
   getActiveProducts,
@@ -550,5 +812,10 @@ module.exports = {
   // newsletter + enquiries
   subscribeNewsletter,
   unsubscribeNewsletter,
+  listSubscribers,
+  exportSubscribersCsv,
   submitEnquiry,
+  listEnquiries,
+  setEnquiryStatus,
+  replyToEnquiry,
 };

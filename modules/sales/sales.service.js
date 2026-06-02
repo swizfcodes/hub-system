@@ -506,7 +506,7 @@ async function generateInvoiceFromOrder(
 }
 
 async function handToLogistics(business, orderId, data, user) {
-  return withBusinessContext(business, async (client) => {
+  const result = await withBusinessContext(business, async (client) => {
     const order = await repo.findOrderById(client, orderId);
     if (!order)
       throw Object.assign(new Error("Order not found"), { status: 404 });
@@ -517,6 +517,22 @@ async function handToLogistics(business, orderId, data, user) {
     });
     return { message: "Order handed to logistics", order: updated };
   });
+
+  const logisticsService = require("../logistics/logistics.service");
+  await logisticsService.createDelivery(
+    business,
+    {
+      reference_type: "sales_order",
+      reference_id: orderId,
+      contact_id: result.order.contact_id,
+      delivery_address: data.delivery_address,
+      courier: data.courier_preference,
+      delivery_fee: data.delivery_fee || 0,
+    },
+    user,
+  );
+
+  return result;
 }
 
 async function cancelOrder(business, orderId, user) {
