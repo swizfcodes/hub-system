@@ -18,6 +18,11 @@ router.use("/auth", loginRateLimiter, require("../shared/auth/auth.routes"));
 // store-admin route surface — web sales flow through the ERP's
 // own accounting + stock path.
 router.use("/store", require("../modules/store/store.public.routes"));
+router.use(
+  "/store-admin",
+  protect,
+  require("../modules/store/store.admin.routes"),
+);
 
 // ── Supplier portal (public, token-gated) ─────────────────────
 router.use(
@@ -160,10 +165,14 @@ router.use(
   protect,
   require("../modules/campaigns/campaigns.routes"),
 );
-router.use("/sales-campaigns", protect, (function () {
-  const { adminRouter } = require("../modules/sales_campaigns/admin.service");
-  return adminRouter;
-})());
+router.use(
+  "/sales-campaigns",
+  protect,
+  (function () {
+    const { adminRouter } = require("../modules/sales_campaigns/admin.service");
+    return adminRouter;
+  })(),
+);
 router.use("/social", protect, require("../modules/social/social.routes"));
 router.use("/loyalty", protect, require("../modules/loyalty/loyalty.routes"));
 router.use(

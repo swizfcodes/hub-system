@@ -1,7 +1,12 @@
 "use strict";
 
 const crypto = require("crypto");
-const { withStoreContext, withBusinessContext, withSharedContext, nextDocumentNumber } = require("../../config/db");
+const {
+  withStoreContext,
+  withBusinessContext,
+  withSharedContext,
+  nextDocumentNumber,
+} = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
 const paystackService = require("../../integrations/paystack/paystack.service");
 const journalService = require("../accounting/journal.service");
@@ -39,10 +44,10 @@ const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
 const SCENT_FAMILY_STYLE = {
   "Fresh & Marine": { swatch: "#B8C9D6", ink: "#2B3A45" },
   "Citrus & Green": { swatch: "#D8DEB0", ink: "#3A4022" },
-  "Oud & Floral":   { swatch: "#2B2820", ink: "#F2EDE4" },
-  "Spice & Amber":  { swatch: "#D9A76A", ink: "#3B2A15" },
-  "Woody & Deep":   { swatch: "#9B4A2E", ink: "#F2EDE4" },
-  "Floral & Musk":  { swatch: "#C5A0A7", ink: "#3B1F26" },
+  "Oud & Floral": { swatch: "#2B2820", ink: "#F2EDE4" },
+  "Spice & Amber": { swatch: "#D9A76A", ink: "#3B2A15" },
+  "Woody & Deep": { swatch: "#9B4A2E", ink: "#F2EDE4" },
+  "Floral & Musk": { swatch: "#C5A0A7", ink: "#3B1F26" },
 };
 const SCENT_STYLE_FALLBACK = { swatch: "#2B2820", ink: "#F2EDE4" };
 
@@ -588,6 +593,26 @@ async function exportSubscribersCsv(opts = {}) {
   });
 }
 
+// ── SCENTS ADMIN ─────────────────────────────────────────────
+
+async function listEditableScents() {
+  return withStoreContext(async (client) => {
+    return { data: await repo.listEditableScents(client) };
+  });
+}
+
+async function saveScent(family, data) {
+  if (!family) {
+    throw Object.assign(new Error("family is required"), { status: 400 });
+  }
+  if (!data.name || !data.name.trim()) {
+    throw Object.assign(new Error("name is required"), { status: 400 });
+  }
+  return withStoreContext(async (client) => {
+    return repo.upsertScent(client, { ...data, family });
+  });
+}
+
 async function subscribeNewsletter({ email, source }) {
   if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
     throw Object.assign(new Error("A valid email is required"), {
@@ -716,7 +741,9 @@ async function setEnquiryStatus(id, status) {
 // adapter to the customer's inbox. Then flip the enquiry to 'replied'.
 async function replyToEnquiry(enquiryId, message, user) {
   if (!message || !message.trim()) {
-    throw Object.assign(new Error("Reply message is required"), { status: 400 });
+    throw Object.assign(new Error("Reply message is required"), {
+      status: 400,
+    });
   }
 
   // 1. Load the enquiry (store schema).
@@ -745,7 +772,11 @@ async function replyToEnquiry(enquiryId, message, user) {
         `INSERT INTO shared.contacts (contact_type, display_name, primary_phone, email, source)
          VALUES (ARRAY['customer'], $1, $2, $3, 'enquiry')
          RETURNING contact_id`,
-        [enquiry.name || enquiry.email, enquiry.phone, enquiry.email.toLowerCase()],
+        [
+          enquiry.name || enquiry.email,
+          enquiry.phone,
+          enquiry.email.toLowerCase(),
+        ],
       );
       contactId = ins.rows[0].contact_id;
     }
@@ -761,25 +792,34 @@ async function replyToEnquiry(enquiryId, message, user) {
        LIMIT 1`,
       [contactId],
     );
-    if (ch[0]) return ch[0].channel_id;
+    let resolvedChannelId;
+    if (ch[0]) {
+      resolvedChannelId = ch[0].channel_id;
+    } else {
+      // Create one, keyed to the enquirer's email (source/external_id is
+      // what the customer_thread dispatch reads to route via SMTP).
+      const created = await client.query(
+        `INSERT INTO shared.message_channels (channel_type, name, metadata)
+         VALUES ('customer_thread', $1, $2)
+         RETURNING channel_id`,
+        [
+          `Thread: ${enquiry.name || enquiry.email}`,
+          JSON.stringify({ source: "email", external_id: enquiry.email }),
+        ],
+      );
+      resolvedChannelId = created.rows[0].channel_id;
+      await client.query(
+        `INSERT INTO shared.channel_members (channel_id, contact_id) VALUES ($1, $2)`,
+        [resolvedChannelId, contactId],
+      );
+    }
 
-    // Create one, keyed to the enquirer's email (source/external_id is
-    // what the customer_thread dispatch reads to route via SMTP).
-    const created = await client.query(
-      `INSERT INTO shared.message_channels (channel_type, name, metadata)
-       VALUES ('customer_thread', $1, $2)
-       RETURNING channel_id`,
-      [
-        `Thread: ${enquiry.name || enquiry.email}`,
-        JSON.stringify({ source: "email", external_id: enquiry.email }),
-      ],
-    );
-    const newId = created.rows[0].channel_id;
+    // Ensure the replying staff member is a member of the thread (new or existing).
     await client.query(
-      `INSERT INTO shared.channel_members (channel_id, contact_id) VALUES ($1, $2)`,
-      [newId, contactId],
+      `INSERT INTO shared.channel_members (channel_id, user_id, role) VALUES ($1, $2, 'admin') ON CONFLICT DO NOTHING`,
+      [resolvedChannelId, user.user_id],
     );
-    return newId;
+    return resolvedChannelId;
   });
 
   // 3. Send through messaging — this writes the message AND dispatches
@@ -812,6 +852,8 @@ module.exports = {
   // newsletter + enquiries
   subscribeNewsletter,
   unsubscribeNewsletter,
+  listEditableScents,
+  saveScent,
   listSubscribers,
   exportSubscribersCsv,
   submitEnquiry,

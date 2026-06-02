@@ -143,6 +143,83 @@ async function listRelatedProducts(client, family, excludeId, limit) {
 // exists; otherwise sensible fallbacks are used so a freshly-uploaded
 // product's scent still renders. store.scents alone is NOT the source of
 // truth — products drive which scents appear.
+// ── SCENTS ADMIN (presentation overrides) ────────────────────
+// Scents are derived from published products; this lets staff override
+// the presentation (name/tagline/colour/hero image/description) by
+// writing store.scents, which the storefront read-path already merges.
+
+// Editable scents = families that actually have a published product,
+// LEFT JOINed to any existing store.scents override row so the admin
+// shows current values (override if present, else derived defaults).
+async function listEditableScents(client) {
+  const { rows } = await client.query(
+    `SELECT
+       p.scent_family                                   AS family,
+       COALESCE(s.name, p.scent_family::text)           AS name,
+       COALESCE(
+         s.slug,
+         lower(regexp_replace(p.scent_family::text, '[^a-zA-Z0-9]+', '-', 'g'))
+       )                                                AS slug,
+       COALESCE(s.tagline, '')                          AS tagline,
+       COALESCE(s.description, '')                      AS description,
+       s.swatch                                         AS swatch,
+       s.ink                                            AS ink,
+       s.image                                          AS image,
+       COALESCE(s.display_order, 0)                     AS display_order,
+       (s.family IS NOT NULL)                           AS has_override
+     FROM (
+       SELECT DISTINCT scent_family
+       FROM store.products
+       WHERE is_published = true
+     ) p
+     LEFT JOIN store.scents s ON s.family = p.scent_family
+     ORDER BY display_order, name`,
+  );
+  return rows;
+}
+
+// Upsert a scent's presentation row. Keyed by family (PK). Notes are left
+// to the product-derived values (not edited here), so we keep existing
+// note arrays on conflict and only touch presentation fields.
+async function upsertScent(client, s) {
+  const slug =
+    s.slug ||
+    s.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO store.scents
+       (family, name, slug, tagline, description, swatch, ink, image, display_order)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+     ON CONFLICT (family) DO UPDATE SET
+       name          = EXCLUDED.name,
+       slug          = EXCLUDED.slug,
+       tagline       = EXCLUDED.tagline,
+       description   = EXCLUDED.description,
+       swatch        = EXCLUDED.swatch,
+       ink           = EXCLUDED.ink,
+       image         = EXCLUDED.image,
+       display_order = EXCLUDED.display_order,
+       updated_at    = now()
+     RETURNING *`,
+    [
+      s.family,
+      s.name,
+      slug,
+      s.tagline || "",
+      s.description || "",
+      s.swatch || "#2B2820",
+      s.ink || "#F2EDE4",
+      s.image || null,
+      s.display_order ?? 0,
+    ],
+  );
+  return row;
+}
+
 async function listScents(client) {
   const { rows } = await client.query(
     `SELECT
@@ -666,6 +743,9 @@ module.exports = {
   findStoreProductsByIds,
   listRelatedProducts,
   // scents / signatures
+  // scents
+  listEditableScents,
+  upsertScent,
   listScents,
   findScentBySlug,
   listSignatures,
