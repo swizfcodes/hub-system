@@ -23,7 +23,7 @@ export function AuditTab({ contactId }: { contactId: string }) {
       <EmptyState
         icon={<History className="w-6 h-6" />}
         title="No audit entries"
-        description="Changes to this contact will be recorded here. Confirm that /api/audit is mounted on the backend."
+        description="Create, edit and delete actions on this contact are recorded here. If it stays empty, your role may not yet have audit access."
       />
     );
   }
