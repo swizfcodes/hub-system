@@ -11,26 +11,29 @@ process.env.NODE_ENV = "test";
 
 // JWT
 process.env.JWT_SECRET =
-  process.env.JWT_SECRET || "test-secret-key-for-testing-only-min-64-chars-xxxxxxxxxxxxxxxx";
+  process.env.JWT_SECRET ||
+  "test-secret-key-for-testing-only-min-64-chars-xxxxxxxxxxxxxxxx";
 process.env.JWT_EXPIRY = process.env.JWT_EXPIRY || "1h";
 process.env.JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET || "test-refresh-secret-for-testing-only-min-64-chars-xxxxxxxxxxxxxxx";
+  process.env.JWT_REFRESH_SECRET ||
+  "test-refresh-secret-for-testing-only-min-64-chars-xxxxxxxxxxxxxxx";
 process.env.JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || "7d";
 
 // PostgreSQL — real values required for integration tests; stubs prevent
 // config.js from calling process.exit(1) in unit tests that mock the DB.
-process.env.PG_HOST     = process.env.PG_HOST     || "localhost";
-process.env.PG_PORT     = process.env.PG_PORT     || "5432";
+process.env.PG_HOST = process.env.PG_HOST || "localhost";
+process.env.PG_PORT = process.env.PG_PORT || "5432";
 process.env.PG_DATABASE = process.env.PG_DATABASE || "hub_db_test";
-process.env.PG_USER     = process.env.PG_USER     || "hub_app";
+process.env.PG_USER = process.env.PG_USER || "hub_app";
 process.env.PG_PASSWORD = process.env.PG_PASSWORD || "test-pg-password-stub";
 
 // Redis
 process.env.REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // App
-process.env.PORT            = process.env.PORT || "3001";
-process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || "http://localhost:3001";
+process.env.PORT = process.env.PORT || "3001";
+process.env.ALLOWED_ORIGINS =
+  process.env.ALLOWED_ORIGINS || "http://localhost:3001";
 
 // Suppress console output in tests unless explicitly needed
 const originalLog = console.log;

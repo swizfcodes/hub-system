@@ -1,27 +1,30 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Package, Search } from 'lucide-react';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { listOrders } from '@services/sales/orders';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { Input } from '@components/ui/Input';
-import { Skeleton } from '@components/ui/Skeleton';
-import { EmptyState } from '@components/ui/EmptyState';
-import { fmtMoney, fmtDate } from '@lib/format';
-import { ORDER_FILTER_OPTIONS, FULFILMENT_LABELS } from '@lib/constants/salesConstants';
-import { cn } from '@lib/cn';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Package, Search } from "lucide-react";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { listOrders } from "@services/sales/orders";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { Input } from "@components/ui/Input";
+import { Skeleton } from "@components/ui/Skeleton";
+import { EmptyState } from "@components/ui/EmptyState";
+import { fmtMoney, fmtDate } from "@lib/format";
+import {
+  ORDER_FILTER_OPTIONS,
+  FULFILMENT_LABELS,
+} from "@lib/constants/salesConstants";
+import { cn } from "@lib/cn";
 
 export function OrdersView() {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { currency } = useActiveBusiness();
 
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sales-orders', { status }],
-    queryFn:  () => listOrders({ status: status || undefined, limit: 50 }),
+    queryKey: ["sales-orders", { status }],
+    queryFn: () => listOrders({ status: status || undefined, limit: 50 }),
   });
 
   const rows = data?.data ?? [];
@@ -30,7 +33,7 @@ export function OrdersView() {
     ? rows.filter(
         (o) =>
           o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-          (o.contact_name ?? '').toLowerCase().includes(search.toLowerCase()),
+          (o.contact_name ?? "").toLowerCase().includes(search.toLowerCase()),
       )
     : rows;
 
@@ -44,10 +47,10 @@ export function OrdersView() {
               key={opt.value}
               onClick={() => setStatus(opt.value)}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 status === opt.value
-                  ? 'bg-orika-gold text-orika-black'
-                  : 'bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80',
+                  ? "bg-orika-gold text-orika-black"
+                  : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80",
               )}
             >
               {opt.label}
@@ -79,8 +82,8 @@ export function OrdersView() {
           title="No orders found"
           description={
             search || status
-              ? 'Try adjusting your filters.'
-              : 'Confirmed quotations will appear here as orders.'
+              ? "Try adjusting your filters."
+              : "Confirmed quotations will appear here as orders."
           }
         />
       ) : (
@@ -88,22 +91,29 @@ export function OrdersView() {
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-white/5 bg-orika-graphite/40">
-                {['Order', 'Customer', 'Total', 'Paid', 'Outstanding', 'Type', 'Status', ''].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {[
+                  "Order",
+                  "Customer",
+                  "Total",
+                  "Paid",
+                  "Outstanding",
+                  "Type",
+                  "Status",
+                  "",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filtered.map((o) => {
                 const isOverdue =
-                  o.amount_outstanding > 0 && o.status === 'fulfilled';
+                  o.amount_outstanding > 0 && o.status === "fulfilled";
                 return (
                   <tr
                     key={o.order_id}
@@ -114,7 +124,7 @@ export function OrdersView() {
                       {o.order_number}
                     </td>
                     <td className="px-4 py-3 font-medium text-orika-cream">
-                      {o.contact_name ?? '—'}
+                      {o.contact_name ?? "—"}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-orika-cream">
                       {fmtMoney(o.total_amount, currency)}
@@ -124,8 +134,8 @@ export function OrdersView() {
                     </td>
                     <td
                       className={cn(
-                        'px-4 py-3 tabular-nums font-medium',
-                        isOverdue ? 'text-red-400' : 'text-orika-cloud',
+                        "px-4 py-3 tabular-nums font-medium",
+                        isOverdue ? "text-red-400" : "text-orika-cloud",
                       )}
                     >
                       {fmtMoney(o.amount_outstanding, currency)}
@@ -134,7 +144,11 @@ export function OrdersView() {
                       {FULFILMENT_LABELS[o.fulfilment_type]}
                     </td>
                     <td className="px-4 py-3">
-                      <SalesStatusBadge entity="order" status={o.status} size="sm" />
+                      <SalesStatusBadge
+                        entity="order"
+                        status={o.status}
+                        size="sm"
+                      />
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-orika-smoke">
                       {fmtDate(o.created_at)}

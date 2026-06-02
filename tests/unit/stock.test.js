@@ -82,7 +82,7 @@ describe("Stock Management Service", () => {
       const movement = generateStockMovement(TEST_BUSINESS, {
         quantity: -150,
         balance_before: 100,
-        balance_after: -50,  // This represents what would happen without validation
+        balance_after: -50, // This represents what would happen without validation
       });
       // This should fail validation, balance would be negative
       expect(movement.balance_after < 0).toBe(true); // Represents failure condition
@@ -228,7 +228,9 @@ describe("Stock Management Service", () => {
   describe("Multi-Product Scenarios", () => {
     it("should track multiple products", () => {
       const movements = TEST_PRODUCTS.map((product) =>
-        generateStockMovement(TEST_BUSINESS, { product_id: product.product_id }),
+        generateStockMovement(TEST_BUSINESS, {
+          product_id: product.product_id,
+        }),
       );
 
       expect(movements.length).toBe(TEST_PRODUCTS.length);
@@ -246,12 +248,16 @@ describe("Stock Management Service", () => {
     });
 
     it("should identify inventory mix", () => {
-      const totalQuantity = TEST_PRODUCTS.reduce((sum, p) => sum + p.stock_quantity, 0);
-      const avgUnitCost = TEST_PRODUCTS.reduce((sum, p) => sum + p.unit_cost, 0) / TEST_PRODUCTS.length;
-      
+      const totalQuantity = TEST_PRODUCTS.reduce(
+        (sum, p) => sum + p.stock_quantity,
+        0,
+      );
+      const avgUnitCost =
+        TEST_PRODUCTS.reduce((sum, p) => sum + p.unit_cost, 0) /
+        TEST_PRODUCTS.length;
+
       expect(totalQuantity).toBeGreaterThan(0);
       expect(avgUnitCost).toBeGreaterThan(0);
     });
   });
 });
-

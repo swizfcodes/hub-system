@@ -16,8 +16,8 @@
 
 require("dotenv").config();
 const { pool, nextDocumentNumber } = require("../config/db");
-const { loadActiveBusinesses }     = require("../config/businesses");
-const logger                       = require("../config/logger");
+const { loadActiveBusinesses } = require("../config/businesses");
+const logger = require("../config/logger");
 
 async function backfillBusiness(business) {
   const client = await pool.connect();
@@ -29,8 +29,12 @@ async function backfillBusiness(business) {
       [business],
     );
     const colSet = new Set(cols.map((c) => c.column_name));
-    const addrCol = colSet.has("delivery_address") ? "o.delivery_address" : "NULL";
-    const courierCol = colSet.has("courier_preference") ? "o.courier_preference" : "NULL";
+    const addrCol = colSet.has("delivery_address")
+      ? "o.delivery_address"
+      : "NULL";
+    const courierCol = colSet.has("courier_preference")
+      ? "o.courier_preference"
+      : "NULL";
 
     // Find awaiting_dispatch orders with no delivery record
     const { rows: orders } = await client.query(
@@ -56,7 +60,11 @@ async function backfillBusiness(business) {
     for (const order of orders) {
       await client.query("BEGIN");
       try {
-        const deliveryNumber = await nextDocumentNumber(client, business, "delivery");
+        const deliveryNumber = await nextDocumentNumber(
+          client,
+          business,
+          "delivery",
+        );
 
         let addr;
         if (!order.delivery_address) {
@@ -73,7 +81,9 @@ async function backfillBusiness(business) {
           }
         }
 
-        const { rows: [delivery] } = await client.query(
+        const {
+          rows: [delivery],
+        } = await client.query(
           `INSERT INTO ${business}.deliveries
              (delivery_number, reference_type, reference_id, contact_id,
               delivery_address, courier, status, delivery_fee, fee_borne_by)
@@ -101,7 +111,12 @@ async function backfillBusiness(business) {
             `INSERT INTO ${business}.delivery_items
                (delivery_id, product_id, description, quantity)
              VALUES ($1,$2,$3,$4)`,
-            [delivery.delivery_id, line.product_id, line.description, line.quantity],
+            [
+              delivery.delivery_id,
+              line.product_id,
+              line.description,
+              line.quantity,
+            ],
           );
         }
 
@@ -114,10 +129,14 @@ async function backfillBusiness(business) {
         );
 
         await client.query("COMMIT");
-        logger.info(`[${business}] Created ${deliveryNumber} for order ${order.order_id}`);
+        logger.info(
+          `[${business}] Created ${deliveryNumber} for order ${order.order_id}`,
+        );
       } catch (err) {
         await client.query("ROLLBACK");
-        logger.error(`[${business}] Failed for order ${order.order_id}: ${err.message}`);
+        logger.error(
+          `[${business}] Failed for order ${order.order_id}: ${err.message}`,
+        );
       }
     }
   } finally {

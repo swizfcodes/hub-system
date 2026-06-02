@@ -1,20 +1,22 @@
-import { api } from '@services/api';
+import { api } from "@services/api";
 
 export interface EditableScent {
-  family:        string;
-  name:          string;
-  slug:          string;
-  tagline:       string;
-  description:   string;
-  swatch:        string | null;
-  ink:           string | null;
-  image:         string | null;
+  family: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  description: string;
+  swatch: string | null;
+  ink: string | null;
+  image: string | null;
   display_order: number;
-  has_override:  boolean;
+  has_override: boolean;
 }
 
 export async function listEditableScents(): Promise<EditableScent[]> {
-  const { data } = await api.get<{ data: EditableScent[] }>('/store-admin/scents');
+  const { data } = await api.get<{ data: EditableScent[] }>(
+    "/store-admin/scents",
+  );
   return data.data;
 }
 

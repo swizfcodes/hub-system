@@ -4,7 +4,10 @@ const { withSharedContext } = require("../../config/db");
 const auditService = require("../audit/audit.service");
 const repo = require("./contacts.repository");
 
-async function list({ business, search = "", type, page = 1, limit = 50 }, user) {
+async function list(
+  { business, search = "", type, page = 1, limit = 50 },
+  user,
+) {
   return withSharedContext(async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     // Prefer the explicit business passed by the route (sourced from

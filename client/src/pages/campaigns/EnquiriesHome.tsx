@@ -4,41 +4,42 @@
  * View partnership/wholesale/gifting enquiries submitted from the site,
  * filter by status, and move them through new → read → replied → closed.
  */
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Mail, Phone, Send } from 'lucide-react';
-import { Topbar } from '@/components/shell/Topbar';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Input } from '@components/ui/Input';
-import { Button } from '@components/ui/Button';
-import { Badge } from '@components/ui/Badge';
-import { EmptyState } from '@components/ui/EmptyState';
-import { showToast } from '@hooks/useToast';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Search, Mail, Phone, Send } from "lucide-react";
+import { Topbar } from "@/components/shell/Topbar";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Badge } from "@components/ui/Badge";
+import { EmptyState } from "@components/ui/EmptyState";
+import { showToast } from "@hooks/useToast";
 import {
   listEnquiries,
   setEnquiryStatus,
   replyToEnquiry,
   type Enquiry,
   type EnquiryStatus,
-} from '@services/campaigns/campaigns';
+} from "@services/campaigns/campaigns";
 
 const WORD_LIMIT = 40;
 
-const STATUS_FLOW: EnquiryStatus[] = ['new', 'read', 'replied', 'closed'];
-const STATUS_TONE: Record<EnquiryStatus, 'gold' | 'info' | 'sage' | 'neutral'> = {
-  new: 'gold',
-  read: 'info',
-  replied: 'sage',
-  closed: 'neutral',
-};
+const STATUS_FLOW: EnquiryStatus[] = ["new", "read", "replied", "closed"];
+const STATUS_TONE: Record<EnquiryStatus, "gold" | "info" | "sage" | "neutral"> =
+  {
+    new: "gold",
+    read: "info",
+    replied: "sage",
+    closed: "neutral",
+  };
 
 export default function EnquiriesHome() {
   const qc = useQueryClient();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<EnquiryStatus | ''>('');
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<EnquiryStatus | "">("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ['campaigns', 'enquiries', search, status],
+    queryKey: ["campaigns", "enquiries", search, status],
     queryFn: () =>
       listEnquiries({
         search: search || undefined,
@@ -50,9 +51,9 @@ export default function EnquiriesHome() {
     mutationFn: ({ id, next }: { id: string; next: EnquiryStatus }) =>
       setEnquiryStatus(id, next),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['campaigns', 'enquiries'] });
+      qc.invalidateQueries({ queryKey: ["campaigns", "enquiries"] });
     },
-    onError: () => showToast.error('Could not update status'),
+    onError: () => showToast.error("Could not update status"),
   });
 
   const enquiries = data?.data ?? [];
@@ -66,23 +67,31 @@ export default function EnquiriesHome() {
           title="Storefront Enquiries"
           subtitle="Partnership, wholesale, gifting and general enquiries submitted from the site."
           crumbs={[
-            { label: 'Hub', to: '/' },
-            { label: 'Campaigns', to: '/campaigns' },
-            { label: 'Enquiries' },
+            { label: "Hub", to: "/" },
+            { label: "Campaigns", to: "/campaigns" },
+            { label: "Enquiries" },
           ]}
         />
 
         {/* KPI strip */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Total',   value: counts.total,   color: '#9E9891' },
-            { label: 'New',     value: counts.new,     color: '#C9A86C' },
-            { label: 'Replied', value: counts.replied, color: '#2D6A4F' },
-            { label: 'Closed',  value: counts.closed,  color: '#9E9891' },
+            { label: "Total", value: counts.total, color: "#9E9891" },
+            { label: "New", value: counts.new, color: "#C9A86C" },
+            { label: "Replied", value: counts.replied, color: "#2D6A4F" },
+            { label: "Closed", value: counts.closed, color: "#9E9891" },
           ].map((kpi) => (
-            <div key={kpi.label} className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">{kpi.label}</p>
-              <p className="font-display text-2xl font-light tabular-nums" style={{ color: kpi.color }}>
+            <div
+              key={kpi.label}
+              className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+            >
+              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+                {kpi.label}
+              </p>
+              <p
+                className="font-display text-2xl font-light tabular-nums"
+                style={{ color: kpi.color }}
+              >
                 {kpi.value}
               </p>
             </div>
@@ -101,22 +110,24 @@ export default function EnquiriesHome() {
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            {([
-              { v: '', label: 'All' },
-              { v: 'new', label: 'New' },
-              { v: 'read', label: 'Read' },
-              { v: 'replied', label: 'Replied' },
-              { v: 'closed', label: 'Closed' },
-            ] as { v: EnquiryStatus | ''; label: string }[]).map((opt) => (
+            {(
+              [
+                { v: "", label: "All" },
+                { v: "new", label: "New" },
+                { v: "read", label: "Read" },
+                { v: "replied", label: "Replied" },
+                { v: "closed", label: "Closed" },
+              ] as { v: EnquiryStatus | ""; label: string }[]
+            ).map((opt) => (
               <button
-                key={opt.v || 'all'}
+                key={opt.v || "all"}
                 type="button"
                 onClick={() => setStatus(opt.v)}
                 className={
-                  'rounded-full border px-3 py-1 text-xs font-medium transition-all ' +
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-all " +
                   (status === opt.v
-                    ? 'border-orika-gold bg-orika-gold/10 text-orika-gold'
-                    : 'border-white/10 text-orika-smoke hover:border-white/25')
+                    ? "border-orika-gold bg-orika-gold/10 text-orika-gold"
+                    : "border-white/10 text-orika-smoke hover:border-white/25")
                 }
               >
                 {opt.label}
@@ -162,22 +173,24 @@ function EnquiryCard({
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
-  const [reply, setReply] = useState('');
+  const [reply, setReply] = useState("");
 
   const words = e.message.trim().split(/\s+/);
   const isLong = words.length > WORD_LIMIT;
   const shown =
-    isLong && !expanded ? words.slice(0, WORD_LIMIT).join(' ') + '…' : e.message;
+    isLong && !expanded
+      ? words.slice(0, WORD_LIMIT).join(" ") + "…"
+      : e.message;
 
   const replyMutation = useMutation({
     mutationFn: () => replyToEnquiry(e.id, reply.trim()),
     onSuccess: () => {
-      showToast.success('Reply sent', `Delivered to ${e.email}`);
-      setReply('');
+      showToast.success("Reply sent", `Delivered to ${e.email}`);
+      setReply("");
       setReplyOpen(false);
-      qc.invalidateQueries({ queryKey: ['campaigns', 'enquiries'] });
+      qc.invalidateQueries({ queryKey: ["campaigns", "enquiries"] });
     },
-    onError: () => showToast.error('Could not send reply'),
+    onError: () => showToast.error("Could not send reply"),
   });
 
   return (
@@ -192,13 +205,21 @@ function EnquiryCard({
             {e.type}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-orika-smoke">
-            <a href={`mailto:${e.email}`} className="flex items-center gap-1 hover:text-orika-gold">
+            <a
+              href={`mailto:${e.email}`}
+              className="flex items-center gap-1 hover:text-orika-gold"
+            >
               <Mail className="h-3 w-3" /> {e.email}
             </a>
-            <a href={`tel:${e.phone}`} className="flex items-center gap-1 hover:text-orika-gold">
+            <a
+              href={`tel:${e.phone}`}
+              className="flex items-center gap-1 hover:text-orika-gold"
+            >
               <Phone className="h-3 w-3" /> {e.phone}
             </a>
-            <span className="tabular-nums">{new Date(e.created_at).toLocaleString()}</span>
+            <span className="tabular-nums">
+              {new Date(e.created_at).toLocaleString()}
+            </span>
           </div>
         </div>
 
@@ -234,7 +255,7 @@ function EnquiryCard({
           onClick={() => setExpanded((x) => !x)}
           className="mt-1 text-xs text-orika-gold hover:underline"
         >
-          {expanded ? 'View less' : 'View more'}
+          {expanded ? "View less" : "View more"}
         </button>
       )}
 
@@ -249,7 +270,11 @@ function EnquiryCard({
             className="w-full rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/60 focus:border-orika-gold/40 focus:outline-none"
           />
           <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setReplyOpen(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyOpen(false)}
+            >
               Cancel
             </Button>
             <Button

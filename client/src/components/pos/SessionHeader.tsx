@@ -1,21 +1,25 @@
 // ── SessionHeader.tsx ──────────────────────────────────────────────────────────
-import { LogOut, BarChart2 } from 'lucide-react';
-import { usePOSStore } from '@stores/posStore';
-import { Button } from '@components/ui/Button';
-import { fmtMoney } from '@lib/format';
+import { LogOut, BarChart2 } from "lucide-react";
+import { usePOSStore } from "@stores/posStore";
+import { Button } from "@components/ui/Button";
+import { fmtMoney } from "@lib/format";
 
 interface SessionHeaderProps {
-  onClose:   () => void;
+  onClose: () => void;
   onXReport: () => void;
   currency?: string;
 }
 
-export function SessionHeader({ onClose, onXReport, currency = 'NGN' }: SessionHeaderProps) {
+export function SessionHeader({
+  onClose,
+  onXReport,
+  currency = "NGN",
+}: SessionHeaderProps) {
   const { session, terminal, pendingCount, parked } = usePOSStore((s) => ({
-    session:      s.session,
-    terminal:     s.terminal,
+    session: s.session,
+    terminal: s.terminal,
     pendingCount: s.pendingCount,
-    parked:       s.parked,
+    parked: s.parked,
   }));
 
   if (!session) return null;
@@ -26,7 +30,7 @@ export function SessionHeader({ onClose, onXReport, currency = 'NGN' }: SessionH
         <div className="h-2 w-2 rounded-full bg-green-400 shrink-0" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-orika-cream">
-            {terminal?.name ?? 'POS'}
+            {terminal?.name ?? "POS"}
           </p>
           <p className="text-xs text-orika-smoke">
             Float: {fmtMoney(session.opening_float, currency)}
@@ -53,7 +57,12 @@ export function SessionHeader({ onClose, onXReport, currency = 'NGN' }: SessionH
         >
           <BarChart2 className="h-4 w-4" />
         </button>
-        <Button variant="ghost" size="sm" onClick={onClose} className="text-red-400 hover:text-red-300">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="text-red-400 hover:text-red-300"
+        >
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">Close Session</span>
         </Button>

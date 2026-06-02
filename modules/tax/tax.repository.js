@@ -89,17 +89,26 @@ async function countUnpostedCampaignOrders(client, start, end) {
 // ── Tax profile ───────────────────────────────────────────────────────────────
 
 async function getProfile(client) {
-  const { rows: [p] } = await client.query(`SELECT * FROM tax_profile LIMIT 1`);
+  const {
+    rows: [p],
+  } = await client.query(`SELECT * FROM tax_profile LIMIT 1`);
   return p || null;
 }
 
 async function updateProfile(client, fields) {
   const allowed = [
-    "legal_name", "tin", "tax_state", "vat_registered",
-    "fiscal_year_end_month", "is_small_company", "small_co_turnover_cap",
-    "cit_rate", "dev_levy_rate",
+    "legal_name",
+    "tin",
+    "tax_state",
+    "vat_registered",
+    "fiscal_year_end_month",
+    "is_small_company",
+    "small_co_turnover_cap",
+    "cit_rate",
+    "dev_levy_rate",
   ];
-  const sets = [], values = [];
+  const sets = [],
+    values = [];
   for (const key of allowed) {
     if (fields[key] !== undefined) {
       values.push(fields[key]);
@@ -108,7 +117,9 @@ async function updateProfile(client, fields) {
   }
   if (!sets.length) return getProfile(client);
   sets.push(`updated_at = now()`);
-  const { rows: [p] } = await client.query(
+  const {
+    rows: [p],
+  } = await client.query(
     `UPDATE tax_profile SET ${sets.join(", ")} RETURNING *`,
     values,
   );
@@ -118,7 +129,9 @@ async function updateProfile(client, fields) {
 // ── Filings ───────────────────────────────────────────────────────────────────
 
 async function findFilingByTypePeriod(client, taxType, periodLabel) {
-  const { rows: [f] } = await client.query(
+  const {
+    rows: [f],
+  } = await client.query(
     `SELECT * FROM tax_filings WHERE tax_type = $1 AND period_label = $2`,
     [taxType, periodLabel],
   );
@@ -126,7 +139,9 @@ async function findFilingByTypePeriod(client, taxType, periodLabel) {
 }
 
 async function insertFiling(client, d) {
-  const { rows: [f] } = await client.query(
+  const {
+    rows: [f],
+  } = await client.query(
     `INSERT INTO tax_filings
        (filing_number, tax_type, period_label, period_start, period_end,
         status, computed_amount, adjustment_amount, final_amount, workpaper,
@@ -134,10 +149,18 @@ async function insertFiling(client, d) {
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
      RETURNING *`,
     [
-      d.filing_number, d.tax_type, d.period_label, d.period_start, d.period_end,
-      d.status || "draft", d.computed_amount || 0, d.adjustment_amount || 0,
-      d.final_amount || 0, d.workpaper ? JSON.stringify(d.workpaper) : null,
-      d.notes || null, d.created_by || null,
+      d.filing_number,
+      d.tax_type,
+      d.period_label,
+      d.period_start,
+      d.period_end,
+      d.status || "draft",
+      d.computed_amount || 0,
+      d.adjustment_amount || 0,
+      d.final_amount || 0,
+      d.workpaper ? JSON.stringify(d.workpaper) : null,
+      d.notes || null,
+      d.created_by || null,
     ],
   );
   return f;
@@ -145,21 +168,34 @@ async function insertFiling(client, d) {
 
 async function updateFiling(client, filingId, fields) {
   const allowed = [
-    "status", "computed_amount", "adjustment_amount", "final_amount",
-    "workpaper", "notes", "filing_reference", "filed_at", "filed_by",
-    "settlement_entry_id", "paid_at",
+    "status",
+    "computed_amount",
+    "adjustment_amount",
+    "final_amount",
+    "workpaper",
+    "notes",
+    "filing_reference",
+    "filed_at",
+    "filed_by",
+    "settlement_entry_id",
+    "paid_at",
   ];
-  const sets = [], values = [];
+  const sets = [],
+    values = [];
   for (const key of allowed) {
     if (fields[key] !== undefined) {
-      values.push(key === "workpaper" ? JSON.stringify(fields[key]) : fields[key]);
+      values.push(
+        key === "workpaper" ? JSON.stringify(fields[key]) : fields[key],
+      );
       sets.push(`${key} = $${values.length}`);
     }
   }
   if (!sets.length) return findFilingById(client, filingId);
   sets.push(`updated_at = now()`);
   values.push(filingId);
-  const { rows: [f] } = await client.query(
+  const {
+    rows: [f],
+  } = await client.query(
     `UPDATE tax_filings SET ${sets.join(", ")} WHERE filing_id = $${values.length} RETURNING *`,
     values,
   );
@@ -167,10 +203,11 @@ async function updateFiling(client, filingId, fields) {
 }
 
 async function findFilingById(client, filingId) {
-  const { rows: [f] } = await client.query(
-    `SELECT * FROM tax_filings WHERE filing_id = $1`,
-    [filingId],
-  );
+  const {
+    rows: [f],
+  } = await client.query(`SELECT * FROM tax_filings WHERE filing_id = $1`, [
+    filingId,
+  ]);
   return f || null;
 }
 
@@ -189,7 +226,9 @@ async function listFilings(client, { taxType, year } = {}) {
 }
 
 async function addAdjustment(client, d) {
-  const { rows: [a] } = await client.query(
+  const {
+    rows: [a],
+  } = await client.query(
     `INSERT INTO tax_filing_adjustments (filing_id, label, amount, reason, created_by)
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,
     [d.filing_id, d.label, d.amount, d.reason || null, d.created_by || null],
@@ -206,7 +245,9 @@ async function listAdjustments(client, filingId) {
 }
 
 async function sumAdjustments(client, filingId) {
-  const { rows: [r] } = await client.query(
+  const {
+    rows: [r],
+  } = await client.query(
     `SELECT COALESCE(SUM(amount), 0) AS total FROM tax_filing_adjustments WHERE filing_id = $1`,
     [filingId],
   );

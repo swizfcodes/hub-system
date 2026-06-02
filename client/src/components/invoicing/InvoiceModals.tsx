@@ -1,52 +1,63 @@
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { DollarSign, Send, FileX, AlertTriangle } from 'lucide-react';
-import { Modal } from '@components/ui/Modal';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Select } from '@components/ui/Select';
-import { recordPayment, sendInvoice, writeOffInvoice } from '@services/invoicing/invoices';
-import { createCreditNote } from '@services/invoicing/creditNotes';
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { DollarSign, Send, FileX, AlertTriangle } from "lucide-react";
+import { Modal } from "@components/ui/Modal";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Select } from "@components/ui/Select";
 import {
-  recordPaymentSchema, type RecordPaymentValues,
-  sendInvoiceSchema,   type SendInvoiceValues,
-  createCreditNoteSchema, type CreateCreditNoteValues,
-  writeOffSchema,      type WriteOffValues,
-} from '@lib/schemas/invoicing';
+  recordPayment,
+  sendInvoice,
+  writeOffInvoice,
+} from "@services/invoicing/invoices";
+import { createCreditNote } from "@services/invoicing/creditNotes";
+import {
+  recordPaymentSchema,
+  type RecordPaymentValues,
+  sendInvoiceSchema,
+  type SendInvoiceValues,
+  createCreditNoteSchema,
+  type CreateCreditNoteValues,
+  writeOffSchema,
+  type WriteOffValues,
+} from "@lib/schemas/invoicing";
 import {
   PAYMENT_METHOD_OPTIONS,
   SEND_CHANNEL_OPTIONS,
-} from '@lib/constants/invoicingConstants';
-import { fmtMoney } from '@lib/format';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import type { Invoice } from '@typedefs/invoicing';
+} from "@lib/constants/invoicingConstants";
+import { fmtMoney } from "@lib/format";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import type { Invoice } from "@typedefs/invoicing";
 //import { cn } from '@lib/cn';
 
 // ── RecordPaymentModal ─────────────────────────────────────────────────────────
 
 interface RecordPaymentProps {
-  open:      boolean;
-  onClose:   () => void;
-  invoice:   Invoice;
+  open: boolean;
+  onClose: () => void;
+  invoice: Invoice;
   currency?: string;
 }
 
 export function RecordPaymentModal({
-  open, onClose, invoice, currency = 'NGN',
+  open,
+  onClose,
+  invoice,
+  currency = "NGN",
 }: RecordPaymentProps) {
   const qc = useQueryClient();
 
   const form = useForm<RecordPaymentValues>({
     resolver: zodResolver(recordPaymentSchema),
     defaultValues: {
-      amount:         invoice.amount_outstanding,
-      payment_method: 'bank_transfer',
-      payment_date:   new Date().toISOString().split('T')[0],
-      reference:      '',
-      notes:          '',
-      is_confirmed:   true,
+      amount: invoice.amount_outstanding,
+      payment_method: "bank_transfer",
+      payment_date: new Date().toISOString().split("T")[0],
+      reference: "",
+      notes: "",
+      is_confirmed: true,
     },
   });
 
@@ -54,17 +65,17 @@ export function RecordPaymentModal({
     mutationFn: (values: RecordPaymentValues) =>
       recordPayment(invoice.invoice_id, values),
     onSuccess: () => {
-      showToast.success('Payment recorded');
-      qc.invalidateQueries({ queryKey: ['invoice', invoice.invoice_id] });
-      qc.invalidateQueries({ queryKey: ['invoices'] });
-      qc.invalidateQueries({ queryKey: ['invoice-kpis'] });
+      showToast.success("Payment recorded");
+      qc.invalidateQueries({ queryKey: ["invoice", invoice.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoice-kpis"] });
       form.reset();
       onClose();
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
 
-  const amount = form.watch('amount');
+  const amount = form.watch("amount");
 
   return (
     <Modal
@@ -75,7 +86,11 @@ export function RecordPaymentModal({
       surface="light"
       footer={
         <div className="flex gap-3 justify-end">
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
             Cancel
           </Button>
           <Button
@@ -116,7 +131,8 @@ export function RecordPaymentModal({
 
         {amount > 0 && amount > invoice.amount_outstanding && (
           <p className="text-xs text-amber-600">
-            Amount exceeds outstanding balance — this will fully settle the invoice.
+            Amount exceeds outstanding balance — this will fully settle the
+            invoice.
           </p>
         )}
 
@@ -181,9 +197,9 @@ export function RecordPaymentModal({
 // ── SendInvoiceModal ───────────────────────────────────────────────────────────
 
 interface SendInvoiceProps {
-  open:      boolean;
-  onClose:   () => void;
-  invoice:   Invoice;
+  open: boolean;
+  onClose: () => void;
+  invoice: Invoice;
 }
 
 export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
@@ -191,22 +207,22 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
 
   const form = useForm<SendInvoiceValues>({
     resolver: zodResolver(sendInvoiceSchema),
-    defaultValues: { channel: invoice.email ? 'email' : 'whatsapp' },
+    defaultValues: { channel: invoice.email ? "email" : "whatsapp" },
   });
 
   const mutation = useMutation({
     mutationFn: (values: SendInvoiceValues) =>
       sendInvoice(invoice.invoice_id, values),
     onSuccess: () => {
-      showToast.success('Invoice sent');
-      qc.invalidateQueries({ queryKey: ['invoice', invoice.invoice_id] });
-      qc.invalidateQueries({ queryKey: ['invoices'] });
+      showToast.success("Invoice sent");
+      qc.invalidateQueries({ queryKey: ["invoice", invoice.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
       onClose();
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
 
-  const channel = form.watch('channel');
+  const channel = form.watch("channel");
 
   return (
     <Modal
@@ -217,7 +233,13 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
       surface="light"
       footer={
         <div className="flex gap-3 justify-end">
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={form.handleSubmit((v) => mutation.mutate(v))}
             loading={mutation.isPending}
@@ -232,11 +254,15 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
         <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm space-y-1">
           <div className="flex justify-between">
             <span className="text-text-on-light-muted">To</span>
-            <span className="font-medium text-orika-black">{invoice.contact_name}</span>
+            <span className="font-medium text-orika-black">
+              {invoice.contact_name}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-text-on-light-muted">Invoice</span>
-            <span className="font-medium text-orika-black">{invoice.invoice_number}</span>
+            <span className="font-medium text-orika-black">
+              {invoice.invoice_number}
+            </span>
           </div>
         </div>
 
@@ -255,21 +281,23 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
         />
 
         {/* Warn if channel has no address */}
-        {channel === 'email' && !invoice.email && (
+        {channel === "email" && !invoice.email && (
           <p className="text-xs text-state-danger">
-            No email address on file for {invoice.contact_name}. Update the contact first.
+            No email address on file for {invoice.contact_name}. Update the
+            contact first.
           </p>
         )}
-        {channel === 'whatsapp' && !invoice.whatsapp_number && (
+        {channel === "whatsapp" && !invoice.whatsapp_number && (
           <p className="text-xs text-state-danger">
-            No WhatsApp number on file for {invoice.contact_name}. Update the contact first.
+            No WhatsApp number on file for {invoice.contact_name}. Update the
+            contact first.
           </p>
         )}
 
         <p className="text-xs text-text-on-light-muted">
-          {channel === 'email'
-            ? 'The invoice PDF will be sent as an email attachment.'
-            : 'A payment summary message will be sent to their WhatsApp number.'}
+          {channel === "email"
+            ? "The invoice PDF will be sent as an email attachment."
+            : "A payment summary message will be sent to their WhatsApp number."}
         </p>
       </div>
     </Modal>
@@ -279,27 +307,30 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
 // ── CreditNoteModal ────────────────────────────────────────────────────────────
 
 interface CreditNoteProps {
-  open:      boolean;
-  onClose:   () => void;
-  invoice:   Invoice;
+  open: boolean;
+  onClose: () => void;
+  invoice: Invoice;
   currency?: string;
 }
 
 export function CreditNoteModal({
-  open, onClose, invoice, currency = 'NGN',
+  open,
+  onClose,
+  invoice,
+  currency = "NGN",
 }: CreditNoteProps) {
   const qc = useQueryClient();
 
   const form = useForm<CreateCreditNoteValues>({
     resolver: zodResolver(createCreditNoteSchema),
     defaultValues: {
-      reason: '',
+      reason: "",
       lines: invoice.lines?.map((l) => ({
-        product_id:  l.product_id ?? '',
+        product_id: l.product_id ?? "",
         description: l.description,
-        quantity:    l.quantity,
-        unit_price:  l.unit_price,
-      })) ?? [{ product_id: '', description: '', quantity: 1, unit_price: 0 }],
+        quantity: l.quantity,
+        unit_price: l.unit_price,
+      })) ?? [{ product_id: "", description: "", quantity: 1, unit_price: 0 }],
     },
   });
 
@@ -308,16 +339,19 @@ export function CreditNoteModal({
       createCreditNote(invoice.invoice_id, values),
     onSuccess: (cn) => {
       showToast.success(`Credit note ${cn.credit_note_number} created`);
-      qc.invalidateQueries({ queryKey: ['invoice', invoice.invoice_id] });
-      qc.invalidateQueries({ queryKey: ['invoices'] });
+      qc.invalidateQueries({ queryKey: ["invoice", invoice.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
       form.reset();
       onClose();
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
 
-  const watchedLines = form.watch('lines');
-  const creditTotal  = watchedLines.reduce((s, l) => s + (l.unit_price * l.quantity), 0);
+  const watchedLines = form.watch("lines");
+  const creditTotal = watchedLines.reduce(
+    (s, l) => s + l.unit_price * l.quantity,
+    0,
+  );
 
   return (
     <Modal
@@ -329,7 +363,13 @@ export function CreditNoteModal({
       description={`Against invoice ${invoice.invoice_number}`}
       footer={
         <div className="flex gap-3 justify-end">
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={form.handleSubmit((v) => mutation.mutate(v))}
             loading={mutation.isPending}
@@ -343,8 +383,8 @@ export function CreditNoteModal({
         {creditTotal > invoice.total_amount && (
           <div className="rounded-xl border border-state-danger/30 bg-state-danger/5 px-4 py-3 text-xs text-state-danger flex gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            Credit note total ({fmtMoney(creditTotal, currency)}) exceeds invoice total
-            ({fmtMoney(invoice.total_amount, currency)}).
+            Credit note total ({fmtMoney(creditTotal, currency)}) exceeds
+            invoice total ({fmtMoney(invoice.total_amount, currency)}).
           </div>
         )}
 
@@ -367,7 +407,7 @@ export function CreditNoteModal({
           <p className="text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted">
             Items to Credit
           </p>
-          {form.watch('lines').map((_, i) => (
+          {form.watch("lines").map((_, i) => (
             <div
               key={i}
               className="rounded-xl border border-orika-cloud/30 bg-orika-cloud/10 p-3 space-y-2"
@@ -395,7 +435,9 @@ export function CreditNoteModal({
                       type="number"
                       min={1}
                       surface="light"
-                      onChange={(e) => f.onChange(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        f.onChange(parseInt(e.target.value) || 1)
+                      }
                       error={fieldState.error?.message}
                     />
                   )}
@@ -411,7 +453,9 @@ export function CreditNoteModal({
                       step="0.01"
                       min={0}
                       surface="light"
-                      onChange={(e) => f.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        f.onChange(parseFloat(e.target.value) || 0)
+                      }
                       error={fieldState.error?.message}
                     />
                   )}
@@ -432,18 +476,23 @@ export function CreditNoteModal({
 // ── WriteOffModal ──────────────────────────────────────────────────────────────
 
 interface WriteOffProps {
-  open:      boolean;
-  onClose:   () => void;
-  invoice:   Invoice;
+  open: boolean;
+  onClose: () => void;
+  invoice: Invoice;
   currency?: string;
 }
 
-export function WriteOffModal({ open, onClose, invoice, currency = 'NGN' }: WriteOffProps) {
+export function WriteOffModal({
+  open,
+  onClose,
+  invoice,
+  currency = "NGN",
+}: WriteOffProps) {
   const qc = useQueryClient();
 
   const form = useForm<WriteOffValues>({
     resolver: zodResolver(writeOffSchema),
-    defaultValues: { reason: '' },
+    defaultValues: { reason: "" },
   });
 
   const mutation = useMutation({
@@ -451,9 +500,9 @@ export function WriteOffModal({ open, onClose, invoice, currency = 'NGN' }: Writ
       writeOffInvoice(invoice.invoice_id, values),
     onSuccess: () => {
       showToast.success(`Invoice ${invoice.invoice_number} written off`);
-      qc.invalidateQueries({ queryKey: ['invoice', invoice.invoice_id] });
-      qc.invalidateQueries({ queryKey: ['invoices'] });
-      qc.invalidateQueries({ queryKey: ['invoice-kpis'] });
+      qc.invalidateQueries({ queryKey: ["invoice", invoice.invoice_id] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoice-kpis"] });
       form.reset();
       onClose();
     },
@@ -469,7 +518,13 @@ export function WriteOffModal({ open, onClose, invoice, currency = 'NGN' }: Writ
       surface="light"
       footer={
         <div className="flex gap-3 justify-end">
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={form.handleSubmit((v) => mutation.mutate(v))}
             loading={mutation.isPending}
@@ -485,8 +540,8 @@ export function WriteOffModal({ open, onClose, invoice, currency = 'NGN' }: Writ
         <div className="rounded-xl border border-state-danger/30 bg-state-danger/5 px-4 py-3 text-sm text-state-danger">
           <p className="font-semibold">This action cannot be undone.</p>
           <p className="mt-1 text-xs">
-            Writing off {invoice.invoice_number} will void the invoice and post a bad debt
-            journal entry for{' '}
+            Writing off {invoice.invoice_number} will void the invoice and post
+            a bad debt journal entry for{" "}
             <strong>{fmtMoney(invoice.amount_outstanding, currency)}</strong>.
           </p>
         </div>

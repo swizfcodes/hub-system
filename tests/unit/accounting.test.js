@@ -195,8 +195,7 @@ describe("Accounting Service", () => {
 
       const totalDebits = entries.reduce((sum, entry) => {
         return (
-          sum +
-          entry.lines.reduce((lineSum, line) => lineSum + line.debit, 0)
+          sum + entry.lines.reduce((lineSum, line) => lineSum + line.debit, 0)
         );
       }, 0);
 
@@ -212,8 +211,7 @@ describe("Accounting Service", () => {
 
       const totalCredits = entries.reduce((sum, entry) => {
         return (
-          sum +
-          entry.lines.reduce((lineSum, line) => lineSum + line.credit, 0)
+          sum + entry.lines.reduce((lineSum, line) => lineSum + line.credit, 0)
         );
       }, 0);
 
@@ -221,10 +219,7 @@ describe("Accounting Service", () => {
     });
 
     it("should verify accounting equation", () => {
-      const entries = [
-        generateJournalEntry(),
-        generateJournalEntry(),
-      ];
+      const entries = [generateJournalEntry(), generateJournalEntry()];
 
       let totalDebits = 0;
       let totalCredits = 0;
@@ -240,4 +235,3 @@ describe("Accounting Service", () => {
     });
   });
 });
-

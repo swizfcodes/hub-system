@@ -91,9 +91,7 @@ describe("Purchasing Workflow Integration", () => {
         ],
       });
 
-      expect(po2.items[0].unit_price).toBeGreaterThan(
-        po1.items[0].unit_price,
-      );
+      expect(po2.items[0].unit_price).toBeGreaterThan(po1.items[0].unit_price);
     });
   });
 });

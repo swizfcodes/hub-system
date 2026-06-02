@@ -1,5 +1,5 @@
-import { api } from '../api';
-import type { OnHandResponse, OnHandRow } from '@typedefs/stock';
+import { api } from "../api";
+import type { OnHandResponse, OnHandRow } from "@typedefs/stock";
 
 export interface OnHandParams {
   search?: string;
@@ -19,13 +19,25 @@ export interface OnHandParams {
  *
  * Drop-in code in STOCK_PATCH_NOTES.md.
  */
-export async function listOnHand(params: OnHandParams = {}): Promise<OnHandResponse> {
+export async function listOnHand(
+  params: OnHandParams = {},
+): Promise<OnHandResponse> {
   try {
-    const { data } = await api.get<OnHandResponse>('/stock/on-hand', { params });
+    const { data } = await api.get<OnHandResponse>("/stock/on-hand", {
+      params,
+    });
     return data;
   } catch (e) {
     if ((e as { response?: { status?: number } }).response?.status === 404) {
-      return { data: [], totals: { total_value: 0, total_units: 0, low_stock_count: 0, out_of_stock_count: 0 } };
+      return {
+        data: [],
+        totals: {
+          total_value: 0,
+          total_units: 0,
+          low_stock_count: 0,
+          out_of_stock_count: 0,
+        },
+      };
     }
     throw e;
   }
@@ -39,7 +51,8 @@ export async function getOnHand(productId: string): Promise<OnHandRow | null> {
     const { data } = await api.get<OnHandRow>(`/stock/on-hand/${productId}`);
     return data;
   } catch (e) {
-    if ((e as { response?: { status?: number } }).response?.status === 404) return null;
+    if ((e as { response?: { status?: number } }).response?.status === 404)
+      return null;
     throw e;
   }
 }

@@ -87,7 +87,9 @@ app.use(
 // /api/c/track/:business/:token — order tracking. Mounted BEFORE /api so the
 // authenticated router never sees these requests and verifyToken is skipped.
 {
-  const { storefrontRouter } = require("./modules/sales_campaigns/storefront.service");
+  const {
+    storefrontRouter,
+  } = require("./modules/sales_campaigns/storefront.service");
   app.use("/api/c", storefrontRouter);
 }
 

@@ -15,10 +15,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
-  interface Window { qz?: any }
+  interface Window {
+    qz?: any;
+  }
 }
 
-const QZ_CDN = 'https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js';
+const QZ_CDN = "https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js";
 
 let scriptPromise: Promise<any> | null = null;
 
@@ -26,11 +28,15 @@ function loadQz(): Promise<any> {
   if (window.qz) return Promise.resolve(window.qz);
   if (scriptPromise) return scriptPromise;
   scriptPromise = new Promise<any>((resolve, reject) => {
-    const s = document.createElement('script');
+    const s = document.createElement("script");
     s.src = QZ_CDN;
     s.async = true;
-    s.onload = () => (window.qz ? resolve(window.qz) : reject(new Error('QZ Tray library failed to initialise')));
-    s.onerror = () => reject(new Error('Could not load the QZ Tray library (offline?)'));
+    s.onload = () =>
+      window.qz
+        ? resolve(window.qz)
+        : reject(new Error("QZ Tray library failed to initialise"));
+    s.onerror = () =>
+      reject(new Error("Could not load the QZ Tray library (offline?)"));
     document.head.appendChild(s);
   });
   return scriptPromise;
@@ -69,18 +75,21 @@ export async function isQzAvailable(): Promise<boolean> {
 }
 
 /** Send a raw ZPL string to the named printer (or the OS default). */
-export async function printRawZpl(zpl: string, printerName?: string): Promise<void> {
+export async function printRawZpl(
+  zpl: string,
+  printerName?: string,
+): Promise<void> {
   const qz = await ensureConnected();
   const printer = printerName
     ? await qz.printers.find(printerName)
     : await qz.printers.getDefault();
   if (!printer) {
     throw new Error(
-      'No printer found. Connect the printer, set it as default, or enter its exact name in print settings.',
+      "No printer found. Connect the printer, set it as default, or enter its exact name in print settings.",
     );
   }
   const config = qz.configs.create(printer);
-  await qz.print(config, [{ type: 'raw', format: 'plain', data: zpl }]);
+  await qz.print(config, [{ type: "raw", format: "plain", data: zpl }]);
 }
 
 /** List installed printer names (for the settings picker). Returns [] on failure. */

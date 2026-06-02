@@ -208,9 +208,7 @@ router.patch(
   can("messaging", "edit"),
   async (req, res, next) => {
     try {
-      res.json(
-        await service.assignThread(req.params.id, req.body, req.user),
-      );
+      res.json(await service.assignThread(req.params.id, req.body, req.user));
     } catch (e) {
       next(e);
     }
@@ -259,9 +257,7 @@ router.get(
   can("messaging", "view"),
   async (req, res, next) => {
     try {
-      res.json(
-        await service.getCustomer360(req.params.contactId, req.user),
-      );
+      res.json(await service.getCustomer360(req.params.contactId, req.user));
     } catch (e) {
       next(e);
     }

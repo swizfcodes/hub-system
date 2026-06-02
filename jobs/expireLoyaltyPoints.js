@@ -10,7 +10,9 @@ module.exports = async function expireLoyaltyPoints() {
     try {
       const { expired } = await loyaltyService.expirePoints(business);
       if (expired > 0) {
-        logger.info(`[loyalty:expiry] ${expired} point row(s) expired for "${business}"`);
+        logger.info(
+          `[loyalty:expiry] ${expired} point row(s) expired for "${business}"`,
+        );
       }
     } catch (err) {
       logger.error(`[loyalty:expiry] failed for "${business}"`, err);

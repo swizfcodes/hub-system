@@ -153,10 +153,18 @@ router.post(
   body("lines").isArray({ min: 1 }),
   // Per-line validation — without these a NaN unit_price or string quantity
   // propagates into VAT calculations and journal entries silently.
-  body("lines.*.quantity").isInt({ min: 1 }).withMessage("Each line quantity must be a positive integer"),
-  body("lines.*.unit_price").isFloat({ min: 0 }).withMessage("Each line unit_price must be a non-negative number"),
-  body("lines.*.discount_amount").optional({ nullable: true }).isFloat({ min: 0 }),
-  body("lines.*.vat_rate").optional({ nullable: true }).isFloat({ min: 0, max: 1 }),
+  body("lines.*.quantity")
+    .isInt({ min: 1 })
+    .withMessage("Each line quantity must be a positive integer"),
+  body("lines.*.unit_price")
+    .isFloat({ min: 0 })
+    .withMessage("Each line unit_price must be a non-negative number"),
+  body("lines.*.discount_amount")
+    .optional({ nullable: true })
+    .isFloat({ min: 0 }),
+  body("lines.*.vat_rate")
+    .optional({ nullable: true })
+    .isFloat({ min: 0, max: 1 }),
   body("lines.*.product_id").optional({ nullable: true }).isUUID(),
   body("lines.*.description").optional().isString().trim(),
   validate,

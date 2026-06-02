@@ -1,19 +1,23 @@
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Sparkles } from 'lucide-react';
-import { Modal } from '@components/ui/Modal';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Select } from '@components/ui/Select';
-import { Textarea } from '@components/ui/Textarea';
-import { adjustmentSchema, ADJUSTMENT_TYPES, type AdjustmentValues } from '@lib/schemas/stock';
-import { createAdjustment } from '@services/stock/adjustments';
-import { listLocations } from '@services/catalogue/locations';
-import { getOnHand } from '@services/stock/onHand';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { ProductSelectField } from '@components/shared/CatalogueSearchInput';
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Sparkles } from "lucide-react";
+import { Modal } from "@components/ui/Modal";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Select } from "@components/ui/Select";
+import { Textarea } from "@components/ui/Textarea";
+import {
+  adjustmentSchema,
+  ADJUSTMENT_TYPES,
+  type AdjustmentValues,
+} from "@lib/schemas/stock";
+import { createAdjustment } from "@services/stock/adjustments";
+import { listLocations } from "@services/catalogue/locations";
+import { getOnHand } from "@services/stock/onHand";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { ProductSelectField } from "@components/shared/CatalogueSearchInput";
 
 interface Props {
   open: boolean;
@@ -22,46 +26,62 @@ interface Props {
   locationId?: string;
 }
 
-const TYPE_LABELS: Record<typeof ADJUSTMENT_TYPES[number], string> = {
-  count:      'Count correction',
-  write_off:  'Write-off (lost / shrinkage)',
-  damage:     'Damaged',
-  found:      'Found (system under-counted)',
-  correction: 'Other correction',
+const TYPE_LABELS: Record<(typeof ADJUSTMENT_TYPES)[number], string> = {
+  count: "Count correction",
+  write_off: "Write-off (lost / shrinkage)",
+  damage: "Damaged",
+  found: "Found (system under-counted)",
+  correction: "Other correction",
 };
 
-export function AdjustmentModal({ open, onClose, productId, locationId }: Props) {
+export function AdjustmentModal({
+  open,
+  onClose,
+  productId,
+  locationId,
+}: Props) {
   const qc = useQueryClient();
-  const { data: locations = [] } = useQuery({ queryKey: ['catalogue', 'locations'], queryFn: () => listLocations(false) });
+  const { data: locations = [] } = useQuery({
+    queryKey: ["catalogue", "locations"],
+    queryFn: () => listLocations(false),
+  });
 
   const form = useForm<AdjustmentValues>({
     resolver: zodResolver(adjustmentSchema),
     defaultValues: {
-      product_id: productId ?? '',
-      location_id: locationId ?? '',
-      adjustment_type: 'count',
+      product_id: productId ?? "",
+      location_id: locationId ?? "",
+      adjustment_type: "count",
       quantity_before: 0,
       quantity_after: 0,
-      reason: '',
+      reason: "",
     },
   });
-  const { register, control, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = form;
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = form;
 
-  const pid = watch('product_id');
-  const type = watch('adjustment_type');
-  const before = watch('quantity_before');
-  const after = watch('quantity_after');
+  const pid = watch("product_id");
+  const type = watch("adjustment_type");
+  const before = watch("quantity_before");
+  const after = watch("quantity_after");
   const delta = (after || 0) - (before || 0);
 
   // Auto-load current on-hand into quantity_before when product chosen
   useQuery({
-    queryKey: ['stock', 'on-hand', pid],
+    queryKey: ["stock", "on-hand", pid],
     queryFn: async () => {
       if (!pid) return null;
       const r = await getOnHand(pid);
       if (r) {
-        setValue('quantity_before', r.on_hand);
-        setValue('quantity_after', r.on_hand);
+        setValue("quantity_before", r.on_hand);
+        setValue("quantity_after", r.on_hand);
       }
       return r;
     },
@@ -71,21 +91,46 @@ export function AdjustmentModal({ open, onClose, productId, locationId }: Props)
   const mutation = useMutation({
     mutationFn: (v: AdjustmentValues) => createAdjustment(v),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['stock'] });
-      showToast.success('Adjustment recorded', 'Audit trail logged.');
-      reset(); onClose();
+      qc.invalidateQueries({ queryKey: ["stock"] });
+      showToast.success("Adjustment recorded", "Audit trail logged.");
+      reset();
+      onClose();
     },
-    onError: (e) => showToast.error('Failed', errMsg(e)),
+    onError: (e) => showToast.error("Failed", errMsg(e)),
   });
 
   return (
-    <Modal open={open} onClose={() => { reset(); onClose(); }} surface="light" size="md"
+    <Modal
+      open={open}
+      onClose={() => {
+        reset();
+        onClose();
+      }}
+      surface="light"
+      size="md"
       title="Record adjustment"
       description="Reconcile a count or document loss/damage. Above-threshold adjustments may require approval."
-      footer={<>
-        <Button variant="outline-light" onClick={() => { reset(); onClose(); }}>Cancel</Button>
-        <Button variant="primary" loading={isSubmitting || mutation.isPending} onClick={handleSubmit((v) => mutation.mutate(v))}>Record adjustment</Button>
-      </>}>
+      footer={
+        <>
+          <Button
+            variant="outline-light"
+            onClick={() => {
+              reset();
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            loading={isSubmitting || mutation.isPending}
+            onClick={handleSubmit((v) => mutation.mutate(v))}
+          >
+            Record adjustment
+          </Button>
+        </>
+      }
+    >
       <form className="space-y-4">
         <Controller
           control={control}
@@ -105,38 +150,74 @@ export function AdjustmentModal({ open, onClose, productId, locationId }: Props)
           control={control}
           name="location_id"
           render={({ field }) => (
-            <Select {...field} label="Location"
+            <Select
+              {...field}
+              label="Location"
               placeholder="Pick a location"
-              options={locations.map((l) => ({ value: l.location_id, label: l.name }))}
-              error={errors.location_id?.message} />
+              options={locations.map((l) => ({
+                value: l.location_id,
+                label: l.name,
+              }))}
+              error={errors.location_id?.message}
+            />
           )}
         />
-        <Select {...register('adjustment_type')} label="Adjustment type"
-          options={ADJUSTMENT_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] }))} />
+        <Select
+          {...register("adjustment_type")}
+          label="Adjustment type"
+          options={ADJUSTMENT_TYPES.map((t) => ({
+            value: t,
+            label: TYPE_LABELS[t],
+          }))}
+        />
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <Input {...register('quantity_before', { valueAsNumber: true })} type="number" min={0} label="System count" />
-          <Input {...register('quantity_after',  { valueAsNumber: true })} type="number" min={0} label="Actual count" />
+          <Input
+            {...register("quantity_before", { valueAsNumber: true })}
+            type="number"
+            min={0}
+            label="System count"
+          />
+          <Input
+            {...register("quantity_after", { valueAsNumber: true })}
+            type="number"
+            min={0}
+            label="Actual count"
+          />
           <div className="flex items-end">
-            <div className={`w-full rounded-xl py-3.5 px-4 text-sm font-mono text-center border ${delta < 0 ? 'bg-state-danger/10 text-state-danger border-state-danger/30' : delta > 0 ? 'bg-living-sage/10 text-living-sage border-living-sage/30' : 'bg-orika-cream border-orika-cloud/40 text-orika-black/70'}`}>
-              {delta > 0 ? '+' : ''}{delta}
+            <div
+              className={`w-full rounded-xl py-3.5 px-4 text-sm font-mono text-center border ${delta < 0 ? "bg-state-danger/10 text-state-danger border-state-danger/30" : delta > 0 ? "bg-living-sage/10 text-living-sage border-living-sage/30" : "bg-orika-cream border-orika-cloud/40 text-orika-black/70"}`}
+            >
+              {delta > 0 ? "+" : ""}
+              {delta}
             </div>
           </div>
         </div>
 
-        {(type === 'write_off' || type === 'damage') && (
+        {(type === "write_off" || type === "damage") && (
           <div className="rounded-xl bg-state-warn/[0.08] border border-state-warn/30 p-3 flex items-start gap-2 text-xs text-orika-black/80">
             <AlertTriangle className="w-3.5 h-3.5 text-state-warn mt-0.5 shrink-0" />
-            <p><strong>Write-offs and damage</strong> may require approval above the per-business threshold. The audit log records the request either way.</p>
+            <p>
+              <strong>Write-offs and damage</strong> may require approval above
+              the per-business threshold. The audit log records the request
+              either way.
+            </p>
           </div>
         )}
 
-        <Textarea {...register('reason')} label="Reason" rows={3} placeholder="What happened? Be specific — auditors and managers read this." error={errors.reason?.message} />
+        <Textarea
+          {...register("reason")}
+          label="Reason"
+          rows={3}
+          placeholder="What happened? Be specific — auditors and managers read this."
+          error={errors.reason?.message}
+        />
 
         {delta !== 0 && (
           <div className="text-[0.65rem] text-text-on-light-muted flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3" />
-            A <code className="font-mono">stock_movements</code> entry of type <code className="font-mono">adjustment</code> will be created.
+            <Sparkles className="w-3 h-3" />A{" "}
+            <code className="font-mono">stock_movements</code> entry of type{" "}
+            <code className="font-mono">adjustment</code> will be created.
           </div>
         )}
       </form>

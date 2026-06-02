@@ -5,10 +5,7 @@
  * Tests partner management and relationships
  */
 
-const {
-  generateRetailPartner,
-  TEST_BUSINESS,
-} = require("../fixtures/seed");
+const { generateRetailPartner, TEST_BUSINESS } = require("../fixtures/seed");
 
 describe("Retail Partners Service", () => {
   describe("Partner Creation", () => {
@@ -161,7 +158,8 @@ describe("Retail Partners Service", () => {
       ];
 
       const avgCommission =
-        partners.reduce((sum, p) => sum + p.commission_rate, 0) / partners.length;
+        partners.reduce((sum, p) => sum + p.commission_rate, 0) /
+        partners.length;
       expect(avgCommission).toBeGreaterThan(0);
     });
   });

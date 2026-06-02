@@ -1,21 +1,28 @@
-import { useState, useRef, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Search, UserPlus, X, User } from 'lucide-react';
-import { Input } from '@components/ui/Input';
-import { Button } from '@components/ui/Button';
-import { Skeleton } from '@components/ui/Skeleton';
-import { Modal } from '@components/ui/Modal';
-import { searchContacts, createContact, type Contact } from '@services/contacts';
-import { quickCreateContactSchema, type QuickCreateContactValues } from '@lib/schemas/pos';
-import { cn } from '@lib/cn';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
+import { useState, useRef, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Search, UserPlus, X, User } from "lucide-react";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Skeleton } from "@components/ui/Skeleton";
+import { Modal } from "@components/ui/Modal";
+import {
+  searchContacts,
+  createContact,
+  type Contact,
+} from "@services/contacts";
+import {
+  quickCreateContactSchema,
+  type QuickCreateContactValues,
+} from "@lib/schemas/pos";
+import { cn } from "@lib/cn";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
 
 interface Props {
-  value:     Contact | null;
-  onChange:  (contact: Contact | null) => void;
-  label?:    string;
+  value: Contact | null;
+  onChange: (contact: Contact | null) => void;
+  label?: string;
   required?: boolean;
   className?: string;
 }
@@ -23,26 +30,26 @@ interface Props {
 export function ContactSearchInput({
   value,
   onChange,
-  label    = 'Customer',
+  label = "Customer",
   required = false,
   className,
 }: Props) {
-  const [query,      setQuery]      = useState('');
-  const [results,    setResults]    = useState<Contact[]>([]);
-  const [loading,    setLoading]    = useState(false);
-  const [open,       setOpen]       = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef    = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Quick-create form
   const form = useForm<QuickCreateContactValues>({
     resolver: zodResolver(quickCreateContactSchema),
     defaultValues: {
-      display_name:    '',
-      primary_phone:   '',
-      whatsapp_number: '',
-      email:           '',
+      display_name: "",
+      primary_phone: "",
+      whatsapp_number: "",
+      email: "",
     },
   });
 
@@ -64,35 +71,40 @@ export function ContactSearchInput({
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (inputRef.current && !inputRef.current.closest('.contact-search-root')?.contains(e.target as Node)) {
+      if (
+        inputRef.current &&
+        !inputRef.current
+          .closest(".contact-search-root")
+          ?.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   function select(contact: Contact) {
     onChange(contact);
     setOpen(false);
-    setQuery('');
+    setQuery("");
     setResults([]);
   }
 
   function clear() {
     onChange(null);
-    setQuery('');
+    setQuery("");
   }
 
   async function handleCreate(data: QuickCreateContactValues) {
     try {
       const contact = await createContact({
-        display_name:    data.display_name,
-        primary_phone:   data.primary_phone,
+        display_name: data.display_name,
+        primary_phone: data.primary_phone,
         whatsapp_number: data.whatsapp_number || undefined,
-        email:           data.email || undefined,
-        contact_type:    ['customer'],
-        source:          'walk_in',
+        email: data.email || undefined,
+        contact_type: ["customer"],
+        source: "walk_in",
       });
       select(contact);
       setShowCreate(false);
@@ -106,7 +118,7 @@ export function ContactSearchInput({
   // Selected state
   if (value) {
     return (
-      <div className={cn('contact-search-root', className)}>
+      <div className={cn("contact-search-root", className)}>
         {label && (
           <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
             {label}
@@ -116,7 +128,9 @@ export function ContactSearchInput({
         <div className="flex items-center gap-3 rounded-lg border border-orika-gold/40 bg-orika-gold/5 px-3 py-2.5">
           <User className="h-4 w-4 shrink-0 text-orika-gold" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-orika-cream">{value.display_name}</p>
+            <p className="truncate text-sm font-medium text-orika-cream">
+              {value.display_name}
+            </p>
             <p className="text-xs text-orika-smoke">{value.primary_phone}</p>
           </div>
           <button
@@ -132,7 +146,7 @@ export function ContactSearchInput({
   }
 
   return (
-    <div className={cn('contact-search-root relative', className)}>
+    <div className={cn("contact-search-root relative", className)}>
       {label && (
         <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
           {label}
@@ -140,14 +154,20 @@ export function ContactSearchInput({
         </label>
       )}
 
-      <div className="relative" ref={inputRef as React.RefObject<HTMLDivElement>}>
+      <div
+        className="relative"
+        ref={inputRef as React.RefObject<HTMLDivElement>}
+      >
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
         <input
           type="text"
           ref={inputRef}
           value={query}
           placeholder="Search by name, phone, or email..."
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
           onFocus={() => setOpen(true)}
           className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
         />
@@ -175,7 +195,9 @@ export function ContactSearchInput({
                       <p className="truncate text-sm font-medium text-orika-cream">
                         {contact.display_name}
                       </p>
-                      <p className="text-xs text-orika-smoke">{contact.primary_phone}</p>
+                      <p className="text-xs text-orika-smoke">
+                        {contact.primary_phone}
+                      </p>
                     </div>
                   </button>
                 </li>
@@ -194,12 +216,12 @@ export function ContactSearchInput({
               onClick={() => {
                 setShowCreate(true);
                 setOpen(false);
-                form.setValue('display_name', query);
+                form.setValue("display_name", query);
               }}
               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs text-orika-gold hover:bg-orika-gold/5 transition-colors"
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Add new contact{query ? ` "${query}"` : ''}
+              Add new contact{query ? ` "${query}"` : ""}
             </button>
           </div>
         </div>
@@ -214,7 +236,9 @@ export function ContactSearchInput({
         surface="light"
         footer={
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setShowCreate(false)}>
+              Cancel
+            </Button>
             <Button
               onClick={form.handleSubmit(handleCreate)}
               loading={form.formState.isSubmitting}
@@ -230,8 +254,14 @@ export function ContactSearchInput({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">Name *</label>
-                <Input {...field} placeholder="Full name" error={fieldState.error?.message} />
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Name *
+                </label>
+                <Input
+                  {...field}
+                  placeholder="Full name"
+                  error={fieldState.error?.message}
+                />
               </div>
             )}
           />
@@ -241,8 +271,15 @@ export function ContactSearchInput({
               control={form.control}
               render={({ field, fieldState }) => (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">Phone *</label>
-                  <Input {...field} type="tel" placeholder="+234..." error={fieldState.error?.message} />
+                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                    Phone *
+                  </label>
+                  <Input
+                    {...field}
+                    type="tel"
+                    placeholder="+234..."
+                    error={fieldState.error?.message}
+                  />
                 </div>
               )}
             />
@@ -251,7 +288,9 @@ export function ContactSearchInput({
               control={form.control}
               render={({ field }) => (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">WhatsApp</label>
+                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                    WhatsApp
+                  </label>
                   <Input {...field} type="tel" placeholder="+234..." />
                 </div>
               )}
@@ -262,13 +301,21 @@ export function ContactSearchInput({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">Email</label>
-                <Input {...field} type="email" placeholder="customer@email.com" error={fieldState.error?.message} />
+                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  Email
+                </label>
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="customer@email.com"
+                  error={fieldState.error?.message}
+                />
               </div>
             )}
           />
           <p className="text-xs text-orika-smoke/60">
-            Phone is required for WhatsApp receipts. Email is required for email receipts.
+            Phone is required for WhatsApp receipts. Email is required for email
+            receipts.
           </p>
         </div>
       </Modal>

@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 // Default landing-page sections — applied when a campaign is created without
 // an explicit `sections` payload, so the public page always has blocks to
@@ -29,7 +29,7 @@ async function listCampaigns(client, { status, limit = 20, offset = 0 }) {
      GROUP BY sc.campaign_id
      ORDER BY sc.created_at DESC
      LIMIT $2 OFFSET $3`,
-    [status || null, limit, offset]
+    [status || null, limit, offset],
   );
   return rows;
 }
@@ -38,7 +38,9 @@ async function findCampaignById(client, campaignId) {
   // Subqueries avoid the PostgreSQL restriction on json_agg(DISTINCT ... ORDER BY ...).
   // The products subquery joins campaign_products with products so the admin UI
   // gets product_name, selling_price, and image_url alongside the campaign fields.
-  const { rows: [campaign] } = await client.query(
+  const {
+    rows: [campaign],
+  } = await client.query(
     `SELECT sc.*,
             (SELECT COALESCE(
                jsonb_agg(
@@ -91,20 +93,24 @@ async function findCampaignById(client, campaignId) {
             ) AS bank_accounts
      FROM sales_campaigns sc
      WHERE sc.campaign_id = $1`,
-    [campaignId]
+    [campaignId],
   );
   return campaign || null;
 }
 
 async function findCampaignBySlug(client, slug) {
-  const { rows: [campaign] } = await client.query(
-    `SELECT * FROM sales_campaigns WHERE slug = $1`, [slug]
-  );
+  const {
+    rows: [campaign],
+  } = await client.query(`SELECT * FROM sales_campaigns WHERE slug = $1`, [
+    slug,
+  ]);
   return campaign || null;
 }
 
 async function insertCampaign(client, data) {
-  const { rows: [campaign] } = await client.query(
+  const {
+    rows: [campaign],
+  } = await client.query(
     `INSERT INTO sales_campaigns
        (campaign_name, slug, template, status, headline, subheadline, body_copy,
         hero_image_url, discount_type, discount_value, sections,
@@ -113,42 +119,74 @@ async function insertCampaign(client, data) {
      VALUES ($1,$2,$3,'draft',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
      RETURNING *`,
     [
-      data.campaign_name, data.slug, data.template || 'editorial',
-      data.headline || null, data.subheadline || null, data.body_copy || null,
-      data.hero_image_url || null, data.discount_type || 'none',
+      data.campaign_name,
+      data.slug,
+      data.template || "editorial",
+      data.headline || null,
+      data.subheadline || null,
+      data.body_copy || null,
+      data.hero_image_url || null,
+      data.discount_type || "none",
       data.discount_value || null,
       JSON.stringify(
         data.sections && Object.keys(data.sections).length
           ? data.sections
           : DEFAULT_CAMPAIGN_SECTIONS,
       ),
-      data.start_date || null, data.end_date || null, data.is_evergreen || false,
-      data.whatsapp_number || null, data.inquiry_email || null,
-      data.store_location || null, data.redirect_url || null, data.created_by,
-      data.accent_color || '#C9A86C',
-    ]
+      data.start_date || null,
+      data.end_date || null,
+      data.is_evergreen || false,
+      data.whatsapp_number || null,
+      data.inquiry_email || null,
+      data.store_location || null,
+      data.redirect_url || null,
+      data.created_by,
+      data.accent_color || "#C9A86C",
+    ],
   );
   return campaign;
 }
 
 async function updateCampaign(client, campaignId, fields) {
-  const sets = [], values = [];
+  const sets = [],
+    values = [];
   const allowed = [
-    'campaign_name','slug','template','status','headline','subheadline','body_copy',
-    'hero_image_url','accent_color','discount_type','discount_value','sections','start_date','end_date',
-    'is_evergreen','whatsapp_number','inquiry_email','store_location','redirect_url','qr_code_url',
+    "campaign_name",
+    "slug",
+    "template",
+    "status",
+    "headline",
+    "subheadline",
+    "body_copy",
+    "hero_image_url",
+    "accent_color",
+    "discount_type",
+    "discount_value",
+    "sections",
+    "start_date",
+    "end_date",
+    "is_evergreen",
+    "whatsapp_number",
+    "inquiry_email",
+    "store_location",
+    "redirect_url",
+    "qr_code_url",
   ];
   for (const key of allowed) {
     if (fields[key] !== undefined) {
-      values.push(key === 'sections' ? JSON.stringify(fields[key]) : fields[key]);
+      values.push(
+        key === "sections" ? JSON.stringify(fields[key]) : fields[key],
+      );
       sets.push(`${key} = $${values.length}`);
     }
   }
   if (!sets.length) return findCampaignById(client, campaignId);
   values.push(campaignId);
-  const { rows: [row] } = await client.query(
-    `UPDATE sales_campaigns SET ${sets.join(',')} WHERE campaign_id = $${values.length} RETURNING *`,
-    values
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE sales_campaigns SET ${sets.join(",")} WHERE campaign_id = $${values.length} RETURNING *`,
+    values,
   );
   return row || null;
 }
@@ -156,7 +194,9 @@ async function updateCampaign(client, campaignId, fields) {
 // ── CAMPAIGN PRODUCTS ─────────────────────────────────────────────────────────
 
 async function upsertCampaignProduct(client, campaignId, data) {
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `INSERT INTO campaign_products
        (campaign_id, product_id, display_order, campaign_price, campaign_label,
         campaign_image_url, quantity_allocated, show_stock_count, low_stock_threshold)
@@ -171,11 +211,16 @@ async function upsertCampaignProduct(client, campaignId, data) {
        low_stock_threshold = EXCLUDED.low_stock_threshold
      RETURNING *`,
     [
-      campaignId, data.product_id, data.display_order || 0,
-      data.campaign_price || null, data.campaign_label || null,
-      data.campaign_image_url || null, data.quantity_allocated || 0,
-      data.show_stock_count !== false, data.low_stock_threshold || 5,
-    ]
+      campaignId,
+      data.product_id,
+      data.display_order || 0,
+      data.campaign_price || null,
+      data.campaign_label || null,
+      data.campaign_image_url || null,
+      data.quantity_allocated || 0,
+      data.show_stock_count !== false,
+      data.low_stock_threshold || 5,
+    ],
   );
   return row;
 }
@@ -183,19 +228,21 @@ async function upsertCampaignProduct(client, campaignId, data) {
 async function removeCampaignProduct(client, campaignId, productId) {
   const { rowCount } = await client.query(
     `DELETE FROM campaign_products WHERE campaign_id = $1 AND product_id = $2`,
-    [campaignId, productId]
+    [campaignId, productId],
   );
   return rowCount > 0;
 }
 
 async function deductCampaignStock(client, campaignProductId, quantity) {
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `UPDATE campaign_products
      SET quantity_reserved = quantity_reserved + $2
      WHERE id = $1
        AND (quantity_allocated = 0 OR quantity_reserved + quantity_sold + $2 <= quantity_allocated)
      RETURNING id, quantity_allocated, quantity_reserved, quantity_sold`,
-    [campaignProductId, quantity]
+    [campaignProductId, quantity],
   );
   return row || null; // null = insufficient stock
 }
@@ -206,7 +253,7 @@ async function confirmCampaignStock(client, campaignProductId, quantity) {
      SET quantity_reserved = GREATEST(0, quantity_reserved - $2),
          quantity_sold = quantity_sold + $2
      WHERE id = $1`,
-    [campaignProductId, quantity]
+    [campaignProductId, quantity],
   );
 }
 
@@ -215,19 +262,28 @@ async function restoreCampaignStock(client, campaignProductId, quantity) {
     `UPDATE campaign_products
      SET quantity_reserved = GREATEST(0, quantity_reserved - $2)
      WHERE id = $1`,
-    [campaignProductId, quantity]
+    [campaignProductId, quantity],
   );
 }
 
 // ── BANK ACCOUNTS ─────────────────────────────────────────────────────────────
 
 async function insertBankAccount(client, campaignId, data) {
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `INSERT INTO campaign_bank_accounts
        (campaign_id, bank_name, account_number, account_name, sort_code, is_primary, display_order)
      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [campaignId, data.bank_name, data.account_number, data.account_name,
-     data.sort_code || null, data.is_primary || false, data.display_order || 0]
+    [
+      campaignId,
+      data.bank_name,
+      data.account_number,
+      data.account_name,
+      data.sort_code || null,
+      data.is_primary || false,
+      data.display_order || 0,
+    ],
   );
   return row;
 }
@@ -235,14 +291,17 @@ async function insertBankAccount(client, campaignId, data) {
 async function deleteBankAccount(client, id, campaignId) {
   const { rowCount } = await client.query(
     `DELETE FROM campaign_bank_accounts WHERE id = $1 AND campaign_id = $2`,
-    [id, campaignId]
+    [id, campaignId],
   );
   return rowCount > 0;
 }
 
 // ── ORDERS ────────────────────────────────────────────────────────────────────
 
-async function listOrders(client, { campaignId, status, limit = 50, offset = 0 }) {
+async function listOrders(
+  client,
+  { campaignId, status, limit = 50, offset = 0 },
+) {
   const { rows } = await client.query(
     `SELECT co.*, sc.campaign_name, sc.slug,
             json_agg(jsonb_build_object(
@@ -259,13 +318,15 @@ async function listOrders(client, { campaignId, status, limit = 50, offset = 0 }
      GROUP BY co.order_id, sc.campaign_name, sc.slug
      ORDER BY co.created_at DESC
      LIMIT $3 OFFSET $4`,
-    [campaignId || null, status || null, limit, offset]
+    [campaignId || null, status || null, limit, offset],
   );
   return rows;
 }
 
 async function findOrderByToken(client, trackingToken) {
-  const { rows: [order] } = await client.query(
+  const {
+    rows: [order],
+  } = await client.query(
     `SELECT co.*,
             json_agg(jsonb_build_object(
               'product_name', coi.product_name,
@@ -276,13 +337,15 @@ async function findOrderByToken(client, trackingToken) {
      LEFT JOIN campaign_order_items coi ON coi.order_id = co.order_id
      WHERE co.tracking_token = $1
      GROUP BY co.order_id`,
-    [trackingToken]
+    [trackingToken],
   );
   return order || null;
 }
 
 async function insertOrder(client, data) {
-  const { rows: [order] } = await client.query(
+  const {
+    rows: [order],
+  } = await client.query(
     `INSERT INTO campaign_orders
        (campaign_id, order_number, customer_name, customer_phone, customer_email,
         fulfilment_type, delivery_address, pickup_location, payment_method,
@@ -290,14 +353,21 @@ async function insertOrder(client, data) {
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
     [
-      data.campaign_id, data.order_number,
-      data.customer_name, data.customer_phone, data.customer_email || null,
+      data.campaign_id,
+      data.order_number,
+      data.customer_name,
+      data.customer_phone,
+      data.customer_email || null,
       data.fulfilment_type,
       data.delivery_address ? JSON.stringify(data.delivery_address) : null,
       data.pickup_location || null,
-      data.payment_method, data.subtotal, data.discount_amount || 0,
-      data.total_amount, data.source || null, data.bank_account_id || null,
-    ]
+      data.payment_method,
+      data.subtotal,
+      data.discount_amount || 0,
+      data.total_amount,
+      data.source || null,
+      data.bank_account_id || null,
+    ],
   );
   return order;
 }
@@ -307,14 +377,36 @@ async function insertOrderItem(client, data) {
     `INSERT INTO campaign_order_items
        (order_id, campaign_product_id, product_id, product_name, quantity, unit_price, discount_amount, line_total)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [data.order_id, data.campaign_product_id, data.product_id,
-     data.product_name, data.quantity, data.unit_price,
-     data.discount_amount || 0, data.line_total]
+    [
+      data.order_id,
+      data.campaign_product_id,
+      data.product_id,
+      data.product_name,
+      data.quantity,
+      data.unit_price,
+      data.discount_amount || 0,
+      data.line_total,
+    ],
   );
 }
 
-async function updateOrderStatus(client, orderId, { status, cancellationReason, proofImageUrl, hubContactId, hubOrderId, hubInvoiceId, loyaltyPointsAwarded, paystackReference }) {
-  const { rows: [order] } = await client.query(
+async function updateOrderStatus(
+  client,
+  orderId,
+  {
+    status,
+    cancellationReason,
+    proofImageUrl,
+    hubContactId,
+    hubOrderId,
+    hubInvoiceId,
+    loyaltyPointsAwarded,
+    paystackReference,
+  },
+) {
+  const {
+    rows: [order],
+  } = await client.query(
     `UPDATE campaign_orders SET
        status                 = COALESCE($2, status),
        cancellation_reason    = COALESCE($3, cancellation_reason),
@@ -327,9 +419,17 @@ async function updateOrderStatus(client, orderId, { status, cancellationReason, 
        paystack_reference     = COALESCE($9, paystack_reference)
      WHERE order_id = $1
      RETURNING *`,
-    [orderId, status || null, cancellationReason || null, proofImageUrl || null,
-     hubContactId || null, hubOrderId || null, hubInvoiceId || null,
-     loyaltyPointsAwarded || null, paystackReference || null]
+    [
+      orderId,
+      status || null,
+      cancellationReason || null,
+      proofImageUrl || null,
+      hubContactId || null,
+      hubOrderId || null,
+      hubInvoiceId || null,
+      loyaltyPointsAwarded || null,
+      paystackReference || null,
+    ],
   );
   return order || null;
 }
@@ -339,7 +439,9 @@ async function updateOrderStatus(client, orderId, { status, cancellationReason, 
 // Returns the campaign with enriched product data (from the products table)
 // used to render the public landing page — no auth required.
 async function getStorefrontCampaign(client, slug) {
-  const { rows: [campaign] } = await client.query(
+  const {
+    rows: [campaign],
+  } = await client.query(
     `SELECT sc.campaign_id, sc.campaign_name, sc.slug, sc.template, sc.status,
             sc.headline, sc.subheadline, sc.body_copy, sc.hero_image_url,
             sc.accent_color,
@@ -392,7 +494,7 @@ async function getStorefrontCampaign(client, slug) {
      LEFT JOIN campaign_bank_accounts cba ON cba.campaign_id = sc.campaign_id
      WHERE sc.slug = $1
      GROUP BY sc.campaign_id`,
-    [slug]
+    [slug],
   );
   return campaign || null;
 }
@@ -404,9 +506,17 @@ async function insertAnalyticsEvent(client, data) {
     `INSERT INTO shared.campaign_analytics
        (campaign_id, business, slug, event_type, source, ip_hash, session_id, product_id, metadata)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-    [data.campaign_id, data.business, data.slug, data.event_type,
-     data.source || null, data.ip_hash || null, data.session_id || null,
-     data.product_id || null, data.metadata ? JSON.stringify(data.metadata) : null]
+    [
+      data.campaign_id,
+      data.business,
+      data.slug,
+      data.event_type,
+      data.source || null,
+      data.ip_hash || null,
+      data.session_id || null,
+      data.product_id || null,
+      data.metadata ? JSON.stringify(data.metadata) : null,
+    ],
   );
 }
 
@@ -423,7 +533,7 @@ async function getAnalytics(client, campaignId) {
      WHERE campaign_id = $1
      GROUP BY event_type, source
      ORDER BY event_type`,
-    [campaignId]
+    [campaignId],
   );
   return rows;
 }
@@ -431,13 +541,23 @@ async function getAnalytics(client, campaignId) {
 // ── LEADS ─────────────────────────────────────────────────────────────────────
 
 async function insertLead(client, data) {
-  const { rows: [lead] } = await client.query(
+  const {
+    rows: [lead],
+  } = await client.query(
     `INSERT INTO shared.campaign_leads
        (campaign_id, business, slug, name, phone, email, message, lead_type, source)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-    [data.campaign_id, data.business, data.slug,
-     data.name || null, data.phone || null, data.email || null,
-     data.message || null, data.lead_type || 'form', data.source || null]
+    [
+      data.campaign_id,
+      data.business,
+      data.slug,
+      data.name || null,
+      data.phone || null,
+      data.email || null,
+      data.message || null,
+      data.lead_type || "form",
+      data.source || null,
+    ],
   );
   return lead;
 }
@@ -445,19 +565,31 @@ async function insertLead(client, data) {
 async function updateLeadContact(client, leadId, contactId) {
   await client.query(
     `UPDATE shared.campaign_leads SET hub_contact_id = $2 WHERE lead_id = $1`,
-    [leadId, contactId]
+    [leadId, contactId],
   );
 }
 
 module.exports = {
-  listCampaigns, findCampaignById, findCampaignBySlug,
-  insertCampaign, updateCampaign,
-  upsertCampaignProduct, removeCampaignProduct,
-  deductCampaignStock, confirmCampaignStock, restoreCampaignStock,
-  insertBankAccount, deleteBankAccount,
-  listOrders, findOrderByToken,
-  insertOrder, insertOrderItem, updateOrderStatus,
+  listCampaigns,
+  findCampaignById,
+  findCampaignBySlug,
+  insertCampaign,
+  updateCampaign,
+  upsertCampaignProduct,
+  removeCampaignProduct,
+  deductCampaignStock,
+  confirmCampaignStock,
+  restoreCampaignStock,
+  insertBankAccount,
+  deleteBankAccount,
+  listOrders,
+  findOrderByToken,
+  insertOrder,
+  insertOrderItem,
+  updateOrderStatus,
   getStorefrontCampaign,
-  insertAnalyticsEvent, getAnalytics,
-  insertLead, updateLeadContact,
+  insertAnalyticsEvent,
+  getAnalytics,
+  insertLead,
+  updateLeadContact,
 };

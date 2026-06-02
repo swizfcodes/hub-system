@@ -4,44 +4,44 @@
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
 export type QuoteStatus =
-  | 'draft'
-  | 'sent'
-  | 'viewed'
-  | 'confirmed'
-  | 'expired'
-  | 'cancelled';
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "confirmed"
+  | "expired"
+  | "cancelled";
 
 export type OrderStatus =
-  | 'confirmed'
-  | 'partially_fulfilled'
-  | 'fulfilled'
-  | 'awaiting_dispatch'
-  | 'cancelled';
+  | "confirmed"
+  | "partially_fulfilled"
+  | "fulfilled"
+  | "awaiting_dispatch"
+  | "cancelled";
 
 export type InvoiceStatus =
-  | 'draft'
-  | 'sent'
-  | 'partially_paid'
-  | 'paid'
-  | 'overdue'
-  | 'voided';
+  | "draft"
+  | "sent"
+  | "partially_paid"
+  | "paid"
+  | "overdue"
+  | "voided";
 
-export type ReceiptStatus = 'issued' | 'voided';
+export type ReceiptStatus = "issued" | "voided";
 
-export type FulfilmentType = 'walk_in' | 'delivery';
+export type FulfilmentType = "walk_in" | "delivery";
 
 export type PaymentMethod =
-  | 'bank_transfer'
-  | 'pos_card'
-  | 'cash'
-  | 'paystack'
-  | 'stripe';
+  | "bank_transfer"
+  | "pos_card"
+  | "cash"
+  | "paystack"
+  | "stripe";
 
-export type DiscountType = 'percentage' | 'fixed';
+export type DiscountType = "percentage" | "fixed";
 
-export type DiscountApprovalStatus = 'pending' | 'approved' | 'rejected';
+export type DiscountApprovalStatus = "pending" | "approved" | "rejected";
 
-export type SendChannel = 'email' | 'whatsapp';
+export type SendChannel = "email" | "whatsapp";
 
 // ── Line items ─────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ export interface OrderLine {
   quantity: number;
   unit_price: number;
   line_total: number;
-  status: 'pending' | 'fulfilled' | 'cancelled';
+  status: "pending" | "fulfilled" | "cancelled";
 }
 
 export interface InvoiceLine {
@@ -129,7 +129,7 @@ export interface SalesOrder {
   fulfilment_type: FulfilmentType;
   total_amount: number;
   amount_paid: number;
-  amount_outstanding: number;  // GENERATED ALWAYS AS STORED — never write
+  amount_outstanding: number; // GENERATED ALWAYS AS STORED — never write
   notes?: string | null;
   created_by?: string | null;
   created_at: string;
@@ -174,7 +174,7 @@ export interface Invoice {
   vat_amount: number;
   total_amount: number;
   amount_paid: number;
-  amount_outstanding: number;  // GENERATED ALWAYS AS STORED — never write
+  amount_outstanding: number; // GENERATED ALWAYS AS STORED — never write
   currency: string;
   notes?: string | null;
   payment_instructions?: string | null;
@@ -216,7 +216,7 @@ export interface Receipt {
 
 export interface DiscountApproval {
   approval_id: string;
-  reference_type: 'quotation' | 'pos_transaction';
+  reference_type: "quotation" | "pos_transaction";
   reference_id: string;
   product_id: string;
   requested_price: number;

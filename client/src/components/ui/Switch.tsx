@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@lib/cn';
+import React from "react";
+import { cn } from "@lib/cn";
 
 export interface SwitchProps {
   checked: boolean;
@@ -7,15 +7,29 @@ export interface SwitchProps {
   label?: string;
   description?: string;
   disabled?: boolean;
-  surface?: 'dark' | 'light';
+  surface?: "dark" | "light";
   id?: string;
 }
 
-export function Switch({ checked, onChange, label, description, disabled, surface='dark', id }: SwitchProps) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  description,
+  disabled,
+  surface = "dark",
+  id,
+}: SwitchProps) {
   const switchId = id || React.useId();
-  const isDark = surface === 'dark';
+  const isDark = surface === "dark";
   return (
-    <label htmlFor={switchId} className={cn('flex items-start gap-3 cursor-pointer select-none group', disabled && 'opacity-50 cursor-not-allowed')}>
+    <label
+      htmlFor={switchId}
+      className={cn(
+        "flex items-start gap-3 cursor-pointer select-none group",
+        disabled && "opacity-50 cursor-not-allowed",
+      )}
+    >
       <button
         type="button"
         role="switch"
@@ -24,20 +38,44 @@ export function Switch({ checked, onChange, label, description, disabled, surfac
         disabled={disabled}
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
-          'mt-0.5 relative w-10 h-6 rounded-full transition-colors flex-shrink-0',
-          checked ? 'bg-orika-gold' : isDark ? 'bg-orika-graphite' : 'bg-orika-cloud',
-          'focus-visible:ring-2 focus-visible:ring-orika-gold focus-visible:ring-offset-2',
+          "mt-0.5 relative w-10 h-6 rounded-full transition-colors flex-shrink-0",
+          checked
+            ? "bg-orika-gold"
+            : isDark
+              ? "bg-orika-graphite"
+              : "bg-orika-cloud",
+          "focus-visible:ring-2 focus-visible:ring-orika-gold focus-visible:ring-offset-2",
         )}
       >
-        <span className={cn(
-          'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-orika-cream shadow-card transition-transform',
-          checked && 'translate-x-4',
-        )} />
+        <span
+          className={cn(
+            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-orika-cream shadow-card transition-transform",
+            checked && "translate-x-4",
+          )}
+        />
       </button>
       {(label || description) && (
         <div className="flex-1">
-          {label && <div className={cn('text-sm font-medium', isDark ? 'text-orika-cream' : 'text-orika-black')}>{label}</div>}
-          {description && <div className={cn('text-xs mt-0.5', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>{description}</div>}
+          {label && (
+            <div
+              className={cn(
+                "text-sm font-medium",
+                isDark ? "text-orika-cream" : "text-orika-black",
+              )}
+            >
+              {label}
+            </div>
+          )}
+          {description && (
+            <div
+              className={cn(
+                "text-xs mt-0.5",
+                isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+              )}
+            >
+              {description}
+            </div>
+          )}
         </div>
       )}
     </label>

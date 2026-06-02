@@ -70,9 +70,9 @@ describe("Logistics Service", () => {
     it("should set delivery date", () => {
       const shipment = generateShipment();
       expect(shipment.delivery_date).toBeTruthy();
-      expect(new Date(shipment.delivery_date) > new Date(shipment.pickup_date)).toBe(
-        true,
-      );
+      expect(
+        new Date(shipment.delivery_date) > new Date(shipment.pickup_date),
+      ).toBe(true);
     });
   });
 
@@ -88,7 +88,9 @@ describe("Logistics Service", () => {
     });
 
     it("should track in_transit status", () => {
-      const shipment = generateShipment(TEST_BUSINESS, { status: "in_transit" });
+      const shipment = generateShipment(TEST_BUSINESS, {
+        status: "in_transit",
+      });
       expect(shipment.status).toBe("in_transit");
     });
 
@@ -155,7 +157,9 @@ describe("Logistics Service", () => {
         generateShipment(TEST_BUSINESS, { status: "failed_delivery" }),
       ];
 
-      const successful = shipments.filter((s) => s.status === "delivered").length;
+      const successful = shipments.filter(
+        (s) => s.status === "delivered",
+      ).length;
       const successRate = (successful / shipments.length) * 100;
 
       expect(successRate).toBeGreaterThan(0);

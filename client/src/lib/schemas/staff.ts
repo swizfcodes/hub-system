@@ -1,73 +1,83 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const phoneRegex = /^[+0-9()\-\s]{6,20}$/;
 
 // Single transactional onboarding payload — POST /api/staff
-export const staffOnboardSchema = z.object({
-  // Contact part (only required if not linking to existing contact)
-  contact_id: z.string().uuid().optional().or(z.literal('')),
-  first_name: z.string().optional().or(z.literal('')),
-  last_name:  z.string().optional().or(z.literal('')),
-  primary_phone: z.string().regex(phoneRegex).optional().or(z.literal('')),
-  whatsapp_number: z.string().regex(phoneRegex).optional().or(z.literal('')),
-  email: z.string().email().optional().or(z.literal('')),
-  gender: z.enum(['M', 'F', 'other', 'prefer_not']).optional(),
-  date_of_birth: z.string().optional().or(z.literal('')),
-  visible_to: z.array(z.string()).optional(),
+export const staffOnboardSchema = z
+  .object({
+    // Contact part (only required if not linking to existing contact)
+    contact_id: z.string().uuid().optional().or(z.literal("")),
+    first_name: z.string().optional().or(z.literal("")),
+    last_name: z.string().optional().or(z.literal("")),
+    primary_phone: z.string().regex(phoneRegex).optional().or(z.literal("")),
+    whatsapp_number: z.string().regex(phoneRegex).optional().or(z.literal("")),
+    email: z.string().email().optional().or(z.literal("")),
+    gender: z.enum(["M", "F", "other", "prefer_not"]).optional(),
+    date_of_birth: z.string().optional().or(z.literal("")),
+    visible_to: z.array(z.string()).optional(),
 
-  // Profile part (required)
-  employee_number: z.string().regex(/^[A-Z0-9-]+$/, 'Uppercase, digits, dashes only').min(3),
-  business:        z.string().min(1),
-  department:      z.string().optional().or(z.literal('')),
-  job_title:       z.string().min(1, 'Required').max(120),
-  employment_type: z.enum(['full_time', 'part_time', 'contract']),
-  start_date:      z.string().min(1, 'Required'),
-  reports_to:      z.string().uuid().optional().or(z.literal('')),
+    // Profile part (required)
+    employee_number: z
+      .string()
+      .regex(/^[A-Z0-9-]+$/, "Uppercase, digits, dashes only")
+      .min(3),
+    business: z.string().min(1),
+    department: z.string().optional().or(z.literal("")),
+    job_title: z.string().min(1, "Required").max(120),
+    employment_type: z.enum(["full_time", "part_time", "contract"]),
+    start_date: z.string().min(1, "Required"),
+    reports_to: z.string().uuid().optional().or(z.literal("")),
 
-  // Financial (privileged; saved encrypted server-side)
-  bank_name:           z.string().optional().or(z.literal('')),
-  bank_account_number: z.string().optional().or(z.literal('')),
-  bank_sort_code:      z.string().optional().or(z.literal('')),
-  nin:                 z.string().optional().or(z.literal('')),
-  bvn:                 z.string().optional().or(z.literal('')),
-  base_salary:         z.number().min(0).optional(),
-  pension_pin:         z.string().optional().or(z.literal('')),
-  nhf_number:          z.string().optional().or(z.literal('')),
-  tax_id:              z.string().optional().or(z.literal('')),
+    // Financial (privileged; saved encrypted server-side)
+    bank_name: z.string().optional().or(z.literal("")),
+    bank_account_number: z.string().optional().or(z.literal("")),
+    bank_sort_code: z.string().optional().or(z.literal("")),
+    nin: z.string().optional().or(z.literal("")),
+    bvn: z.string().optional().or(z.literal("")),
+    base_salary: z.number().min(0).optional(),
+    pension_pin: z.string().optional().or(z.literal("")),
+    nhf_number: z.string().optional().or(z.literal("")),
+    tax_id: z.string().optional().or(z.literal("")),
 
-  // Login provisioning
-  create_login:         z.boolean().default(false),
-  permitted_businesses: z.array(z.string()).optional(),
-}).refine(
-  (v) => v.contact_id || (v.first_name && v.last_name && v.primary_phone),
-  { message: 'Either link an existing contact or fill first name, last name and phone', path: ['first_name'] },
-).refine(
-  (v) => !v.create_login || (v.create_login && v.email),
-  { message: 'Email is required when provisioning a login', path: ['email'] },
-);
+    // Login provisioning
+    create_login: z.boolean().default(false),
+    permitted_businesses: z.array(z.string()).optional(),
+  })
+  .refine(
+    (v) => v.contact_id || (v.first_name && v.last_name && v.primary_phone),
+    {
+      message:
+        "Either link an existing contact or fill first name, last name and phone",
+      path: ["first_name"],
+    },
+  )
+  .refine((v) => !v.create_login || (v.create_login && v.email), {
+    message: "Email is required when provisioning a login",
+    path: ["email"],
+  });
 export type StaffOnboardValues = z.infer<typeof staffOnboardSchema>;
 
 export const contractSchema = z.object({
-  contract_type:  z.enum(['full_time', 'part_time', 'contract', 'amendment']),
-  effective_from: z.string().min(1, 'Required'),
-  effective_to:   z.string().optional().or(z.literal('')),
-  gross_salary:   z.number().min(0),
-  notes:          z.string().max(500).optional().or(z.literal('')),
+  contract_type: z.enum(["full_time", "part_time", "contract", "amendment"]),
+  effective_from: z.string().min(1, "Required"),
+  effective_to: z.string().optional().or(z.literal("")),
+  gross_salary: z.number().min(0),
+  notes: z.string().max(500).optional().or(z.literal("")),
 });
 export type ContractValues = z.infer<typeof contractSchema>;
 
 export const assetSchema = z.object({
-  asset_type:        z.string().min(1, 'Required'),
-  description:       z.string().min(1, 'Required'),
-  serial_number:     z.string().optional().or(z.literal('')),
-  issued_date:       z.string().min(1, 'Required'),
-  condition_on_issue:z.string().optional().or(z.literal('')),
-  notes:             z.string().max(500).optional().or(z.literal('')),
+  asset_type: z.string().min(1, "Required"),
+  description: z.string().min(1, "Required"),
+  serial_number: z.string().optional().or(z.literal("")),
+  issued_date: z.string().min(1, "Required"),
+  condition_on_issue: z.string().optional().or(z.literal("")),
+  notes: z.string().max(500).optional().or(z.literal("")),
 });
 export type AssetValues = z.infer<typeof assetSchema>;
 
 export const offboardSchema = z.object({
-  last_day: z.string().min(1, 'Required'),
-  reason:   z.string().min(5, 'Add a brief reason'),
+  last_day: z.string().min(1, "Required"),
+  reason: z.string().min(5, "Add a brief reason"),
 });
 export type OffboardValues = z.infer<typeof offboardSchema>;

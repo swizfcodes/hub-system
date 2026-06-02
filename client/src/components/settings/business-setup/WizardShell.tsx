@@ -1,6 +1,6 @@
-import React from 'react';
-import { Check } from 'lucide-react';
-import { cn } from '@lib/cn';
+import React from "react";
+import { Check } from "lucide-react";
+import { cn } from "@lib/cn";
 
 export interface WizardStep {
   key: string;
@@ -16,7 +16,13 @@ interface Props {
   footer?: React.ReactNode;
 }
 
-export function WizardShell({ steps, currentIndex, onStepClick, children, footer }: Props) {
+export function WizardShell({
+  steps,
+  currentIndex,
+  onStepClick,
+  children,
+  footer,
+}: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 lg:gap-10">
       {/* Stepper rail */}
@@ -34,24 +40,43 @@ export function WizardShell({ steps, currentIndex, onStepClick, children, footer
                   disabled={!clickable}
                   onClick={() => clickable && onStepClick(i)}
                   className={cn(
-                    'group w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all',
-                    active ? 'bg-orika-gold/10 border border-orika-gold/30' : 'border border-transparent',
-                    !active && done && 'hover:bg-orika-charcoal/60',
-                    !clickable && 'cursor-default',
+                    "group w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
+                    active
+                      ? "bg-orika-gold/10 border border-orika-gold/30"
+                      : "border border-transparent",
+                    !active && done && "hover:bg-orika-charcoal/60",
+                    !clickable && "cursor-default",
                   )}
                 >
-                  <span className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-                    done ? 'bg-living-sage/20 text-living-sage'
-                      : active ? 'bg-orika-gold text-orika-black shadow-glow-sm'
-                      : 'bg-orika-graphite text-orika-smoke',
-                  )}>
+                  <span
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                      done
+                        ? "bg-living-sage/20 text-living-sage"
+                        : active
+                          ? "bg-orika-gold text-orika-black shadow-glow-sm"
+                          : "bg-orika-graphite text-orika-smoke",
+                    )}
+                  >
                     {done ? <Check className="w-4 h-4" /> : i + 1}
                   </span>
                   <div className="min-w-0">
-                    <div className={cn('text-sm font-medium truncate', active ? 'text-orika-cream' : done ? 'text-orika-cloud' : 'text-orika-smoke')}>{step.label}</div>
+                    <div
+                      className={cn(
+                        "text-sm font-medium truncate",
+                        active
+                          ? "text-orika-cream"
+                          : done
+                            ? "text-orika-cloud"
+                            : "text-orika-smoke",
+                      )}
+                    >
+                      {step.label}
+                    </div>
                     {step.description && (
-                      <div className="text-[0.65rem] text-orika-smoke truncate hidden lg:block">{step.description}</div>
+                      <div className="text-[0.65rem] text-orika-smoke truncate hidden lg:block">
+                        {step.description}
+                      </div>
                     )}
                   </div>
                 </button>
@@ -64,11 +89,13 @@ export function WizardShell({ steps, currentIndex, onStepClick, children, footer
       {/* Body */}
       <section className="min-w-0">
         <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-10 border border-orika-cloud/30 shadow-lift">
-          <div className="animate-slide-up">
-            {children}
-          </div>
+          <div className="animate-slide-up">{children}</div>
         </div>
-        {footer && <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">{footer}</div>}
+        {footer && (
+          <div className="mt-5 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+            {footer}
+          </div>
+        )}
       </section>
     </div>
   );

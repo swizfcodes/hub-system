@@ -49,7 +49,7 @@ async function getOwnerRoleId() {
     if (!rows.length) {
       throw new Error(
         "System role 'owner' not found in shared.roles — " +
-        "run migration 000022 (seed) and 000035 (reseed) first.",
+          "run migration 000022 (seed) and 000035 (reseed) first.",
       );
     }
     _ownerRoleId = rows[0].role_id;

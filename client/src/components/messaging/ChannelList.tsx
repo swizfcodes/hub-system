@@ -1,50 +1,61 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, CheckCheck } from 'lucide-react';
-import { Skeleton } from '@components/ui/Skeleton';
-import { listChannels } from '@services/messaging';
-import { useChannelListUpdates } from '@hooks/useMessaging';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Plus, CheckCheck } from "lucide-react";
+import { Skeleton } from "@components/ui/Skeleton";
+import { listChannels } from "@services/messaging";
+import { useChannelListUpdates } from "@hooks/useMessaging";
 import {
-  INBOX_TABS, PLATFORM_META, getChannelDisplayName,
-  getChannelPlatform, fmtRelativeTime,
-} from '@lib/constants/messagingConstants';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { cn } from '@lib/cn';
-import type { Channel } from '@typedefs/messaging';
+  INBOX_TABS,
+  PLATFORM_META,
+  getChannelDisplayName,
+  getChannelPlatform,
+  fmtRelativeTime,
+} from "@lib/constants/messagingConstants";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { cn } from "@lib/cn";
+import type { Channel } from "@typedefs/messaging";
 
 interface ChannelListProps {
   activeChannelId: string | null;
-  onSelect:        (channel: Channel) => void;
-  onNewChannel:    () => void;
+  onSelect: (channel: Channel) => void;
+  onNewChannel: () => void;
 }
 
-export function ChannelList({ activeChannelId, onSelect, onNewChannel }: ChannelListProps) {
+export function ChannelList({
+  activeChannelId,
+  onSelect,
+  onNewChannel,
+}: ChannelListProps) {
   const { active: business } = useActiveBusiness();
-  const [activeTab, setActiveTab] = useState('all');
-  const [search, setSearch]       = useState('');
+  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
 
   useChannelListUpdates(business);
 
   const tab = INBOX_TABS.find((t) => t.key === activeTab) ?? INBOX_TABS[0];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['channels', business, activeTab, search],
-    queryFn: () => listChannels({
-      business:     business ?? undefined,
-      channel_type: tab.channelType,
-      search:       search || undefined,
-      limit:        50,
-    }),
+    queryKey: ["channels", business, activeTab, search],
+    queryFn: () =>
+      listChannels({
+        business: business ?? undefined,
+        channel_type: tab.channelType,
+        search: search || undefined,
+        limit: 50,
+      }),
     refetchInterval: 30_000,
   });
 
   const channels = (data?.data ?? []).filter((ch) => {
     const key = tab.key as string;
-    if (!tab.platform || key === 'all' || key === 'internal') return true;
+    if (!tab.platform || key === "all" || key === "internal") return true;
     return getChannelPlatform(ch) === tab.platform;
   });
 
-  const totalUnread = (data?.data ?? []).reduce((s, c) => s + (c.unread_count ?? 0), 0);
+  const totalUnread = (data?.data ?? []).reduce(
+    (s, c) => s + (c.unread_count ?? 0),
+    0,
+  );
 
   return (
     <div className="flex h-full flex-col border-r border-white/5 bg-orika-black">
@@ -54,7 +65,7 @@ export function ChannelList({ activeChannelId, onSelect, onNewChannel }: Channel
           <h2 className="text-sm font-semibold text-orika-cream">Messages</h2>
           {totalUnread > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orika-gold text-[10px] font-bold text-orika-black px-1">
-              {totalUnread > 99 ? '99+' : totalUnread}
+              {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
         </div>
@@ -84,31 +95,38 @@ export function ChannelList({ activeChannelId, onSelect, onNewChannel }: Channel
       {/* Platform tabs */}
       <div className="flex overflow-x-auto px-3 pb-2 gap-1 scrollbar-none">
         {INBOX_TABS.map((t) => {
-          const tabUnread = t.key === 'all' ? totalUnread
-            : (data?.data ?? [])
-                .filter((ch) => {
-                  if (t.key === 'internal') return ch.channel_type !== 'customer_thread';
-                  return getChannelPlatform(ch) === t.platform;
-                })
-                .reduce((s, c) => s + (c.unread_count ?? 0), 0);
+          const tabUnread =
+            t.key === "all"
+              ? totalUnread
+              : (data?.data ?? [])
+                  .filter((ch) => {
+                    if (t.key === "internal")
+                      return ch.channel_type !== "customer_thread";
+                    return getChannelPlatform(ch) === t.platform;
+                  })
+                  .reduce((s, c) => s + (c.unread_count ?? 0), 0);
 
           return (
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={cn(
-                'flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-medium transition-all',
+                "flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-medium transition-all",
                 activeTab === t.key
-                  ? 'bg-orika-gold text-orika-black'
-                  : 'text-orika-smoke hover:text-orika-cream hover:bg-orika-charcoal',
+                  ? "bg-orika-gold text-orika-black"
+                  : "text-orika-smoke hover:text-orika-cream hover:bg-orika-charcoal",
               )}
             >
               {t.label}
               {tabUnread > 0 && (
-                <span className={cn(
-                  'rounded-full px-1 text-[9px] font-bold',
-                  activeTab === t.key ? 'bg-orika-black/20 text-orika-black' : 'bg-orika-gold/20 text-orika-gold',
-                )}>
+                <span
+                  className={cn(
+                    "rounded-full px-1 text-[9px] font-bold",
+                    activeTab === t.key
+                      ? "bg-orika-black/20 text-orika-black"
+                      : "bg-orika-gold/20 text-orika-gold",
+                  )}
+                >
                   {tabUnread}
                 </span>
               )}
@@ -149,11 +167,17 @@ export function ChannelList({ activeChannelId, onSelect, onNewChannel }: Channel
 // ── ChannelRow ────────────────────────────────────────────────────────────────
 
 function ChannelRow({
-  channel, isActive, onClick,
-}: { channel: Channel; isActive: boolean; onClick: () => void }) {
+  channel,
+  isActive,
+  onClick,
+}: {
+  channel: Channel;
+  isActive: boolean;
+  onClick: () => void;
+}) {
   const platform = getChannelPlatform(channel);
-  const meta     = PLATFORM_META[platform];
-  const name     = getChannelDisplayName(channel);
+  const meta = PLATFORM_META[platform];
+  const name = getChannelDisplayName(channel);
   const hasUnread = (channel.unread_count ?? 0) > 0;
 
   return (
@@ -161,16 +185,19 @@ function ChannelRow({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all',
+        "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
         isActive
-          ? 'bg-orika-charcoal border border-white/10'
-          : 'hover:bg-orika-charcoal/50',
+          ? "bg-orika-charcoal border border-white/10"
+          : "hover:bg-orika-charcoal/50",
       )}
     >
       {/* Platform avatar */}
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm"
-        style={{ backgroundColor: meta.bg, border: `1.5px solid ${meta.color}40` }}
+        style={{
+          backgroundColor: meta.bg,
+          border: `1.5px solid ${meta.color}40`,
+        }}
       >
         <span>{meta.icon}</span>
       </div>
@@ -178,7 +205,12 @@ function ChannelRow({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-1">
-          <p className={cn('truncate text-xs font-medium', hasUnread ? 'text-orika-cream' : 'text-orika-cloud')}>
+          <p
+            className={cn(
+              "truncate text-xs font-medium",
+              hasUnread ? "text-orika-cream" : "text-orika-cloud",
+            )}
+          >
             {name}
           </p>
           {channel.last_message?.created_at && (
@@ -189,7 +221,7 @@ function ChannelRow({
         </div>
         <div className="flex items-center justify-between gap-1 mt-0.5">
           <p className="truncate text-[11px] text-orika-smoke/70">
-            {channel.last_message?.content ?? 'No messages yet'}
+            {channel.last_message?.content ?? "No messages yet"}
           </p>
           {hasUnread ? (
             <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-orika-gold text-[9px] font-bold text-orika-black px-1">

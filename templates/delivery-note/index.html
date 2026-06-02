@@ -1,259 +1,299 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Delivery Note {{delivery_number}}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delivery Note {{delivery_number}}</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      font-size: 13px;
-      line-height: 1.55;
-      color: #1a1a1a;
-      background: #fff;
-      padding: 0;
-    }
+      body {
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 0;
+      }
 
-    :root {
-      --gold:      #C9A86C;
-      --gold-dark: #8A6A30;
-      --charcoal:  #1A1814;
-      --smoke:     #6B6560;
-      --line:      #E5E0D8;
-      --bg-alt:    #F9F7F4;
-    }
+      :root {
+        --gold: #c9a86c;
+        --gold-dark: #8a6a30;
+        --charcoal: #1a1814;
+        --smoke: #6b6560;
+        --line: #e5e0d8;
+        --bg-alt: #f9f7f4;
+      }
 
-    .page { max-width: 794px; margin: 0 auto; padding: 48px 56px; }
+      .page {
+        max-width: 794px;
+        margin: 0 auto;
+        padding: 48px 56px;
+      }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding-bottom: 28px;
-      border-bottom: 2px solid var(--gold);
-      margin-bottom: 32px;
-    }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 28px;
+        border-bottom: 2px solid var(--gold);
+        margin-bottom: 32px;
+      }
 
-    .brand-block .brand-name {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      color: var(--charcoal);
-      text-transform: uppercase;
-    }
-    .brand-block .brand-sub {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-top: 2px;
-    }
+      .brand-block .brand-name {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--charcoal);
+        text-transform: uppercase;
+      }
+      .brand-block .brand-sub {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-top: 2px;
+      }
 
-    .doc-block { text-align: right; }
-    .doc-block .doc-label {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--charcoal);
-      text-transform: uppercase;
-    }
-    .doc-block .doc-number {
-      font-size: 13px;
-      font-family: 'Courier New', monospace;
-      color: var(--gold-dark);
-      margin-top: 4px;
-    }
-    .doc-block .doc-date {
-      font-size: 11px;
-      color: var(--smoke);
-      margin-top: 4px;
-    }
+      .doc-block {
+        text-align: right;
+      }
+      .doc-block .doc-label {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--charcoal);
+        text-transform: uppercase;
+      }
+      .doc-block .doc-number {
+        font-size: 13px;
+        font-family: "Courier New", monospace;
+        color: var(--gold-dark);
+        margin-top: 4px;
+      }
+      .doc-block .doc-date {
+        font-size: 11px;
+        color: var(--smoke);
+        margin-top: 4px;
+      }
 
-    .meta-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 32px;
-    }
+      .meta-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 32px;
+      }
 
-    .meta-block .meta-heading {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 4px;
-      margin-bottom: 8px;
-    }
-    .meta-block .meta-value { color: var(--charcoal); font-weight: 600; font-size: 13px; }
-    .meta-block .meta-sub   { color: var(--smoke);    font-size: 11.5px; margin-top: 2px; }
+      .meta-block .meta-heading {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 4px;
+        margin-bottom: 8px;
+      }
+      .meta-block .meta-value {
+        color: var(--charcoal);
+        font-weight: 600;
+        font-size: 13px;
+      }
+      .meta-block .meta-sub {
+        color: var(--smoke);
+        font-size: 11.5px;
+        margin-top: 2px;
+      }
 
-    .section-heading {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-bottom: 8px;
-    }
+      .section-heading {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-bottom: 8px;
+      }
 
-    table.lines {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 32px;
-    }
-    table.lines thead tr { background: var(--charcoal); color: #fff; }
-    table.lines thead th {
-      padding: 9px 10px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      text-align: left;
-    }
-    table.lines thead th.right { text-align: right; }
-    table.lines tbody tr.row-even { background: #fff; }
-    table.lines tbody tr.row-odd  { background: var(--bg-alt); }
-    table.lines td {
-      padding: 9px 10px;
-      font-size: 12px;
-      color: var(--charcoal);
-      vertical-align: top;
-    }
-    table.lines td.c-num { width: 36px; color: var(--smoke); font-size: 11px; }
-    table.lines td.c-qty { width: 60px; text-align: right; font-weight: 600; }
+      table.lines {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 32px;
+      }
+      table.lines thead tr {
+        background: var(--charcoal);
+        color: #fff;
+      }
+      table.lines thead th {
+        padding: 9px 10px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-align: left;
+      }
+      table.lines thead th.right {
+        text-align: right;
+      }
+      table.lines tbody tr.row-even {
+        background: #fff;
+      }
+      table.lines tbody tr.row-odd {
+        background: var(--bg-alt);
+      }
+      table.lines td {
+        padding: 9px 10px;
+        font-size: 12px;
+        color: var(--charcoal);
+        vertical-align: top;
+      }
+      table.lines td.c-num {
+        width: 36px;
+        color: var(--smoke);
+        font-size: 11px;
+      }
+      table.lines td.c-qty {
+        width: 60px;
+        text-align: right;
+        font-weight: 600;
+      }
 
-    /* ── Signature grid ── */
-    .signatures {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 32px;
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid var(--line);
-    }
-    .sig-block .sig-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-bottom: 8px;
-    }
-    .sig-block .sig-name {
-      font-size: 12px;
-      color: var(--charcoal);
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .sig-block img {
-      width: 100%;
-      max-height: 100px;
-      object-fit: contain;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: #fafafa;
-      padding: 4px;
-    }
-    .sig-block .sig-line {
-      height: 80px;
-      border: 1px dashed var(--line);
-      border-radius: 4px;
-      background: #fafafa;
-      display: flex;
-      align-items: flex-end;
-      padding: 6px 10px;
-    }
-    .sig-block .sig-line span {
-      font-size: 10px;
-      color: var(--smoke);
-    }
+      /* ── Signature grid ── */
+      .signatures {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      .sig-block .sig-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-bottom: 8px;
+      }
+      .sig-block .sig-name {
+        font-size: 12px;
+        color: var(--charcoal);
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .sig-block img {
+        width: 100%;
+        max-height: 100px;
+        object-fit: contain;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #fafafa;
+        padding: 4px;
+      }
+      .sig-block .sig-line {
+        height: 80px;
+        border: 1px dashed var(--line);
+        border-radius: 4px;
+        background: #fafafa;
+        display: flex;
+        align-items: flex-end;
+        padding: 6px 10px;
+      }
+      .sig-block .sig-line span {
+        font-size: 10px;
+        color: var(--smoke);
+      }
 
-    .page-footer {
-      margin-top: 40px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .page-footer .footer-brand {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--smoke);
-    }
-    .page-footer .footer-note { font-size: 10px; color: var(--smoke); }
-  </style>
-</head>
-<body>
-<div class="page">
+      .page-footer {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .page-footer .footer-brand {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+      .page-footer .footer-note {
+        font-size: 10px;
+        color: var(--smoke);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- ── Header ── -->
+      <div class="header">
+        <div class="brand-block">
+          <div class="brand-name">Orika Hub</div>
+          <div class="brand-sub">Where luxury meets intelligence</div>
+        </div>
+        <div class="doc-block">
+          <div class="doc-label">Delivery Note</div>
+          <div class="doc-number">{{delivery_number}}</div>
+          <div class="doc-date">Signed: {{signed_at}}</div>
+        </div>
+      </div>
 
-  <!-- ── Header ── -->
-  <div class="header">
-    <div class="brand-block">
-      <div class="brand-name">Orika Hub</div>
-      <div class="brand-sub">Where luxury meets intelligence</div>
+      <!-- ── Meta row ── -->
+      <div class="meta-row">
+        <div class="meta-block">
+          <div class="meta-heading">Delivered To</div>
+          <div class="meta-value">{{contact_name}}</div>
+          <div class="meta-sub">{{delivery_address}}</div>
+        </div>
+        <div class="meta-block">
+          <div class="meta-heading">Delivery Details</div>
+          <div class="meta-sub">Courier: {{courier}}</div>
+        </div>
+      </div>
+
+      <!-- ── Items ── -->
+      <div class="section-heading">Items Delivered</div>
+      <table class="lines">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th class="right">Qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{items_html}}
+        </tbody>
+      </table>
+
+      <!-- ── Signatures ── -->
+      <div class="signatures">
+        <div class="sig-block">
+          <div class="sig-label">Customer Signature</div>
+          <div class="sig-name">{{customer_name}}</div>
+          <img src="{{customer_signature}}" alt="Customer signature" />
+        </div>
+        <div class="sig-block">
+          <div class="sig-label">Driver / Agent Signature</div>
+          <div class="sig-name">{{driver_name}}</div>
+          <img src="{{driver_signature}}" alt="Driver signature" />
+        </div>
+      </div>
+
+      <!-- ── Page footer ── -->
+      <div class="page-footer">
+        <span class="footer-brand">Orika Hub</span>
+        <span class="footer-note"
+          >Delivery Note {{delivery_number}} · Signed {{signed_at}}</span
+        >
+      </div>
     </div>
-    <div class="doc-block">
-      <div class="doc-label">Delivery Note</div>
-      <div class="doc-number">{{delivery_number}}</div>
-      <div class="doc-date">Signed: {{signed_at}}</div>
-    </div>
-  </div>
-
-  <!-- ── Meta row ── -->
-  <div class="meta-row">
-    <div class="meta-block">
-      <div class="meta-heading">Delivered To</div>
-      <div class="meta-value">{{contact_name}}</div>
-      <div class="meta-sub">{{delivery_address}}</div>
-    </div>
-    <div class="meta-block">
-      <div class="meta-heading">Delivery Details</div>
-      <div class="meta-sub">Courier: {{courier}}</div>
-    </div>
-  </div>
-
-  <!-- ── Items ── -->
-  <div class="section-heading">Items Delivered</div>
-  <table class="lines">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Description</th>
-        <th class="right">Qty</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{items_html}}
-    </tbody>
-  </table>
-
-  <!-- ── Signatures ── -->
-  <div class="signatures">
-    <div class="sig-block">
-      <div class="sig-label">Customer Signature</div>
-      <div class="sig-name">{{customer_name}}</div>
-      <img src="{{customer_signature}}" alt="Customer signature" />
-    </div>
-    <div class="sig-block">
-      <div class="sig-label">Driver / Agent Signature</div>
-      <div class="sig-name">{{driver_name}}</div>
-      <img src="{{driver_signature}}" alt="Driver signature" />
-    </div>
-  </div>
-
-  <!-- ── Page footer ── -->
-  <div class="page-footer">
-    <span class="footer-brand">Orika Hub</span>
-    <span class="footer-note">Delivery Note {{delivery_number}} · Signed {{signed_at}}</span>
-  </div>
-
-</div>
-</body>
+  </body>
 </html>

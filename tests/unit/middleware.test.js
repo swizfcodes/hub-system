@@ -311,9 +311,9 @@ describe("Business Context Middleware", () => {
     });
 
     it("should allow business override", () => {
-      const user = { 
+      const user = {
         ...TEST_USER,
-        permitted_businesses: ["biz1", "biz2", "biz3"]
+        permitted_businesses: ["biz1", "biz2", "biz3"],
       };
       const selectedBusiness = "biz2";
       expect(user.permitted_businesses).toContain("biz2");

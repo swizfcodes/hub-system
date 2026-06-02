@@ -1,11 +1,23 @@
 // Types mirror shared.staff_profiles / staff_contracts / staff_assets / leave_requests
 // + auth.users (the embed via LEFT JOIN in staff.repository.js).
 
-export type Department = 'sales' | 'operations' | 'finance' | 'logistics' | 'management' | string;
-export type EmploymentType = 'full_time' | 'part_time' | 'contract';
-export type ContractType = 'full_time' | 'part_time' | 'contract' | 'amendment';
-export type LeaveType = 'annual' | 'sick' | 'maternity' | 'paternity' | 'compassionate' | 'unpaid';
-export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type Department =
+  | "sales"
+  | "operations"
+  | "finance"
+  | "logistics"
+  | "management"
+  | string;
+export type EmploymentType = "full_time" | "part_time" | "contract";
+export type ContractType = "full_time" | "part_time" | "contract" | "amendment";
+export type LeaveType =
+  | "annual"
+  | "sick"
+  | "maternity"
+  | "paternity"
+  | "compassionate"
+  | "unpaid";
+export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 
 export interface StaffProfile {
   profile_id: string;

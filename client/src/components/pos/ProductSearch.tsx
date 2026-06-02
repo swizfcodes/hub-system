@@ -1,13 +1,17 @@
 // ── ProductSearch.tsx ──────────────────────────────────────────────────────────
-import { useState, useEffect as useEffectPS } from 'react';
-import { Search, Plus, AlertTriangle } from 'lucide-react';
-import { usePOSStore } from '@stores/posStore';
-import { getCachedProducts, getCachedCategories, getStockQty } from '@lib/posDb';
-import { api } from '@services/api';
-import { LOW_STOCK_THRESHOLD } from '@lib/constants/posConstants';
-import { fmtMoney } from '@lib/format';
-import { cn } from '@lib/cn';
-import type { POSProduct, POSCategory } from '@typedefs/pos';
+import { useState, useEffect as useEffectPS } from "react";
+import { Search, Plus, AlertTriangle } from "lucide-react";
+import { usePOSStore } from "@stores/posStore";
+import {
+  getCachedProducts,
+  getCachedCategories,
+  getStockQty,
+} from "@lib/posDb";
+import { api } from "@services/api";
+import { LOW_STOCK_THRESHOLD } from "@lib/constants/posConstants";
+import { fmtMoney } from "@lib/format";
+import { cn } from "@lib/cn";
+import type { POSProduct, POSCategory } from "@typedefs/pos";
 
 interface ProductSearchProps {
   currency?: string;
@@ -15,17 +19,20 @@ interface ProductSearchProps {
   cacheVersion?: number;
 }
 
-export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSearchProps) {
+export function ProductSearch({
+  currency = "NGN",
+  cacheVersion = 0,
+}: ProductSearchProps) {
   const { addLine, isOnline } = usePOSStore((s) => ({
-    addLine:  s.addLine,
+    addLine: s.addLine,
     isOnline: s.isOnline,
   }));
 
-  const [query,       setQuery]       = useState('');
-  const [products,    setProducts]    = useState<POSProduct[]>([]);
-  const [categories,  setCategories]  = useState<POSCategory[]>([]);
-  const [categoryId,  setCategoryId]  = useState<string | null>(null);
-  const [stockMap,    setStockMap]    = useState<Map<string, number>>(new Map());
+  const [query, setQuery] = useState("");
+  const [products, setProducts] = useState<POSProduct[]>([]);
+  const [categories, setCategories] = useState<POSCategory[]>([]);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [stockMap, setStockMap] = useState<Map<string, number>>(new Map());
 
   // Re-reads IndexedDB whenever cacheVersion changes (triggered by POSSession
   // after seedProductCache completes). Also runs on first mount to pick up any
@@ -56,16 +63,22 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
 
     const t = setTimeout(async () => {
       try {
-        const { data } = await api.get(`/catalogue/barcodes/lookup/${encodeURIComponent(query)}`);
+        const { data } = await api.get(
+          `/catalogue/barcodes/lookup/${encodeURIComponent(query)}`,
+        );
         if (data?.product_id) {
-          const product = products.find((p) => p.product_id === data.product_id);
+          const product = products.find(
+            (p) => p.product_id === data.product_id,
+          );
           if (product) {
             const qty = stockMap.get(product.product_id) ?? 0;
             addLine({ ...product, available_qty: qty });
-            setQuery('');
+            setQuery("");
           }
         }
-      } catch { /* not a barcode */ }
+      } catch {
+        /* not a barcode */
+      }
     }, 500);
     return () => clearTimeout(t);
   }, [query, isOnline]);
@@ -105,8 +118,10 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
           <button
             onClick={() => setCategoryId(null)}
             className={cn(
-              'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              !categoryId ? 'bg-orika-gold text-orika-black' : 'bg-orika-graphite text-orika-cloud',
+              "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              !categoryId
+                ? "bg-orika-gold text-orika-black"
+                : "bg-orika-graphite text-orika-cloud",
             )}
           >
             All
@@ -116,10 +131,10 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
               key={cat.category_id}
               onClick={() => setCategoryId(cat.category_id)}
               className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 categoryId === cat.category_id
-                  ? 'bg-orika-gold text-orika-black'
-                  : 'bg-orika-graphite text-orika-cloud',
+                  ? "bg-orika-gold text-orika-black"
+                  : "bg-orika-graphite text-orika-cloud",
               )}
             >
               {cat.name}
@@ -132,19 +147,19 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
       <div className="flex-1 overflow-y-auto">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {filtered.map((product) => {
-            const qty     = stockMap.get(product.product_id) ?? 0;
-            const isOut   = qty === 0;
-            const isLow   = qty > 0 && qty <= LOW_STOCK_THRESHOLD;
+            const qty = stockMap.get(product.product_id) ?? 0;
+            const isOut = qty === 0;
+            const isLow = qty > 0 && qty <= LOW_STOCK_THRESHOLD;
             return (
               <button
                 key={product.product_id}
                 onClick={() => handleAdd(product)}
                 disabled={isOut}
                 className={cn(
-                  'flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all',
+                  "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
                   isOut
-                    ? 'cursor-not-allowed border-white/5 bg-orika-graphite/20 opacity-50'
-                    : 'border-white/5 bg-orika-charcoal hover:border-orika-gold/30 hover:bg-orika-graphite/30',
+                    ? "cursor-not-allowed border-white/5 bg-orika-graphite/20 opacity-50"
+                    : "border-white/5 bg-orika-charcoal hover:border-orika-gold/30 hover:bg-orika-graphite/30",
                 )}
               >
                 <p className="line-clamp-2 text-xs font-medium text-orika-cream">
@@ -155,14 +170,18 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
                 </p>
                 <div className="flex items-center gap-1">
                   {isOut ? (
-                    <span className="text-[10px] text-red-400">Out of stock</span>
+                    <span className="text-[10px] text-red-400">
+                      Out of stock
+                    </span>
                   ) : isLow ? (
                     <span className="flex items-center gap-0.5 text-[10px] text-amber-400">
                       <AlertTriangle className="h-2.5 w-2.5" />
                       {qty} left
                     </span>
                   ) : (
-                    <span className="text-[10px] text-orika-smoke">{qty} in stock</span>
+                    <span className="text-[10px] text-orika-smoke">
+                      {qty} in stock
+                    </span>
                   )}
                 </div>
                 {!isOut && (
@@ -181,14 +200,15 @@ export function ProductSearch({ currency = 'NGN', cacheVersion = 0 }: ProductSea
               <>
                 <p className="text-orika-cloud">No products loaded yet.</p>
                 <p className="mt-1 text-xs">
-                  They may still be syncing, or your account may not have catalogue access.
-                  Make sure products are active, then reopen this session.
+                  They may still be syncing, or your account may not have
+                  catalogue access. Make sure products are active, then reopen
+                  this session.
                 </p>
               </>
             ) : categoryId ? (
-              'No products in this category'
+              "No products in this category"
             ) : (
-              'No active products available'
+              "No active products available"
             )}
           </div>
         )}

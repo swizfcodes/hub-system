@@ -274,30 +274,33 @@ function buildPayslipTemplateData(payslip) {
   const periodLabel = `${monthName(payslip.period_month)} ${payslip.period_year}`;
 
   return {
-    run_number:              esc(payslip.run_number || "—"),
-    period_label:            esc(periodLabel),
-    display_name:            esc(payslip.display_name || "—"),
-    job_title:               esc(payslip.job_title || "—"),
-    employee_number:         esc(payslip.employee_number || "—"),
-    bank_name:               esc(payslip.bank_name || "—"),
-    bank_account_number:     esc(payslip.bank_account_number || "—"),
-    basic_salary:            fmtAmt(payslip.basic_salary),
-    housing_allowance:       fmtAmt(payslip.housing_allowance),
-    transport_allowance:     fmtAmt(payslip.transport_allowance),
-    commission_amount:       fmtAmt(payslip.commission_amount),
-    gross_salary:            fmtAmt(payslip.gross_salary),
-    paye_deduction:          fmtAmt(payslip.paye_deduction),
-    pension_employee:        fmtAmt(payslip.pension_employee),
-    nhf_deduction:           fmtAmt(payslip.nhf_deduction),
-    advance_recovery:        fmtAmt(payslip.advance_recovery),
-    other_deductions:        fmtAmt(payslip.other_deductions),
-    total_deductions:        fmtAmt(payslip.total_deductions),
-    net_salary:              fmtAmt(payslip.net_salary),
-    days_absent:             String(payslip.days_absent || 0),
+    run_number: esc(payslip.run_number || "—"),
+    period_label: esc(periodLabel),
+    display_name: esc(payslip.display_name || "—"),
+    job_title: esc(payslip.job_title || "—"),
+    employee_number: esc(payslip.employee_number || "—"),
+    bank_name: esc(payslip.bank_name || "—"),
+    bank_account_number: esc(payslip.bank_account_number || "—"),
+    basic_salary: fmtAmt(payslip.basic_salary),
+    housing_allowance: fmtAmt(payslip.housing_allowance),
+    transport_allowance: fmtAmt(payslip.transport_allowance),
+    commission_amount: fmtAmt(payslip.commission_amount),
+    gross_salary: fmtAmt(payslip.gross_salary),
+    paye_deduction: fmtAmt(payslip.paye_deduction),
+    pension_employee: fmtAmt(payslip.pension_employee),
+    nhf_deduction: fmtAmt(payslip.nhf_deduction),
+    advance_recovery: fmtAmt(payslip.advance_recovery),
+    other_deductions: fmtAmt(payslip.other_deductions),
+    total_deductions: fmtAmt(payslip.total_deductions),
+    net_salary: fmtAmt(payslip.net_salary),
+    days_absent: String(payslip.days_absent || 0),
     // Conditional rows
-    commission_row_style:    Number(payslip.commission_amount || 0) > 0 ? "" : "display:none",
-    advance_row_style:       Number(payslip.advance_recovery || 0) > 0 ? "" : "display:none",
-    other_deductions_style:  Number(payslip.other_deductions || 0) > 0 ? "" : "display:none",
+    commission_row_style:
+      Number(payslip.commission_amount || 0) > 0 ? "" : "display:none",
+    advance_row_style:
+      Number(payslip.advance_recovery || 0) > 0 ? "" : "display:none",
+    other_deductions_style:
+      Number(payslip.other_deductions || 0) > 0 ? "" : "display:none",
   };
 }
 

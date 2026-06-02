@@ -1,19 +1,25 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent, type DragStartEvent,
-} from '@dnd-kit/core';
-import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { Plus } from 'lucide-react';
-import { Skeleton } from '@components/ui/Skeleton';
-import { DealCard } from './DealCard';
-import { moveDealStage } from '@services/crm/deals';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { fmtMoney } from '@lib/format';
-import type { PipelineStageWithDeals } from '@typedefs/crm';
-import { cn } from '@lib/cn';
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { useDroppable, useDraggable } from "@dnd-kit/core";
+import { Plus } from "lucide-react";
+import { Skeleton } from "@components/ui/Skeleton";
+import { DealCard } from "./DealCard";
+import { moveDealStage } from "@services/crm/deals";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { fmtMoney } from "@lib/format";
+import type { PipelineStageWithDeals } from "@typedefs/crm";
+import { cn } from "@lib/cn";
 
 interface Props {
   pipeline?: PipelineStageWithDeals[];
@@ -26,12 +32,15 @@ export function PipelineBoard({ pipeline, loading, onNewDeal }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const move = useMutation({
-    mutationFn: ({ id, stage }: { id: string; stage: string }) => moveDealStage(id, stage),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['crm'] }),
-    onError: (e) => showToast.error('Could not move', errMsg(e)),
+    mutationFn: ({ id, stage }: { id: string; stage: string }) =>
+      moveDealStage(id, stage),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crm"] }),
+    onError: (e) => showToast.error("Could not move", errMsg(e)),
   });
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+  );
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
   const onDragEnd = (e: DragEndEvent) => {
@@ -40,7 +49,9 @@ export function PipelineBoard({ pipeline, loading, onNewDeal }: Props) {
     if (!over) return;
     const dealId = String(active.id);
     const newStage = String(over.id);
-    const fromStage = (pipeline ?? []).find((s) => s.deals.some((d) => d.deal_id === dealId))?.stage_key;
+    const fromStage = (pipeline ?? []).find((s) =>
+      s.deals.some((d) => d.deal_id === dealId),
+    )?.stage_key;
     if (fromStage === newStage) return;
     move.mutate({ id: dealId, stage: newStage });
   };
@@ -48,7 +59,9 @@ export function PipelineBoard({ pipeline, loading, onNewDeal }: Props) {
   if (loading) {
     return (
       <div className="flex gap-3 overflow-x-auto pb-4">
-        {[0,1,2,3].map((i) => <Skeleton key={i} className="h-96 w-72 flex-shrink-0" />)}
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-96 w-72 flex-shrink-0" />
+        ))}
       </div>
     );
   }
@@ -57,18 +70,33 @@ export function PipelineBoard({ pipeline, loading, onNewDeal }: Props) {
   const draggingDeal = allDeals.find((d) => d.deal_id === activeId);
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    >
       <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar">
-        {(pipeline ?? []).map((stage) => <Column key={stage.stage_key} stage={stage} onNewDeal={onNewDeal} />)}
+        {(pipeline ?? []).map((stage) => (
+          <Column key={stage.stage_key} stage={stage} onNewDeal={onNewDeal} />
+        ))}
       </div>
       <DragOverlay>
-        {draggingDeal ? <DealCard deal={draggingDeal} dragging className="w-72" /> : null}
+        {draggingDeal ? (
+          <DealCard deal={draggingDeal} dragging className="w-72" />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
 }
 
-function Column({ stage, onNewDeal }: { stage: PipelineStageWithDeals; onNewDeal: (s?: string) => void }) {
+function Column({
+  stage,
+  onNewDeal,
+}: {
+  stage: PipelineStageWithDeals;
+  onNewDeal: (s?: string) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.stage_key });
   const count = stage.deals.length;
   return (
@@ -76,22 +104,30 @@ function Column({ stage, onNewDeal }: { stage: PipelineStageWithDeals; onNewDeal
       <div className="h-1" style={{ background: stage.colour }} />
       <div className="px-3 py-2.5 flex items-center justify-between gap-2 border-b border-orika-graphite/70">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-semibold text-orika-cream uppercase tracking-wide truncate">{stage.stage_label}</span>
+          <span className="text-xs font-semibold text-orika-cream uppercase tracking-wide truncate">
+            {stage.stage_label}
+          </span>
           <span className="text-[0.6rem] text-orika-smoke">{count}</span>
         </div>
-        <span className="text-[0.6rem] font-mono text-orika-gold">{fmtMoney(stage.total_value, 'NGN')}</span>
+        <span className="text-[0.6rem] font-mono text-orika-gold">
+          {fmtMoney(stage.total_value, "NGN")}
+        </span>
       </div>
 
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto transition-colors',
-          isOver && 'bg-orika-gold/[0.05]',
+          "flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto transition-colors",
+          isOver && "bg-orika-gold/[0.05]",
         )}
       >
-        {stage.deals.map((deal) => <DraggableDealCard key={deal.deal_id} deal={deal} />)}
+        {stage.deals.map((deal) => (
+          <DraggableDealCard key={deal.deal_id} deal={deal} />
+        ))}
         {count === 0 && !isOver && (
-          <div className="text-center py-8 text-[0.65rem] text-orika-smoke italic">No deals</div>
+          <div className="text-center py-8 text-[0.65rem] text-orika-smoke italic">
+            No deals
+          </div>
         )}
       </div>
 
@@ -105,8 +141,14 @@ function Column({ stage, onNewDeal }: { stage: PipelineStageWithDeals; onNewDeal
   );
 }
 
-function DraggableDealCard({ deal }: { deal: PipelineStageWithDeals['deals'][number] }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: deal.deal_id });
+function DraggableDealCard({
+  deal,
+}: {
+  deal: PipelineStageWithDeals["deals"][number];
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: deal.deal_id,
+  });
   return (
     <div ref={setNodeRef} {...attributes} {...listeners}>
       <DealCard deal={deal} dragging={isDragging} />

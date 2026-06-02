@@ -1,8 +1,13 @@
-import { api } from '../api';
-import type { Supplier } from '@typedefs/purchasing';
+import { api } from "../api";
+import type { Supplier } from "@typedefs/purchasing";
 
-export async function listSuppliers(params: { search?: string; page?: number; limit?: number } = {}): Promise<{ data: Supplier[] }> {
-  const { data } = await api.get<{ data: Supplier[] }>('/purchasing/suppliers', { params });
+export async function listSuppliers(
+  params: { search?: string; page?: number; limit?: number } = {},
+): Promise<{ data: Supplier[] }> {
+  const { data } = await api.get<{ data: Supplier[] }>(
+    "/purchasing/suppliers",
+    { params },
+  );
   return data;
 }
 
@@ -11,8 +16,13 @@ export async function getSupplier(id: string): Promise<Supplier> {
   return data;
 }
 
-export async function createSupplier(payload: { contact_id: string; payment_terms_days?: number; preferred_currency?: string; notes?: string }): Promise<Supplier> {
-  const { data } = await api.post<Supplier>('/purchasing/suppliers', payload);
+export async function createSupplier(payload: {
+  contact_id: string;
+  payment_terms_days?: number;
+  preferred_currency?: string;
+  notes?: string;
+}): Promise<Supplier> {
+  const { data } = await api.post<Supplier>("/purchasing/suppliers", payload);
   return data;
 }
 
@@ -25,7 +35,7 @@ export async function createSupplier(payload: { contact_id: string; payment_term
  * When the backend adds POST /purchasing/suppliers/invite (returning {token}),
  * we'll switch to calling that and emailing the token URL.
  */
-import { createContact } from '@services/contacts/contacts';
+import { createContact } from "@services/contacts/contacts";
 export async function inviteOrCreateSupplier(input: {
   contact_id?: string;
   display_name?: string;
@@ -43,12 +53,12 @@ export async function inviteOrCreateSupplier(input: {
     const contact = await createContact({
       display_name: input.display_name || input.company_name || input.email,
       company_name: input.company_name || undefined,
-      contact_type: ['supplier'],
-      primary_phone: input.primary_phone || '',
+      contact_type: ["supplier"],
+      primary_phone: input.primary_phone || "",
       whatsapp_number: input.whatsapp_number || undefined,
       email: input.email,
       visible_to: input.visible_to,
-      priority_level: 'regular',
+      priority_level: "regular",
     });
     contactId = contact.contact_id;
   }

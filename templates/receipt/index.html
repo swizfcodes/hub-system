@@ -1,221 +1,242 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Receipt {{receipt_number}}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Receipt {{receipt_number}}</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-      font-size: 13px;
-      line-height: 1.55;
-      color: #1a1a1a;
-      background: #fff;
-      padding: 0;
-    }
+      body {
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #1a1a1a;
+        background: #fff;
+        padding: 0;
+      }
 
-    :root {
-      --gold:      #C9A86C;
-      --gold-dark: #8A6A30;
-      --charcoal:  #1A1814;
-      --smoke:     #6B6560;
-      --line:      #E5E0D8;
-      --bg-alt:    #F9F7F4;
-    }
+      :root {
+        --gold: #c9a86c;
+        --gold-dark: #8a6a30;
+        --charcoal: #1a1814;
+        --smoke: #6b6560;
+        --line: #e5e0d8;
+        --bg-alt: #f9f7f4;
+      }
 
-    .page { max-width: 794px; margin: 0 auto; padding: 48px 56px; }
+      .page {
+        max-width: 794px;
+        margin: 0 auto;
+        padding: 48px 56px;
+      }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding-bottom: 28px;
-      border-bottom: 2px solid var(--gold);
-      margin-bottom: 40px;
-    }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 28px;
+        border-bottom: 2px solid var(--gold);
+        margin-bottom: 40px;
+      }
 
-    .brand-block .brand-name {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      color: var(--charcoal);
-      text-transform: uppercase;
-    }
-    .brand-block .brand-sub {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-top: 2px;
-    }
+      .brand-block .brand-name {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--charcoal);
+        text-transform: uppercase;
+      }
+      .brand-block .brand-sub {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-top: 2px;
+      }
 
-    .doc-block { text-align: right; }
-    .doc-block .doc-label {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--charcoal);
-      text-transform: uppercase;
-    }
-    .doc-block .doc-number {
-      font-size: 13px;
-      font-family: 'Courier New', monospace;
-      color: var(--gold-dark);
-      margin-top: 4px;
-    }
+      .doc-block {
+        text-align: right;
+      }
+      .doc-block .doc-label {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--charcoal);
+        text-transform: uppercase;
+      }
+      .doc-block .doc-number {
+        font-size: 13px;
+        font-family: "Courier New", monospace;
+        color: var(--gold-dark);
+        margin-top: 4px;
+      }
 
-    /* ── Receipt card ── */
-    .receipt-card {
-      background: var(--bg-alt);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 32px 36px;
-      margin-bottom: 32px;
-    }
+      /* ── Receipt card ── */
+      .receipt-card {
+        background: var(--bg-alt);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 32px 36px;
+        margin-bottom: 32px;
+      }
 
-    .receipt-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .receipt-row:last-child { border-bottom: none; }
-    .receipt-row .r-label {
-      font-size: 11px;
-      color: var(--smoke);
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .receipt-row .r-value {
-      font-size: 13px;
-      color: var(--charcoal);
-      font-weight: 600;
-      text-align: right;
-    }
+      .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .receipt-row:last-child {
+        border-bottom: none;
+      }
+      .receipt-row .r-label {
+        font-size: 11px;
+        color: var(--smoke);
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .receipt-row .r-value {
+        font-size: 13px;
+        color: var(--charcoal);
+        font-weight: 600;
+        text-align: right;
+      }
 
-    .amount-hero {
-      text-align: center;
-      padding: 24px 0 16px;
-      border-bottom: 2px solid var(--gold);
-      margin-bottom: 24px;
-    }
-    .amount-hero .amount-label {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-bottom: 4px;
-    }
-    .amount-hero .amount-value {
-      font-size: 36px;
-      font-weight: 700;
-      font-family: 'Courier New', monospace;
-      color: var(--charcoal);
-    }
+      .amount-hero {
+        text-align: center;
+        padding: 24px 0 16px;
+        border-bottom: 2px solid var(--gold);
+        margin-bottom: 24px;
+      }
+      .amount-hero .amount-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-bottom: 4px;
+      }
+      .amount-hero .amount-value {
+        font-size: 36px;
+        font-weight: 700;
+        font-family: "Courier New", monospace;
+        color: var(--charcoal);
+      }
 
-    .thankyou {
-      text-align: center;
-      margin: 32px 0;
-      font-size: 13px;
-      color: var(--smoke);
-      font-style: italic;
-    }
+      .thankyou {
+        text-align: center;
+        margin: 32px 0;
+        font-size: 13px;
+        color: var(--smoke);
+        font-style: italic;
+      }
 
-    .notes-section { margin-bottom: 24px; }
-    .notes-heading {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--gold-dark);
-      margin-bottom: 6px;
-    }
-    .notes-body {
-      font-size: 11.5px;
-      color: var(--smoke);
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
+      .notes-section {
+        margin-bottom: 24px;
+      }
+      .notes-heading {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin-bottom: 6px;
+      }
+      .notes-body {
+        font-size: 11.5px;
+        color: var(--smoke);
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
 
-    .page-footer {
-      margin-top: 40px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .page-footer .footer-brand {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--smoke);
-    }
-    .page-footer .footer-note { font-size: 10px; color: var(--smoke); }
-  </style>
-</head>
-<body>
-<div class="page">
+      .page-footer {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .page-footer .footer-brand {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+      .page-footer .footer-note {
+        font-size: 10px;
+        color: var(--smoke);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <!-- ── Header ── -->
+      <div class="header">
+        <div class="brand-block">
+          <div class="brand-name">Orika Hub</div>
+          <div class="brand-sub">Where luxury meets intelligence</div>
+        </div>
+        <div class="doc-block">
+          <div class="doc-label">Receipt</div>
+          <div class="doc-number">{{receipt_number}}</div>
+        </div>
+      </div>
 
-  <!-- ── Header ── -->
-  <div class="header">
-    <div class="brand-block">
-      <div class="brand-name">Orika Hub</div>
-      <div class="brand-sub">Where luxury meets intelligence</div>
+      <!-- ── Amount hero ── -->
+      <div class="amount-hero">
+        <div class="amount-label">Amount Received</div>
+        <div class="amount-value">{{amount}}</div>
+      </div>
+
+      <!-- ── Receipt details card ── -->
+      <div class="receipt-card">
+        <div class="receipt-row">
+          <span class="r-label">Received From</span>
+          <span class="r-value">{{contact_name}}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">Date</span>
+          <span class="r-value">{{issued_at}}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">Invoice Ref.</span>
+          <span class="r-value">{{invoice_number}}</span>
+        </div>
+        <div class="receipt-row">
+          <span class="r-label">Payment Method</span>
+          <span class="r-value">{{payment_method}}</span>
+        </div>
+      </div>
+
+      <!-- ── Notes ── -->
+      <div class="notes-section" style="{{notes_style}}">
+        <div class="notes-heading">Notes</div>
+        <div class="notes-body">{{notes}}</div>
+      </div>
+
+      <!-- ── Thank you ── -->
+      <div class="thankyou">
+        Thank you for your payment — we appreciate your business.
+      </div>
+
+      <!-- ── Page footer ── -->
+      <div class="page-footer">
+        <span class="footer-brand">Orika Hub</span>
+        <span class="footer-note"
+          >Receipt {{receipt_number}} · Invoice {{invoice_number}}</span
+        >
+      </div>
     </div>
-    <div class="doc-block">
-      <div class="doc-label">Receipt</div>
-      <div class="doc-number">{{receipt_number}}</div>
-    </div>
-  </div>
-
-  <!-- ── Amount hero ── -->
-  <div class="amount-hero">
-    <div class="amount-label">Amount Received</div>
-    <div class="amount-value">{{amount}}</div>
-  </div>
-
-  <!-- ── Receipt details card ── -->
-  <div class="receipt-card">
-    <div class="receipt-row">
-      <span class="r-label">Received From</span>
-      <span class="r-value">{{contact_name}}</span>
-    </div>
-    <div class="receipt-row">
-      <span class="r-label">Date</span>
-      <span class="r-value">{{issued_at}}</span>
-    </div>
-    <div class="receipt-row">
-      <span class="r-label">Invoice Ref.</span>
-      <span class="r-value">{{invoice_number}}</span>
-    </div>
-    <div class="receipt-row">
-      <span class="r-label">Payment Method</span>
-      <span class="r-value">{{payment_method}}</span>
-    </div>
-  </div>
-
-  <!-- ── Notes ── -->
-  <div class="notes-section" style="{{notes_style}}">
-    <div class="notes-heading">Notes</div>
-    <div class="notes-body">{{notes}}</div>
-  </div>
-
-  <!-- ── Thank you ── -->
-  <div class="thankyou">Thank you for your payment — we appreciate your business.</div>
-
-  <!-- ── Page footer ── -->
-  <div class="page-footer">
-    <span class="footer-brand">Orika Hub</span>
-    <span class="footer-note">Receipt {{receipt_number}} · Invoice {{invoice_number}}</span>
-  </div>
-
-</div>
-</body>
+  </body>
 </html>

@@ -1,1 +1,1 @@
-export * from './loyalty';
+export * from "./loyalty";

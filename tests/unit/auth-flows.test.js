@@ -202,10 +202,7 @@ describe("Authentication Flows", () => {
     it("should enforce password reset after time", () => {
       const reset = generatePasswordReset();
       expect(reset.expires_at).toBeTruthy();
-      expect(
-        new Date(reset.expires_at) >
-          new Date(),
-      ).toBe(true);
+      expect(new Date(reset.expires_at) > new Date()).toBe(true);
     });
 
     it("should invalidate old sessions", () => {
@@ -218,9 +215,21 @@ describe("Authentication Flows", () => {
 
     it("should track failed reset attempts", () => {
       const attempts = [
-        { reset_id: "reset-1", attempt: 1, timestamp: new Date().toISOString() },
-        { reset_id: "reset-1", attempt: 2, timestamp: new Date().toISOString() },
-        { reset_id: "reset-1", attempt: 3, timestamp: new Date().toISOString() },
+        {
+          reset_id: "reset-1",
+          attempt: 1,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          reset_id: "reset-1",
+          attempt: 2,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          reset_id: "reset-1",
+          attempt: 3,
+          timestamp: new Date().toISOString(),
+        },
       ];
 
       expect(attempts.length).toBe(3);

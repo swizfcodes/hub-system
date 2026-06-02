@@ -1,43 +1,43 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { FileText, Truck, ExternalLink } from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Button } from '@components/ui/Button';
-import { Skeleton } from '@components/ui/Skeleton';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { LineItemsTable } from '@components/sales/shared/LineItemsTable';
-import { HandToLogisticsModal } from '@components/sales/modals/SalesModals';
-import { getOrder, generateInvoice } from '@services/sales/orders';
-import { fmtDate, fmtMoney } from '@lib/format';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { FULFILMENT_LABELS } from '@lib/constants/salesConstants';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { FileText, Truck, ExternalLink } from "lucide-react";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Button } from "@components/ui/Button";
+import { Skeleton } from "@components/ui/Skeleton";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { LineItemsTable } from "@components/sales/shared/LineItemsTable";
+import { HandToLogisticsModal } from "@components/sales/modals/SalesModals";
+import { getOrder, generateInvoice } from "@services/sales/orders";
+import { fmtDate, fmtMoney } from "@lib/format";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { FULFILMENT_LABELS } from "@lib/constants/salesConstants";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function OrderDetail() {
-  const { id }        = useParams<{ id: string }>();
-  const navigate      = useNavigate();
-  const qc            = useQueryClient();
-  const { currency }  = useActiveBusiness();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { currency } = useActiveBusiness();
 
   const [showLogistics, setShowLogistics] = useState(false);
-  const [invoiceDueDate, setInvoiceDueDate] = useState('');
+  const [invoiceDueDate, setInvoiceDueDate] = useState("");
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ['order', id],
-    queryFn:  () => getOrder(id!),
-    enabled:  !!id,
+    queryKey: ["order", id],
+    queryFn: () => getOrder(id!),
+    enabled: !!id,
   });
 
   const invoiceMutation = useMutation({
     mutationFn: () => {
-      if (!invoiceDueDate) throw new Error('Set a due date for the invoice');
+      if (!invoiceDueDate) throw new Error("Set a due date for the invoice");
       return generateInvoice(id!, { due_date: invoiceDueDate });
     },
     onSuccess: (inv) => {
-      qc.invalidateQueries({ queryKey: ['order', id] });
+      qc.invalidateQueries({ queryKey: ["order", id] });
       showToast.success(`Invoice ${inv.invoice_number} generated`);
       navigate(`/sales/invoices/${inv.invoice_id}`);
     },
@@ -62,20 +62,20 @@ export default function OrderDetail() {
     );
   }
 
-  const hasInvoice       = !!order.invoice_id;
-  const isDelivery       = order.fulfilment_type === 'delivery';
-  const canHandToLogistics = isDelivery && order.status === 'confirmed';
-  const canGenerateInvoice = !hasInvoice && order.status !== 'cancelled';
+  const hasInvoice = !!order.invoice_id;
+  const isDelivery = order.fulfilment_type === "delivery";
+  const canHandToLogistics = isDelivery && order.status === "confirmed";
+  const canGenerateInvoice = !hasInvoice && order.status !== "cancelled";
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title={order.order_number}
-        subtitle={`${order.contact_name ?? ''} · ${FULFILMENT_LABELS[order.fulfilment_type]} · ${fmtDate(order.created_at)}`}
+        subtitle={`${order.contact_name ?? ""} · ${FULFILMENT_LABELS[order.fulfilment_type]} · ${fmtDate(order.created_at)}`}
         crumbs={[
-          { label: 'Hub', to: '/' },
-          { label: 'Sales', to: '/sales' },
-          { label: 'Orders', to: '/sales' },
+          { label: "Hub", to: "/" },
+          { label: "Sales", to: "/sales" },
+          { label: "Orders", to: "/sales" },
           { label: order.order_number },
         ]}
         actions={<SalesStatusBadge entity="order" status={order.status} />}
@@ -90,11 +90,20 @@ export default function OrderDetail() {
               Order Details
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <MetaField label="Customer"    value={order.contact_name ?? '—'} />
-              <MetaField label="Fulfilment"  value={FULFILMENT_LABELS[order.fulfilment_type]} />
-              <MetaField label="Quote Ref"   value={order.quotation_number ?? '—'} />
-              <MetaField label="Created"     value={fmtDate(order.created_at)} />
-              <MetaField label="Total"       value={fmtMoney(order.total_amount, currency)} />
+              <MetaField label="Customer" value={order.contact_name ?? "—"} />
+              <MetaField
+                label="Fulfilment"
+                value={FULFILMENT_LABELS[order.fulfilment_type]}
+              />
+              <MetaField
+                label="Quote Ref"
+                value={order.quotation_number ?? "—"}
+              />
+              <MetaField label="Created" value={fmtDate(order.created_at)} />
+              <MetaField
+                label="Total"
+                value={fmtMoney(order.total_amount, currency)}
+              />
               <MetaField
                 label="Outstanding"
                 value={fmtMoney(order.amount_outstanding, currency)}
@@ -112,10 +121,10 @@ export default function OrderDetail() {
               <LineItemsTable
                 lines={order.lines}
                 totals={{
-                  subtotal:       order.total_amount,
+                  subtotal: order.total_amount,
                   discount_total: 0,
-                  vat_amount:     0,
-                  total_amount:   order.total_amount,
+                  vat_amount: 0,
+                  total_amount: order.total_amount,
                 }}
                 currency={currency}
                 compact
@@ -132,7 +141,7 @@ export default function OrderDetail() {
               {hasInvoice && (
                 <SalesStatusBadge
                   entity="invoice"
-                  status={order.invoice_status ?? 'draft'}
+                  status={order.invoice_status ?? "draft"}
                   size="sm"
                 />
               )}
@@ -149,7 +158,9 @@ export default function OrderDetail() {
             ) : canGenerateInvoice ? (
               <div className="flex items-end gap-3">
                 <div>
-                  <label className="mb-1 block text-xs text-orika-smoke">Invoice Due Date</label>
+                  <label className="mb-1 block text-xs text-orika-smoke">
+                    Invoice Due Date
+                  </label>
                   <input
                     type="date"
                     value={invoiceDueDate}
@@ -199,7 +210,9 @@ export default function OrderDetail() {
                 <span className="text-orika-smoke">Outstanding</span>
                 <span
                   className={
-                    order.amount_outstanding > 0 ? 'font-semibold text-amber-400' : 'font-medium text-orika-smoke'
+                    order.amount_outstanding > 0
+                      ? "font-semibold text-amber-400"
+                      : "font-medium text-orika-smoke"
                   }
                 >
                   {fmtMoney(order.amount_outstanding, currency)}
@@ -243,7 +256,7 @@ export default function OrderDetail() {
           onClose={() => setShowLogistics(false)}
           orderId={order.order_id}
           orderNumber={order.order_number}
-          contactPhone={order.primary_phone ?? ''}
+          contactPhone={order.primary_phone ?? ""}
           onDispatched={() => setShowLogistics(false)}
         />
       )}
@@ -256,14 +269,16 @@ function MetaField({
   value,
   highlight = false,
 }: {
-  label:      string;
-  value:      string;
+  label: string;
+  value: string;
   highlight?: boolean;
 }) {
   return (
     <div>
       <dt className="text-xs text-orika-smoke">{label}</dt>
-      <dd className={`mt-0.5 font-medium truncate ${highlight ? 'text-amber-400' : 'text-orika-cream'}`}>
+      <dd
+        className={`mt-0.5 font-medium truncate ${highlight ? "text-amber-400" : "text-orika-cream"}`}
+      >
         {value}
       </dd>
     </div>

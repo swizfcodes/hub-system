@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api } from "./api";
 
 export interface AuditFeedEntry {
   log_id: string;
@@ -14,14 +14,18 @@ export interface AuditFeedEntry {
 export interface AuditFeedResult {
   data: AuditFeedEntry[];
   /** '24h' if results are from the last 24 hours, 'all_time' if fallback */
-  window: '24h' | 'all_time';
+  window: "24h" | "all_time";
 }
 
-export async function getMyAuditFeed(params: { business?: string; limit?: number } = {}): Promise<AuditFeedResult> {
+export async function getMyAuditFeed(
+  params: { business?: string; limit?: number } = {},
+): Promise<AuditFeedResult> {
   try {
-    const { data } = await api.get<AuditFeedResult>('/audit/my-feed', { params });
+    const { data } = await api.get<AuditFeedResult>("/audit/my-feed", {
+      params,
+    });
     return data;
   } catch {
-    return { data: [], window: '24h' };
+    return { data: [], window: "24h" };
   }
 }

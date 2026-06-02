@@ -107,9 +107,7 @@ router.patch(
   can("calendar", "edit"),
   async (req, res, next) => {
     try {
-      res.json(
-        await service.updateEvent(req.params.id, req.body, req.user),
-      );
+      res.json(await service.updateEvent(req.params.id, req.body, req.user));
     } catch (e) {
       if (e.code === "CLASH_DETECTED") {
         return res.status(409).json({
@@ -166,9 +164,7 @@ router.post(
     try {
       res
         .status(201)
-        .json(
-          await service.addParticipant(req.params.id, req.body, req.user),
-        );
+        .json(await service.addParticipant(req.params.id, req.body, req.user));
     } catch (e) {
       next(e);
     }
@@ -201,9 +197,7 @@ router.post(
   can("calendar", "view"),
   async (req, res, next) => {
     try {
-      res.json(
-        await service.respondToEvent(req.params.pid, req.body.status),
-      );
+      res.json(await service.respondToEvent(req.params.pid, req.body.status));
     } catch (e) {
       next(e);
     }

@@ -37,10 +37,7 @@ async function generateLeaveSummary(client, { startDate, endDate }) {
       subtitle: `${startDate} to ${endDate}`,
       generatedAt: new Date().toISOString(),
       summary: {
-        total_requests: rows.reduce(
-          (s, r) => s + parseInt(r.request_count),
-          0,
-        ),
+        total_requests: rows.reduce((s, r) => s + parseInt(r.request_count), 0),
         total_days: rows.reduce((s, r) => s + parseInt(r.total_days), 0),
       },
     },

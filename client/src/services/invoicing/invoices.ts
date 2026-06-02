@@ -1,32 +1,34 @@
 // ── services/invoicing/invoices.ts ────────────────────────────────────────────
-import { api } from '@services/api';
+import { api } from "@services/api";
 import type {
   Invoice,
   InvoiceListResponse,
   InvoiceKpis,
   InvoicePayment,
-} from '@typedefs/invoicing';
+} from "@typedefs/invoicing";
 import type {
   CreateInvoiceValues,
   RecordPaymentValues,
   SendInvoiceValues,
   WriteOffValues,
-} from '@lib/schemas/invoicing';
+} from "@lib/schemas/invoicing";
 
 // ── List ──────────────────────────────────────────────────────────────────────
 
 export interface InvoiceListParams {
-  page?:       number;
-  limit?:      number;
-  status?:     string;
-  contactId?:  string;
+  page?: number;
+  limit?: number;
+  status?: string;
+  contactId?: string;
 }
 
 export async function listInvoices(
   params: InvoiceListParams = {},
 ): Promise<InvoiceListResponse> {
   try {
-    const { data } = await api.get<InvoiceListResponse>('/invoicing', { params });
+    const { data } = await api.get<InvoiceListResponse>("/invoicing", {
+      params,
+    });
     return data;
   } catch {
     return { data: [] };
@@ -46,8 +48,10 @@ export async function getInvoice(id: string): Promise<Invoice | null> {
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
-export async function createInvoice(values: CreateInvoiceValues): Promise<Invoice> {
-  const { data } = await api.post<Invoice>('/invoicing', values);
+export async function createInvoice(
+  values: CreateInvoiceValues,
+): Promise<Invoice> {
+  const { data } = await api.post<Invoice>("/invoicing", values);
   return data;
 }
 
@@ -99,7 +103,7 @@ export function invoicePdfUrl(invoiceId: string): string {
 
 export async function getInvoiceKpis(): Promise<InvoiceKpis | null> {
   try {
-    const { data } = await api.get<InvoiceKpis>('/invoicing/kpis');
+    const { data } = await api.get<InvoiceKpis>("/invoicing/kpis");
     return data;
   } catch {
     return null;

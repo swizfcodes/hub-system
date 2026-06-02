@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 /**
  * Drives the guarded business-context switch:
@@ -9,7 +9,7 @@ import { create } from 'zustand';
  * flipping the active business and clearing the data cache. Keeping this in a
  * store means both switcher instances (sidebar + mobile topbar) share one flow.
  */
-export type SwitchPhase = 'idle' | 'confirm' | 'switching';
+export type SwitchPhase = "idle" | "confirm" | "switching";
 
 export interface SwitchTarget {
   fromKey: string;
@@ -37,22 +37,22 @@ interface BusinessSwitchState {
 }
 
 export const useBusinessSwitchStore = create<BusinessSwitchState>((set) => ({
-  phase: 'idle',
+  phase: "idle",
   fromKey: null,
   toKey: null,
-  fromName: '',
-  toName: '',
-  accent: '#C9A86C',
+  fromName: "",
+  toName: "",
+  accent: "#C9A86C",
   request: (t) =>
     set({
-      phase: 'confirm',
+      phase: "confirm",
       fromKey: t.fromKey,
       toKey: t.toKey,
       fromName: t.fromName,
       toName: t.toName,
       accent: t.accent,
     }),
-  cancel: () => set({ phase: 'idle' }),
-  begin: () => set({ phase: 'switching' }),
-  finish: () => set({ phase: 'idle' }),
+  cancel: () => set({ phase: "idle" }),
+  begin: () => set({ phase: "switching" }),
+  finish: () => set({ phase: "idle" }),
 }));

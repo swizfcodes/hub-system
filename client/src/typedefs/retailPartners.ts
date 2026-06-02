@@ -2,17 +2,17 @@
 // Shared types for the Retail Partners / Consignment module.
 // Derived from the constants META maps, zod schemas, and service responses.
 
-export type ArrangementType = 'consignment' | 'wholesale' | 'both';
+export type ArrangementType = "consignment" | "wholesale" | "both";
 
 export type ConsignmentStatus =
-  | 'active'
-  | 'partially_returned'
-  | 'fully_settled'
-  | 'recalled';
+  | "active"
+  | "partially_returned"
+  | "fully_settled"
+  | "recalled";
 
-export type SettlementStatus = 'draft' | 'sent' | 'paid';
+export type SettlementStatus = "draft" | "sent" | "paid";
 
-export type SettlementCycle = 'weekly' | 'biweekly' | 'monthly';
+export type SettlementCycle = "weekly" | "biweekly" | "monthly";
 
 export interface PartnerBalance {
   current_balance: number;

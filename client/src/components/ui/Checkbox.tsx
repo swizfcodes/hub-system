@@ -1,24 +1,42 @@
-import React from 'react';
-import { Check } from 'lucide-react';
-import { cn } from '@lib/cn';
+import React from "react";
+import { Check } from "lucide-react";
+import { cn } from "@lib/cn";
 
 export interface CheckboxProps {
   checked: boolean;
   onChange: (v: boolean) => void;
   label?: React.ReactNode;
   disabled?: boolean;
-  surface?: 'dark' | 'light';
+  surface?: "dark" | "light";
 }
 
-export function Checkbox({ checked, onChange, label, disabled, surface='light' }: CheckboxProps) {
-  const isDark = surface === 'dark';
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+  disabled,
+  surface = "light",
+}: CheckboxProps) {
+  const isDark = surface === "dark";
   return (
-    <label className={cn('inline-flex items-center gap-2.5 cursor-pointer select-none group', disabled && 'opacity-50 cursor-not-allowed')}>
-      <span className={cn(
-        'relative w-4 h-4 rounded flex items-center justify-center transition-colors flex-shrink-0',
-        isDark ? 'border border-orika-graphite bg-orika-charcoal group-hover:border-orika-gold/50' : 'border border-orika-cloud bg-white group-hover:border-orika-black',
-        checked && (isDark ? 'border-orika-gold bg-orika-gold/15' : 'border-orika-black bg-orika-cream'),
-      )}>
+    <label
+      className={cn(
+        "inline-flex items-center gap-2.5 cursor-pointer select-none group",
+        disabled && "opacity-50 cursor-not-allowed",
+      )}
+    >
+      <span
+        className={cn(
+          "relative w-4 h-4 rounded flex items-center justify-center transition-colors flex-shrink-0",
+          isDark
+            ? "border border-orika-graphite bg-orika-charcoal group-hover:border-orika-gold/50"
+            : "border border-orika-cloud bg-white group-hover:border-orika-black",
+          checked &&
+            (isDark
+              ? "border-orika-gold bg-orika-gold/15"
+              : "border-orika-black bg-orika-cream"),
+        )}
+      >
         <input
           type="checkbox"
           className="sr-only"
@@ -26,9 +44,25 @@ export function Checkbox({ checked, onChange, label, disabled, surface='light' }
           disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
         />
-        {checked && <Check className={cn('w-3 h-3', isDark ? 'text-orika-gold' : 'text-orika-black')} />}
+        {checked && (
+          <Check
+            className={cn(
+              "w-3 h-3",
+              isDark ? "text-orika-gold" : "text-orika-black",
+            )}
+          />
+        )}
       </span>
-      {label && <span className={cn('text-xs font-medium', isDark ? 'text-orika-cream' : 'text-orika-black')}>{label}</span>}
+      {label && (
+        <span
+          className={cn(
+            "text-xs font-medium",
+            isDark ? "text-orika-cream" : "text-orika-black",
+          )}
+        >
+          {label}
+        </span>
+      )}
     </label>
   );
 }

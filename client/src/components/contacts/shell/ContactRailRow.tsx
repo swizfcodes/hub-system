@@ -1,9 +1,9 @@
-import { Star } from 'lucide-react';
-import { ContactAvatar } from '../shared/ContactAvatar';
-import { QuickActions } from '../shared/QuickActions';
-import { CONTACT_TYPE_META } from '@lib/constants/contactTypes';
-import type { Contact } from '@typedefs/contacts';
-import { cn } from '@lib/cn';
+import { Star } from "lucide-react";
+import { ContactAvatar } from "../shared/ContactAvatar";
+import { QuickActions } from "../shared/QuickActions";
+import { CONTACT_TYPE_META } from "@lib/constants/contactTypes";
+import type { Contact } from "@typedefs/contacts";
+import { cn } from "@lib/cn";
 
 interface Props {
   contact: Contact;
@@ -12,34 +12,43 @@ interface Props {
   showActions?: boolean;
 }
 
-export function ContactRailRow({ contact, active, onClick, showActions }: Props) {
-  const primary = contact.contact_type?.[0] || 'customer';
+export function ContactRailRow({
+  contact,
+  active,
+  onClick,
+  showActions,
+}: Props) {
+  const primary = contact.contact_type?.[0] || "customer";
   const meta = CONTACT_TYPE_META[primary];
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        'group w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all border',
+        "group w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all border",
         active
-          ? 'bg-orika-charcoal border-orika-gold/40 shadow-card'
-          : 'bg-transparent border-transparent hover:bg-orika-charcoal/50 hover:border-orika-graphite',
+          ? "bg-orika-charcoal border-orika-gold/40 shadow-card"
+          : "bg-transparent border-transparent hover:bg-orika-charcoal/50 hover:border-orika-graphite",
       )}
     >
       <ContactAvatar contact={contact} size="md" emphasiseType={primary} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-sm text-orika-cream truncate">{contact.display_name}</span>
-          {contact.priority_level === 'vip' && (
+          <span className="font-medium text-sm text-orika-cream truncate">
+            {contact.display_name}
+          </span>
+          {contact.priority_level === "vip" && (
             <Star className="w-3.5 h-3.5 fill-orika-gold text-orika-gold shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5 text-xs">
-          <span className={cn('truncate', meta.textClass)}>{meta.label}</span>
+          <span className={cn("truncate", meta.textClass)}>{meta.label}</span>
           {contact.company_name && (
             <>
               <span className="text-orika-smoke">·</span>
-              <span className="text-orika-smoke truncate">{contact.company_name}</span>
+              <span className="text-orika-smoke truncate">
+                {contact.company_name}
+              </span>
             </>
           )}
         </div>

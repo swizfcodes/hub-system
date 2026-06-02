@@ -5,10 +5,7 @@
  * Tests webhook event handling and processing
  */
 
-const {
-  generateWebhookEvent,
-  TEST_BUSINESS,
-} = require("../fixtures/seed");
+const { generateWebhookEvent, TEST_BUSINESS } = require("../fixtures/seed");
 
 describe("Webhook Events", () => {
   describe("Event Creation", () => {
@@ -189,9 +186,7 @@ describe("Webhook Events", () => {
         generateWebhookEvent(TEST_BUSINESS, { status: "failed" }),
       ];
 
-      const successful = events.filter(
-        (e) => e.status === "processed",
-      ).length;
+      const successful = events.filter((e) => e.status === "processed").length;
       const successRate = (successful / events.length) * 100;
 
       expect(successRate).toBeGreaterThan(50);
