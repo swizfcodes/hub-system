@@ -17,7 +17,7 @@ import { ProductImage } from '@components/catalogue/shared/ProductImage';
 import { ProductPrice } from '@components/catalogue/shared/ProductPrice';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
 import { CategoryFormModal } from '@components/catalogue/modals/CategoryFormModal';
-import { listProducts, deleteProduct, restoreProduct } from '@services/catalogue/products';
+import { listProducts, deleteProduct, restoreProduct, updateProduct } from '@services/catalogue/products';
 import { downloadProductTemplate } from '@lib/downloadProductTemplate';
 import { listCategories, deleteCategory } from '@services/catalogue/categories';
 import { listLocations, createLocation } from '@services/catalogue/locations';
@@ -138,6 +138,16 @@ function ProductsTab({
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products', business] }); showToast.success('Product restored'); },
     onError: (e) => showToast.error('Failed', errMsg(e)),
   });
+  const activate = useMutation({
+    mutationFn: (id: string) => updateProduct(id, { is_active: true } as any),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products', business] }); showToast.success('Product activated — now visible in POS and Stock'); },
+    onError: (e) => showToast.error('Failed', errMsg(e)),
+  });
+  const deactivate = useMutation({
+    mutationFn: (id: string) => updateProduct(id, { is_active: false } as any),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue', 'products', business] }); showToast.success('Product deactivated'); },
+    onError: (e) => showToast.error('Failed', errMsg(e)),
+  });
 
   return (
     <>
@@ -235,6 +245,14 @@ function ProductsTab({
                   <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu items={[
                       { label: 'Open', onClick: () => navigate(`/catalogue/${p.product_id}`) },
+                      ...(!p.is_deleted && !p.is_active
+                        ? [{ label: 'Activate', onClick: () => activate.mutate(p.product_id) }]
+                        : []
+                      ),
+                      ...(!p.is_deleted && p.is_active
+                        ? [{ label: 'Deactivate', onClick: () => deactivate.mutate(p.product_id) }]
+                        : []
+                      ),
                       ...(p.is_deleted
                         ? [{ label: 'Restore', onClick: () => restore.mutate(p.product_id) }]
                         : [{ label: 'Archive', destructive: true, onClick: () => archive.mutate(p.product_id) }]

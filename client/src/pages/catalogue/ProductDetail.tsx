@@ -16,7 +16,7 @@ import { ConfirmationModal } from '@components/ui/ConfirmationModal';
 import { ProductImage } from '@components/catalogue/shared/ProductImage';
 import { ProductPrice } from '@components/catalogue/shared/ProductPrice';
 import { ProductFormModal } from '@components/catalogue/modals/ProductFormModal';
-import { getProduct, deleteProduct, restoreProduct, getShareUrl, listImages, uploadImage, setPrimaryImage, deleteImage, listBarcodes, addBarcode, deleteBarcode, listProductSuppliers, unlinkSupplier } from '@services/catalogue/products';
+import { getProduct, deleteProduct, restoreProduct, updateProduct, getShareUrl, listImages, uploadImage, setPrimaryImage, deleteImage, listBarcodes, addBarcode, deleteBarcode, listProductSuppliers, unlinkSupplier } from '@services/catalogue/products';
 import { listSuppliers } from '@services/purchasing/suppliers';
 import { linkSupplier } from '@services/catalogue/products';
 import { showToast } from '@hooks/useToast';
@@ -70,6 +70,16 @@ export default function ProductDetail() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue'] }); showToast.success('Restored'); },
     onError: (e) => showToast.error('Failed', errMsg(e)),
   });
+  const activate = useMutation({
+    mutationFn: () => updateProduct(id!, { is_active: true } as any),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue'] }); showToast.success('Product activated — now visible in POS and Stock'); },
+    onError: (e) => showToast.error('Failed', errMsg(e)),
+  });
+  const deactivate = useMutation({
+    mutationFn: () => updateProduct(id!, { is_active: false } as any),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['catalogue'] }); showToast.success('Product deactivated'); },
+    onError: (e) => showToast.error('Failed', errMsg(e)),
+  });
 
   return (
     <>
@@ -98,6 +108,16 @@ export default function ProductDetail() {
                 <ProductPrice cost={product.cost_price} selling={product.selling_price} currency={product.currency} size="md" />
                 <div className="mt-5 flex flex-wrap items-center gap-2">
                   <Button variant="secondary" size="sm" leftIcon={<Pencil className="w-3.5 h-3.5" />} onClick={() => setEditing(true)}>Edit</Button>
+                  {!product.is_deleted && !product.is_active && (
+                    <Button variant="gold" size="sm" leftIcon={<RotateCw className="w-3.5 h-3.5" />} onClick={() => activate.mutate()} loading={activate.isPending}>
+                      Activate
+                    </Button>
+                  )}
+                  {!product.is_deleted && product.is_active && (
+                    <Button variant="secondary" size="sm" onClick={() => deactivate.mutate()} loading={deactivate.isPending}>
+                      Deactivate
+                    </Button>
+                  )}
                   {product.is_deleted ? (
                     <Button variant="gold" size="sm" leftIcon={<RotateCw className="w-3.5 h-3.5" />} onClick={() => restore.mutate()} loading={restore.isPending}>Restore</Button>
                   ) : (
