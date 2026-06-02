@@ -2,7 +2,7 @@ import {
   LayoutGrid, Users, ShoppingBag, CreditCard, Truck, Package, Factory,
   FileText, BookOpen, Wallet, UserCog, Megaphone, MessageCircle, Calendar,
   CheckSquare, BarChart3, Mail, Heart, Building2, Settings, ShieldCheck,
-  Share2, Vault, Landmark,
+  Share2, Vault, Landmark, Layers,
 } from 'lucide-react';
 
 export interface AppModule {
@@ -33,7 +33,8 @@ export const HUB_MODULES: AppModule[] = [
   { key: 'contacts',        label: 'Contacts',       description: 'Shared address book',                 icon: Mail,          route: '/contacts',          accent: 'rose',  group: 'people' },
   { key: 'messaging',       label: 'Messaging',      description: 'WhatsApp, email, SMS',                icon: MessageCircle, route: '/messaging',         badgeKey: 'unread',        accent: 'rose',  group: 'people' },
   { key: 'campaigns',       label: 'Campaigns',      description: 'Marketing & promotions',              icon: Megaphone,     route: '/campaigns',         accent: 'rose',  group: 'ops' },
-  { key: 'sales-campaigns', label: 'Sales Campaigns',description: 'Landing pages & storefronts',         icon: Share2,        route: '/sales-campaigns',   accent: 'rose',  group: 'ops' },
+  { key: 'sales-campaigns', label: 'Sales Campaigns', description: 'Landing pages & storefronts',        icon: Share2,        route: '/sales-campaigns',   accent: 'rose',  group: 'ops' },
+  { key: 'workspace',       label: 'Workspace',       description: 'Personal notes & scratch area',       icon: Layers,        route: '/workspace',         accent: 'gold',  group: 'main' },
   { key: 'social',          label: 'Social',         description: 'Connected channels & posts',          icon: Heart,         route: '/social',            accent: 'rose',  group: 'ops' },
   { key: 'loyalty',         label: 'Loyalty',        description: 'Tiers, points & rewards',             icon: Heart,         route: '/loyalty',           accent: 'rose',  group: 'people' },
   { key: 'catalogue',       label: 'Catalogue',      description: 'Products · Categories · Locations',   icon: Package,       route: '/catalogue',         accent: 'sage',  group: 'ops' },
