@@ -4,6 +4,7 @@ const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const { getVatRate } = require("../../config/businesses");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const crmService = require("../crm/crm.service");
@@ -154,10 +155,16 @@ async function sendQuotation(
       status: 400,
     });
   if (channel === "email") {
+    const { subject: subj, html: body } = renderEmail("quotation", business, {
+      quotation_number: q.quotation_number,
+      contact_name: q.contact_name,
+      valid_until: q.valid_until,
+    });
     await sendEmail({
       to: q.email,
-      subject: `Quotation ${q.quotation_number}`,
-      html: `<p>Dear ${q.contact_name}, please find attached your quotation ${q.quotation_number} valid until ${q.valid_until}.</p>`,
+      subject: subj,
+      html: body,
+      business,
       attachments: [
         {
           filename: `${q.quotation_number}.pdf`,

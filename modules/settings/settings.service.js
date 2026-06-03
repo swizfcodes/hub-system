@@ -113,9 +113,12 @@ async function createBusinessWithSchema(data, user) {
     vatRate: data.vat_rate,
     whtRate: data.wht_rate,
     accentColour: data.accent_colour,
+    secondaryColour: data.secondary_colour,
     fiscalYearStart: data.fiscal_year_start,
     missionStatement: data.mission_statement,
     brandFonts: data.brand_fonts,
+    socialLinks: data.social_links,
+    emailFooterText: data.email_footer_text,
     cashHandlingRules: data.cash_handling_rules,
     paymentMethods: data.payment_methods,
   });

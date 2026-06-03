@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const { withStoreContext, withBusinessContext, withSharedContext, nextDocumentNumber } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 const paystackService = require("../../integrations/paystack/paystack.service");
 const journalService = require("../accounting/journal.service");
 const stockService = require("../stock/stock.service");
@@ -502,11 +503,13 @@ async function verifyAndFulfil(reference) {
     // 8. Confirmation email — best effort, never fails the txn.
     try {
       const addr = order.delivery_address || {};
-      await sendEmail({
-        to: addr.email,
-        subject: "Your Orika Living order is confirmed",
-        html: orderConfirmationHtml(order),
+      const { subject, html } = renderEmail("order_confirmation", STORE_BUSINESS, {
+        customer_name: addr.full_name,
+        order_id: order.id,
+        items: order.items || [],
+        total: Number(order.total_kobo) / 100,
       });
+      await sendEmail({ to: addr.email, subject, html, business: STORE_BUSINESS });
     } catch (err) {
       logger.warn(
         `[store] confirmation email failed for ${order.id}: ${err.message}`,
@@ -515,27 +518,6 @@ async function verifyAndFulfil(reference) {
 
     return { ok: true, order_id: order.id, status: "paid" };
   });
-}
-
-function orderConfirmationHtml(order) {
-  const addr = order.delivery_address || {};
-  const lines = (order.items || [])
-    .map(
-      (i) =>
-        `<li>${i.quantity} × ${i.name} — ₦${(
-          (i.price_kobo * i.quantity) /
-          100
-        ).toLocaleString()}</li>`,
-    )
-    .join("");
-  return `
-    <h2>Thank you for your order, ${addr.full_name || "customer"}!</h2>
-    <p>Your order <strong>${order.id}</strong> has been confirmed and is
-    being prepared.</p>
-    <ul>${lines}</ul>
-    <p><strong>Total: ₦${(Number(order.total_kobo) / 100).toLocaleString()}</strong></p>
-    <p>Delivery to: ${addr.street}, ${addr.city}, ${addr.state}</p>
-    <p>— Orika Living</p>`;
 }
 
 /**
@@ -610,11 +592,12 @@ async function subscribeNewsletter({ email, source }) {
     }
 
     try {
+      const welcome = renderEmail("newsletter_welcome", STORE_BUSINESS, {});
       await sendEmail({
         to: sub.email,
-        subject: "Welcome to Orika Living",
-        html: `<p>Thank you for subscribing. You'll be first to hear about
-               new scents and editions.</p><p>— Orika Living</p>`,
+        subject: welcome.subject,
+        html: welcome.html,
+        business: STORE_BUSINESS,
       });
     } catch (err) {
       logger.warn(`[store] newsletter welcome email failed: ${err.message}`);

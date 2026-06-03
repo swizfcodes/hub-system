@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { withSharedContext } = require("../../config/db");
 const smtp = require("../../integrations/messaging/adapters/smtp");
+const { renderEmail } = require("../../lib/email/render");
 const auditService = require("../../shared/audit/audit.service");
 const config = require("../../config/config");
 const logger = require("../../config/logger");
@@ -44,18 +45,18 @@ async function createInvite(
     );
 
     const inviteUrl = `${config.app.hubBaseUrl}/invite/${rawToken}`;
+    const { subject, html } = renderEmail("invite", businesses[0], {
+      display_name,
+      invited_by: user.display_name || "the admin",
+      invite_url: inviteUrl,
+    });
 
     try {
       await smtp.sendChannelMessage({
         to: email,
-        subject: "You have been invited to Orika Hub",
-        html: `
-          <p>Hi ${display_name},</p>
-          <p>You have been invited to join Orika Hub by ${user.display_name || "the admin"}.</p>
-          <p><strong>This link expires in 1 hour and can only be used once.</strong></p>
-          <p><a href="${inviteUrl}" style="background:#C9A86C;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Accept Invitation</a></p>
-          <p>Or copy this link: ${inviteUrl}</p>
-        `,
+        subject,
+        html,
+        business: businesses[0],
       });
     } catch (err) {
       logger.error(`[invite] email send failed for ${email}`, err);

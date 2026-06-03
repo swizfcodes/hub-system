@@ -346,6 +346,7 @@ async function sendMessage(channelId, data, user) {
             channelId,
             text: data.content,
             source,
+            business: channel.business,
           });
         }
       } catch (err) {

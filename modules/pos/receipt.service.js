@@ -2,6 +2,7 @@
 
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail, sendWithAttachment } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const logger = require("../../config/logger");
@@ -160,19 +161,18 @@ async function sendViaEmail(business, tx, overrideTo) {
   }
   try {
     const pdf = await generateReceiptPDF(business, tx);
-    const html = `
-      <p>Dear ${escapeHtml(tx.contact_name || "Customer")},</p>
-      <p>Thank you for your purchase. Your receipt is attached.</p>
-      <p><strong>Receipt:</strong> ${tx.transaction_number}<br>
-         <strong>Total:</strong> ${formatCurrency(tx.total_amount)}</p>
-      <p>We appreciate your business.</p>
-    `;
+    const { subject: subj, html: body } = renderEmail("receipt", business, {
+      contact_name: tx.contact_name,
+      transaction_number: tx.transaction_number,
+      total_amount: tx.total_amount,
+    });
     await sendWithAttachment({
       to,
-      subject: `Receipt ${tx.transaction_number}`,
-      html,
+      subject: subj,
+      html: body,
       filename: `${tx.transaction_number}.pdf`,
       pdfBuffer: pdf,
+      business,
     });
     return { success: true, channel: "email", recipient: to };
   } catch (err) {

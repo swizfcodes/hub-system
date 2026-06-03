@@ -1,6 +1,7 @@
 "use strict";
 const { withBusinessContext } = require("../config/db");
 const { sendEmail } = require("../lib/email/sender");
+const { renderEmail } = require("../lib/email/render");
 const logger = require("../config/logger");
 const { getActiveBusinesses } = require("../config/businesses");
 
@@ -21,11 +22,12 @@ module.exports = async function sendPaymentReminders() {
 
       for (const inv of rows) {
         try {
-          await sendEmail({
-            to: inv.email,
-            subject: `Payment Reminder — ${inv.invoice_number}`,
-            html: `<p>Dear ${inv.display_name}, your invoice ${inv.invoice_number} of ₦${Number(inv.amount_outstanding).toLocaleString()} is overdue. Please make payment at your earliest convenience.</p>`,
+          const { subject: subj, html: body } = renderEmail("payment_reminder", business, {
+            display_name: inv.display_name,
+            invoice_number: inv.invoice_number,
+            amount_outstanding: inv.amount_outstanding,
           });
+          await sendEmail({ to: inv.email, subject: subj, html: body, business });
           logger.info(
             `Payment reminder sent: ${inv.invoice_number} → ${inv.email}`,
           );

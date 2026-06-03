@@ -16,6 +16,7 @@ export interface Business {
   cac_number?: string | null;
   logo_path?: string | null;
   accent_colour: string;
+  secondary_colour?: string | null;
   fiscal_year_start: number;
   default_currency: string;
   vat_number?: string | null;
@@ -23,6 +24,8 @@ export interface Business {
   wht_rate: number;
   mission_statement?: string | null;
   brand_fonts?: Record<string, string>;
+  social_links?: Record<string, string>;
+  email_footer_text?: string | null;
   cash_handling_rules?: Record<string, unknown>;
   payment_methods?: Record<string, unknown>;
   loyalty_settings?: Record<string, unknown>;

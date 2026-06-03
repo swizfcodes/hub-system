@@ -2,6 +2,7 @@
 
 const { withBusinessContext } = require("../config/db");
 const { sendEmail } = require("../lib/email/sender");
+const { renderEmail } = require("../lib/email/render");
 const whatsapp = require("../integrations/messaging/adapters/whatsapp");
 const logger = require("../config/logger");
 const config = require("../config/config");
@@ -83,11 +84,11 @@ module.exports = async function sendPartnerPaymentReminders() {
               `[partner_reminders:${business}] WhatsApp reminder sent: ${r.settlement_number} → ${r.partner_code} (day ${r.days_past_due})`,
             );
           } else if (r.email) {
-            await sendEmail({
-              to: r.email,
-              subject: `Settlement reminder — ${r.settlement_number}`,
-              html: body.replace(/\n/g, "<br>"),
+            const { subject: subj, html: emailHtml } = renderEmail("partner_reminder", business, {
+              settlement_number: r.settlement_number,
+              body: body.replace(/\n/g, "<br>"),
             });
+            await sendEmail({ to: r.email, subject: subj, html: emailHtml, business });
             sent = true;
             logger.info(
               `[partner_reminders:${business}] email reminder sent: ${r.settlement_number} → ${r.partner_code} (day ${r.days_past_due})`,

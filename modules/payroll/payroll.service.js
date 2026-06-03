@@ -6,6 +6,7 @@ const { renderToPDF } = require("../../lib/pdf/generator");
 const auditService = require("../../shared/audit/audit.service");
 const journalService = require("../accounting/journal.service");
 const emailSender = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./payroll.repository");
@@ -463,12 +464,18 @@ async function sendPayslip(business, payslipId, { channel = "email" }, user) {
 
   const results = {};
   if (["email", "both"].includes(channel) && payslip.email) {
+    const period = `${monthName(payslip.period_month)} ${payslip.period_year}`;
+    const { subject: subj, html: body } = renderEmail("payslip", business, {
+      display_name: payslip.display_name,
+      period,
+    });
     await emailSender.sendWithAttachment({
       to: payslip.email,
-      subject: `Your Payslip — ${monthName(payslip.period_month)} ${payslip.period_year}`,
-      html: `<p>Dear ${payslip.display_name},</p><p>Please find your payslip attached.</p>`,
+      subject: subj,
+      html: body,
       filename: `payslip-${payslip.run_number}.pdf`,
       pdfBuffer: pdf,
+      business,
     });
     results.email = "sent";
   }

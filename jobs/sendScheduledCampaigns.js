@@ -37,6 +37,7 @@ module.exports = async function sendScheduledCampaigns() {
               subject: campaign.subject_line,
               html: campaign.html_content.replace("{{name}}", r.display_name),
               from: campaign.from_name,
+              business,
             });
             await client.query(
               `UPDATE campaign_recipients SET status = 'sent', sent_at = now()

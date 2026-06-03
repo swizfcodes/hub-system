@@ -18,7 +18,21 @@ export type StepIdentityValues = z.infer<typeof stepIdentitySchema>;
 export const stepBrandingSchema = z.object({
   logo_path:           z.string().optional().or(z.literal('')),
   accent_colour:       z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a hex like #C9A86C'),
+  secondary_colour:    z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a hex like #F5F0EB').optional().or(z.literal('')),
   mission_statement:   z.string().max(280).optional().or(z.literal('')),
+  brand_fonts:         z.object({
+    heading: z.string().optional().or(z.literal('')),
+    body:    z.string().optional().or(z.literal('')),
+  }).optional(),
+  social_links:        z.object({
+    instagram: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    facebook:  z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    tiktok:    z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    twitter:   z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    youtube:   z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    linkedin:  z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  }).optional(),
+  email_footer_text:   z.string().max(500).optional().or(z.literal('')),
 });
 export type StepBrandingValues = z.infer<typeof stepBrandingSchema>;
 

@@ -196,10 +196,10 @@ async function bootstrap(opts) {
     const { rows: configInsert } = await client.query(
       `INSERT INTO shared.business_config
          (business_key, display_name, legal_name, default_currency,
-          vat_rate, wht_rate, accent_colour, fiscal_year_start,
-          mission_statement, brand_fonts, cash_handling_rules,
-          payment_methods, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, true)
+          vat_rate, wht_rate, accent_colour, secondary_colour, fiscal_year_start,
+          mission_statement, brand_fonts, social_links, email_footer_text,
+          cash_handling_rules, payment_methods, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13, $14::jsonb, $15::jsonb, true)
        RETURNING *`,
       [
         opts.key,
@@ -209,9 +209,12 @@ async function bootstrap(opts) {
         opts.vatRate ?? 0.075,
         opts.whtRate ?? 0.05,
         opts.accentColour || "#2563EB",
+        opts.secondaryColour || "#F5F0EB",
         opts.fiscalYearStart ?? 1,
         opts.missionStatement || null,
         JSON.stringify(opts.brandFonts || {}),
+        JSON.stringify(opts.socialLinks || {}),
+        opts.emailFooterText || null,
         JSON.stringify(opts.cashHandlingRules || {}),
         JSON.stringify(opts.paymentMethods || {}),
       ],

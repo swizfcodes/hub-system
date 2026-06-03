@@ -34,10 +34,11 @@ async function insertBusiness(client, data) {
   } = await client.query(
     `INSERT INTO shared.business_config
        (business_key, display_name, legal_name, address, phone, email, website,
-        tin, cac_number, logo_path, accent_colour, fiscal_year_start,
+        tin, cac_number, logo_path, accent_colour, secondary_colour, fiscal_year_start,
         default_currency, vat_number, vat_rate, wht_rate,
-        mission_statement, brand_fonts, cash_handling_rules, payment_methods, loyalty_settings)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+        mission_statement, brand_fonts, social_links, email_footer_text,
+        cash_handling_rules, payment_methods, loyalty_settings)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
      RETURNING *`,
     [
       data.business_key,
@@ -51,6 +52,7 @@ async function insertBusiness(client, data) {
       data.cac_number || null,
       data.logo_path || null,
       data.accent_colour || "#2563EB",
+      data.secondary_colour || "#F5F0EB",
       data.fiscal_year_start || 1,
       data.default_currency || "NGN",
       data.vat_number || null,
@@ -58,6 +60,8 @@ async function insertBusiness(client, data) {
       data.wht_rate ?? 0.05,
       data.mission_statement || null,
       JSON.stringify(data.brand_fonts || {}),
+      JSON.stringify(data.social_links || {}),
+      data.email_footer_text || null,
       JSON.stringify(data.cash_handling_rules || {}),
       JSON.stringify(data.payment_methods || {}),
       JSON.stringify(data.loyalty_settings || {}),
@@ -79,6 +83,7 @@ async function updateBusiness(client, businessKey, fields) {
     "cac_number",
     "logo_path",
     "accent_colour",
+    "secondary_colour",
     "fiscal_year_start",
     "default_currency",
     "vat_number",
@@ -86,6 +91,8 @@ async function updateBusiness(client, businessKey, fields) {
     "wht_rate",
     "mission_statement",
     "brand_fonts",
+    "social_links",
+    "email_footer_text",
     "cash_handling_rules",
     "payment_methods",
     "loyalty_settings",
@@ -97,7 +104,7 @@ async function updateBusiness(client, businessKey, fields) {
   for (const key of allowed) {
     if (fields[key] === undefined) continue;
     if (
-      ["brand_fonts", "cash_handling_rules", "payment_methods", "loyalty_settings"].includes(key)
+      ["brand_fonts", "social_links", "cash_handling_rules", "payment_methods", "loyalty_settings"].includes(key)
     ) {
       sets.push(`${key} = $${i++}::jsonb`);
       values.push(JSON.stringify(fields[key]));

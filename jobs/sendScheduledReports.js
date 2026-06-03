@@ -3,6 +3,7 @@
 const { pool } = require("../config/db");
 const reportsService = require("../modules/reports/reports.service");
 const smtp = require("../integrations/messaging/adapters/smtp");
+const { renderEmail } = require("../lib/email/render");
 const whatsapp = require("../integrations/messaging/adapters/whatsapp");
 const logger = require("../config/logger");
 const businesses = require("../config/businesses");
@@ -57,13 +58,19 @@ module.exports = async function sendScheduledReports() {
 
         if (schedule.channels?.includes("email") && schedule.recipients?.length) {
           for (const email of schedule.recipients) {
+            const { subject: subj, html: reportHtml } = renderEmail("scheduled_report", business, {
+              report_name: report.report_name,
+              start_date: startDate,
+              end_date: endDate,
+            });
             await smtp.sendChannelMessage({
               to: email,
-              subject: `${report.report_name} — ${startDate} to ${endDate}`,
-              html: `<p>Please find your scheduled report attached.</p>`,
+              subject: subj,
+              html: reportHtml,
               attachments: [
                 { filename: `${report.report_name}.pdf`, content: output },
               ],
+              business,
             });
           }
         }

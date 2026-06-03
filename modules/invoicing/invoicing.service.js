@@ -8,6 +8,7 @@ const journalService = require("../accounting/journal.service");
 const stockService = require("../stock/stock.service");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendWithAttachment } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./invoicing.repository");
@@ -367,12 +368,19 @@ async function send(business, invoiceId, { channel = "email" }, user) {
   }
 
   if (channel === "email") {
+    const { subject: subj, html: body } = renderEmail("invoice", business, {
+      invoice_number: inv.invoice_number,
+      contact_name: inv.contact_name,
+      total_amount: inv.total_amount,
+      due_date: inv.due_date,
+    });
     await sendWithAttachment({
       to: inv.email,
-      subject: `Invoice ${inv.invoice_number}`,
-      html: `<p>Dear ${inv.contact_name}, please find attached your invoice ${inv.invoice_number} for ₦${Number(inv.total_amount).toLocaleString()}. Due: ${inv.due_date}.</p>`,
+      subject: subj,
+      html: body,
       filename: `${inv.invoice_number}.pdf`,
       pdfBuffer: pdf,
+      business,
     });
   } else if (channel === "whatsapp") {
     await whatsapp.sendMessage({

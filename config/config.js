@@ -25,6 +25,7 @@ const config = {
     // Public base URL of the Hub frontend — used in invite/onboarding links.
     hubBaseUrl:
       process.env.HUB_BASE_URL ||
+      process.env.BASE_URL ||
       (process.env.ALLOWED_ORIGINS || "http://localhost:7000").split(",")[0],
     allowedOrigins: (
       process.env.ALLOWED_ORIGINS || "http://localhost:7000"
@@ -147,6 +148,19 @@ const config = {
     pass: process.env.SMTP_PASS,
     fromName: process.env.SMTP_FROM_NAME || "Hub Platform",
     fromEmail: process.env.SMTP_FROM_EMAIL,
+    // Per-brand sender overrides — mirrors the WhatsApp phoneNumbers pattern.
+    // Falls back to the shared fromName / fromEmail above if a brand key is
+    // missing or empty.
+    brands: {
+      jewelry: {
+        fromName:  process.env.SMTP_FROM_NAME_JEWELRY  || process.env.SMTP_FROM_NAME || "Orika Living",
+        fromEmail: process.env.SMTP_FROM_EMAIL_JEWELRY || process.env.SMTP_FROM_EMAIL,
+      },
+      diffusers: {
+        fromName:  process.env.SMTP_FROM_NAME_DIFFUSERS  || process.env.SMTP_FROM_NAME || "Bejewelled",
+        fromEmail: process.env.SMTP_FROM_EMAIL_DIFFUSERS || process.env.SMTP_FROM_EMAIL,
+      },
+    },
   },
 };
 

@@ -114,7 +114,7 @@ async function handleInbound({ source, entry, messaging }) {
 }
 
 // Send a reply back to the customer via the correct channel
-async function sendReply({ contactId, channelId, text, source, emailMeta }) {
+async function sendReply({ contactId, channelId, text, source, emailMeta, business }) {
   if (source === "whatsapp_business_account" || source === "whatsapp") {
     await whatsapp.sendMessage({ to: contactId, text });
   } else if (source === "instagram") {
@@ -126,6 +126,7 @@ async function sendReply({ contactId, channelId, text, source, emailMeta }) {
       to: contactId, // customer email
       subject: emailMeta?.subject || "Re: Your enquiry",
       html: `<p>${text}</p>`,
+      business,
     });
   }
 }

@@ -11,9 +11,10 @@ async function sendChannelMessage({
   html,
   from,
   attachments = [],
+  business,
 }) {
   try {
-    const info = await sendEmail({ to, subject, html, from, attachments });
+    const info = await sendEmail({ to, subject, html, from, attachments, business });
     return { messageId: info.messageId, delivered: true };
   } catch (err) {
     logger.error(`SMTP channel message failed to ${to}`, err);

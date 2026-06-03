@@ -174,6 +174,7 @@ async function processSend(
     const c = await repo.findById(client, campaignId);
     if (!c) throw new Error(`Campaign ${campaignId} not found`);
     campaignContent = c;
+    campaignContent._business = business;
   });
 
   // Process recipients in batches. We pull a batch, dispatch in parallel,
@@ -267,6 +268,7 @@ async function sendToRecipient(campaign, recipient) {
           subject: personaliseSubject(campaign.subject_line, recipient),
           html: personalised + trackingPixel,
           from: campaign.from_name,
+          business: campaign._business,
         });
         return { success: true };
       }
@@ -402,7 +404,7 @@ function personaliseSubject(subject, recipient) {
 }
 
 function buildTrackingPixel(token) {
-  const baseUrl = config.app?.baseUrl || process.env.BASE_URL || "";
+  const baseUrl = config.app?.hubBaseUrl || "";
   if (!baseUrl) return "";
   const url = `${baseUrl}/api/campaigns/track/${token}?type=opened`;
   return `<img src="${url}" width="1" height="1" alt="" style="display:none" />`;
