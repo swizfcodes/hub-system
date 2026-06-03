@@ -257,6 +257,20 @@ router.post(
 );
 
 router.post(
+  "/:id/activate-login",
+  param("id").isUUID(),
+  validate,
+  can("staff", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.activateLogin(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
   "/:id/reset-password",
   param("id").isUUID(),
   validate,

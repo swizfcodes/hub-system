@@ -26,6 +26,7 @@ import {
   revokeStaffRole,
   provisionLogin,
   deactivateLogin,
+  activateLogin,
   resetPassword,
   type CredentialsResponse,
 } from "@services/contacts/staff";
@@ -40,6 +41,7 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
   const qc = useQueryClient();
   const [provisioning, setProvisioning] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [grantingRole, setGrantingRole] = useState(false);
   const [revoking, setRevoking] = useState<{
@@ -65,6 +67,17 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
       qc.invalidateQueries({ queryKey: ["staff", staff.profile_id] });
       showToast.success("Login deactivated");
       setDeactivating(false);
+    },
+    onError: (e) => showToast.error("Failed", errMsg(e)),
+  });
+
+  const activate = useMutation({
+    mutationFn: () => activateLogin(staff.profile_id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+      qc.invalidateQueries({ queryKey: ["staff", staff.profile_id] });
+      showToast.success("Login activated");
+      setActivating(false);
     },
     onError: (e) => showToast.error("Failed", errMsg(e)),
   });
@@ -150,7 +163,7 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
                 >
                   Reset password
                 </Button>
-                {staff.user_is_active && (
+                {staff.user_is_active ? (
                   <Button
                     variant="danger"
                     size="sm"
@@ -158,6 +171,15 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
                     onClick={() => setDeactivating(true)}
                   >
                     Deactivate
+                  </Button>
+                ) : (
+                  <Button
+                    variant="gold"
+                    size="sm"
+                    leftIcon={<ShieldCheck className="w-3.5 h-3.5" />}
+                    onClick={() => setActivating(true)}
+                  >
+                    Activate
                   </Button>
                 )}
               </>
@@ -301,6 +323,23 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
         }
         confirmLabel="Deactivate"
         loading={deactivate.isPending}
+      />
+      <ConfirmationModal
+        open={activating}
+        onClose={() => setActivating(false)}
+        onConfirm={() => {
+          activate.mutateAsync();
+        }}
+        title="Activate login?"
+        message={
+          <p>
+            This user will be able to sign into the Hub again with their
+            existing credentials and roles.
+          </p>
+        }
+        tone="warn"
+        confirmLabel="Activate"
+        loading={activate.isPending}
       />
       <ConfirmationModal
         open={resetting}
