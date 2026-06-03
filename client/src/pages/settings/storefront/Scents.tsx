@@ -1,12 +1,13 @@
 /**
- * StorefrontScents — manage the presentation of storefront scents.
- * Route: /settings/storefront-scents
+ * Storefront · Scents — manage the presentation of storefront scents.
+ * Route: /settings/storefront/scents
  *
  * Scents are derived from published products; this page lets staff
  * override their presentation (name, tagline, description, swatch/ink
- * colour, hero image) by writing store.scents. Only families that have a
- * published product are editable. The storefront read-path already merges
- * these as overrides, falling back to derived defaults where blank.
+ * colour, hero image, display order) by writing store.scents. Only
+ * families that have a published product are editable. The storefront
+ * read-path already merges these as overrides, falling back to derived
+ * defaults where blank.
  */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,7 +42,7 @@ export default function StorefrontScents() {
 
   return (
     <>
-      <Topbar title="Storefront Scents" subtitle="Settings · Storefront" />
+      <Topbar title="Scents" subtitle="Settings · Storefront" />
       <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-6">
         <PageHeader
           title="Scent Presentation"
@@ -49,7 +50,8 @@ export default function StorefrontScents() {
           crumbs={[
             { label: "Hub", to: "/" },
             { label: "Settings", to: "/settings" },
-            { label: "Storefront Scents" },
+            { label: "Storefront", to: "/settings/storefront" },
+            { label: "Scents" },
           ]}
         />
 
@@ -167,7 +169,7 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
         />
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2 mt-4">
+      <div className="grid gap-4 sm:grid-cols-3 mt-4">
         <label className="block">
           <span className="text-xs text-orika-smoke">Swatch colour</span>
           <div className="flex items-center gap-2 mt-1">
@@ -197,6 +199,17 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
               onChange={(e) => set("ink", e.target.value)}
             />
           </div>
+        </label>
+        <label className="block">
+          <span className="text-xs text-orika-smoke">Display order</span>
+          <Input
+            type="number"
+            value={String(form.display_order)}
+            onChange={(e) => set("display_order", Number(e.target.value) || 0)}
+          />
+          <span className="text-[0.65rem] text-orika-smoke/70">
+            Lower numbers appear first.
+          </span>
         </label>
       </div>
 
