@@ -3,7 +3,7 @@
 // event CRUD from the existing contacts calendar service and adds participant
 // management (introduced by the scheduling patch).
 
-import { api } from '@services/api';
+import { api } from "@services/api";
 
 export {
   listEvents,
@@ -12,7 +12,7 @@ export {
   createEvent,
   updateEvent,
   deleteEvent,
-} from '@services/contacts/calendar';
+} from "@services/contacts/calendar";
 
 export interface EventParticipant {
   participant_id: string;
@@ -20,10 +20,12 @@ export interface EventParticipant {
   user_id?: string | null;
   contact_id?: string | null;
   display_name?: string | null;
-  status?: 'invited' | 'accepted' | 'declined' | 'tentative' | string;
+  status?: "invited" | "accepted" | "declined" | "tentative" | string;
 }
 
-export async function listParticipants(eventId: string): Promise<EventParticipant[]> {
+export async function listParticipants(
+  eventId: string,
+): Promise<EventParticipant[]> {
   try {
     const { data } = await api.get<{ data: EventParticipant[] }>(
       `/calendar/events/${eventId}/participants`,

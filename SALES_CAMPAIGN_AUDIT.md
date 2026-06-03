@@ -19,11 +19,11 @@ CASE WHEN p.primary_image_document_id IS NOT NULL
      ELSE NULL END
 ```
 
-But `products` has **no such column** (migration `000007`). Product images live in a separate `product_images` table (`document_id`, `is_primary`). PostgreSQL resolves every column reference when it *parses* the statement — before any rows are read — so the query threw `column p.primary_image_document_id does not exist` on **every** request. The flow was:
+But `products` has **no such column** (migration `000007`). Product images live in a separate `product_images` table (`document_id`, `is_primary`). PostgreSQL resolves every column reference when it _parses_ the statement — before any rows are read — so the query threw `column p.primary_image_document_id does not exist` on **every** request. The flow was:
 
 `GET /api/c/diffusers/orika-diffuser-sale` → query throws → service rejects → API returns 500 → the frontend service `getStorefrontPage()` catches and returns `null` → `LandingPage.tsx` renders **"Not Available."**
 
-This is why it failed for *all* storefront pages, not just this one. The admin builder kept working because its query (`findCampaignById`) uses the correct `product_images` join — so the campaign looked perfectly fine inside the ERP while the public page was broken.
+This is why it failed for _all_ storefront pages, not just this one. The admin builder kept working because its query (`findCampaignById`) uses the correct `product_images` join — so the campaign looked perfectly fine inside the ERP while the public page was broken.
 
 **Fix** — derive the image from `product_images`, matching the working admin query:
 
@@ -50,15 +50,15 @@ COALESCE(
 
 **Where it's wired in:**
 
-| Upload surface | File | Behaviour |
-|---|---|---|
+| Upload surface                               | File                                                                                          | Behaviour                                  |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | Campaign hero + all catalogue product images | `shared/documents/documents.service.js` (`uploadDocument`, `document_type = 'product_image'`) | Converted to WebP before hashing & storage |
-| Storefront proof-of-payment (public) | `modules/files/files.routes.js` | Images → WebP; PDFs untouched |
-| Business logo | `shared/upload/uploads.routes.js` | Raster → WebP; SVG untouched |
+| Storefront proof-of-payment (public)         | `modules/files/files.routes.js`                                                               | Images → WebP; PDFs untouched              |
+| Business logo                                | `shared/upload/uploads.routes.js`                                                             | Raster → WebP; SVG untouched               |
 
-I also raised the hero upload's inbound cap from 10 MB → 20 MB so large originals are *accepted and then shrunk* server-side instead of being rejected.
+I also raised the hero upload's inbound cap from 10 MB → 20 MB so large originals are _accepted and then shrunk_ server-side instead of being rejected.
 
-**Note on the timeout:** compression runs after the file reaches the server, so it fixes storage size and (most importantly) page-load weight. If an upload of a very large original still times out *during transfer*, that's a reverse-proxy limit (e.g. nginx `client_max_body_size` / `proxy_read_timeout`) and is an infra setting, not app code.
+**Note on the timeout:** compression runs after the file reaches the server, so it fixes storage size and (most importantly) page-load weight. If an upload of a very large original still times out _during transfer_, that's a reverse-proxy limit (e.g. nginx `client_max_body_size` / `proxy_read_timeout`) and is an infra setting, not app code.
 
 **Action required:** run `npm install` on the server so the `sharp` native binary is present. Until then the optimizer safely no-ops and stores originals.
 
@@ -66,13 +66,13 @@ I also raised the hero upload's inbound cap from 10 MB → 20 MB so large origin
 
 ## 3. Other bugs fixed
 
-| # | Area | Issue | Fix | Severity |
-|---|---|---|---|---|
-| 1 | `getStorefrontCampaign` (backend) | Non-existent column broke every public page (see §1) | Subquery on `product_images` | **Critical** |
-| 2 | `storefront.service.js → trackEvent` | The `business` URL param was interpolated straight into a schema-qualified table name (`${business}.sales_campaigns`) with no validation — a SQL-injection vector on a public, unauthenticated route | Reject unless `businesses.isValidBusiness(business)` before the query runs | **High (security)** |
-| 3 | `Checkout.tsx` (bank transfer step) | Display logic `bankAccounts.find(a => a.id === bankAccounts[0]?.id)` + `.map(...).slice(0,1)` always showed the **first** account, ignoring the one the customer selected — customers could transfer to the wrong account | Render the actually-selected account (`watch('bank_account_id')`, falling back to primary/first) | **High (correctness)** |
-| 4 | `CampaignBuilder.tsx` & `LandingPage.tsx` | Discount rendered as "**25.00%**" because PostgreSQL returns `NUMERIC` as a string `"25.00"` | Coerce with `Number(...)` so it reads "25%" | Medium (polish) |
-| 5 | `CampaignBuilder.tsx` (share panel) | Share/copy link shown for draft/scheduled campaigns with no warning → broken links get shared | Added an amber warning banner whenever status ≠ `live` | Medium (UX) |
+| #   | Area                                      | Issue                                                                                                                                                                                                                     | Fix                                                                                              | Severity               |
+| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------- |
+| 1   | `getStorefrontCampaign` (backend)         | Non-existent column broke every public page (see §1)                                                                                                                                                                      | Subquery on `product_images`                                                                     | **Critical**           |
+| 2   | `storefront.service.js → trackEvent`      | The `business` URL param was interpolated straight into a schema-qualified table name (`${business}.sales_campaigns`) with no validation — a SQL-injection vector on a public, unauthenticated route                      | Reject unless `businesses.isValidBusiness(business)` before the query runs                       | **High (security)**    |
+| 3   | `Checkout.tsx` (bank transfer step)       | Display logic `bankAccounts.find(a => a.id === bankAccounts[0]?.id)` + `.map(...).slice(0,1)` always showed the **first** account, ignoring the one the customer selected — customers could transfer to the wrong account | Render the actually-selected account (`watch('bank_account_id')`, falling back to primary/first) | **High (correctness)** |
+| 4   | `CampaignBuilder.tsx` & `LandingPage.tsx` | Discount rendered as "**25.00%**" because PostgreSQL returns `NUMERIC` as a string `"25.00"`                                                                                                                              | Coerce with `Number(...)` so it reads "25%"                                                      | Medium (polish)        |
+| 5   | `CampaignBuilder.tsx` (share panel)       | Share/copy link shown for draft/scheduled campaigns with no warning → broken links get shared                                                                                                                             | Added an amber warning banner whenever status ≠ `live`                                           | Medium (UX)            |
 
 The over-long WhatsApp message you pasted is expected behaviour, not a bug: the share text concatenates headline + subheadline + body copy + discount + dates + URL. WhatsApp shows "Read more" past a certain length. If you want it shorter, trim the campaign's **body copy** (or I can cap the share message to the headline + discount + link).
 
@@ -80,7 +80,7 @@ The over-long WhatsApp message you pasted is expected behaviour, not a bug: the 
 
 ## 4. Performance optimizations
 
-- **Public image serving was writing an audit row on every view.** The route `GET /api/documents/:id/image` called `downloadDocument()`, which re-reads the file, recomputes a SHA-256, and writes an audit-log `INSERT` — on *every* `<img>` load of a publicly shared page. I added `getImageForPublic()` (no re-hash, no audit) for the public route, and pointed the route at it. Authenticated downloads keep full verification + audit. This removes a DB write and a full-file hash per image impression.
+- **Public image serving was writing an audit row on every view.** The route `GET /api/documents/:id/image` called `downloadDocument()`, which re-reads the file, recomputes a SHA-256, and writes an audit-log `INSERT` — on _every_ `<img>` load of a publicly shared page. I added `getImageForPublic()` (no re-hash, no audit) for the public route, and pointed the route at it. Authenticated downloads keep full verification + audit. This removes a DB write and a full-file hash per image impression.
 - **Smaller images end-to-end** (§2): WebP conversion cuts hero/product bytes by ~70–90%, which is the single biggest win for landing-page load time and the upload timeout.
 - The hero image is already served with `Cache-Control: public, max-age=31536000, immutable`, so repeat views are cached by the browser. (If you later put the app behind a CDN, these images will cache at the edge for free.)
 

@@ -53,7 +53,7 @@ tests/        — Unit and integration tests
 - Financial mutations always post a matching `journal_entry`
 - Stock changes always write to `stock_movements` — never update a quantity column
 
-
 ## Tests
+
 - Run `npm test`
 - Read `TEST_SUMMARY.md` for more information

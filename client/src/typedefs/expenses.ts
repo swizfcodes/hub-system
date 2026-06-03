@@ -1,29 +1,29 @@
 // ── typedefs/expenses.ts ──────────────────────────────────────────────────────
 // Types for the Expenses module — expenses, cash advances and KPI rollups.
 
-export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'paid';
+export type ExpenseStatus = "pending" | "approved" | "rejected" | "paid";
 
 export type AdvanceStatus =
-  | 'pending'
-  | 'approved'
-  | 'disbursed'
-  | 'settled'
-  | 'rejected';
+  | "pending"
+  | "approved"
+  | "disbursed"
+  | "settled"
+  | "rejected";
 
-export type ExpenseType = 'reimbursement' | 'petty_cash' | 'direct_payment';
+export type ExpenseType = "reimbursement" | "petty_cash" | "direct_payment";
 
 export type ExpenseCategory =
-  | 'rent'
-  | 'transport'
-  | 'office_supplies'
-  | 'meals'
-  | 'client_entertainment'
-  | 'utilities'
-  | 'maintenance'
-  | 'marketing'
-  | 'insurance'
-  | 'professional_fees'
-  | 'other';
+  | "rent"
+  | "transport"
+  | "office_supplies"
+  | "meals"
+  | "client_entertainment"
+  | "utilities"
+  | "maintenance"
+  | "marketing"
+  | "insurance"
+  | "professional_fees"
+  | "other";
 
 export interface ExpenseReceipt {
   receipt_id: string;

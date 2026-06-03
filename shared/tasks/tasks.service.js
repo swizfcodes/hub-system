@@ -330,7 +330,12 @@ async function createFromModule({
 
 // remind_at = due_at − reminder_minutes (null if either is missing).
 function computeRemindAt(dueAt, reminderMinutes) {
-  if (!dueAt || reminderMinutes === undefined || reminderMinutes === null || reminderMinutes === "") {
+  if (
+    !dueAt ||
+    reminderMinutes === undefined ||
+    reminderMinutes === null ||
+    reminderMinutes === ""
+  ) {
     return null;
   }
   const mins = parseInt(reminderMinutes, 10);
@@ -368,7 +373,9 @@ async function syncCalendarForTask(client, task, user) {
       await calendarRepo.softDelete(client, task.calendar_event_id);
     }
   } catch (e) {
-    logger.warn(`[tasks] calendar sync failed for ${task.task_id}: ${e.message}`);
+    logger.warn(
+      `[tasks] calendar sync failed for ${task.task_id}: ${e.message}`,
+    );
   }
 }
 

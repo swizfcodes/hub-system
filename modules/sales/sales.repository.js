@@ -20,7 +20,15 @@ async function listQuotations(
        AND ($3::UUID IS NULL OR q.deal_id = $3)
        AND ($4 = 'all' OR q.assigned_to = $5)
      ORDER BY q.created_at DESC LIMIT $6 OFFSET $7`,
-    [status || null, contactId || null, dealId || null, scope, userId, limit, offset],
+    [
+      status || null,
+      contactId || null,
+      dealId || null,
+      scope,
+      userId,
+      limit,
+      offset,
+    ],
   );
   return rows;
 }

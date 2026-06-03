@@ -5,10 +5,7 @@
  * Tests business configuration and settings management
  */
 
-const {
-  generateSettings,
-  TEST_BUSINESS,
-} = require("../fixtures/seed");
+const { generateSettings, TEST_BUSINESS } = require("../fixtures/seed");
 
 describe("Settings Service", () => {
   describe("Settings Creation", () => {

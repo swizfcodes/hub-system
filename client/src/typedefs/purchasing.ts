@@ -1,10 +1,32 @@
 // Types mirror per-business purchasing schema (000014_business_purchasing.sql).
 
-export type RFQStatus = 'draft' | 'sent' | 'responses_received' | 'closed' | 'cancelled';
-export type POStatus = 'draft' | 'sent' | 'acknowledged' | 'partially_received' | 'received' | 'invoiced' | 'paid' | 'cancelled';
-export type QuoteStatus = 'received' | 'accepted' | 'rejected';
-export type QualityStatus = 'pending' | 'accepted' | 'partially_rejected' | 'rejected';
-export type BillStatus = 'pending' | 'matched' | 'approved' | 'paid' | 'disputed';
+export type RFQStatus =
+  | "draft"
+  | "sent"
+  | "responses_received"
+  | "closed"
+  | "cancelled";
+export type POStatus =
+  | "draft"
+  | "sent"
+  | "acknowledged"
+  | "partially_received"
+  | "received"
+  | "invoiced"
+  | "paid"
+  | "cancelled";
+export type QuoteStatus = "received" | "accepted" | "rejected";
+export type QualityStatus =
+  | "pending"
+  | "accepted"
+  | "partially_rejected"
+  | "rejected";
+export type BillStatus =
+  | "pending"
+  | "matched"
+  | "approved"
+  | "paid"
+  | "disputed";
 
 export interface Supplier {
   supplier_id: string;
@@ -14,7 +36,7 @@ export interface Supplier {
   preferred_currency: string;
   lead_time_days?: number | null;
   portal_access_token?: string | null;
-  rating: number;             // 1-5
+  rating: number; // 1-5
   credit_limit?: number;
   is_active: boolean;
   notes?: string | null;
@@ -31,7 +53,7 @@ export interface RFQLine {
   line_id: string;
   rfq_id: string;
   product_id?: string | null;
-  product_name?: string;        // joined
+  product_name?: string; // joined
   product_sku?: string;
   description: string;
   quantity_needed: number;
@@ -160,7 +182,7 @@ export interface SupplierInvoice {
 
 // Best-value scoring weights (Q5 answer B+C)
 export interface QuoteScoreWeights {
-  price: number;          // 0-1
+  price: number; // 0-1
   lead_time: number;
   supplier_rating: number;
   payment_terms: number;
@@ -168,9 +190,9 @@ export interface QuoteScoreWeights {
 }
 
 export const DEFAULT_SCORE_WEIGHTS: QuoteScoreWeights = {
-  price: 0.50,
-  lead_time: 0.20,
+  price: 0.5,
+  lead_time: 0.2,
   supplier_rating: 0.15,
-  payment_terms: 0.10,
+  payment_terms: 0.1,
   delivery_history: 0.05,
 };

@@ -1,17 +1,13 @@
-import { api } from '@services/api';
-import type {
-  Quotation,
-  SalesKpis,
-  SalesListResponse,
-} from '@typedefs/sales';
+import { api } from "@services/api";
+import type { Quotation, SalesKpis, SalesListResponse } from "@typedefs/sales";
 import type {
   CreateQuotationValues,
   UpdateQuotationValues,
   SendQuotationValues,
   ConfirmQuotationValues,
-} from '@lib/schemas/sales';
+} from "@lib/schemas/sales";
 
-const BASE = '/sales/quotations';
+const BASE = "/sales/quotations";
 
 export interface ListQuotationsParams {
   page?: number;
@@ -81,9 +77,7 @@ export async function confirmQuotation(
 export async function cancelQuotation(
   id: string,
 ): Promise<{ message: string }> {
-  const { data } = await api.post<{ message: string }>(
-    `${BASE}/${id}/cancel`,
-  );
+  const { data } = await api.post<{ message: string }>(`${BASE}/${id}/cancel`);
   return data;
 }
 
@@ -94,7 +88,7 @@ export function quotationPdfUrl(id: string): string {
 
 export async function getSalesKpis(): Promise<SalesKpis> {
   try {
-    const { data } = await api.get<SalesKpis>('/sales/kpis');
+    const { data } = await api.get<SalesKpis>("/sales/kpis");
     return data;
   } catch {
     // Failsoft — return zeros so the KPI strip renders rather than breaking

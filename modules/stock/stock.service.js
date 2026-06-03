@@ -97,29 +97,44 @@ async function createTransfer(business, data, user) {
   // STOCK_PATCH_NOTES §transfers for migration details.
   return withBusinessContext(business, async (client) => {
     if (!Array.isArray(data.lines) || data.lines.length === 0) {
-      throw Object.assign(new Error("Transfer must have at least one line"), { status: 400 });
+      throw Object.assign(new Error("Transfer must have at least one line"), {
+        status: 400,
+      });
     }
     if (data.from_location_id === data.to_location_id) {
-      throw Object.assign(new Error("From and To locations must differ"), { status: 400 });
+      throw Object.assign(new Error("From and To locations must differ"), {
+        status: 400,
+      });
     }
-    const transferNumber = await nextDocumentNumber(client, business, "transfer");
+    const transferNumber = await nextDocumentNumber(
+      client,
+      business,
+      "transfer",
+    );
     const transfer = await repo.insertTransferPending(client, {
       transferNumber,
       from_location_id: data.from_location_id,
-      to_location_id:   data.to_location_id,
-      notes:            data.notes,
-      userId:           user.user_id,
+      to_location_id: data.to_location_id,
+      notes: data.notes,
+      userId: user.user_id,
     });
     await repo.insertTransferLines(client, transfer.transfer_id, data.lines);
     return repo.findTransferById(client, transfer.transfer_id);
   });
 }
 
-async function listTransfers(business, { status, from, to, page = 1, limit = 50 } = {}) {
+async function listTransfers(
+  business,
+  { status, from, to, page = 1, limit = 50 } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listTransfers(client, {
-      status, from, to, limit: parseInt(limit), offset,
+      status,
+      from,
+      to,
+      limit: parseInt(limit),
+      offset,
     });
     return { data: rows };
   });
@@ -128,7 +143,8 @@ async function listTransfers(business, { status, from, to, page = 1, limit = 50 
 async function getTransfer(business, transferId) {
   return withBusinessContext(business, async (client) => {
     const t = await repo.findTransferById(client, transferId);
-    if (!t) throw Object.assign(new Error("Transfer not found"), { status: 404 });
+    if (!t)
+      throw Object.assign(new Error("Transfer not found"), { status: 404 });
     return t;
   });
 }
@@ -139,7 +155,8 @@ async function dispatchTransfer(business, transferId, user) {
   // until /receive is called.
   return withBusinessContext(business, async (client) => {
     const t = await repo.findTransferById(client, transferId);
-    if (!t) throw Object.assign(new Error("Transfer not found"), { status: 404 });
+    if (!t)
+      throw Object.assign(new Error("Transfer not found"), { status: 404 });
     if (t.status !== "pending") {
       throw Object.assign(
         new Error(`Cannot dispatch — transfer is ${t.status}`),
@@ -150,14 +167,14 @@ async function dispatchTransfer(business, transferId, user) {
     for (const line of lines) {
       await movements.recordMovement(client, {
         business,
-        productId:      line.product_id,
-        movementType:   "transferred_out",
-        quantity:       line.quantity,
-        direction:      -1,
+        productId: line.product_id,
+        movementType: "transferred_out",
+        quantity: line.quantity,
+        direction: -1,
         fromLocationId: t.from_location_id,
-        referenceType:  "transfer",
-        referenceId:    transferId,
-        performedBy:    user.user_id,
+        referenceType: "transfer",
+        referenceId: transferId,
+        performedBy: user.user_id,
       });
     }
     await repo.updateTransferStatus(client, transferId, "in_transit");
@@ -169,7 +186,8 @@ async function receiveTransfer(business, transferId, user) {
   // in_transit → received. Writes one transferred_in movement per line.
   return withBusinessContext(business, async (client) => {
     const t = await repo.findTransferById(client, transferId);
-    if (!t) throw Object.assign(new Error("Transfer not found"), { status: 404 });
+    if (!t)
+      throw Object.assign(new Error("Transfer not found"), { status: 404 });
     if (t.status !== "in_transit") {
       throw Object.assign(
         new Error(`Cannot receive — transfer is ${t.status}`),
@@ -180,14 +198,14 @@ async function receiveTransfer(business, transferId, user) {
     for (const line of lines) {
       await movements.recordMovement(client, {
         business,
-        productId:    line.product_id,
+        productId: line.product_id,
         movementType: "transferred_in",
-        quantity:     line.quantity,
-        direction:    1,
+        quantity: line.quantity,
+        direction: 1,
         toLocationId: t.to_location_id,
-        referenceType:"transfer",
-        referenceId:  transferId,
-        performedBy:  user.user_id,
+        referenceType: "transfer",
+        referenceId: transferId,
+        performedBy: user.user_id,
       });
     }
     await repo.updateTransferStatus(client, transferId, "received", {
@@ -205,7 +223,8 @@ async function cancelTransfer(business, transferId, { reason }, user) {
   // nothing has moved yet — just flip the status.
   return withBusinessContext(business, async (client) => {
     const t = await repo.findTransferById(client, transferId);
-    if (!t) throw Object.assign(new Error("Transfer not found"), { status: 404 });
+    if (!t)
+      throw Object.assign(new Error("Transfer not found"), { status: 404 });
     if (!["pending", "in_transit"].includes(t.status)) {
       throw Object.assign(
         new Error(`Cannot cancel — transfer is ${t.status}`),
@@ -213,7 +232,9 @@ async function cancelTransfer(business, transferId, { reason }, user) {
       );
     }
     if (!reason || !reason.trim()) {
-      throw Object.assign(new Error("Cancellation reason is required"), { status: 400 });
+      throw Object.assign(new Error("Cancellation reason is required"), {
+        status: 400,
+      });
     }
     if (t.status === "in_transit") {
       // Reverse the outbound movements by writing inbound rows back
@@ -223,15 +244,15 @@ async function cancelTransfer(business, transferId, { reason }, user) {
       for (const line of lines) {
         await movements.recordMovement(client, {
           business,
-          productId:    line.product_id,
+          productId: line.product_id,
           movementType: "transferred_in",
-          quantity:     line.quantity,
-          direction:    1,
-          toLocationId: t.from_location_id,  // back to source
-          referenceType:"transfer_cancel",
-          referenceId:  transferId,
-          notes:        `Reversal — transfer cancelled: ${reason}`,
-          performedBy:  user.user_id,
+          quantity: line.quantity,
+          direction: 1,
+          toLocationId: t.from_location_id, // back to source
+          referenceType: "transfer_cancel",
+          referenceId: transferId,
+          notes: `Reversal — transfer cancelled: ${reason}`,
+          performedBy: user.user_id,
         });
       }
     }
@@ -244,16 +265,27 @@ async function cancelTransfer(business, transferId, { reason }, user) {
 
 // ── On-hand ─────────────────────────────────────────────────────────────────
 
-async function getOnHand(business, { search, category_id, location_id, low_stock_only, out_of_stock_only, page = 1, limit = 200 } = {}) {
+async function getOnHand(
+  business,
+  {
+    search,
+    category_id,
+    location_id,
+    low_stock_only,
+    out_of_stock_only,
+    page = 1,
+    limit = 200,
+  } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     return repo.getOnHand(client, {
       search,
-      categoryId:     category_id,
-      locationId:     location_id,
-      lowStockOnly:   low_stock_only,
+      categoryId: category_id,
+      locationId: location_id,
+      lowStockOnly: low_stock_only,
       outOfStockOnly: out_of_stock_only,
-      limit:          parseInt(limit),
+      limit: parseInt(limit),
       offset,
     });
   });
@@ -262,18 +294,25 @@ async function getOnHand(business, { search, category_id, location_id, low_stock
 async function getOnHandByProduct(business, productId) {
   return withBusinessContext(business, async (client) => {
     const row = await repo.getOnHandByProduct(client, productId);
-    if (!row) throw Object.assign(new Error("Product not found"), { status: 404 });
+    if (!row)
+      throw Object.assign(new Error("Product not found"), { status: 404 });
     return row;
   });
 }
 
 // ── Reservations (service wrappers — heavy lifting in movements.service) ────
 
-async function listReservations(business, { status, product_id, page = 1, limit = 50 } = {}) {
+async function listReservations(
+  business,
+  { status, product_id, page = 1, limit = 50 } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listReservations(client, {
-      status, productId: product_id, limit: parseInt(limit), offset,
+      status,
+      productId: product_id,
+      limit: parseInt(limit),
+      offset,
     });
     return { data: rows };
   });
@@ -283,13 +322,13 @@ async function createReservationService(business, data, user) {
   return withBusinessContext(business, async (client) => {
     const reservation = await movements.createReservation(client, {
       business,
-      productId:   data.product_id,
-      quantity:    data.quantity,
+      productId: data.product_id,
+      quantity: data.quantity,
       reservedFor: data.reserved_for || null,
-      crmDealId:   data.crm_deal_id  || null,
-      expiresAt:   data.expires_at,
-      notes:       data.notes        || null,
-      userId:      user.user_id,
+      crmDealId: data.crm_deal_id || null,
+      expiresAt: data.expires_at,
+      notes: data.notes || null,
+      userId: user.user_id,
     });
     return repo.findReservationById(client, reservation.reservation_id);
   });
@@ -297,7 +336,12 @@ async function createReservationService(business, data, user) {
 
 async function releaseReservationService(business, reservationId, user) {
   return withBusinessContext(business, async (client) => {
-    await movements.releaseReservation(client, business, reservationId, user.user_id);
+    await movements.releaseReservation(
+      client,
+      business,
+      reservationId,
+      user.user_id,
+    );
     return repo.findReservationById(client, reservationId);
   });
 }
@@ -311,14 +355,18 @@ async function convertReservationService(business, reservationId) {
 
 // ── Quality checks ──────────────────────────────────────────────────────────
 
-async function listQualityChecks(business, { product_id, check_type, result, page = 1, limit = 50 } = {}) {
+async function listQualityChecks(
+  business,
+  { product_id, check_type, result, page = 1, limit = 50 } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listQualityChecks(client, {
       productId: product_id,
       checkType: check_type,
       result,
-      limit: parseInt(limit), offset,
+      limit: parseInt(limit),
+      offset,
     });
     return { data: rows };
   });
@@ -329,9 +377,9 @@ async function createQualityCheck(business, data, user) {
     return repo.insertQualityCheck(client, {
       product_id: data.product_id,
       check_type: data.check_type,
-      result:     data.result,
-      notes:      data.notes,
-      userId:     user.user_id,
+      result: data.result,
+      notes: data.notes,
+      userId: user.user_id,
     });
   });
 }

@@ -1,5 +1,5 @@
-import { EmptyState } from '@components/ui/EmptyState';
-import { Users } from 'lucide-react';
+import { EmptyState } from "@components/ui/EmptyState";
+import { Users } from "lucide-react";
 
 /**
  * Users tab — assigns roles per business to staff and manages

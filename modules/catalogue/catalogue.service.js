@@ -144,7 +144,7 @@ async function listProducts(business, query, user) {
       limit: query.limit,
     });
 
-    const mappedRows = rows.map(p => ({
+    const mappedRows = rows.map((p) => ({
       ...p,
       primary_image_url: p.primary_image_document_id
         ? `/api/documents/${p.primary_image_document_id}/image`
@@ -161,7 +161,7 @@ async function getProduct(business, productId) {
     if (!product) {
       throw Object.assign(new Error("Product not found"), { status: 404 });
     }
-    
+
     const [images, suppliers, barcodes, storeProduct] = await Promise.all([
       repo.listProductImages(client, productId),
       repo.listProductSuppliers(client, productId),
@@ -170,14 +170,16 @@ async function getProduct(business, productId) {
     ]);
 
     // Inject the URLs for the image gallery
-    const mappedImages = images.map(img => ({
+    const mappedImages = images.map((img) => ({
       ...img,
-      url: `/api/documents/${img.document_id}/image`
+      url: `/api/documents/${img.document_id}/image`,
     }));
 
     return {
       ...product,
-      primary_image_url: product.primary_image_document_id ? `/api/documents/${product.primary_image_document_id}/image` : null,
+      primary_image_url: product.primary_image_document_id
+        ? `/api/documents/${product.primary_image_document_id}/image`
+        : null,
       images: mappedImages,
       suppliers,
       barcodes,
@@ -653,7 +655,8 @@ async function importProducts(business, rows, user) {
       if (row.category_name) {
         const cat = await repo.findCategoryByName(client, row.category_name);
         if (cat) categoryId = cat.category_id;
-        else warning = `category "${row.category_name}" not found — imported uncategorised`;
+        else
+          warning = `category "${row.category_name}" not found — imported uncategorised`;
       }
 
       // Unique barcode (retry on the astronomically unlikely collision).
@@ -666,7 +669,11 @@ async function importProducts(business, rows, user) {
         }
       }
       if (!barcodeValue) {
-        out.errors.push({ row: rn, sku, message: "could not generate a unique barcode" });
+        out.errors.push({
+          row: rn,
+          sku,
+          message: "could not generate a unique barcode",
+        });
         continue;
       }
 
@@ -686,7 +693,10 @@ async function importProducts(business, rows, user) {
           barcode: barcodeValue,
           customFields: {},
           reorderLevel: Math.max(0, Math.round(toNum(row.reorder_level) ?? 0)),
-          reorderQuantity: Math.max(0, Math.round(toNum(row.reorder_quantity) ?? 0)),
+          reorderQuantity: Math.max(
+            0,
+            Math.round(toNum(row.reorder_quantity) ?? 0),
+          ),
           createdBy: user.user_id,
         });
         await repo.insertBarcode(client, {
@@ -696,7 +706,13 @@ async function importProducts(business, rows, user) {
           isPrimary: true,
         });
         await client.query("RELEASE SAVEPOINT import_row");
-        out.created.push({ row: rn, sku, product_id: product.product_id, name, warning });
+        out.created.push({
+          row: rn,
+          sku,
+          product_id: product.product_id,
+          name,
+          warning,
+        });
       } catch (err) {
         await client.query("ROLLBACK TO SAVEPOINT import_row");
         out.errors.push({ row: rn, sku, message: err.message });
@@ -848,13 +864,13 @@ async function listProductImages(business, productId) {
     if (!product) {
       throw Object.assign(new Error("Product not found"), { status: 404 });
     }
-    
+
     const images = await repo.listProductImages(client, productId);
-    const mappedImages = images.map(img => ({
+    const mappedImages = images.map((img) => ({
       ...img,
-      url: `/api/documents/${img.document_id}/image`
+      url: `/api/documents/${img.document_id}/image`,
     }));
-    
+
     return { data: mappedImages };
   });
 }
@@ -1237,9 +1253,7 @@ async function getProductShareUrl(business, productId) {
       priceText ? `Price: ${priceText}` : null,
       product.description ? String(product.description).slice(0, 160) : null,
       ``,
-      published
-        ? `Shop it here: ${url}`
-        : `Preview: ${url}`,
+      published ? `Shop it here: ${url}` : `Preview: ${url}`,
     ].filter((l) => l !== null);
 
     return {
@@ -1249,7 +1263,8 @@ async function getProductShareUrl(business, productId) {
       url,
       slug,
       published,
-      price: product.selling_price != null ? Number(product.selling_price) : null,
+      price:
+        product.selling_price != null ? Number(product.selling_price) : null,
       currency: product.currency || "NGN",
       image_url,
       message: messageLines.join("\n"),

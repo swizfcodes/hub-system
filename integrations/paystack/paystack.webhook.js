@@ -131,10 +131,10 @@ async function handleChargeSuccess(data) {
   // No matching invoice payment — try campaign storefront orders.
   // Reference for those is the order_id UUID itself (not a separate column).
   try {
-    const storefrontService = require(
-      "../../modules/sales_campaigns/storefront.service",
-    );
-    const { rows: [order] } = await pool.query(
+    const storefrontService = require("../../modules/sales_campaigns/storefront.service");
+    const {
+      rows: [order],
+    } = await pool.query(
       `SELECT co.order_id, sc.business
          FROM jewelry.campaign_orders co
          JOIN jewelry.sales_campaigns sc ON sc.campaign_id = co.campaign_id

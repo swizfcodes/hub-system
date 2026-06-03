@@ -1,8 +1,17 @@
 // Types mirror shared.calendar_events.
 
 export type EventType =
-  | 'meeting' | 'call' | 'delivery' | 'pickup' | 'fitting' | 'photoshoot'
-  | 'training' | 'review' | 'reminder' | 'other' | string;
+  | "meeting"
+  | "call"
+  | "delivery"
+  | "pickup"
+  | "fitting"
+  | "photoshoot"
+  | "training"
+  | "review"
+  | "reminder"
+  | "other"
+  | string;
 
 export interface CalendarEvent {
   is_private?: boolean;
@@ -15,7 +24,7 @@ export interface CalendarEvent {
   all_day: boolean;
   location?: string | null;
   description?: string | null;
-  recurrence_rule?: string | null;   // RFC 5545 RRULE
+  recurrence_rule?: string | null; // RFC 5545 RRULE
   reference_type?: string | null;
   reference_id?: string | null;
   created_by: string;
@@ -25,7 +34,13 @@ export interface CalendarEvent {
 }
 
 export interface ClashResponse {
-  code: 'CLASH_DETECTED';
+  code: "CLASH_DETECTED";
   message: string;
-  clashes: Array<{ event_id: string; title: string; start_at: string; end_at: string; location?: string }>;
+  clashes: Array<{
+    event_id: string;
+    title: string;
+    start_at: string;
+    end_at: string;
+    location?: string;
+  }>;
 }

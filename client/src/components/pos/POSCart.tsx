@@ -1,27 +1,29 @@
 // ── POSCart.tsx ────────────────────────────────────────────────────────────────
-import { Trash2, AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
-import { usePOSStore } from '@stores/posStore';
-import { fmtMoney } from '@lib/format';
-import { cn } from '@lib/cn';
+import { Trash2, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
+import { usePOSStore } from "@stores/posStore";
+import { fmtMoney } from "@lib/format";
+import { cn } from "@lib/cn";
 
 interface POSCartProps {
   currency?: string;
 }
 
-export function POSCart({ currency = 'NGN' }: POSCartProps) {
+export function POSCart({ currency = "NGN" }: POSCartProps) {
   const { lines, updateLineQty, updateLinePrice, removeLine } = usePOSStore(
     (s) => ({
-      lines:           s.lines,
-      updateLineQty:   s.updateLineQty,
+      lines: s.lines,
+      updateLineQty: s.updateLineQty,
       updateLinePrice: s.updateLinePrice,
-      removeLine:      s.removeLine,
+      removeLine: s.removeLine,
     }),
   );
 
   if (!lines.length) {
     return (
       <div className="flex flex-1 items-center justify-center py-12 text-center">
-        <p className="text-sm text-orika-smoke">Cart is empty — add products from the search panel</p>
+        <p className="text-sm text-orika-smoke">
+          Cart is empty — add products from the search panel
+        </p>
       </div>
     );
   }
@@ -32,10 +34,8 @@ export function POSCart({ currency = 'NGN' }: POSCartProps) {
         <div
           key={line.id}
           className={cn(
-            'rounded-lg border bg-orika-charcoal p-3 space-y-2',
-            line.needs_approval
-              ? 'border-red-500/40'
-              : 'border-white/5',
+            "rounded-lg border bg-orika-charcoal p-3 space-y-2",
+            line.needs_approval ? "border-red-500/40" : "border-white/5",
           )}
         >
           {/* Line header */}
@@ -55,7 +55,8 @@ export function POSCart({ currency = 'NGN' }: POSCartProps) {
           {line.needs_approval && (
             <div className="flex items-center gap-1.5 text-xs text-red-400">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              Price below minimum ({fmtMoney(line.min_price, currency)}) — manager approval required
+              Price below minimum ({fmtMoney(line.min_price, currency)}) —
+              manager approval required
             </div>
           )}
 
@@ -85,17 +86,21 @@ export function POSCart({ currency = 'NGN' }: POSCartProps) {
             {/* Price (editable) */}
             <div className="flex-1">
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">₦</span>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                  ₦
+                </span>
                 <input
                   type="number"
                   step="0.01"
                   value={line.unit_price}
-                  onChange={(e) => updateLinePrice(line.id, parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateLinePrice(line.id, parseFloat(e.target.value) || 0)
+                  }
                   className={cn(
-                    'w-full rounded border py-1 pl-5 pr-2 text-right text-sm tabular-nums text-orika-cream focus:outline-none',
+                    "w-full rounded border py-1 pl-5 pr-2 text-right text-sm tabular-nums text-orika-cream focus:outline-none",
                     line.needs_approval
-                      ? 'border-red-500/40 bg-red-900/10'
-                      : 'border-white/10 bg-orika-graphite focus:border-orika-gold/40',
+                      ? "border-red-500/40 bg-red-900/10"
+                      : "border-white/10 bg-orika-graphite focus:border-orika-gold/40",
                   )}
                 />
               </div>

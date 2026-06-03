@@ -3,27 +3,37 @@
  * Pure numbers — no charts (Q8: A).
  * Finance section blurred for non-approve users (Q9: blend D+B).
  */
-import { useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import { KpiCard, StatRow } from '@components/dashboard/KpiCard';
-import { Skeleton }         from '@components/ui/Skeleton';
-import { fmtMoney } from '@lib/format';
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { KpiCard, StatRow } from "@components/dashboard/KpiCard";
+import { Skeleton } from "@components/ui/Skeleton";
+import { fmtMoney } from "@lib/format";
 import type {
-  SalesDashboard, FinanceDashboard, StockDashboard,
-  CustomerDashboard, LogisticsDashboard,
-} from '@typedefs/dashboard';
+  SalesDashboard,
+  FinanceDashboard,
+  StockDashboard,
+  CustomerDashboard,
+  LogisticsDashboard,
+} from "@typedefs/dashboard";
 
 interface SectionProps {
   isLoading: boolean;
-  currency:  string;
+  currency: string;
 }
 
 // ── Section wrapper ───────────────────────────────────────────────────────────
 
 function Section({
-  title, icon, href, children, isLoading,
+  title,
+  icon,
+  href,
+  children,
+  isLoading,
 }: {
-  title: string; icon: string; href: string; isLoading: boolean;
+  title: string;
+  icon: string;
+  href: string;
+  isLoading: boolean;
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
@@ -34,16 +44,22 @@ function Section({
           <span className="text-lg">{icon}</span>
           <h3 className="text-sm font-semibold text-orika-cream">{title}</h3>
         </div>
-        <button onClick={() => navigate(href)}
-          className="flex items-center gap-1 text-xs text-orika-gold hover:underline">
+        <button
+          onClick={() => navigate(href)}
+          className="flex items-center gap-1 text-xs text-orika-gold hover:underline"
+        >
           Details <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
       {isLoading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[1,2,3,4].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
         </div>
-      ) : children}
+      ) : (
+        children
+      )}
     </div>
   );
 }
@@ -51,34 +67,71 @@ function Section({
 // ── Sales Section ─────────────────────────────────────────────────────────────
 
 export function SalesSection({
-  data, isLoading, currency,
+  data,
+  isLoading,
+  currency,
 }: SectionProps & { data: SalesDashboard | null }) {
   if (!data && !isLoading) return null;
 
-  const rev     = data?.revenue;
-  const quotes  = data?.quotations;
-  const top5    = data?.top_products?.slice(0, 5) ?? [];
+  const rev = data?.revenue;
+  const quotes = data?.quotations;
+  const top5 = data?.top_products?.slice(0, 5) ?? [];
 
   return (
-    <Section title="Sales" icon="📈" href="/reports/sales/by_period" isLoading={isLoading}>
+    <Section
+      title="Sales"
+      icon="📈"
+      href="/reports/sales/by_period"
+      isLoading={isLoading}
+    >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="MTD Revenue"     value={rev?.total_amount ?? 0}    type="currency" currency={currency} size="lg" />
-        <KpiCard label="Invoices"        value={rev?.invoice_count ?? 0}   type="number" />
-        <KpiCard label="Avg Order Value" value={rev?.avg_order_value ?? 0} type="currency" currency={currency} />
-        <KpiCard label="Quote Conversion"
-          value={quotes ? `${((quotes.converted / Math.max(quotes.total_quotes, 1)) * 100).toFixed(0)}%` : '—'}
-          type="text" />
+        <KpiCard
+          label="MTD Revenue"
+          value={rev?.total_amount ?? 0}
+          type="currency"
+          currency={currency}
+          size="lg"
+        />
+        <KpiCard
+          label="Invoices"
+          value={rev?.invoice_count ?? 0}
+          type="number"
+        />
+        <KpiCard
+          label="Avg Order Value"
+          value={rev?.avg_order_value ?? 0}
+          type="currency"
+          currency={currency}
+        />
+        <KpiCard
+          label="Quote Conversion"
+          value={
+            quotes
+              ? `${((quotes.converted / Math.max(quotes.total_quotes, 1)) * 100).toFixed(0)}%`
+              : "—"
+          }
+          type="text"
+        />
       </div>
 
       {/* Top products */}
       {top5.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3 space-y-1">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Top Products</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Top Products
+          </p>
           {top5.map((p, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-              <p className="text-xs text-orika-cream truncate max-w-[200px]">{p.description}</p>
+            <div
+              key={i}
+              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+            >
+              <p className="text-xs text-orika-cream truncate max-w-[200px]">
+                {p.description}
+              </p>
               <div className="flex items-center gap-4 shrink-0">
-                <span className="text-xs text-orika-smoke">{p.units_sold} units</span>
+                <span className="text-xs text-orika-smoke">
+                  {p.units_sold} units
+                </span>
                 <span className="text-xs font-semibold text-orika-cream tabular-nums">
                   {fmtMoney(p.revenue, currency)}
                 </span>
@@ -91,10 +144,17 @@ export function SalesSection({
       {/* Payment methods */}
       {(data?.payment_methods?.length ?? 0) > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Payment Methods</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Payment Methods
+          </p>
           {data!.payment_methods.map((m, i) => (
-            <StatRow key={i} label={m.payment_method || 'Other'}
-              value={m.total_amount} type="currency" currency={currency} />
+            <StatRow
+              key={i}
+              label={m.payment_method || "Other"}
+              value={m.total_amount}
+              type="currency"
+              currency={currency}
+            />
           ))}
         </div>
       )}
@@ -105,36 +165,89 @@ export function SalesSection({
 // ── Finance Section ───────────────────────────────────────────────────────────
 
 export function FinanceSection({
-  data, isLoading, currency, canView,
+  data,
+  isLoading,
+  currency,
+  canView,
 }: SectionProps & { data: FinanceDashboard | null; canView: boolean }) {
-  const ive  = data?.income_vs_expense;
-  const ar   = data?.ar_ageing;
+  const ive = data?.income_vs_expense;
+  const ar = data?.ar_ageing;
   const banks = data?.bank_balances ?? [];
 
   return (
-    <Section title="Finance" icon="💰" href="/reports/finance/profit_and_loss" isLoading={isLoading}>
+    <Section
+      title="Finance"
+      icon="💰"
+      href="/reports/finance/profit_and_loss"
+      isLoading={isLoading}
+    >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Income (MTD)"   value={ive?.income   ?? 0} type="currency" currency={currency} restricted={!canView} />
-        <KpiCard label="Expenses (MTD)" value={ive?.expenses  ?? 0} type="currency" currency={currency} restricted={!canView} />
-        <KpiCard label="Net Profit"     value={ive?.net       ?? 0} type="currency" currency={currency} restricted={!canView}
-          alertColor={canView && ive && ive.net < 0 ? '#EF4444' : undefined} />
-        <KpiCard label="AR Outstanding" value={ar?.total ?? 0} type="currency" currency={currency}
-          alertColor={ar && ar.total > 0 ? '#F97316' : undefined}
-          sub={ar ? `${ar.invoice_count} invoices` : undefined} />
+        <KpiCard
+          label="Income (MTD)"
+          value={ive?.income ?? 0}
+          type="currency"
+          currency={currency}
+          restricted={!canView}
+        />
+        <KpiCard
+          label="Expenses (MTD)"
+          value={ive?.expenses ?? 0}
+          type="currency"
+          currency={currency}
+          restricted={!canView}
+        />
+        <KpiCard
+          label="Net Profit"
+          value={ive?.net ?? 0}
+          type="currency"
+          currency={currency}
+          restricted={!canView}
+          alertColor={canView && ive && ive.net < 0 ? "#EF4444" : undefined}
+        />
+        <KpiCard
+          label="AR Outstanding"
+          value={ar?.total ?? 0}
+          type="currency"
+          currency={currency}
+          alertColor={ar && ar.total > 0 ? "#F97316" : undefined}
+          sub={ar ? `${ar.invoice_count} invoices` : undefined}
+        />
       </div>
 
       {/* AR ageing breakdown */}
       {ar && canView && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">AR Ageing</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            AR Ageing
+          </p>
           <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-            <StatRow label="Current"  value={ar.current ?? 0} type="currency" currency={currency} />
-            <StatRow label="1–30 days" value={ar['1_30'] ?? 0} type="currency" currency={currency}
-              accent={ar['1_30'] > 0 ? '#F97316' : undefined} />
-            <StatRow label="31–60 days" value={ar['31_60'] ?? 0} type="currency" currency={currency}
-              accent={ar['31_60'] > 0 ? '#F97316' : undefined} />
-            <StatRow label="90+ days" value={ar['90plus'] ?? 0} type="currency" currency={currency}
-              accent={ar['90plus'] > 0 ? '#EF4444' : undefined} />
+            <StatRow
+              label="Current"
+              value={ar.current ?? 0}
+              type="currency"
+              currency={currency}
+            />
+            <StatRow
+              label="1–30 days"
+              value={ar["1_30"] ?? 0}
+              type="currency"
+              currency={currency}
+              accent={ar["1_30"] > 0 ? "#F97316" : undefined}
+            />
+            <StatRow
+              label="31–60 days"
+              value={ar["31_60"] ?? 0}
+              type="currency"
+              currency={currency}
+              accent={ar["31_60"] > 0 ? "#F97316" : undefined}
+            />
+            <StatRow
+              label="90+ days"
+              value={ar["90plus"] ?? 0}
+              type="currency"
+              currency={currency}
+              accent={ar["90plus"] > 0 ? "#EF4444" : undefined}
+            />
           </div>
         </div>
       )}
@@ -142,10 +255,17 @@ export function FinanceSection({
       {/* Bank balances */}
       {banks.length > 0 && canView && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Bank Balances</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Bank Balances
+          </p>
           {banks.map((b) => (
-            <StatRow key={b.account_id} label={`${b.bank_name} — ${b.account_name}`}
-              value={b.running_balance} type="currency" currency={currency} />
+            <StatRow
+              key={b.account_id}
+              label={`${b.bank_name} — ${b.account_name}`}
+              value={b.running_balance}
+              type="currency"
+              currency={currency}
+            />
           ))}
         </div>
       )}
@@ -156,32 +276,63 @@ export function FinanceSection({
 // ── Customers Section ─────────────────────────────────────────────────────────
 
 export function CustomersSection({
-  data, isLoading, currency,
+  data,
+  isLoading,
+  currency,
 }: SectionProps & { data: CustomerDashboard | null }) {
   const summary = data?.summary;
-  const nvr     = data?.new_vs_returning;
-  const top5    = data?.top_customers?.slice(0, 5) ?? [];
+  const nvr = data?.new_vs_returning;
+  const top5 = data?.top_customers?.slice(0, 5) ?? [];
   const pipeline = data?.pipeline_health ?? [];
 
   return (
-    <Section title="Customers & CRM" icon="👥" href="/reports/sales/by_customer" isLoading={isLoading}>
+    <Section
+      title="Customers & CRM"
+      icon="👥"
+      href="/reports/sales/by_customer"
+      isLoading={isLoading}
+    >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Total Customers"  value={summary?.total_customers ?? 0} type="number" />
-        <KpiCard label="VIP Customers"    value={summary?.vip_count ?? 0}       type="number" alertColor={summary?.vip_count ? '#C9A86C' : undefined} />
-        <KpiCard label="New This Period"  value={summary?.new_this_period ?? 0} type="number" />
-        <KpiCard label="Returning"        value={nvr?.returning_customers ?? 0} type="number"
-          sub={nvr ? `${nvr.new_customers} new` : undefined} />
+        <KpiCard
+          label="Total Customers"
+          value={summary?.total_customers ?? 0}
+          type="number"
+        />
+        <KpiCard
+          label="VIP Customers"
+          value={summary?.vip_count ?? 0}
+          type="number"
+          alertColor={summary?.vip_count ? "#C9A86C" : undefined}
+        />
+        <KpiCard
+          label="New This Period"
+          value={summary?.new_this_period ?? 0}
+          type="number"
+        />
+        <KpiCard
+          label="Returning"
+          value={nvr?.returning_customers ?? 0}
+          type="number"
+          sub={nvr ? `${nvr.new_customers} new` : undefined}
+        />
       </div>
 
       {/* Top customers */}
       {top5.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Top Customers</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Top Customers
+          </p>
           {top5.map((c) => (
-            <div key={c.contact_id} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div
+              key={c.contact_id}
+              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+            >
               <div>
                 <p className="text-xs text-orika-cream">{c.display_name}</p>
-                <p className="text-[10px] text-orika-smoke">{c.order_count} orders</p>
+                <p className="text-[10px] text-orika-smoke">
+                  {c.order_count} orders
+                </p>
               </div>
               <span className="text-xs font-semibold text-orika-cream tabular-nums">
                 {fmtMoney(c.lifetime_value, currency)}
@@ -194,11 +345,18 @@ export function CustomersSection({
       {/* Pipeline health */}
       {pipeline.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Deal Pipeline</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Deal Pipeline
+          </p>
           {pipeline.map((p) => (
-            <StatRow key={p.stage} label={p.stage.replace(/_/g,' ')}
-              value={p.total_value} type="currency" currency={currency}
-              accent="#7B68EE" />
+            <StatRow
+              key={p.stage}
+              label={p.stage.replace(/_/g, " ")}
+              value={p.total_value}
+              type="currency"
+              currency={currency}
+              accent="#7B68EE"
+            />
           ))}
         </div>
       )}
@@ -209,30 +367,62 @@ export function CustomersSection({
 // ── Stock Section ─────────────────────────────────────────────────────────────
 
 export function StockSection({
-  data, isLoading, currency,
+  data,
+  isLoading,
+  currency,
 }: SectionProps & { data: StockDashboard | null }) {
-  const tv      = data?.total_value;
+  const tv = data?.total_value;
   const lowCount = parseInt(String(data?.low_stock?.low_stock_count ?? 0));
-  const topMov  = data?.top_moving?.slice(0, 5) ?? [];
+  const topMov = data?.top_moving?.slice(0, 5) ?? [];
 
   return (
-    <Section title="Inventory" icon="📦" href="/reports/stock/valuation" isLoading={isLoading}>
+    <Section
+      title="Inventory"
+      icon="📦"
+      href="/reports/stock/valuation"
+      isLoading={isLoading}
+    >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard label="Total SKUs"       value={tv?.total_products ?? 0}    type="number" />
-        <KpiCard label="Cost Value"       value={tv?.total_cost_value ?? 0}  type="currency" currency={currency} />
-        <KpiCard label="Retail Value"     value={tv?.total_retail_value ?? 0} type="currency" currency={currency} />
-        <KpiCard label="Low Stock Alerts" value={lowCount} type="number"
-          alertColor={lowCount > 0 ? '#EF4444' : '#2D6A4F'}
-          onClick={() => window.location.href = '/reports/stock/low_stock'} />
+        <KpiCard
+          label="Total SKUs"
+          value={tv?.total_products ?? 0}
+          type="number"
+        />
+        <KpiCard
+          label="Cost Value"
+          value={tv?.total_cost_value ?? 0}
+          type="currency"
+          currency={currency}
+        />
+        <KpiCard
+          label="Retail Value"
+          value={tv?.total_retail_value ?? 0}
+          type="currency"
+          currency={currency}
+        />
+        <KpiCard
+          label="Low Stock Alerts"
+          value={lowCount}
+          type="number"
+          alertColor={lowCount > 0 ? "#EF4444" : "#2D6A4F"}
+          onClick={() => (window.location.href = "/reports/stock/low_stock")}
+        />
       </div>
 
       {topMov.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Top Moving (Last 30 days)</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Top Moving (Last 30 days)
+          </p>
           {topMov.map((p) => (
-            <div key={p.sku} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div
+              key={p.sku}
+              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+            >
               <p className="text-xs text-orika-cream truncate">{p.name}</p>
-              <span className="text-xs font-semibold text-orika-gold tabular-nums">{p.units_out} units</span>
+              <span className="text-xs font-semibold text-orika-gold tabular-nums">
+                {p.units_out} units
+              </span>
             </div>
           ))}
         </div>
@@ -244,32 +434,63 @@ export function StockSection({
 // ── Logistics Section ─────────────────────────────────────────────────────────
 
 export function LogisticsSection({
-  data, isLoading, currency: _currency,
+  data,
+  isLoading,
+  currency: _currency,
 }: SectionProps & { data: LogisticsDashboard | null }) {
-  const s       = data?.summary;
-  const active  = data?.active_deliveries?.slice(0, 5) ?? [];
+  const s = data?.summary;
+  const active = data?.active_deliveries?.slice(0, 5) ?? [];
 
   return (
-    <Section title="Logistics" icon="🚚" href="/reports/delivery/performance" isLoading={isLoading}>
+    <Section
+      title="Logistics"
+      icon="🚚"
+      href="/reports/delivery/performance"
+      isLoading={isLoading}
+    >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <KpiCard label="Pending"      value={s?.pending ?? 0}    type="number" alertColor={s && s.pending > 10 ? '#F97316' : undefined} />
-        <KpiCard label="In Transit"   value={s?.in_transit ?? 0} type="number" />
-        <KpiCard label="Delivered"    value={s?.delivered ?? 0}  type="number" alertColor="#2D6A4F" />
-        <KpiCard label="Failed"       value={s?.failed ?? 0}     type="number" alertColor={s && s.failed > 0 ? '#EF4444' : undefined} />
-        <KpiCard label="Avg Hours"    value={s ? parseFloat(String(s.avg_delivery_hours)).toFixed(1) : '—'} type="text" />
+        <KpiCard
+          label="Pending"
+          value={s?.pending ?? 0}
+          type="number"
+          alertColor={s && s.pending > 10 ? "#F97316" : undefined}
+        />
+        <KpiCard label="In Transit" value={s?.in_transit ?? 0} type="number" />
+        <KpiCard
+          label="Delivered"
+          value={s?.delivered ?? 0}
+          type="number"
+          alertColor="#2D6A4F"
+        />
+        <KpiCard
+          label="Failed"
+          value={s?.failed ?? 0}
+          type="number"
+          alertColor={s && s.failed > 0 ? "#EF4444" : undefined}
+        />
+        <KpiCard
+          label="Avg Hours"
+          value={s ? parseFloat(String(s.avg_delivery_hours)).toFixed(1) : "—"}
+          type="text"
+        />
       </div>
 
       {active.length > 0 && (
         <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">Active Deliveries</p>
+          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+            Active Deliveries
+          </p>
           {active.map((d) => (
-            <div key={d.delivery_id} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div
+              key={d.delivery_id}
+              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+            >
               <div>
                 <p className="text-xs text-orika-cream">{d.delivery_number}</p>
                 <p className="text-[10px] text-orika-smoke">{d.contact_name}</p>
               </div>
               <span className="text-[10px] rounded-full px-2 py-0.5 bg-orika-graphite text-orika-smoke capitalize">
-                {d.status.replace(/_/g,' ')}
+                {d.status.replace(/_/g, " ")}
               </span>
             </div>
           ))}

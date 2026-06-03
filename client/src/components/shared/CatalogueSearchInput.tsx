@@ -14,54 +14,54 @@
  *     onSelect={(p) => form.setValue('product_id', p.product_id)}
  *   />
  */
-import { useState, useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Search, X } from 'lucide-react';
-import { api } from '@services/api';
-import { fmtMoney } from '@lib/format';
-import { cn } from '@lib/cn';
+import { useState, useRef, useEffect } from "react";
+import ReactDOM from "react-dom";
+import { useQuery } from "@tanstack/react-query";
+import { Search, X } from "lucide-react";
+import { api } from "@services/api";
+import { fmtMoney } from "@lib/format";
+import { cn } from "@lib/cn";
 
 export interface CatalogueProduct {
-  product_id:    string;
-  name:          string;
-  sku?:          string;
+  product_id: string;
+  name: string;
+  sku?: string;
   selling_price: number;
 }
 
 interface CatalogueSearchInputProps {
-  currency:      string;
-  onSelect:      (p: CatalogueProduct) => void;
-  label?:        string;
-  placeholder?:  string;
+  currency: string;
+  onSelect: (p: CatalogueProduct) => void;
+  label?: string;
+  placeholder?: string;
   /** 'dark' = charcoal/gold (POS, PO forms). 'light' = white/black (invoice, consignment modals). */
-  surface?:      'dark' | 'light';
+  surface?: "dark" | "light";
   /** Unique key per instance — prevents cross-instance query cache collisions. */
-  instanceKey?:  string | number;
-  className?:    string;
+  instanceKey?: string | number;
+  className?: string;
 }
 
 export function CatalogueSearchInput({
   currency,
   onSelect,
   label,
-  placeholder = 'Click to browse or type to filter…',
-  surface = 'dark',
+  placeholder = "Click to browse or type to filter…",
+  surface = "dark",
   instanceKey = 0,
-  className = '',
+  className = "",
 }: CatalogueSearchInputProps) {
-  const [query,    setQuery]    = useState('');
-  const [isOpen,   setIsOpen]   = useState(false);
-  const wrapRef                 = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [dropRect, setDropRect] = useState<DOMRect | null>(null);
 
   // Fetch on open — empty query = browse all (limit 8), typed query = filter.
   const { data: results = [], isFetching } = useQuery({
-    queryKey: ['catalogue-search', instanceKey, query],
+    queryKey: ["catalogue-search", instanceKey, query],
     queryFn: async () => {
       const params: Record<string, string | number> = { limit: 8 };
       if (query.trim()) params.search = query.trim();
-      const { data } = await api.get('/catalogue/products', { params });
+      const { data } = await api.get("/catalogue/products", { params });
       return (data.data ?? []) as CatalogueProduct[];
     },
     enabled: isOpen,
@@ -75,26 +75,27 @@ export function CatalogueSearchInput({
       if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
     }
     updateRect();
-    window.addEventListener('scroll', updateRect, true);
-    window.addEventListener('resize', updateRect);
+    window.addEventListener("scroll", updateRect, true);
+    window.addEventListener("resize", updateRect);
     return () => {
-      window.removeEventListener('scroll', updateRect, true);
-      window.removeEventListener('resize', updateRect);
+      window.removeEventListener("scroll", updateRect, true);
+      window.removeEventListener("resize", updateRect);
     };
   }, [isOpen]);
 
   // Close on outside click.
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setIsOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+        setIsOpen(false);
     }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   function handleSelect(p: CatalogueProduct) {
     onSelect(p);
-    setQuery('');
+    setQuery("");
     setIsOpen(false);
   }
 
@@ -109,72 +110,89 @@ export function CatalogueSearchInput({
     if (wrapRef.current) setDropRect(wrapRef.current.getBoundingClientRect());
   }
 
-  const isDark = surface === 'dark';
+  const isDark = surface === "dark";
 
   // ── Theme tokens ────────────────────────────────────────────────────────────
   const inputCls = isDark
-    ? 'w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none'
-    : 'w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-orika-black shadow-sm focus:border-orika-black focus:outline-none focus:ring-1 focus:ring-orika-black';
+    ? "w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
+    : "w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-orika-black shadow-sm focus:border-orika-black focus:outline-none focus:ring-1 focus:ring-orika-black";
 
   const iconCls = isDark
-    ? 'absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke pointer-events-none'
-    : 'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke pointer-events-none';
+    ? "absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke pointer-events-none"
+    : "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke pointer-events-none";
 
   const dropCls = isDark
-    ? 'rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto'
-    : 'rounded-xl border border-orika-cloud/30 bg-white shadow-lg max-h-56 overflow-y-auto';
+    ? "rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto"
+    : "rounded-xl border border-orika-cloud/30 bg-white shadow-lg max-h-56 overflow-y-auto";
 
   const rowCls = isDark
-    ? 'flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors'
-    : 'flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-orika-cloud/20 transition-colors';
+    ? "flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+    : "flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-orika-cloud/20 transition-colors";
 
-  const nameCls  = isDark ? 'text-xs font-medium text-orika-cream'    : 'text-sm font-medium text-orika-black';
-  const skuCls   = isDark ? 'text-[10px] text-orika-smoke'            : 'text-xs text-text-on-light-muted';
-  const priceCls = isDark ? 'text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0'
-                           : 'text-sm font-semibold text-orika-black tabular-nums ml-4 shrink-0';
-  const msgCls   = isDark ? 'px-3 py-3 text-xs text-orika-smoke'      : 'px-3 py-3 text-sm text-text-on-light-muted';
+  const nameCls = isDark
+    ? "text-xs font-medium text-orika-cream"
+    : "text-sm font-medium text-orika-black";
+  const skuCls = isDark
+    ? "text-[10px] text-orika-smoke"
+    : "text-xs text-text-on-light-muted";
+  const priceCls = isDark
+    ? "text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0"
+    : "text-sm font-semibold text-orika-black tabular-nums ml-4 shrink-0";
+  const msgCls = isDark
+    ? "px-3 py-3 text-xs text-orika-smoke"
+    : "px-3 py-3 text-sm text-text-on-light-muted";
 
   const labelCls = isDark
-    ? 'mb-1 block text-xs text-orika-smoke'
-    : 'mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted';
+    ? "mb-1 block text-xs text-orika-smoke"
+    : "mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted";
 
   // ── Portaled dropdown ───────────────────────────────────────────────────────
-  const dropdown = isOpen && dropRect ? ReactDOM.createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        top:   dropRect.bottom + 4,
-        left:  dropRect.left,
-        width: dropRect.width,
-        zIndex: 9999,
-      }}
-      className={dropCls}
-    >
-      {isFetching && results.length === 0 ? (
-        <p className={msgCls}>Loading…</p>
-      ) : results.length > 0 ? (
-        results.map((p) => (
-          <button
-            key={p.product_id}
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); handleSelect(p); }}
-            className={rowCls}
+  const dropdown =
+    isOpen && dropRect
+      ? ReactDOM.createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: dropRect.bottom + 4,
+              left: dropRect.left,
+              width: dropRect.width,
+              zIndex: 9999,
+            }}
+            className={dropCls}
           >
-            <div className="min-w-0">
-              <p className={nameCls}>{p.name}</p>
-              {p.sku && <p className={skuCls}>{p.sku}</p>}
-            </div>
-            <span className={priceCls}>{fmtMoney(p.selling_price, currency)}</span>
-          </button>
-        ))
-      ) : (
-        <p className={msgCls}>
-          {query ? `No products found for "${query}"` : 'No active products found'}
-        </p>
-      )}
-    </div>,
-    document.body,
-  ) : null;
+            {isFetching && results.length === 0 ? (
+              <p className={msgCls}>Loading…</p>
+            ) : results.length > 0 ? (
+              results.map((p) => (
+                <button
+                  key={p.product_id}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(p);
+                  }}
+                  className={rowCls}
+                >
+                  <div className="min-w-0">
+                    <p className={nameCls}>{p.name}</p>
+                    {p.sku && <p className={skuCls}>{p.sku}</p>}
+                  </div>
+                  <span className={priceCls}>
+                    {fmtMoney(p.selling_price, currency)}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className={msgCls}>
+                {query
+                  ? `No products found for "${query}"`
+                  : "No active products found"}
+              </p>
+            )}
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <div ref={wrapRef} className={`relative ${className}`}>
@@ -204,13 +222,13 @@ export function CatalogueSearchInput({
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ProductSelectFieldProps {
-  value:        string;           // current product_id from form
-  onChange:     (id: string) => void;
-  currency:     string;
-  label?:       string;
+  value: string; // current product_id from form
+  onChange: (id: string) => void;
+  currency: string;
+  label?: string;
   instanceKey?: string | number;
-  surface?:     'dark' | 'light';
-  error?:       string;
+  surface?: "dark" | "light";
+  error?: string;
 }
 
 export function ProductSelectField({
@@ -219,20 +237,22 @@ export function ProductSelectField({
   currency,
   label,
   instanceKey = 0,
-  surface = 'dark',
+  surface = "dark",
   error,
 }: ProductSelectFieldProps) {
-  const [selectedName, setSelectedName] = useState('');
-  const isDark = surface === 'dark';
+  const [selectedName, setSelectedName] = useState("");
+  const isDark = surface === "dark";
 
   // When a product_id is pre-filled (e.g. from props), fetch its name once.
   const { data: preloaded } = useQuery({
-    queryKey: ['catalogue-product-name', value],
-    queryFn:  async () => {
-      const { data } = await api.get<CatalogueProduct>(`/catalogue/products/${value}`);
+    queryKey: ["catalogue-product-name", value],
+    queryFn: async () => {
+      const { data } = await api.get<CatalogueProduct>(
+        `/catalogue/products/${value}`,
+      );
       return data;
     },
-    enabled:   !!value && !selectedName,
+    enabled: !!value && !selectedName,
     staleTime: Infinity,
   });
 
@@ -240,25 +260,40 @@ export function ProductSelectField({
     if (preloaded && !selectedName) setSelectedName(preloaded.name);
   }, [preloaded, selectedName]);
 
-  function clear() { onChange(''); setSelectedName(''); }
+  function clear() {
+    onChange("");
+    setSelectedName("");
+  }
 
   const labelCls = isDark
-    ? 'mb-1 block text-xs text-orika-smoke'
-    : 'mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted';
+    ? "mb-1 block text-xs text-orika-smoke"
+    : "mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted";
 
   if (value) {
     // Selected state — show chip
     const chipCls = isDark
-      ? 'flex items-center gap-2 rounded-lg border border-orika-gold/40 bg-orika-gold/10 px-3 py-2'
-      : 'flex items-center gap-2 rounded-xl border border-orika-black/20 bg-orika-cloud/20 px-3 py-2.5';
-    const nameCls2 = isDark ? 'text-xs font-medium text-orika-cream flex-1 truncate' : 'text-sm font-medium text-orika-black flex-1 truncate';
+      ? "flex items-center gap-2 rounded-lg border border-orika-gold/40 bg-orika-gold/10 px-3 py-2"
+      : "flex items-center gap-2 rounded-xl border border-orika-black/20 bg-orika-cloud/20 px-3 py-2.5";
+    const nameCls2 = isDark
+      ? "text-xs font-medium text-orika-cream flex-1 truncate"
+      : "text-sm font-medium text-orika-black flex-1 truncate";
 
     return (
       <div>
         {label && <label className={labelCls}>{label}</label>}
         <div className={chipCls}>
-          <span className={nameCls2}>{selectedName || 'Product selected'}</span>
-          <button type="button" onClick={clear} className={cn('transition-colors', isDark ? 'text-orika-smoke hover:text-red-400' : 'text-text-on-light-muted hover:text-state-danger')} aria-label="Remove product">
+          <span className={nameCls2}>{selectedName || "Product selected"}</span>
+          <button
+            type="button"
+            onClick={clear}
+            className={cn(
+              "transition-colors",
+              isDark
+                ? "text-orika-smoke hover:text-red-400"
+                : "text-text-on-light-muted hover:text-state-danger",
+            )}
+            aria-label="Remove product"
+          >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

@@ -1,7 +1,7 @@
-import { api } from '@services/api';
-import type { Receipt, SalesListResponse } from '@typedefs/sales';
+import { api } from "@services/api";
+import type { Receipt, SalesListResponse } from "@typedefs/sales";
 
-const BASE = '/sales/receipts';
+const BASE = "/sales/receipts";
 
 export async function listReceipts(params: {
   invoice_id?: string;

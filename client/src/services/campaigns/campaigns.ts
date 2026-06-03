@@ -2,7 +2,7 @@
 // API wrappers for the Campaigns module. Endpoint paths follow the backend
 // modules/campaigns/campaigns.routes.js conventions.
 
-import { api } from '@services/api';
+import { api } from "@services/api";
 import type {
   Campaign,
   CampaignStats,
@@ -13,7 +13,7 @@ import type {
   AudienceFilter,
   AudiencePreview,
   CampaignType,
-} from '@typedefs/campaigns';
+} from "@typedefs/campaigns";
 
 // ── Campaigns ─────────────────────────────────────────────────────────────
 
@@ -21,9 +21,12 @@ export async function listCampaigns(
   params: { status?: string; campaign_type?: string; limit?: number } = {},
 ): Promise<{ data: Campaign[] }> {
   try {
-    const { data } = await api.get<{ data: Campaign[] } | Campaign[]>('/campaigns', {
-      params,
-    });
+    const { data } = await api.get<{ data: Campaign[] } | Campaign[]>(
+      "/campaigns",
+      {
+        params,
+      },
+    );
     return Array.isArray(data) ? { data } : { data: data.data ?? [] };
   } catch {
     return { data: [] };
@@ -37,12 +40,15 @@ export async function getCampaign(id: string): Promise<Campaign> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createCampaign(payload: any): Promise<Campaign> {
-  const { data } = await api.post<Campaign>('/campaigns', payload);
+  const { data } = await api.post<Campaign>("/campaigns", payload);
   return data;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function updateCampaign(id: string, payload: any): Promise<Campaign> {
+export async function updateCampaign(
+  id: string,
+  payload: any,
+): Promise<Campaign> {
   const { data } = await api.patch<Campaign>(`/campaigns/${id}`, payload);
   return data;
 }
@@ -52,12 +58,19 @@ export async function scheduleCampaign(
   scheduledAt: string | { scheduled_at: string },
 ): Promise<Campaign> {
   const payload =
-    typeof scheduledAt === 'string' ? { scheduled_at: scheduledAt } : scheduledAt;
-  const { data } = await api.post<Campaign>(`/campaigns/${id}/schedule`, payload);
+    typeof scheduledAt === "string"
+      ? { scheduled_at: scheduledAt }
+      : scheduledAt;
+  const { data } = await api.post<Campaign>(
+    `/campaigns/${id}/schedule`,
+    payload,
+  );
   return data;
 }
 
-export async function sendNow(id: string): Promise<{ sent: number; campaign?: Campaign }> {
+export async function sendNow(
+  id: string,
+): Promise<{ sent: number; campaign?: Campaign }> {
   const { data } = await api.post<{ sent: number; campaign?: Campaign }>(
     `/campaigns/${id}/send-now`,
     {},
@@ -75,12 +88,15 @@ export async function cancelCampaign(id: string): Promise<Campaign> {
 export async function previewAudience(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   filter: AudienceFilter | any,
-  channelType: CampaignType | 'auto' = 'auto',
+  channelType: CampaignType | "auto" = "auto",
 ): Promise<AudiencePreview> {
-  const { data } = await api.post<AudiencePreview>('/campaigns/audience/preview', {
-    filter,
-    channel_type: channelType,
-  });
+  const { data } = await api.post<AudiencePreview>(
+    "/campaigns/audience/preview",
+    {
+      filter,
+      channel_type: channelType,
+    },
+  );
   return data;
 }
 
@@ -98,8 +114,10 @@ export async function buildAudience(
 
 export async function listSegments(): Promise<Segment[]> {
   try {
-    const { data } = await api.get<{ data: Segment[] } | Segment[]>('/campaigns/segments');
-    return Array.isArray(data) ? data : data.data ?? [];
+    const { data } = await api.get<{ data: Segment[] } | Segment[]>(
+      "/campaigns/segments",
+    );
+    return Array.isArray(data) ? data : (data.data ?? []);
   } catch {
     return [];
   }
@@ -131,22 +149,24 @@ export async function getRecipientActivity(
 ): Promise<RecipientActivity[]> {
   try {
     const params =
-      typeof filter === 'string' ? { status: filter } : filter ?? {};
+      typeof filter === "string" ? { status: filter } : (filter ?? {});
     const { data } = await api.get<
       { data: RecipientActivity[] } | RecipientActivity[]
     >(`/campaigns/${id}/recipients`, { params });
-    return Array.isArray(data) ? data : data.data ?? [];
+    return Array.isArray(data) ? data : (data.data ?? []);
   } catch {
     return [];
   }
 }
 
-export async function getFollowUpSuggestions(id: string): Promise<FollowUpSuggestion[]> {
+export async function getFollowUpSuggestions(
+  id: string,
+): Promise<FollowUpSuggestion[]> {
   try {
-    const { data } = await api.get<{ data: FollowUpSuggestion[] } | FollowUpSuggestion[]>(
-      `/campaigns/${id}/follow-up-suggestions`,
-    );
-    return Array.isArray(data) ? data : data.data ?? [];
+    const { data } = await api.get<
+      { data: FollowUpSuggestion[] } | FollowUpSuggestion[]
+    >(`/campaigns/${id}/follow-up-suggestions`);
+    return Array.isArray(data) ? data : (data.data ?? []);
   } catch {
     return [];
   }
@@ -155,65 +175,73 @@ export async function getFollowUpSuggestions(id: string): Promise<FollowUpSugges
 // ── Newsletter subscribers ───────────────────────────────────────────────
 
 export interface Subscriber {
-  email:           string;
-  subscribed_at:   string;
+  email: string;
+  subscribed_at: string;
   unsubscribed_at: string | null;
-  source:          string;
-  is_active:       boolean;
+  source: string;
+  is_active: boolean;
 }
 
 export interface SubscriberList {
-  data:   Subscriber[];
+  data: Subscriber[];
   counts: { total: number; active: number; unsubscribed: number };
 }
 
-export async function listSubscribers(params: {
-  search?: string;
-  status?: 'active' | 'unsubscribed';
-} = {}): Promise<SubscriberList> {
-  const { data } = await api.get<SubscriberList>('/campaigns/subscribers', {
+export async function listSubscribers(
+  params: {
+    search?: string;
+    status?: "active" | "unsubscribed";
+  } = {},
+): Promise<SubscriberList> {
+  const { data } = await api.get<SubscriberList>("/campaigns/subscribers", {
     params,
   });
   return data;
 }
 
 // Returns the CSV export URL (caller can open it; auth is via the api client).
-export function subscribersExportUrl(params: {
-  search?: string;
-  status?: string;
-} = {}): string {
+export function subscribersExportUrl(
+  params: {
+    search?: string;
+    status?: string;
+  } = {},
+): string {
   const qs = new URLSearchParams(
     Object.entries(params).filter(([, v]) => v) as [string, string][],
   ).toString();
-  return `/campaigns/subscribers/export${qs ? `?${qs}` : ''}`;
+  return `/campaigns/subscribers/export${qs ? `?${qs}` : ""}`;
 }
 
 // ── Storefront enquiries ─────────────────────────────────────────────────
 
-export type EnquiryStatus = 'new' | 'read' | 'replied' | 'closed';
+export type EnquiryStatus = "new" | "read" | "replied" | "closed";
 
 export interface Enquiry {
-  id:         string;
-  name:       string;
-  email:      string;
-  phone:      string;
-  type:       string;
-  message:    string;
-  status:     EnquiryStatus;
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  type: string;
+  message: string;
+  status: EnquiryStatus;
   created_at: string;
 }
 
 export interface EnquiryList {
-  data:   Enquiry[];
+  data: Enquiry[];
   counts: { total: number; new: number; replied: number; closed: number };
 }
 
-export async function listEnquiries(params: {
-  search?: string;
-  status?: EnquiryStatus;
-  type?:   string;
-} = {}): Promise<EnquiryList> {
-  const { data } = await api.get<EnquiryList>('/campaigns/enquiries', { params });
+export async function listEnquiries(
+  params: {
+    search?: string;
+    status?: EnquiryStatus;
+    type?: string;
+  } = {},
+): Promise<EnquiryList> {
+  const { data } = await api.get<EnquiryList>("/campaigns/enquiries", {
+    params,
+  });
   return data;
 }
 
@@ -221,9 +249,12 @@ export async function setEnquiryStatus(
   id: string,
   status: EnquiryStatus,
 ): Promise<Enquiry> {
-  const { data } = await api.patch<Enquiry>(`/campaigns/enquiries/${id}/status`, {
-    status,
-  });
+  const { data } = await api.patch<Enquiry>(
+    `/campaigns/enquiries/${id}/status`,
+    {
+      status,
+    },
+  );
   return data;
 }
 

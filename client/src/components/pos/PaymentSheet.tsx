@@ -1,48 +1,55 @@
 // ── PaymentSheet.tsx ───────────────────────────────────────────────────────────
-import { useState } from 'react';
-import { Plus, Trash2 as Trash } from 'lucide-react';
-import { v4 as uuid } from 'uuid';
-import { Modal } from '@components/ui/Modal';
-import { Button } from '@components/ui/Button';
-import { usePOSStore } from '@stores/posStore';
-import { POS_PAYMENT_META } from '@lib/constants/posConstants';
-import { fmtMoney as fmtMoneyPS } from '@lib/format';
-import { cn } from '@lib/cn';
-import type { PaymentSplitInput, CartTotals, POSPaymentMethod } from '@typedefs/pos';
+import { useState } from "react";
+import { Plus, Trash2 as Trash } from "lucide-react";
+import { v4 as uuid } from "uuid";
+import { Modal } from "@components/ui/Modal";
+import { Button } from "@components/ui/Button";
+import { usePOSStore } from "@stores/posStore";
+import { POS_PAYMENT_META } from "@lib/constants/posConstants";
+import { fmtMoney as fmtMoneyPS } from "@lib/format";
+import { cn } from "@lib/cn";
+import type {
+  PaymentSplitInput,
+  CartTotals,
+  POSPaymentMethod,
+} from "@typedefs/pos";
 
 interface PaymentSheetProps {
-  open:        boolean;
-  onClose:     () => void;
-  totals:      CartTotals;
-  currency?:   string;
-  onConfirm:   (payments: PaymentSplitInput[]) => void;
-  isLoading?:  boolean;
+  open: boolean;
+  onClose: () => void;
+  totals: CartTotals;
+  currency?: string;
+  onConfirm: (payments: PaymentSplitInput[]) => void;
+  isLoading?: boolean;
 }
 
 export function PaymentSheet({
   open,
   onClose,
   totals,
-  currency = 'NGN',
+  currency = "NGN",
   onConfirm,
   isLoading = false,
 }: PaymentSheetProps) {
   const { loyaltyInfo, customer } = usePOSStore((s) => ({
     loyaltyInfo: s.loyaltyInfo,
-    customer:    s.customer,
+    customer: s.customer,
   }));
 
   const [splits, setSplits] = useState<PaymentSplitInput[]>([
-    { id: uuid(), method: 'cash', amount: totals.total },
+    { id: uuid(), method: "cash", amount: totals.total },
   ]);
 
   const totalPaid = splits.reduce((s, p) => s + (p.amount || 0), 0);
-  const change    = Math.max(0, totalPaid - totals.total);
+  const change = Math.max(0, totalPaid - totals.total);
   const shortfall = Math.max(0, totals.total - totalPaid);
-  const isReady   = totalPaid >= totals.total;
+  const isReady = totalPaid >= totals.total;
 
   function addSplit() {
-    setSplits([...splits, { id: uuid(), method: 'bank_transfer', amount: shortfall }]);
+    setSplits([
+      ...splits,
+      { id: uuid(), method: "bank_transfer", amount: shortfall },
+    ]);
   }
 
   function removeSplit(id: string) {
@@ -107,37 +114,47 @@ export function PaymentSheet({
               <div key={split.id} className="space-y-2">
                 {/* Method selector */}
                 <div className="grid grid-cols-4 gap-1.5">
-                  {(Object.keys(POS_PAYMENT_META) as POSPaymentMethod[]).map((method) => {
-                    const m = POS_PAYMENT_META[method];
-                    const M = m.icon;
-                    return (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => updateSplit(split.id, { method })}
-                        className={cn(
-                          'flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all',
-                          split.method === method
-                            ? 'border-orika-gold/60 bg-orika-gold/5 text-orika-gold'
-                            : 'border-black/10 text-orika-smoke hover:border-black/20',
-                        )}
-                      >
-                        <M className="h-4 w-4" />
-                        <span className="text-[9px] leading-tight">{m.label}</span>
-                      </button>
-                    );
-                  })}
+                  {(Object.keys(POS_PAYMENT_META) as POSPaymentMethod[]).map(
+                    (method) => {
+                      const m = POS_PAYMENT_META[method];
+                      const M = m.icon;
+                      return (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => updateSplit(split.id, { method })}
+                          className={cn(
+                            "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all",
+                            split.method === method
+                              ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
+                              : "border-black/10 text-orika-smoke hover:border-black/20",
+                          )}
+                        >
+                          <M className="h-4 w-4" />
+                          <span className="text-[9px] leading-tight">
+                            {m.label}
+                          </span>
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
 
                 {/* Amount + optional ref */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">₦</span>
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                      ₦
+                    </span>
                     <input
                       type="number"
                       step="0.01"
                       value={split.amount}
-                      onChange={(e) => updateSplit(split.id, { amount: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        updateSplit(split.id, {
+                          amount: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="w-full rounded border border-black/10 py-2 pl-5 pr-2 text-right text-sm text-orika-black tabular-nums focus:border-orika-gold/40 focus:outline-none"
                     />
                   </div>
@@ -145,8 +162,10 @@ export function PaymentSheet({
                     <input
                       type="text"
                       placeholder="Ref / terminal #"
-                      value={split.reference ?? ''}
-                      onChange={(e) => updateSplit(split.id, { reference: e.target.value })}
+                      value={split.reference ?? ""}
+                      onChange={(e) =>
+                        updateSplit(split.id, { reference: e.target.value })
+                      }
                       className="flex-1 rounded border border-black/10 px-2 py-2 text-sm focus:border-orika-gold/40 focus:outline-none"
                     />
                   )}
@@ -180,7 +199,9 @@ export function PaymentSheet({
         {change > 0 && (
           <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3 flex justify-between">
             <span className="text-sm text-green-300">Give change</span>
-            <span className="font-semibold text-green-300">{fmtMoneyPS(change, currency)}</span>
+            <span className="font-semibold text-green-300">
+              {fmtMoneyPS(change, currency)}
+            </span>
           </div>
         )}
       </div>

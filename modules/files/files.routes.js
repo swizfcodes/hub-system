@@ -64,47 +64,50 @@ function publicUrlFor(filePath) {
     return `https://${bucket}.s3.${region}.amazonaws.com/${filePath}`;
   }
   const base =
-    (config.app && config.app.hubBaseUrl) ||
-    process.env.HUB_BASE_URL ||
-    "";
+    (config.app && config.app.hubBaseUrl) || process.env.HUB_BASE_URL || "";
   return `${base.replace(/\/+$/, "")}/${filePath}`;
 }
 
 // POST /api/files/upload — multipart/form-data with single `file` field
-router.post("/upload", uploadLimiter, upload.single("file"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No file uploaded" });
-  }
-  try {
-    let outBuffer = req.file.buffer;
-    let ext = path.extname(req.file.originalname).toLowerCase() || "";
-    // Compress receipt images to WebP (PDFs pass through untouched).
-    if (req.file.mimetype !== "application/pdf") {
-      const opt = await optimizeImage(req.file.buffer, {
-        mimeType: req.file.mimetype,
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 80,
-      });
-      if (opt.optimised) {
-        outBuffer = opt.buffer;
-        ext = `.${opt.extension}`;
-      }
+router.post(
+  "/upload",
+  uploadLimiter,
+  upload.single("file"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
     }
-    // Random filename so customers can't enumerate /uploads listing.
-    const id = require("crypto").randomBytes(16).toString("hex");
-    const safe = `${id}${ext}`;
-    const result = await storage.save(outBuffer, safe, "proofs");
+    try {
+      let outBuffer = req.file.buffer;
+      let ext = path.extname(req.file.originalname).toLowerCase() || "";
+      // Compress receipt images to WebP (PDFs pass through untouched).
+      if (req.file.mimetype !== "application/pdf") {
+        const opt = await optimizeImage(req.file.buffer, {
+          mimeType: req.file.mimetype,
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 80,
+        });
+        if (opt.optimised) {
+          outBuffer = opt.buffer;
+          ext = `.${opt.extension}`;
+        }
+      }
+      // Random filename so customers can't enumerate /uploads listing.
+      const id = require("crypto").randomBytes(16).toString("hex");
+      const safe = `${id}${ext}`;
+      const result = await storage.save(outBuffer, safe, "proofs");
 
-    const url = publicUrlFor(result.filePath);
-    logger.info(
-      `[files] proof upload: ${url} (${result.fileSize} bytes) from ${req.ip}`,
-    );
-    res.json({ url });
-  } catch (err) {
-    logger.error("[files] upload failed", err);
-    res.status(500).json({ message: "Upload failed" });
-  }
-});
+      const url = publicUrlFor(result.filePath);
+      logger.info(
+        `[files] proof upload: ${url} (${result.fileSize} bytes) from ${req.ip}`,
+      );
+      res.json({ url });
+    } catch (err) {
+      logger.error("[files] upload failed", err);
+      res.status(500).json({ message: "Upload failed" });
+    }
+  },
+);
 
 module.exports = router;

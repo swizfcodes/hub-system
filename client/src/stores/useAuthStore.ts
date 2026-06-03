@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { getUser, clearToken } from '@services/auth';
-import type { AuthUser } from '@typedefs/common';
+import { create } from "zustand";
+import { getUser, clearToken } from "@services/auth";
+import type { AuthUser } from "@typedefs/common";
 
 interface AuthState {
   user: AuthUser | null;
@@ -18,7 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: () => {
     clearToken();
     set({ user: null, isHydrated: true });
-    window.location.href = '/login';
+    window.location.href = "/login";
   },
   hydrate: () => {
     const u = getUser();

@@ -1,47 +1,64 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Send, Paperclip, Smile, Reply, CheckCheck, CheckCircle2 } from 'lucide-react';
-import { Skeleton } from '@components/ui/Skeleton';
-import { Badge } from '@components/ui/Badge';
+  Send,
+  Paperclip,
+  Smile,
+  Reply,
+  CheckCheck,
+  CheckCircle2,
+} from "lucide-react";
+import { Skeleton } from "@components/ui/Skeleton";
+import { Badge } from "@components/ui/Badge";
 import {
-  listMessages, sendMessage, markRead,
-  resolveThread, toggleReaction } from '@services/messaging';
-import { useChannelMessages } from '@hooks/useMessaging';
+  listMessages,
+  sendMessage,
+  markRead,
+  resolveThread,
+  toggleReaction,
+} from "@services/messaging";
+import { useChannelMessages } from "@hooks/useMessaging";
 import {
-  PLATFORM_META, getChannelPlatform, getChannelDisplayName,
-  QUICK_REACTIONS, fmtRelativeTime,
-} from '@lib/constants/messagingConstants';
-import { cn } from '@lib/cn';
-import type { Channel, Message } from '@typedefs/messaging';
+  PLATFORM_META,
+  getChannelPlatform,
+  getChannelDisplayName,
+  QUICK_REACTIONS,
+  fmtRelativeTime,
+} from "@lib/constants/messagingConstants";
+import { cn } from "@lib/cn";
+import type { Channel, Message } from "@typedefs/messaging";
 
 interface MessageThreadProps {
-  channel:   Channel;
+  channel: Channel;
   onResolve: (ch: Channel) => void;
-  userId?:   string;
+  userId?: string;
 }
 
-export function MessageThread({ channel, onResolve, userId }: MessageThreadProps) {
-  const qc            = useQueryClient();
-  const platform      = getChannelPlatform(channel);
-  const platformMeta  = PLATFORM_META[platform];
-  const [content, setContent]         = useState('');
-  const [replyTo, setReplyTo]         = useState<Message | null>(null);
+export function MessageThread({
+  channel,
+  onResolve,
+  userId,
+}: MessageThreadProps) {
+  const qc = useQueryClient();
+  const platform = getChannelPlatform(channel);
+  const platformMeta = PLATFORM_META[platform];
+  const [content, setContent] = useState("");
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [showReactions, setShowReactions] = useState<string | null>(null);
-  const bottomRef     = useRef<HTMLDivElement>(null);
-  const textareaRef   = useRef<HTMLTextAreaElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useChannelMessages(channel.channel_id);
 
   const { data: messages = [], isLoading } = useQuery({
-    queryKey: ['messages', channel.channel_id],
-    queryFn:  () => listMessages(channel.channel_id, { limit: 50 }),
+    queryKey: ["messages", channel.channel_id],
+    queryFn: () => listMessages(channel.channel_id, { limit: 50 }),
     refetchOnWindowFocus: false,
   });
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
   // Mark read when channel is opened — errors are logged but never surfaced
@@ -50,22 +67,25 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
     if (messages.length > 0) {
       const lastId = messages[messages.length - 1]?.message_id;
       markRead(channel.channel_id, lastId)
-        .then(() => qc.invalidateQueries({ queryKey: ['notifications'] }))
-        .catch((err) => console.warn('[MessageThread] mark-read failed:', err?.message));
+        .then(() => qc.invalidateQueries({ queryKey: ["notifications"] }))
+        .catch((err) =>
+          console.warn("[MessageThread] mark-read failed:", err?.message),
+        );
     }
-    qc.invalidateQueries({ queryKey: ['channels'] });
+    qc.invalidateQueries({ queryKey: ["channels"] });
   }, [channel.channel_id, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMutation = useMutation({
-    mutationFn: (text: string) => sendMessage(channel.channel_id, {
-      content:     text,
-      message_type: 'text',
-      reply_to_id:  replyTo?.message_id,
-    }),
+    mutationFn: (text: string) =>
+      sendMessage(channel.channel_id, {
+        content: text,
+        message_type: "text",
+        reply_to_id: replyTo?.message_id,
+      }),
     onSuccess: () => {
-      setContent('');
+      setContent("");
       setReplyTo(null);
-      qc.invalidateQueries({ queryKey: ['messages', channel.channel_id] });
+      qc.invalidateQueries({ queryKey: ["messages", channel.channel_id] });
     },
   });
 
@@ -73,7 +93,7 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
     mutationFn: () => resolveThread(channel.channel_id),
     onSuccess: (ch) => {
       onResolve(ch as unknown as Channel);
-      qc.invalidateQueries({ queryKey: ['channels'] });
+      qc.invalidateQueries({ queryKey: ["channels"] });
     },
   });
 
@@ -84,7 +104,7 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -95,12 +115,12 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
     setContent(e.target.value);
     const el = textareaRef.current;
     if (el) {
-      el.style.height = 'auto';
+      el.style.height = "auto";
       el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
     }
   }
 
-  const isResolved = channel.status === 'resolved';
+  const isResolved = channel.status === "resolved";
 
   return (
     <div className="flex h-full flex-col">
@@ -119,7 +139,9 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
           <p className="text-xs text-orika-smoke">{platformMeta.label}</p>
         </div>
         {isResolved ? (
-          <Badge tone="sage" size="xs">Resolved</Badge>
+          <Badge tone="sage" size="xs">
+            Resolved
+          </Badge>
         ) : (
           <div className="flex items-center gap-2">
             <button
@@ -139,8 +161,11 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
         {isLoading ? (
           <div className="space-y-3">
-            {[1,2,3,4].map((i) => (
-              <div key={i} className={cn('flex gap-2', i % 2 === 0 && 'flex-row-reverse')}>
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={cn("flex gap-2", i % 2 === 0 && "flex-row-reverse")}
+              >
                 <Skeleton className="h-8 w-8 rounded-full shrink-0" />
                 <Skeleton className="h-12 w-48 rounded-2xl" />
               </div>
@@ -152,10 +177,12 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
           </div>
         ) : (
           messages.map((msg, i) => {
-            const isOwn   = msg.sender_user_id === userId;
-            const isSystem = msg.sender_kind === 'system';
-            const prevMsg  = messages[i - 1];
-            const showName = !isOwn && !isSystem &&
+            const isOwn = msg.sender_user_id === userId;
+            const isSystem = msg.sender_kind === "system";
+            const prevMsg = messages[i - 1];
+            const showName =
+              !isOwn &&
+              !isSystem &&
               msg.sender_user_id !== prevMsg?.sender_user_id;
 
             return (
@@ -165,13 +192,20 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
                 isOwn={isOwn}
                 showSenderName={showName}
                 showReactions={showReactions === msg.message_id}
-                onShowReactions={() => setShowReactions(
-                  showReactions === msg.message_id ? null : msg.message_id
-                )}
-                onReply={() => { setReplyTo(msg); textareaRef.current?.focus(); }}
+                onShowReactions={() =>
+                  setShowReactions(
+                    showReactions === msg.message_id ? null : msg.message_id,
+                  )
+                }
+                onReply={() => {
+                  setReplyTo(msg);
+                  textareaRef.current?.focus();
+                }}
                 onReact={(emoji) => {
                   toggleReaction(msg.message_id, emoji).then(() => {
-                    qc.invalidateQueries({ queryKey: ['messages', channel.channel_id] });
+                    qc.invalidateQueries({
+                      queryKey: ["messages", channel.channel_id],
+                    });
                   });
                   setShowReactions(null);
                 }}
@@ -189,7 +223,10 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
           <p className="flex-1 text-xs text-orika-cloud truncate">
             {replyTo.sender_name}: {replyTo.content}
           </p>
-          <button onClick={() => setReplyTo(null)} className="text-orika-smoke hover:text-orika-cream">
+          <button
+            onClick={() => setReplyTo(null)}
+            className="text-orika-smoke hover:text-orika-cream"
+          >
             ×
           </button>
         </div>
@@ -211,13 +248,21 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
                 style={{ maxHeight: 120 }}
               />
               <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1.5">
-                <button className="text-orika-smoke/60 hover:text-orika-smoke transition-colors p-1" title="Attach">
+                <button
+                  className="text-orika-smoke/60 hover:text-orika-smoke transition-colors p-1"
+                  title="Attach"
+                >
                   <Paperclip className="h-4 w-4" />
                 </button>
-                <button className="text-orika-smoke/60 hover:text-orika-smoke transition-colors p-1" title="Emoji">
+                <button
+                  className="text-orika-smoke/60 hover:text-orika-smoke transition-colors p-1"
+                  title="Emoji"
+                >
                   <Smile className="h-4 w-4" />
                 </button>
-                <span className="text-[10px] text-orika-smoke/30 ml-1">Use @ to mention someone</span>
+                <span className="text-[10px] text-orika-smoke/30 ml-1">
+                  Use @ to mention someone
+                </span>
               </div>
             </div>
             <button
@@ -237,19 +282,25 @@ export function MessageThread({ channel, onResolve, userId }: MessageThreadProps
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 
 interface BubbleProps {
-  message:        Message;
-  isOwn:          boolean;
+  message: Message;
+  isOwn: boolean;
   showSenderName: boolean;
-  showReactions:  boolean;
-  onShowReactions:() => void;
-  onReply:        () => void;
-  onReact:        (emoji: string) => void;
+  showReactions: boolean;
+  onShowReactions: () => void;
+  onReply: () => void;
+  onReact: (emoji: string) => void;
 }
 
 function MessageBubble({
-  message, isOwn, showSenderName, showReactions, onShowReactions, onReply, onReact,
+  message,
+  isOwn,
+  showSenderName,
+  showReactions,
+  onShowReactions,
+  onReply,
+  onReact,
 }: BubbleProps) {
-  if (message.sender_kind === 'system') {
+  if (message.sender_kind === "system") {
     return (
       <div className="flex justify-center py-1">
         <p className="rounded-full bg-orika-graphite/40 px-3 py-1 text-[10px] text-orika-smoke/60 italic">
@@ -260,7 +311,7 @@ function MessageBubble({
   }
 
   return (
-    <div className={cn('group flex gap-2', isOwn ? 'flex-row-reverse' : '')}>
+    <div className={cn("group flex gap-2", isOwn ? "flex-row-reverse" : "")}>
       {/* Avatar */}
       {!isOwn && (
         <div className="h-7 w-7 shrink-0 rounded-full bg-orika-graphite flex items-center justify-center">
@@ -270,7 +321,12 @@ function MessageBubble({
         </div>
       )}
 
-      <div className={cn('flex flex-col max-w-[70%]', isOwn ? 'items-end' : 'items-start')}>
+      <div
+        className={cn(
+          "flex flex-col max-w-[70%]",
+          isOwn ? "items-end" : "items-start",
+        )}
+      >
         {showSenderName && (
           <p className="mb-0.5 text-[10px] font-medium text-orika-smoke px-1">
             {message.sender_name}
@@ -281,10 +337,10 @@ function MessageBubble({
         <div className="relative">
           <div
             className={cn(
-              'rounded-2xl px-3 py-2 text-sm',
+              "rounded-2xl px-3 py-2 text-sm",
               isOwn
-                ? 'rounded-tr-sm bg-orika-gold text-orika-black'
-                : 'rounded-tl-sm bg-orika-charcoal text-orika-cream border border-white/5',
+                ? "rounded-tr-sm bg-orika-gold text-orika-black"
+                : "rounded-tl-sm bg-orika-charcoal text-orika-cream border border-white/5",
             )}
           >
             {message.content && (
@@ -295,10 +351,12 @@ function MessageBubble({
             {message.attachments?.length > 0 && (
               <div className="mt-1.5 space-y-1">
                 {message.attachments.map((att) => (
-                  <div key={att.attachment_id}
-                    className="flex items-center gap-1.5 text-xs opacity-80">
+                  <div
+                    key={att.attachment_id}
+                    className="flex items-center gap-1.5 text-xs opacity-80"
+                  >
                     <Paperclip className="h-3 w-3" />
-                    {att.display_name ?? 'Attachment'}
+                    {att.display_name ?? "Attachment"}
                   </div>
                 ))}
               </div>
@@ -306,31 +364,42 @@ function MessageBubble({
           </div>
 
           {/* Hover actions */}
-          <div className={cn(
-            'absolute top-0 hidden group-hover:flex items-center gap-1',
-            isOwn ? 'right-full mr-2' : 'left-full ml-2',
-          )}>
-            <button onClick={onReply}
+          <div
+            className={cn(
+              "absolute top-0 hidden group-hover:flex items-center gap-1",
+              isOwn ? "right-full mr-2" : "left-full ml-2",
+            )}
+          >
+            <button
+              onClick={onReply}
               className="rounded-lg bg-orika-charcoal border border-white/10 p-1.5 text-orika-smoke hover:text-orika-gold transition-colors"
-              title="Reply">
+              title="Reply"
+            >
               <Reply className="h-3 w-3" />
             </button>
-            <button onClick={onShowReactions}
+            <button
+              onClick={onShowReactions}
               className="rounded-lg bg-orika-charcoal border border-white/10 p-1.5 text-orika-smoke hover:text-orika-gold transition-colors"
-              title="React">
+              title="React"
+            >
               <Smile className="h-3 w-3" />
             </button>
           </div>
 
           {/* Reaction picker */}
           {showReactions && (
-            <div className={cn(
-              'absolute -top-10 z-10 flex items-center gap-1 rounded-2xl border border-white/10 bg-orika-charcoal px-2 py-1.5 shadow-xl',
-              isOwn ? 'right-0' : 'left-0',
-            )}>
+            <div
+              className={cn(
+                "absolute -top-10 z-10 flex items-center gap-1 rounded-2xl border border-white/10 bg-orika-charcoal px-2 py-1.5 shadow-xl",
+                isOwn ? "right-0" : "left-0",
+              )}
+            >
               {QUICK_REACTIONS.map((emoji) => (
-                <button key={emoji} onClick={() => onReact(emoji)}
-                  className="text-base transition-transform hover:scale-125">
+                <button
+                  key={emoji}
+                  onClick={() => onReact(emoji)}
+                  className="text-base transition-transform hover:scale-125"
+                >
                   {emoji}
                 </button>
               ))}

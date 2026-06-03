@@ -2,71 +2,112 @@
  * TaskComponents.tsx
  * Exports: PriorityBadge, TaskStatusBadge, TaskCard, TaskFormModal, SubtaskChecklist, TaskDetailPanel
  */
-import { useState, useRef } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, CheckSquare, Square, Calendar, User, Link2, Lock } from 'lucide-react';
-import { Badge } from '@components/ui/Badge';
-import { Modal } from '@components/ui/Modal';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Select } from '@components/ui/Select';
+import { useState, useRef } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  TASK_PRIORITY_META, TASK_STATUS_META, TASK_PRIORITY_OPTIONS,
-  TASK_STATUS_OPTIONS, REF_TYPE_LABEL,
-} from '@lib/constants/schedulingConstants';
-import { createTaskSchema, type CreateTaskValues } from '@lib/schemas/scheduling';
+  Plus,
+  Trash2,
+  CheckSquare,
+  Square,
+  Calendar,
+  User,
+  Link2,
+  Lock,
+} from "lucide-react";
+import { Badge } from "@components/ui/Badge";
+import { Modal } from "@components/ui/Modal";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Select } from "@components/ui/Select";
 import {
-  createTask, updateTask, deleteTask,
-  addSubtask, setSubtaskDone, deleteSubtask,
-} from '@services/tasks';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { fmtDate } from '@lib/format';
-import { cn } from '@lib/cn';
-import type { Task, Subtask } from '@typedefs/scheduling';
+  TASK_PRIORITY_META,
+  TASK_STATUS_META,
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+  REF_TYPE_LABEL,
+} from "@lib/constants/schedulingConstants";
+import {
+  createTaskSchema,
+  type CreateTaskValues,
+} from "@lib/schemas/scheduling";
+import {
+  createTask,
+  updateTask,
+  deleteTask,
+  addSubtask,
+  setSubtaskDone,
+  deleteSubtask,
+} from "@services/tasks";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { fmtDate } from "@lib/format";
+import { cn } from "@lib/cn";
+import type { Task, Subtask } from "@typedefs/scheduling";
 
 // ── Badges ────────────────────────────────────────────────────────────────────
 
 export function PriorityBadge({
-  priority, size = 'xs',
-}: { priority: string; size?: 'xs' | 'sm' }) {
+  priority,
+  size = "xs",
+}: {
+  priority: string;
+  size?: "xs" | "sm";
+}) {
   const meta = TASK_PRIORITY_META[priority as keyof typeof TASK_PRIORITY_META];
   if (!meta) return null;
-  return <Badge tone={meta.tone} size={size}>{meta.label}</Badge>;
+  return (
+    <Badge tone={meta.tone} size={size}>
+      {meta.label}
+    </Badge>
+  );
 }
 
 export function TaskStatusBadge({
-  status, size = 'xs',
-}: { status: string; size?: 'xs' | 'sm' }) {
+  status,
+  size = "xs",
+}: {
+  status: string;
+  size?: "xs" | "sm";
+}) {
   const meta = TASK_STATUS_META[status as keyof typeof TASK_STATUS_META];
   if (!meta) return null;
-  return <Badge tone={meta.tone} size={size} dot={meta.dot}>{meta.label}</Badge>;
+  return (
+    <Badge tone={meta.tone} size={size} dot={meta.dot}>
+      {meta.label}
+    </Badge>
+  );
 }
 
 // ── SubtaskChecklist ──────────────────────────────────────────────────────────
 
 export function SubtaskChecklist({
-  taskId, subtasks, canEdit = true,
-}: { taskId: string; subtasks: Subtask[]; canEdit?: boolean }) {
+  taskId,
+  subtasks,
+  canEdit = true,
+}: {
+  taskId: string;
+  subtasks: Subtask[];
+  canEdit?: boolean;
+}) {
   const qc = useQueryClient();
-  const [newTitle, setNewTitle] = useState('');
+  const [newTitle, setNewTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const doneMut = useMutation({
     mutationFn: ({ id, done }: { id: string; done: boolean }) =>
       setSubtaskDone(taskId, id, done),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['task', taskId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["task", taskId] }),
     onError: (err) => showToast.error(errMsg(err)),
   });
 
   const addMut = useMutation({
     mutationFn: (title: string) => addSubtask(taskId, title),
     onSuccess: () => {
-      setNewTitle('');
-      qc.invalidateQueries({ queryKey: ['task', taskId] });
+      setNewTitle("");
+      qc.invalidateQueries({ queryKey: ["task", taskId] });
       inputRef.current?.focus();
     },
     onError: (err) => showToast.error(errMsg(err)),
@@ -74,7 +115,7 @@ export function SubtaskChecklist({
 
   const delMut = useMutation({
     mutationFn: (subtaskId: string) => deleteSubtask(taskId, subtaskId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['task', taskId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["task", taskId] }),
     onError: (err) => showToast.error(errMsg(err)),
   });
 
@@ -90,7 +131,9 @@ export function SubtaskChecklist({
           <div className="h-1.5 w-24 rounded-full bg-orika-graphite overflow-hidden">
             <div
               className="h-full rounded-full bg-orika-gold transition-all"
-              style={{ width: `${Math.round((doneCount / subtasks.length) * 100)}%` }}
+              style={{
+                width: `${Math.round((doneCount / subtasks.length) * 100)}%`,
+              }}
             />
           </div>
         )}
@@ -101,14 +144,23 @@ export function SubtaskChecklist({
           <div key={sub.subtask_id} className="group flex items-center gap-2">
             <button
               type="button"
-              onClick={() => doneMut.mutate({ id: sub.subtask_id, done: !sub.is_done })}
+              onClick={() =>
+                doneMut.mutate({ id: sub.subtask_id, done: !sub.is_done })
+              }
               className="shrink-0 text-orika-smoke hover:text-orika-gold transition-colors"
             >
-              {sub.is_done
-                ? <CheckSquare className="h-4 w-4 text-orika-gold" />
-                : <Square className="h-4 w-4" />}
+              {sub.is_done ? (
+                <CheckSquare className="h-4 w-4 text-orika-gold" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
             </button>
-            <span className={cn('flex-1 text-sm', sub.is_done && 'line-through text-orika-smoke')}>
+            <span
+              className={cn(
+                "flex-1 text-sm",
+                sub.is_done && "line-through text-orika-smoke",
+              )}
+            >
               {sub.title}
             </span>
             {canEdit && (
@@ -132,7 +184,7 @@ export function SubtaskChecklist({
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && newTitle.trim()) {
+              if (e.key === "Enter" && newTitle.trim()) {
                 addMut.mutate(newTitle.trim());
               }
             }}
@@ -141,7 +193,9 @@ export function SubtaskChecklist({
           />
           <button
             type="button"
-            onClick={() => { if (newTitle.trim()) addMut.mutate(newTitle.trim()); }}
+            onClick={() => {
+              if (newTitle.trim()) addMut.mutate(newTitle.trim());
+            }}
             disabled={!newTitle.trim() || addMut.isPending}
             className="text-orika-smoke hover:text-orika-gold transition-colors disabled:opacity-40"
           >
@@ -156,14 +210,15 @@ export function SubtaskChecklist({
 // ── TaskCard (for Kanban board) ───────────────────────────────────────────────
 
 interface TaskCardProps {
-  task:       Task;
-  onClick:    (t: Task) => void;
+  task: Task;
+  onClick: (t: Task) => void;
   onDragStart: (e: React.DragEvent, taskId: string) => void;
 }
 
 export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
-  const meta     = TASK_PRIORITY_META[task.priority];
-  const isOverdue = task.due_at && !task.completed_at && new Date(task.due_at) < new Date();
+  const meta = TASK_PRIORITY_META[task.priority];
+  const isOverdue =
+    task.due_at && !task.completed_at && new Date(task.due_at) < new Date();
 
   return (
     <div
@@ -176,7 +231,9 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
       style={{ borderLeft: `3px solid ${meta.color}` }}
     >
       <p className="text-sm font-medium text-orika-cream leading-snug line-clamp-2">
-        {task.is_personal && <Lock className="inline h-3 w-3 mr-1 text-orika-smoke" />}
+        {task.is_personal && (
+          <Lock className="inline h-3 w-3 mr-1 text-orika-smoke" />
+        )}
         {task.title}
       </p>
 
@@ -192,10 +249,12 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
 
       <div className="flex items-center justify-between">
         {task.due_at && (
-          <span className={cn(
-            'flex items-center gap-1 text-[10px]',
-            isOverdue ? 'text-red-400' : 'text-orika-smoke',
-          )}>
+          <span
+            className={cn(
+              "flex items-center gap-1 text-[10px]",
+              isOverdue ? "text-red-400" : "text-orika-smoke",
+            )}
+          >
             <Calendar className="h-3 w-3" />
             {fmtDate(task.due_at)}
           </span>
@@ -203,7 +262,7 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
         {task.assigned_to_name && (
           <span className="flex items-center gap-1 text-[10px] text-orika-smoke ml-auto">
             <User className="h-3 w-3" />
-            {task.assigned_to_name.split(' ')[0]}
+            {task.assigned_to_name.split(" ")[0]}
           </span>
         )}
       </div>
@@ -213,7 +272,9 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
           <div className="h-1 flex-1 rounded-full bg-orika-graphite overflow-hidden">
             <div
               className="h-full rounded-full bg-orika-gold"
-              style={{ width: `${Math.round(((task.subtask_done_count ?? 0) / (task.subtask_count ?? 1)) * 100)}%` }}
+              style={{
+                width: `${Math.round(((task.subtask_done_count ?? 0) / (task.subtask_count ?? 1)) * 100)}%`,
+              }}
             />
           </div>
           <span className="text-[10px] text-orika-smoke whitespace-nowrap">
@@ -228,11 +289,11 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
 // ── TaskFormModal ─────────────────────────────────────────────────────────────
 
 const TASK_REMINDER_OPTIONS = [
-  { value: '',     label: 'No reminder' },
-  { value: '0',    label: 'At due time' },
-  { value: '15',   label: '15 minutes before' },
-  { value: '60',   label: '1 hour before' },
-  { value: '1440', label: '1 day before' },
+  { value: "", label: "No reminder" },
+  { value: "0", label: "At due time" },
+  { value: "15", label: "15 minutes before" },
+  { value: "60", label: "1 hour before" },
+  { value: "1440", label: "1 day before" },
 ];
 
 // ISO (UTC) → value for an <input type="datetime-local"> in local wall-clock time.
@@ -243,30 +304,37 @@ function toLocalInput(iso: string): string {
 }
 
 interface TaskFormModalProps {
-  open:        boolean;
-  onClose:     () => void;
-  existing?:   Task | null;
+  open: boolean;
+  onClose: () => void;
+  existing?: Task | null;
   defaultStatus?: string;
-  isManager?:  boolean;
+  isManager?: boolean;
 }
 
 export function TaskFormModal({
-  open, onClose, existing, defaultStatus = 'inbox', isManager = false,
+  open,
+  onClose,
+  existing,
+  defaultStatus = "inbox",
+  isManager = false,
 }: TaskFormModalProps) {
-  const qc           = useQueryClient();
+  const qc = useQueryClient();
   const { active: business } = useActiveBusiness();
-  const isEdit       = !!existing;
+  const isEdit = !!existing;
 
   const form = useForm<CreateTaskValues>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: {
-      title:       existing?.title ?? '',
-      description: existing?.description ?? '',
-      status:      (existing?.status ?? defaultStatus) as any,
-      priority:    existing?.priority ?? 'normal',
-      assigned_to: existing?.assigned_to ?? '',
-      due_at:      existing?.due_at ? toLocalInput(existing.due_at) : '',
-      reminder_minutes: existing?.reminder_minutes != null ? String(existing.reminder_minutes) : '',
+      title: existing?.title ?? "",
+      description: existing?.description ?? "",
+      status: (existing?.status ?? defaultStatus) as any,
+      priority: existing?.priority ?? "normal",
+      assigned_to: existing?.assigned_to ?? "",
+      due_at: existing?.due_at ? toLocalInput(existing.due_at) : "",
+      reminder_minutes:
+        existing?.reminder_minutes != null
+          ? String(existing.reminder_minutes)
+          : "",
       is_personal: existing?.is_personal ?? false,
     },
   });
@@ -277,15 +345,15 @@ export function TaskFormModal({
       // on edit (to clear). due_at is converted from local time to ISO.
       const blank = isEdit ? null : undefined;
       const payload = {
-        title:        values.title,
-        description:  values.description || blank,
-        status:       values.status,
-        priority:     values.priority,
-        is_personal:  values.is_personal,
-        assigned_to:  values.assigned_to ? values.assigned_to : blank,
-        due_at:       values.due_at ? new Date(values.due_at).toISOString() : blank,
+        title: values.title,
+        description: values.description || blank,
+        status: values.status,
+        priority: values.priority,
+        is_personal: values.is_personal,
+        assigned_to: values.assigned_to ? values.assigned_to : blank,
+        due_at: values.due_at ? new Date(values.due_at).toISOString() : blank,
         reminder_minutes:
-          values.reminder_minutes === '' || values.reminder_minutes == null
+          values.reminder_minutes === "" || values.reminder_minutes == null
             ? blank
             : Number(values.reminder_minutes),
       };
@@ -294,92 +362,170 @@ export function TaskFormModal({
         : createTask({ ...payload, business: business! });
     },
     onSuccess: () => {
-      showToast.success(isEdit ? 'Task updated' : 'Task created');
-      qc.invalidateQueries({ queryKey: ['task-board'] });
-      qc.invalidateQueries({ queryKey: ['tasks'] });
+      showToast.success(isEdit ? "Task updated" : "Task created");
+      qc.invalidateQueries({ queryKey: ["task-board"] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
       form.reset();
       onClose();
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
 
-  const isPersonal = form.watch('is_personal');
+  const isPersonal = form.watch("is_personal");
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Task' : 'New Task'}
+      title={isEdit ? "Edit Task" : "New Task"}
       size="md"
       surface="light"
       footer={
         <div className="flex items-center justify-between gap-3">
           {isEdit && (
-            <Button variant="danger" size="sm"
+            <Button
+              variant="danger"
+              size="sm"
               onClick={async () => {
-                if (!confirm('Delete this task?')) return;
+                if (!confirm("Delete this task?")) return;
                 await deleteTask(existing!.task_id);
-                qc.invalidateQueries({ queryKey: ['task-board'] });
+                qc.invalidateQueries({ queryKey: ["task-board"] });
                 onClose();
-              }}>
+              }}
+            >
               Delete
             </Button>
           )}
           <div className="flex gap-3 ml-auto">
-            <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button>
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              disabled={mutation.isPending}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={form.handleSubmit((v) => mutation.mutate(v))}
               loading={mutation.isPending}
             >
-              {isEdit ? 'Save' : 'Create Task'}
+              {isEdit ? "Save" : "Create Task"}
             </Button>
           </div>
         </div>
       }
     >
       <div className="space-y-4">
-        <Controller name="title" control={form.control} render={({ field, fieldState }) => (
-          <Input {...field} label="Title *" placeholder="What needs to be done?" surface="light"
-            error={fieldState.error?.message} />
-        )} />
+        <Controller
+          name="title"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Input
+              {...field}
+              label="Title *"
+              placeholder="What needs to be done?"
+              surface="light"
+              error={fieldState.error?.message}
+            />
+          )}
+        />
 
-        <Controller name="description" control={form.control} render={({ field }) => (
-          <Input {...field} label="Description" placeholder="More details..." surface="light" />
-        )} />
+        <Controller
+          name="description"
+          control={form.control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              label="Description"
+              placeholder="More details..."
+              surface="light"
+            />
+          )}
+        />
 
         <div className="grid grid-cols-2 gap-3">
-          <Controller name="priority" control={form.control} render={({ field }) => (
-            <Select label="Priority" options={TASK_PRIORITY_OPTIONS}
-              value={field.value} onChange={(e) => field.onChange(e.target.value)} surface="light" />
-          )} />
-          <Controller name="status" control={form.control} render={({ field }) => (
-            <Select label="Status" options={TASK_STATUS_OPTIONS}
-              value={field.value} onChange={(e) => field.onChange(e.target.value)} surface="light" />
-          )} />
+          <Controller
+            name="priority"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                label="Priority"
+                options={TASK_PRIORITY_OPTIONS}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                surface="light"
+              />
+            )}
+          />
+          <Controller
+            name="status"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                label="Status"
+                options={TASK_STATUS_OPTIONS}
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                surface="light"
+              />
+            )}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Controller name="due_at" control={form.control} render={({ field }) => (
-            <Input {...field} label="Due Date & Time" type="datetime-local" surface="light"
-              hint="Adds it to your calendar" />
-          )} />
-          <Controller name="reminder_minutes" control={form.control} render={({ field }) => (
-            <Select label="Reminder" options={TASK_REMINDER_OPTIONS}
-              value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value)} surface="light" />
-          )} />
+          <Controller
+            name="due_at"
+            control={form.control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="Due Date & Time"
+                type="datetime-local"
+                surface="light"
+                hint="Adds it to your calendar"
+              />
+            )}
+          />
+          <Controller
+            name="reminder_minutes"
+            control={form.control}
+            render={({ field }) => (
+              <Select
+                label="Reminder"
+                options={TASK_REMINDER_OPTIONS}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(e.target.value)}
+                surface="light"
+              />
+            )}
+          />
         </div>
 
         {isManager && !isPersonal && (
-          <Controller name="assigned_to" control={form.control} render={({ field }) => (
-            <Input {...field} label="Assign To (User ID)" placeholder="UUID of assignee"
-              surface="light" hint="Manager/owner can assign to any staff" />
-          )} />
+          <Controller
+            name="assigned_to"
+            control={form.control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="Assign To (User ID)"
+                placeholder="UUID of assignee"
+                surface="light"
+                hint="Manager/owner can assign to any staff"
+              />
+            )}
+          />
         )}
 
         <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input type="checkbox" {...form.register('is_personal')} className="rounded" />
+          <input
+            type="checkbox"
+            {...form.register("is_personal")}
+            className="rounded"
+          />
           <Lock className="h-3.5 w-3.5 text-gray-400" />
-          <span className="text-text-on-light-muted">Personal task — visible to you only</span>
+          <span className="text-text-on-light-muted">
+            Personal task — visible to you only
+          </span>
         </label>
       </div>
     </Modal>
@@ -389,19 +535,26 @@ export function TaskFormModal({
 // ── TaskDetailPanel ───────────────────────────────────────────────────────────
 
 interface TaskDetailPanelProps {
-  task:    Task;
-  onEdit:  () => void;
+  task: Task;
+  onEdit: () => void;
   onClose: () => void;
 }
 
-export function TaskDetailPanel({ task, onEdit, onClose }: TaskDetailPanelProps) {
-  const isOverdue = task.due_at && !task.completed_at && new Date(task.due_at) < new Date();
+export function TaskDetailPanel({
+  task,
+  onEdit,
+  onClose,
+}: TaskDetailPanelProps) {
+  const isOverdue =
+    task.due_at && !task.completed_at && new Date(task.due_at) < new Date();
 
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-2">
         <div>
-          <p className="font-semibold text-orika-cream text-lg leading-tight">{task.title}</p>
+          <p className="font-semibold text-orika-cream text-lg leading-tight">
+            {task.title}
+          </p>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             <PriorityBadge priority={task.priority} />
             <TaskStatusBadge status={task.status} />
@@ -410,7 +563,9 @@ export function TaskDetailPanel({ task, onEdit, onClose }: TaskDetailPanelProps)
       </div>
 
       {task.description && (
-        <p className="text-sm text-orika-smoke whitespace-pre-wrap">{task.description}</p>
+        <p className="text-sm text-orika-smoke whitespace-pre-wrap">
+          {task.description}
+        </p>
       )}
 
       <div className="space-y-2 text-sm">
@@ -421,10 +576,17 @@ export function TaskDetailPanel({ task, onEdit, onClose }: TaskDetailPanelProps)
           </div>
         )}
         {task.due_at && (
-          <div className={cn('flex items-center gap-2', isOverdue ? 'text-red-400' : 'text-orika-cloud')}>
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              isOverdue ? "text-red-400" : "text-orika-cloud",
+            )}
+          >
             <Calendar className="h-4 w-4" />
             {fmtDate(task.due_at)}
-            {isOverdue && <span className="text-xs font-semibold">OVERDUE</span>}
+            {isOverdue && (
+              <span className="text-xs font-semibold">OVERDUE</span>
+            )}
           </div>
         )}
         {task.reference_type && (
@@ -435,7 +597,7 @@ export function TaskDetailPanel({ task, onEdit, onClose }: TaskDetailPanelProps)
         )}
       </div>
 
-      {(task.subtasks && task.subtasks.length > 0) && (
+      {task.subtasks && task.subtasks.length > 0 && (
         <SubtaskChecklist taskId={task.task_id} subtasks={task.subtasks} />
       )}
       {(!task.subtasks || task.subtasks.length === 0) && (
@@ -443,8 +605,12 @@ export function TaskDetailPanel({ task, onEdit, onClose }: TaskDetailPanelProps)
       )}
 
       <div className="flex gap-2 pt-2 border-t border-white/5">
-        <Button size="sm" onClick={onEdit}>Edit</Button>
-        <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+        <Button size="sm" onClick={onEdit}>
+          Edit
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          Close
+        </Button>
       </div>
     </div>
   );

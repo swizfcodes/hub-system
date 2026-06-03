@@ -23,14 +23,19 @@ const repo = require("./retail-partners.repository");
 // ─────────────────────────────────────────────────────────────
 
 // Stock sent to a partner: DR Consignment Stock (1430) / CR Inventory (1410).
-async function postConsignmentDispatchJournal(client, { consignment, value, user }) {
+async function postConsignmentDispatchJournal(
+  client,
+  { consignment, value, user },
+) {
   if (!value || value <= 0) return;
   const [consAcc, invAcc] = await Promise.all([
     journalService.getAccountId(client, "1430"),
     journalService.getAccountId(client, "1410"),
   ]);
   if (!consAcc || !invAcc) {
-    logger.warn("[retail_partners] dispatch journal skipped — missing COA 1430/1410");
+    logger.warn(
+      "[retail_partners] dispatch journal skipped — missing COA 1430/1410",
+    );
     return;
   }
   await journalService.postEntry(client, {
@@ -85,7 +90,9 @@ async function postConsignmentSaleJournal(
       lines: revLines,
     });
   } else {
-    logger.warn("[retail_partners] sale revenue journal skipped — missing COA 1350/4100");
+    logger.warn(
+      "[retail_partners] sale revenue journal skipped — missing COA 1350/4100",
+    );
   }
 
   if (cost && cost > 0 && cogsAcc && consAcc) {
@@ -104,7 +111,10 @@ async function postConsignmentSaleJournal(
 }
 
 // Partner remits payment: DR Bank (1210) / CR Partner Receivable (1350).
-async function postConsignmentPaymentJournal(client, { settlement, amount, user }) {
+async function postConsignmentPaymentJournal(
+  client,
+  { settlement, amount, user },
+) {
   const value = parseFloat(amount);
   if (!value || value <= 0) return;
   const [bankAcc, arAcc] = await Promise.all([
@@ -112,7 +122,9 @@ async function postConsignmentPaymentJournal(client, { settlement, amount, user 
     journalService.getAccountId(client, "1350"),
   ]);
   if (!bankAcc || !arAcc) {
-    logger.warn("[retail_partners] payment journal skipped — missing COA 1210/1350");
+    logger.warn(
+      "[retail_partners] payment journal skipped — missing COA 1210/1350",
+    );
     return;
   }
   await journalService.postEntry(client, {

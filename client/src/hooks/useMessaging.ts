@@ -8,18 +8,19 @@
 // This keeps components decoupled from socket.io — they just listen on
 // `window` CustomEvents and invalidate the relevant react-query keys.
 
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-const NEW_MESSAGE_EVENT     = 'orika:message:new';
-const NEW_CHANNEL_EVENT     = 'orika:channel:created';
+const NEW_MESSAGE_EVENT = "orika:message:new";
+const NEW_CHANNEL_EVENT = "orika:channel:created";
 
 /** Helper for the socket-bootstrap layer to publish events. */
 export function dispatchSocketEvent(
-  type: 'message:new' | 'channel:created',
+  type: "message:new" | "channel:created",
   detail: unknown,
 ) {
-  const eventName = type === 'message:new' ? NEW_MESSAGE_EVENT : NEW_CHANNEL_EVENT;
+  const eventName =
+    type === "message:new" ? NEW_MESSAGE_EVENT : NEW_CHANNEL_EVENT;
   window.dispatchEvent(new CustomEvent(eventName, { detail }));
 }
 
@@ -31,8 +32,8 @@ export function useChannelListUpdates(_business: string | null) {
   const qc = useQueryClient();
   useEffect(() => {
     const onAny = () => {
-      qc.invalidateQueries({ queryKey: ['channels'] });
-      qc.invalidateQueries({ queryKey: ['unread-count'] });
+      qc.invalidateQueries({ queryKey: ["channels"] });
+      qc.invalidateQueries({ queryKey: ["unread-count"] });
     };
     window.addEventListener(NEW_MESSAGE_EVENT, onAny);
     window.addEventListener(NEW_CHANNEL_EVENT, onAny);
@@ -54,7 +55,7 @@ export function useChannelMessages(channelId: string | null) {
     const onMessage = (e: Event) => {
       const ev = e as CustomEvent<{ channelId?: string }>;
       if (!ev.detail || ev.detail.channelId === channelId) {
-        qc.invalidateQueries({ queryKey: ['messages', channelId] });
+        qc.invalidateQueries({ queryKey: ["messages", channelId] });
       }
     };
     window.addEventListener(NEW_MESSAGE_EVENT, onMessage);

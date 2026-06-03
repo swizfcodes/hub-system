@@ -1,28 +1,41 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { BarChart2 } from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Skeleton } from '@components/ui/Skeleton';
-import { Modal } from '@components/ui/Modal';
-import { listSessions, getZReport, markReconciled } from '@services/pos/sessions';
-import { XZReportView } from '@components/pos/POSModals';
-import { SESSION_STATUS_META, VARIANCE_STATUS_META } from '@lib/constants/posConstants';
-import { fmtMoney, fmtDateTime } from '@lib/format';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import type { PosSession, ZReport } from '@typedefs/pos';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { BarChart2 } from "lucide-react";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Skeleton } from "@components/ui/Skeleton";
+import { Modal } from "@components/ui/Modal";
+import {
+  listSessions,
+  getZReport,
+  markReconciled,
+} from "@services/pos/sessions";
+import { XZReportView } from "@components/pos/POSModals";
+import {
+  SESSION_STATUS_META,
+  VARIANCE_STATUS_META,
+} from "@lib/constants/posConstants";
+import { fmtMoney, fmtDateTime } from "@lib/format";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import type { PosSession, ZReport } from "@typedefs/pos";
 
 export default function POSSessions() {
-  const { currency }             = useActiveBusiness();
-  const [selectedSession, setSelectedSession] = useState<PosSession | null>(null);
-  const [zReport, setZReport]    = useState<ZReport | null>(null);
+  const { currency } = useActiveBusiness();
+  const [selectedSession, setSelectedSession] = useState<PosSession | null>(
+    null,
+  );
+  const [zReport, setZReport] = useState<ZReport | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [loadingReport, setLoadingReport] = useState(false);
 
-  const { data: sessions = [], isLoading, refetch } = useQuery({
-    queryKey: ['pos-sessions'],
-    queryFn:  () => listSessions({ days: 30 }),
+  const {
+    data: sessions = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["pos-sessions"],
+    queryFn: () => listSessions({ days: 30 }),
   });
 
   async function viewReport(session: PosSession) {
@@ -42,7 +55,7 @@ export default function POSSessions() {
   async function handleReconcile(sessionId: string) {
     try {
       await markReconciled(sessionId);
-      showToast.success('Session reconciled');
+      showToast.success("Session reconciled");
       refetch();
     } catch (err) {
       showToast.error(errMsg(err));
@@ -54,7 +67,11 @@ export default function POSSessions() {
       <PageHeader
         title="Session History"
         subtitle="Review, reconcile, and sign off closed POS sessions."
-        crumbs={[{ label: 'Hub', to: '/' }, { label: 'POS', to: '/pos' }, { label: 'Sessions' }]}
+        crumbs={[
+          { label: "Hub", to: "/" },
+          { label: "POS", to: "/pos" },
+          { label: "Sessions" },
+        ]}
       />
 
       {isLoading ? (
@@ -68,7 +85,15 @@ export default function POSSessions() {
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-white/5 bg-orika-graphite/40">
-                {['Terminal', 'Cashier', 'Opened', 'Revenue', 'Variance', 'Status', ''].map((h) => (
+                {[
+                  "Terminal",
+                  "Cashier",
+                  "Opened",
+                  "Revenue",
+                  "Variance",
+                  "Status",
+                  "",
+                ].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
@@ -80,29 +105,53 @@ export default function POSSessions() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {sessions.map((session: any) => {
-                const statusMeta  = SESSION_STATUS_META[session.status as keyof typeof SESSION_STATUS_META];
-                const StatusIcon  = statusMeta?.icon;
-                const variance    = parseFloat(session.variance ?? 0);
-                const varStatus   = session.status !== 'closed'
-                  ? null
-                  : Math.abs(variance) < 1 ? 'balanced'
-                  : Math.abs(variance) < 1000 ? (variance < 0 ? 'minor_short' : 'minor_over')
-                  : (variance < 0 ? 'short' : 'over');
+                const statusMeta =
+                  SESSION_STATUS_META[
+                    session.status as keyof typeof SESSION_STATUS_META
+                  ];
+                const StatusIcon = statusMeta?.icon;
+                const variance = parseFloat(session.variance ?? 0);
+                const varStatus =
+                  session.status !== "closed"
+                    ? null
+                    : Math.abs(variance) < 1
+                      ? "balanced"
+                      : Math.abs(variance) < 1000
+                        ? variance < 0
+                          ? "minor_short"
+                          : "minor_over"
+                        : variance < 0
+                          ? "short"
+                          : "over";
 
                 return (
-                  <tr key={session.session_id} className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors">
-                    <td className="px-4 py-3 font-medium text-orika-cream">{session.terminal_name}</td>
-                    <td className="px-4 py-3 text-orika-cloud text-xs">{session.opened_by_email}</td>
-                    <td className="px-4 py-3 text-orika-cloud">{fmtDateTime(session.opened_at)}</td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">{fmtMoney(session.total_revenue ?? 0, currency)}</td>
+                  <tr
+                    key={session.session_id}
+                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-medium text-orika-cream">
+                      {session.terminal_name}
+                    </td>
+                    <td className="px-4 py-3 text-orika-cloud text-xs">
+                      {session.opened_by_email}
+                    </td>
+                    <td className="px-4 py-3 text-orika-cloud">
+                      {fmtDateTime(session.opened_at)}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                      {fmtMoney(session.total_revenue ?? 0, currency)}
+                    </td>
                     <td className="px-4 py-3">
                       {varStatus ? (
                         <span
                           className="text-xs font-medium"
-                          style={{ color: VARIANCE_STATUS_META[varStatus]?.color }}
+                          style={{
+                            color: VARIANCE_STATUS_META[varStatus]?.color,
+                          }}
                         >
                           {VARIANCE_STATUS_META[varStatus]?.label}
-                          {Math.abs(variance) > 0 && ` (${fmtMoney(Math.abs(variance), currency)})`}
+                          {Math.abs(variance) > 0 &&
+                            ` (${fmtMoney(Math.abs(variance), currency)})`}
                         </span>
                       ) : (
                         <span className="text-xs text-orika-smoke">—</span>
@@ -122,16 +171,15 @@ export default function POSSessions() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        {session.status === 'closed' && (
+                        {session.status === "closed" && (
                           <button
                             onClick={() => viewReport(session)}
                             className="text-xs text-orika-smoke hover:text-orika-gold transition-colors flex items-center gap-1"
                           >
-                            <BarChart2 className="h-3.5 w-3.5" />
-                            Z Report
+                            <BarChart2 className="h-3.5 w-3.5" />Z Report
                           </button>
                         )}
-                        {session.status === 'closed' && (
+                        {session.status === "closed" && (
                           <button
                             onClick={() => handleReconcile(session.session_id)}
                             className="text-xs text-green-400 hover:text-green-300 transition-colors"
@@ -158,7 +206,10 @@ export default function POSSessions() {
       {/* Z Report modal */}
       <Modal
         open={showReport}
-        onClose={() => { setShowReport(false); setZReport(null); }}
+        onClose={() => {
+          setShowReport(false);
+          setZReport(null);
+        }}
         title={`Z Report — ${selectedSession?.terminal_name}`}
         size="md"
         surface="light"
@@ -171,7 +222,9 @@ export default function POSSessions() {
         ) : zReport ? (
           <XZReportView report={zReport} currency={currency} />
         ) : (
-          <p className="text-sm text-orika-smoke">Report not available for this session.</p>
+          <p className="text-sm text-orika-smoke">
+            Report not available for this session.
+          </p>
         )}
       </Modal>
     </div>

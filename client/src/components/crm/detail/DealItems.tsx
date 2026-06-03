@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Package, Plus, ArrowUpRight } from 'lucide-react';
-import { Button } from '@components/ui/Button';
-import { EmptyState } from '@components/ui/EmptyState';
-import { Skeleton } from '@components/ui/Skeleton';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { QuoteFormModal } from '@components/sales/modals/QuoteFormModal';
-import { listQuotations } from '@services/sales/quotations';
-import { fmtMoney, fmtDate } from '@lib/format';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Package, Plus, ArrowUpRight } from "lucide-react";
+import { Button } from "@components/ui/Button";
+import { EmptyState } from "@components/ui/EmptyState";
+import { Skeleton } from "@components/ui/Skeleton";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { QuoteFormModal } from "@components/sales/modals/QuoteFormModal";
+import { listQuotations } from "@services/sales/quotations";
+import { fmtMoney, fmtDate } from "@lib/format";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
 
 export function DealItems({
   dealId,
@@ -26,7 +26,7 @@ export function DealItems({
   const [showNew, setShowNew] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['deal-quotations', dealId],
+    queryKey: ["deal-quotations", dealId],
     queryFn: () => listQuotations({ deal_id: dealId, limit: 50 }),
     enabled: !!dealId,
   });
@@ -61,7 +61,11 @@ export function DealItems({
           title="No quotations yet"
           description="Create a quotation to lock in items, totals, and validity — then confirm it to convert this deal into a sales order."
           action={
-            <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowNew(true)}>
+            <Button
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={() => setShowNew(true)}
+            >
               Create quotation
             </Button>
           }
@@ -71,7 +75,7 @@ export function DealItems({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5 bg-orika-graphite/40">
-                {['Number', 'Amount', 'Valid Until', 'Status', ''].map((h) => (
+                {["Number", "Amount", "Valid Until", "Status", ""].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
@@ -85,7 +89,9 @@ export function DealItems({
               {quotations.map((q) => (
                 <tr
                   key={q.quotation_id}
-                  onClick={() => navigate(`/sales/quotations/${q.quotation_id}`)}
+                  onClick={() =>
+                    navigate(`/sales/quotations/${q.quotation_id}`)
+                  }
                   className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
@@ -94,9 +100,15 @@ export function DealItems({
                   <td className="px-4 py-3 tabular-nums text-orika-cream">
                     {fmtMoney(q.total_amount, q.currency ?? currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud">{fmtDate(q.valid_until)}</td>
+                  <td className="px-4 py-3 text-orika-cloud">
+                    {fmtDate(q.valid_until)}
+                  </td>
                   <td className="px-4 py-3">
-                    <SalesStatusBadge entity="quotation" status={q.status} size="sm" />
+                    <SalesStatusBadge
+                      entity="quotation"
+                      status={q.status}
+                      size="sm"
+                    />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke inline" />
@@ -111,10 +123,16 @@ export function DealItems({
       <QuoteFormModal
         open={showNew}
         onClose={() => setShowNew(false)}
-        prefill={{ contact_id: contactId, contact_name: contactName ?? '', deal_id: dealId }}
+        prefill={{
+          contact_id: contactId,
+          contact_name: contactName ?? "",
+          deal_id: dealId,
+        }}
         onCreated={(id) => {
           setShowNew(false);
-          queryClient.invalidateQueries({ queryKey: ['deal-quotations', dealId] });
+          queryClient.invalidateQueries({
+            queryKey: ["deal-quotations", dealId],
+          });
           navigate(`/sales/quotations/${id}`);
         }}
       />

@@ -97,7 +97,12 @@ async function updateBusiness(client, businessKey, fields) {
   for (const key of allowed) {
     if (fields[key] === undefined) continue;
     if (
-      ["brand_fonts", "cash_handling_rules", "payment_methods", "loyalty_settings"].includes(key)
+      [
+        "brand_fonts",
+        "cash_handling_rules",
+        "payment_methods",
+        "loyalty_settings",
+      ].includes(key)
     ) {
       sets.push(`${key} = $${i++}::jsonb`);
       values.push(JSON.stringify(fields[key]));
@@ -155,7 +160,6 @@ async function grantBusinessToUser(client, userId, businessKey) {
   );
   return row || null;
 }
-
 
 // ─────────────────────────────────────────────────────────────
 // BANK ACCOUNTS

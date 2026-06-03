@@ -4,22 +4,42 @@ const webSchema = z
   .object({
     // All fields are optional at the type level.
     // superRefine below enforces the required ones only when is_published = true.
-    slug:            z.string().optional().or(z.literal('')),
-    scent_family:    z.string().optional().or(z.literal('')),
-    format:          z.string().optional().or(z.literal('')),
-    size_ml:         z.coerce.number().int().positive().optional().catch(undefined),
-    top_notes:       z.string().optional(),
-    heart_notes:     z.string().optional(),
-    base_notes:      z.string().optional(),
+    slug: z.string().optional().or(z.literal("")),
+    scent_family: z.string().optional().or(z.literal("")),
+    format: z.string().optional().or(z.literal("")),
+    size_ml: z.coerce.number().int().positive().optional().catch(undefined),
+    top_notes: z.string().optional(),
+    heart_notes: z.string().optional(),
+    base_notes: z.string().optional(),
     web_description: z.string().optional(),
-    is_published:    z.boolean().optional(),
+    is_published: z.boolean().optional(),
   })
   .superRefine((web, ctx) => {
     if (web.is_published !== true) return; // not publishing — nothing required
-    if (!web.slug)         ctx.addIssue({ code: 'custom', path: ['slug'],         message: 'URL slug is required to publish' });
-    if (!web.scent_family) ctx.addIssue({ code: 'custom', path: ['scent_family'], message: 'Scent family is required to publish' });
-    if (!web.format)       ctx.addIssue({ code: 'custom', path: ['format'],       message: 'Format is required to publish' });
-    if (!web.size_ml)      ctx.addIssue({ code: 'custom', path: ['size_ml'],      message: 'Size (ml) is required to publish' });
+    if (!web.slug)
+      ctx.addIssue({
+        code: "custom",
+        path: ["slug"],
+        message: "URL slug is required to publish",
+      });
+    if (!web.scent_family)
+      ctx.addIssue({
+        code: "custom",
+        path: ["scent_family"],
+        message: "Scent family is required to publish",
+      });
+    if (!web.format)
+      ctx.addIssue({
+        code: "custom",
+        path: ["format"],
+        message: "Format is required to publish",
+      });
+    if (!web.size_ml)
+      ctx.addIssue({
+        code: "custom",
+        path: ["size_ml"],
+        message: "Size (ml) is required to publish",
+      });
   })
   .optional();
 

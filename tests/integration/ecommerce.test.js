@@ -5,10 +5,7 @@
  * Tests Shopify and WooCommerce product synchronization
  */
 
-const {
-  generateEcommerceProduct,
-  TEST_BUSINESS,
-} = require("../fixtures/seed");
+const { generateEcommerceProduct, TEST_BUSINESS } = require("../fixtures/seed");
 
 describe("E-Commerce Integration", () => {
   describe("Shopify Sync", () => {

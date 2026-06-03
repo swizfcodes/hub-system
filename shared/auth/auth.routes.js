@@ -117,7 +117,9 @@ router.post(
   validate,
   async (req, res, next) => {
     try {
-      res.status(201).json(await inviteService.createInvite(req.user, req.body));
+      res
+        .status(201)
+        .json(await inviteService.createInvite(req.user, req.body));
     } catch (err) {
       next(err);
     }
@@ -141,9 +143,7 @@ router.post(
   validate,
   async (req, res, next) => {
     try {
-      res.json(
-        await inviteService.acceptInvite(req.params.token, req.body),
-      );
+      res.json(await inviteService.acceptInvite(req.params.token, req.body));
     } catch (err) {
       next(err);
     }

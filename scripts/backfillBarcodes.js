@@ -14,14 +14,14 @@
  */
 
 require("dotenv").config();
-const { pool }               = require("../config/db");
+const { pool } = require("../config/db");
 const { loadActiveBusinesses } = require("../config/businesses");
-const logger                 = require("../config/logger");
+const logger = require("../config/logger");
 
 // Same logic as catalogue.service.js — keep in sync if format changes.
 function generateBarcodeValue(business, sku) {
   const bizPrefix = business.slice(0, 3).toUpperCase();
-  const skuFrag   = (sku || "")
+  const skuFrag = (sku || "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 8);
@@ -40,11 +40,13 @@ async function barcodeValueExists(client, value) {
 async function backfillBusiness(businessKey) {
   const client = await pool.connect();
   let inserted = 0;
-  let skipped  = 0;
+  let skipped = 0;
 
   try {
     await client.query("BEGIN");
-    await client.query(`SET LOCAL search_path TO ${businessKey}, shared, public`);
+    await client.query(
+      `SET LOCAL search_path TO ${businessKey}, shared, public`,
+    );
 
     // Products that have no row in barcodes at all
     const { rows: products } = await client.query(
@@ -56,7 +58,9 @@ async function backfillBusiness(businessKey) {
        ORDER BY p.created_at`,
     );
 
-    logger.info(`[${businessKey}] ${products.length} product(s) missing a barcode`);
+    logger.info(
+      `[${businessKey}] ${products.length} product(s) missing a barcode`,
+    );
 
     for (const product of products) {
       // Retry up to 5 times to avoid the (astronomically unlikely) collision
@@ -97,7 +101,9 @@ async function backfillBusiness(businessKey) {
     }
 
     await client.query("COMMIT");
-    logger.info(`[${businessKey}] Done — inserted: ${inserted}, skipped: ${skipped}`);
+    logger.info(
+      `[${businessKey}] Done — inserted: ${inserted}, skipped: ${skipped}`,
+    );
   } catch (err) {
     await client.query("ROLLBACK");
     logger.error(`[${businessKey}] Rollback due to error: ${err.message}`);

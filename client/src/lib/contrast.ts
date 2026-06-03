@@ -25,13 +25,13 @@ export function contrastRatio(hexA: string, hexB: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export type ContrastVerdict = 'AAA' | 'AA' | 'AA-large' | 'fail';
+export type ContrastVerdict = "AAA" | "AA" | "AA-large" | "fail";
 
 export function verdict(ratio: number): ContrastVerdict {
-  if (ratio >= 7) return 'AAA';
-  if (ratio >= 4.5) return 'AA';
-  if (ratio >= 3) return 'AA-large';
-  return 'fail';
+  if (ratio >= 7) return "AAA";
+  if (ratio >= 4.5) return "AA";
+  if (ratio >= 3) return "AA-large";
+  return "fail";
 }
 
 export function isValidHex(value: string): boolean {
@@ -39,6 +39,6 @@ export function isValidHex(value: string): boolean {
 }
 
 export function normaliseHex(value: string): string {
-  const v = value.trim().replace(/^#?/, '');
+  const v = value.trim().replace(/^#?/, "");
   return `#${v.toUpperCase()}`;
 }

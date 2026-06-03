@@ -175,7 +175,9 @@ async function generateDeliveryNotePDF({
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
 
-    const items = Array.isArray(delivery.items) ? delivery.items.filter(Boolean) : [];
+    const items = Array.isArray(delivery.items)
+      ? delivery.items.filter(Boolean)
+      : [];
     const itemsHtml = items
       .map(
         (item, i) => `
@@ -191,7 +193,8 @@ async function generateDeliveryNotePDF({
     let addressStr = "—";
     if (addrRaw) {
       try {
-        const addrObj = typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
+        const addrObj =
+          typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
         addressStr = [addrObj.line1, addrObj.line2, addrObj.city, addrObj.state]
           .filter(Boolean)
           .join(", ");
@@ -201,16 +204,16 @@ async function generateDeliveryNotePDF({
     }
 
     const noteTemplateData = {
-      delivery_number:    esc(delivery.delivery_number || "—"),
-      contact_name:       esc(delivery.contact_name || "—"),
-      delivery_address:   esc(addressStr),
-      courier:            esc(delivery.courier || "—"),
-      signed_at:          fmtDate(delivery.signed_at || new Date()),
-      items_html:         itemsHtml,
-      customer_name:      esc(customer_name || "—"),
-      driver_name:        esc(driver_name || "—"),
+      delivery_number: esc(delivery.delivery_number || "—"),
+      contact_name: esc(delivery.contact_name || "—"),
+      delivery_address: esc(addressStr),
+      courier: esc(delivery.courier || "—"),
+      signed_at: fmtDate(delivery.signed_at || new Date()),
+      items_html: itemsHtml,
+      customer_name: esc(customer_name || "—"),
+      driver_name: esc(driver_name || "—"),
       customer_signature: customer_signature || "",
-      driver_signature:   driver_signature || "",
+      driver_signature: driver_signature || "",
     };
 
     await renderToPDF("delivery-note", noteTemplateData);

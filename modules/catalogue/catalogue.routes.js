@@ -6,7 +6,7 @@ const router = express.Router();
 const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
-const service  = require("./catalogue.service");
+const service = require("./catalogue.service");
 const { buildTemplate, parseImportWorkbook } = require("./template");
 
 // ─────────────────────────────────────────────────────────────
@@ -129,8 +129,14 @@ router.get(
   async (req, res, next) => {
     try {
       const buffer = await buildTemplate();
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      res.setHeader("Content-Disposition", 'attachment; filename="orika_product_import_template.xlsx"');
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="orika_product_import_template.xlsx"',
+      );
       res.send(buffer);
     } catch (err) {
       next(err);

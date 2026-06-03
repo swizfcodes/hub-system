@@ -68,9 +68,18 @@ describe("Scheduled Jobs", () => {
   describe("Session Cleanup", () => {
     it("should remove expired sessions", () => {
       const sessions = [
-        { session_id: "1", expires_at: new Date(Date.now() - 1000).toISOString() },
-        { session_id: "2", expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() },
-        { session_id: "3", expires_at: new Date(Date.now() - 1000).toISOString() },
+        {
+          session_id: "1",
+          expires_at: new Date(Date.now() - 1000).toISOString(),
+        },
+        {
+          session_id: "2",
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        },
+        {
+          session_id: "3",
+          expires_at: new Date(Date.now() - 1000).toISOString(),
+        },
       ];
 
       const expiredCount = sessions.filter(
@@ -84,8 +93,14 @@ describe("Scheduled Jobs", () => {
   describe("Reservation Expiration", () => {
     it("should expire old reservations", () => {
       const reservations = [
-        { reservation_id: "1", expires_at: new Date(Date.now() - 1000).toISOString() },
-        { reservation_id: "2", expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() },
+        {
+          reservation_id: "1",
+          expires_at: new Date(Date.now() - 1000).toISOString(),
+        },
+        {
+          reservation_id: "2",
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        },
       ];
 
       const expiredCount = reservations.filter(
@@ -99,8 +114,20 @@ describe("Scheduled Jobs", () => {
   describe("Payment Reminders", () => {
     it("should send payment reminders for overdue invoices", () => {
       const invoices = [
-        { invoice_id: "1", due_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), paid: false },
-        { invoice_id: "2", due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), paid: false },
+        {
+          invoice_id: "1",
+          due_date: new Date(
+            Date.now() - 5 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          paid: false,
+        },
+        {
+          invoice_id: "2",
+          due_date: new Date(
+            Date.now() + 5 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          paid: false,
+        },
       ];
 
       const overdue = invoices.filter(

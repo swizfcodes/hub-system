@@ -120,9 +120,9 @@ describe("Invoicing Integration", () => {
 
   describe("Invoice Amounts", () => {
     it("should support zero-tax invoices", () => {
-      const invoice = generateInvoice(TEST_BUSINESS, { 
+      const invoice = generateInvoice(TEST_BUSINESS, {
         tax_amount: 0,
-        total_amount: 5000  // Must also set total_amount when tax is zero
+        total_amount: 5000, // Must also set total_amount when tax is zero
       });
       expect(invoice.tax_amount).toBe(0);
       expect(invoice.total_amount).toBe(5000);
@@ -315,4 +315,3 @@ describe("Invoicing Integration", () => {
     });
   });
 });
-

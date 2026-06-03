@@ -1,21 +1,21 @@
-import { CreditCard, ExternalLink } from 'lucide-react';
-import { fmtMoney, fmtDate } from '@lib/format';
-import { PAYMENT_METHOD_META } from '@lib/constants/salesConstants';
-import { Skeleton } from '@components/ui/Skeleton';
-import type { InvoicePayment, Receipt } from '@typedefs/sales';
-import { receiptPdfUrl } from '@services/sales/receipts';
+import { CreditCard, ExternalLink } from "lucide-react";
+import { fmtMoney, fmtDate } from "@lib/format";
+import { PAYMENT_METHOD_META } from "@lib/constants/salesConstants";
+import { Skeleton } from "@components/ui/Skeleton";
+import type { InvoicePayment, Receipt } from "@typedefs/sales";
+import { receiptPdfUrl } from "@services/sales/receipts";
 
 interface Props {
-  payments:   InvoicePayment[];
-  receipts:   Receipt[];
-  currency?:  string;
+  payments: InvoicePayment[];
+  receipts: Receipt[];
+  currency?: string;
   isLoading?: boolean;
 }
 
 export function PaymentLedger({
   payments,
   receipts,
-  currency = 'NGN',
+  currency = "NGN",
   isLoading = false,
 }: Props) {
   if (isLoading) {
@@ -44,9 +44,9 @@ export function PaymentLedger({
   return (
     <div className="divide-y divide-white/5 rounded-lg border border-white/5 overflow-hidden">
       {payments.map((payment) => {
-        const meta    = PAYMENT_METHOD_META[payment.payment_method];
+        const meta = PAYMENT_METHOD_META[payment.payment_method];
         const receipt = receiptMap.get(payment.payment_id);
-        const Icon    = meta?.icon ?? CreditCard;
+        const Icon = meta?.icon ?? CreditCard;
 
         return (
           <div
@@ -63,7 +63,7 @@ export function PaymentLedger({
                 </p>
                 <p className="text-xs text-orika-smoke">
                   {fmtDate(payment.payment_date)}
-                  {payment.reference ? ` · ${payment.reference}` : ''}
+                  {payment.reference ? ` · ${payment.reference}` : ""}
                   {!payment.is_confirmed && (
                     <span className="ml-2 rounded-full bg-amber-900/30 px-1.5 py-0.5 text-xs text-amber-400">
                       Unconfirmed
@@ -86,7 +86,9 @@ export function PaymentLedger({
                   title={`Receipt ${receipt.receipt_number}`}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{receipt.receipt_number}</span>
+                  <span className="hidden sm:inline">
+                    {receipt.receipt_number}
+                  </span>
                 </a>
               )}
             </div>

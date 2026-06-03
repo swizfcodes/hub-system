@@ -1,5 +1,5 @@
-import { api } from '../api';
-import type { Deal } from '@typedefs/crm';
+import { api } from "../api";
+import type { Deal } from "@typedefs/crm";
 
 export interface DealListParams {
   page?: number;
@@ -13,8 +13,10 @@ export interface DealListResponse {
   data: Deal[];
 }
 
-export async function listDeals(params: DealListParams = {}): Promise<DealListResponse> {
-  const { data } = await api.get<DealListResponse>('/crm/deals', { params });
+export async function listDeals(
+  params: DealListParams = {},
+): Promise<DealListResponse> {
+  const { data } = await api.get<DealListResponse>("/crm/deals", { params });
   return data;
 }
 
@@ -24,11 +26,14 @@ export async function getDeal(id: string): Promise<Deal> {
 }
 
 export async function createDeal(payload: Partial<Deal>): Promise<Deal> {
-  const { data } = await api.post<Deal>('/crm/deals', payload);
+  const { data } = await api.post<Deal>("/crm/deals", payload);
   return data;
 }
 
-export async function updateDeal(id: string, patch: Partial<Deal>): Promise<Deal> {
+export async function updateDeal(
+  id: string,
+  patch: Partial<Deal>,
+): Promise<Deal> {
   const { data } = await api.patch<Deal>(`/crm/deals/${id}`, patch);
   return data;
 }

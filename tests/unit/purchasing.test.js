@@ -200,8 +200,20 @@ describe("Purchasing Service", () => {
     it("should calculate subtotal from lines", () => {
       const po = generatePO(null, {
         lines: [
-          { po_line_id: "1", product_id: "p1", quantity_ordered: 10, unit_price: 500, quantity_received: 0 },
-          { po_line_id: "2", product_id: "p2", quantity_ordered: 5, unit_price: 200, quantity_received: 0 },
+          {
+            po_line_id: "1",
+            product_id: "p1",
+            quantity_ordered: 10,
+            unit_price: 500,
+            quantity_received: 0,
+          },
+          {
+            po_line_id: "2",
+            product_id: "p2",
+            quantity_ordered: 5,
+            unit_price: 200,
+            quantity_received: 0,
+          },
         ],
         subtotal: 6000,
         total: 6000,
@@ -214,7 +226,12 @@ describe("Purchasing Service", () => {
       const shipping = 500;
       const duty = 200;
       const total = subtotal + shipping + duty;
-      const po = generatePO(null, { subtotal, shipping_cost: shipping, import_duty: duty, total });
+      const po = generatePO(null, {
+        subtotal,
+        shipping_cost: shipping,
+        import_duty: duty,
+        total,
+      });
       expect(po.total).toBe(total);
     });
 
@@ -235,7 +252,14 @@ describe("Purchasing Service", () => {
     });
 
     it("should support PO statuses", () => {
-      const statuses = ["draft", "sent", "acknowledged", "partially_received", "received", "cancelled"];
+      const statuses = [
+        "draft",
+        "sent",
+        "acknowledged",
+        "partially_received",
+        "received",
+        "cancelled",
+      ];
       statuses.forEach((status) => {
         const po = generatePO(null, { status });
         expect(po.status).toBe(status);
@@ -294,7 +318,9 @@ describe("Purchasing Service", () => {
         quantity_rejected: 8,
         rejection_reason: "Damaged",
       };
-      expect(line.quantity_accepted + line.quantity_rejected).toBe(line.quantity_received);
+      expect(line.quantity_accepted + line.quantity_rejected).toBe(
+        line.quantity_received,
+      );
     });
 
     it("should allow full acceptance", () => {
@@ -326,11 +352,18 @@ describe("Purchasing Service", () => {
     it("should mark as partially received when some lines received", () => {
       const po = generatePO(null, {
         lines: [
-          { po_line_id: "l1", product_id: "p1", quantity_ordered: 100, quantity_received: 50, unit_price: 100 },
+          {
+            po_line_id: "l1",
+            product_id: "p1",
+            quantity_ordered: 100,
+            quantity_received: 50,
+            unit_price: 100,
+          },
         ],
       });
       const isPartial = po.lines.some(
-        (l) => l.quantity_received > 0 && l.quantity_received < l.quantity_ordered,
+        (l) =>
+          l.quantity_received > 0 && l.quantity_received < l.quantity_ordered,
       );
       expect(isPartial).toBe(true);
     });
@@ -339,7 +372,13 @@ describe("Purchasing Service", () => {
       const po = generatePO(null, {
         status: "received",
         lines: [
-          { po_line_id: "l1", product_id: "p1", quantity_ordered: 100, quantity_received: 100, unit_price: 100 },
+          {
+            po_line_id: "l1",
+            product_id: "p1",
+            quantity_ordered: 100,
+            quantity_received: 100,
+            unit_price: 100,
+          },
         ],
       });
       expect(po.status).toBe("received");

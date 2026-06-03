@@ -17,7 +17,10 @@ const businesses = require("../config/businesses");
 function setBusinessContext(req, res, next) {
   // --- PUBLIC ROUTE BYPASS ---
   // Allow unauthenticated public images to pass without a business context
-  if (req.method === 'GET' && req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)) {
+  if (
+    req.method === "GET" &&
+    req.originalUrl.match(/\/api\/documents\/[0-9a-fA-F-]+\/image/)
+  ) {
     return next();
   }
   // ---------------------------

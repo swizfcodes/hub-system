@@ -1,7 +1,14 @@
 // Types mirror shared.tasks + shared.task_subtasks.
 
-export type TaskStatus = 'inbox' | 'today' | 'this_week' | 'this_month' | 'later' | 'done' | 'cancelled';
-export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type TaskStatus =
+  | "inbox"
+  | "today"
+  | "this_week"
+  | "this_month"
+  | "later"
+  | "done"
+  | "cancelled";
+export type TaskPriority = "low" | "normal" | "high" | "urgent";
 
 export interface Task {
   is_personal?: boolean;

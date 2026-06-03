@@ -1,7 +1,15 @@
 // Types mirror per-business CRM schema (000009_business_crm.sql).
 
 export type DealStage = string; // free-form to support per-business pipeline_stage_defs
-export type DealSource = 'walk_in' | 'referral' | 'social_media' | 'repeat' | 'campaign' | 'website' | 'event' | string;
+export type DealSource =
+  | "walk_in"
+  | "referral"
+  | "social_media"
+  | "repeat"
+  | "campaign"
+  | "website"
+  | "event"
+  | string;
 
 export interface Deal {
   deal_id: string;
@@ -25,14 +33,21 @@ export interface Deal {
   email?: string | null;
   primary_phone?: string;
   whatsapp_number?: string | null;
-  priority_level?: 'vip' | 'regular' | 'new';
+  priority_level?: "vip" | "regular" | "new";
   activities?: DealActivity[];
   notes?: DealNote[];
 }
 
 export type ActivityType =
-  | 'call' | 'message' | 'email' | 'store_visit' | 'quotation_sent'
-  | 'invoice_sent' | 'payment_received' | 'note' | 'stage_change';
+  | "call"
+  | "message"
+  | "email"
+  | "store_visit"
+  | "quotation_sent"
+  | "invoice_sent"
+  | "payment_received"
+  | "note"
+  | "stage_change";
 
 export interface DealActivity {
   activity_id: string;
@@ -40,7 +55,7 @@ export interface DealActivity {
   contact_id: string;
   activity_type: ActivityType;
   summary: string;
-  direction?: 'inbound' | 'outbound' | null;
+  direction?: "inbound" | "outbound" | null;
   performed_by?: string | null;
   performed_at: string;
   is_auto: boolean;
@@ -64,7 +79,20 @@ export interface PipelineStageWithDeals {
   colour: string;
   display_order: number;
   is_terminal: boolean;
-  deals: Array<Pick<Deal, 'deal_id' | 'title' | 'stage' | 'expected_value' | 'probability' | 'expected_close_date' | 'updated_at' | 'contact_name' | 'priority_level'>>;
+  deals: Array<
+    Pick<
+      Deal,
+      | "deal_id"
+      | "title"
+      | "stage"
+      | "expected_value"
+      | "probability"
+      | "expected_close_date"
+      | "updated_at"
+      | "contact_name"
+      | "priority_level"
+    >
+  >;
   total_value: number;
 }
 
@@ -76,7 +104,7 @@ export interface PipelineResponse {
 export interface CustomerPreference {
   preference_id: string;
   contact_id: string;
-  preference_key: string;       // 'ring_size', 'preferred_metal', etc.
+  preference_key: string; // 'ring_size', 'preferred_metal', etc.
   preference_value: string;
   notes?: string | null;
   created_by?: string | null;
@@ -84,7 +112,12 @@ export interface CustomerPreference {
   updated_at: string;
 }
 
-export type MilestoneType = 'birthday' | 'wedding_anniversary' | 'business_anniversary' | 'graduation' | 'other';
+export type MilestoneType =
+  | "birthday"
+  | "wedding_anniversary"
+  | "business_anniversary"
+  | "graduation"
+  | "other";
 
 export interface CustomerMilestone {
   milestone_id: string;

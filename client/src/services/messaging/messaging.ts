@@ -2,7 +2,7 @@
 // API wrappers for the SmartComm Messaging module. Endpoint paths follow
 // shared/messaging/messaging.routes.js conventions on the backend.
 
-import { api } from '@services/api';
+import { api } from "@services/api";
 import type {
   Channel,
   Message,
@@ -10,7 +10,7 @@ import type {
   ChannelType,
   Platform,
   MessageType,
-} from '@typedefs/messaging';
+} from "@typedefs/messaging";
 
 // ── Channels ──────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ export async function listChannels(
   params: {
     business?: string;
     channel_type?: string;
-    platform?: Platform | 'internal';
+    platform?: Platform | "internal";
     status?: string;
     search?: string;
     q?: string;
@@ -26,9 +26,12 @@ export async function listChannels(
   } = {},
 ): Promise<{ data: Channel[] }> {
   try {
-    const { data } = await api.get<{ data: Channel[] } | Channel[]>('/messaging/channels', {
-      params,
-    });
+    const { data } = await api.get<{ data: Channel[] } | Channel[]>(
+      "/messaging/channels",
+      {
+        params,
+      },
+    );
     return Array.isArray(data) ? { data } : { data: data.data ?? [] };
   } catch {
     return { data: [] };
@@ -47,7 +50,7 @@ export async function createChannel(payload: {
   business?: string | null;
   member_user_ids?: string[];
 }): Promise<Channel> {
-  const { data } = await api.post<Channel>('/messaging/channels', payload);
+  const { data } = await api.post<Channel>("/messaging/channels", payload);
   return data;
 }
 
@@ -62,7 +65,7 @@ export async function listMessages(
       `/messaging/channels/${channelId}/messages`,
       { params },
     );
-    return Array.isArray(data) ? data : data.data ?? [];
+    return Array.isArray(data) ? data : (data.data ?? []);
   } catch {
     return [];
   }
@@ -86,7 +89,10 @@ export async function sendMessage(
   return data;
 }
 
-export async function markRead(channelId: string, lastMessageId?: string): Promise<{ ok: boolean }> {
+export async function markRead(
+  channelId: string,
+  lastMessageId?: string,
+): Promise<{ ok: boolean }> {
   try {
     const { data } = await api.post<{ ok: boolean }>(
       `/messaging/channels/${channelId}/mark-read`,
@@ -102,7 +108,11 @@ export async function markRead(channelId: string, lastMessageId?: string): Promi
 
 export async function assignThread(
   channelId: string,
-  payload: { assigned_to?: string | null; user_id?: string; handoff_note?: string },
+  payload: {
+    assigned_to?: string | null;
+    user_id?: string;
+    handoff_note?: string;
+  },
 ): Promise<Channel> {
   // Backend expects { assigned_to, handoff_note? }. Some callers pass
   // { user_id } — accept both and normalise.
@@ -139,7 +149,9 @@ export async function toggleReaction(
 // ── Customer 360 panel ────────────────────────────────────────────────────
 
 export async function getCustomer360(contactId: string): Promise<Customer360> {
-  const { data } = await api.get<Customer360>(`/messaging/customer-360/${contactId}`);
+  const { data } = await api.get<Customer360>(
+    `/messaging/customer-360/${contactId}`,
+  );
   return data;
 }
 
@@ -147,7 +159,9 @@ export async function getCustomer360(contactId: string): Promise<Customer360> {
 
 export async function getUnreadCount(): Promise<number> {
   try {
-    const { data } = await api.get<{ count: number }>('/messaging/unread-count');
+    const { data } = await api.get<{ count: number }>(
+      "/messaging/unread-count",
+    );
     return data?.count ?? 0;
   } catch {
     return 0;

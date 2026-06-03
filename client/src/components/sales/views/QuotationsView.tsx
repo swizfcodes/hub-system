@@ -1,30 +1,30 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { listQuotations } from '@services/sales/quotations';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Skeleton } from '@components/ui/Skeleton';
-import { EmptyState } from '@components/ui/EmptyState';
-import { fmtMoney, fmtDate } from '@lib/format';
-import { QUOTE_FILTER_OPTIONS } from '@lib/constants/salesConstants';
-import { QuoteFormModal } from '@components/sales/modals/QuoteFormModal';
-import { cn } from '@lib/cn';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search } from "lucide-react";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { listQuotations } from "@services/sales/quotations";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Skeleton } from "@components/ui/Skeleton";
+import { EmptyState } from "@components/ui/EmptyState";
+import { fmtMoney, fmtDate } from "@lib/format";
+import { QUOTE_FILTER_OPTIONS } from "@lib/constants/salesConstants";
+import { QuoteFormModal } from "@components/sales/modals/QuoteFormModal";
+import { cn } from "@lib/cn";
 
 export function QuotationsView() {
   const navigate = useNavigate();
   const { currency } = useActiveBusiness();
 
-  const [status,  setStatus]  = useState('');
-  const [search,  setSearch]  = useState('');
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['quotations', { status }],
-    queryFn:  () => listQuotations({ status: status || undefined, limit: 50 }),
+    queryKey: ["quotations", { status }],
+    queryFn: () => listQuotations({ status: status || undefined, limit: 50 }),
   });
 
   const rows = data?.data ?? [];
@@ -33,7 +33,7 @@ export function QuotationsView() {
     ? rows.filter(
         (q) =>
           q.quotation_number.toLowerCase().includes(search.toLowerCase()) ||
-          (q.contact_name ?? '').toLowerCase().includes(search.toLowerCase()),
+          (q.contact_name ?? "").toLowerCase().includes(search.toLowerCase()),
       )
     : rows;
 
@@ -48,10 +48,10 @@ export function QuotationsView() {
               key={opt.value}
               onClick={() => setStatus(opt.value)}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 status === opt.value
-                  ? 'bg-orika-gold text-orika-black'
-                  : 'bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80',
+                  ? "bg-orika-gold text-orika-black"
+                  : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80",
               )}
             >
               {opt.label}
@@ -89,8 +89,8 @@ export function QuotationsView() {
           title="No quotations found"
           description={
             search || status
-              ? 'Try adjusting your filters.'
-              : 'Create your first quotation to get started.'
+              ? "Try adjusting your filters."
+              : "Create your first quotation to get started."
           }
           action={
             !search && !status ? (
@@ -106,7 +106,14 @@ export function QuotationsView() {
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-white/5 bg-orika-graphite/40">
-                {['Number', 'Customer', 'Amount', 'Valid Until', 'Status', ''].map((h) => (
+                {[
+                  "Number",
+                  "Customer",
+                  "Amount",
+                  "Valid Until",
+                  "Status",
+                  "",
+                ].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
@@ -120,14 +127,16 @@ export function QuotationsView() {
               {filtered.map((q) => (
                 <tr
                   key={q.quotation_id}
-                  onClick={() => navigate(`/sales/quotations/${q.quotation_id}`)}
+                  onClick={() =>
+                    navigate(`/sales/quotations/${q.quotation_id}`)
+                  }
                   className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
                     {q.quotation_number}
                   </td>
                   <td className="px-4 py-3 font-medium text-orika-cream">
-                    {q.contact_name ?? '—'}
+                    {q.contact_name ?? "—"}
                   </td>
                   <td className="px-4 py-3 tabular-nums text-orika-cream">
                     {fmtMoney(q.total_amount, q.currency ?? currency)}
@@ -136,7 +145,11 @@ export function QuotationsView() {
                     {fmtDate(q.valid_until)}
                   </td>
                   <td className="px-4 py-3">
-                    <SalesStatusBadge entity="quotation" status={q.status} size="sm" />
+                    <SalesStatusBadge
+                      entity="quotation"
+                      status={q.status}
+                      size="sm"
+                    />
                   </td>
                   <td className="px-4 py-3 text-right text-xs text-orika-smoke">
                     {fmtDate(q.created_at)}

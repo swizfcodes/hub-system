@@ -5,56 +5,63 @@
  *
  * Previously this only wrote to localStorage — settings were lost on any new device.
  */
-import { useEffect, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { getBusiness, updateBusiness } from '@services/settings/businesses';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { getBusiness, updateBusiness } from "@services/settings/businesses";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
 
 interface CampaignSettingsState {
-  approvalThreshold:    number;
-  waDailyLimit:         number;
-  defaultFromName:      string;
-  unsubscribePageUrl:   string;
-  autoOptOutOnStop:     boolean;
+  approvalThreshold: number;
+  waDailyLimit: number;
+  defaultFromName: string;
+  unsubscribePageUrl: string;
+  autoOptOutOnStop: boolean;
   requireApprovalAbove: number;
 }
 
 const DEFAULT_SETTINGS: CampaignSettingsState = {
-  approvalThreshold:    50,
-  waDailyLimit:         1000,
-  defaultFromName:      'Orika Hub',
-  unsubscribePageUrl:   '',
-  autoOptOutOnStop:     true,
+  approvalThreshold: 50,
+  waDailyLimit: 1000,
+  defaultFromName: "Orika Hub",
+  unsubscribePageUrl: "",
+  autoOptOutOnStop: true,
   requireApprovalAbove: 50,
 };
 
 export default function CampaignSettings() {
   const { active: business } = useActiveBusiness();
-  const [settings, setSettings] = useState<CampaignSettingsState>(DEFAULT_SETTINGS);
+  const [settings, setSettings] =
+    useState<CampaignSettingsState>(DEFAULT_SETTINGS);
 
   // Load existing campaign_settings from the business config
   const { data: bizConfig, isLoading } = useQuery({
-    queryKey: ['settings', 'business', business],
-    queryFn:  () => getBusiness(business!),
-    enabled:  !!business,
+    queryKey: ["settings", "business", business],
+    queryFn: () => getBusiness(business!),
+    enabled: !!business,
   });
 
   // Hydrate local state from server data once loaded
   useEffect(() => {
     if (bizConfig?.campaign_settings) {
-      setSettings((s) => ({ ...s, ...(bizConfig.campaign_settings as Partial<CampaignSettingsState>) }));
+      setSettings((s) => ({
+        ...s,
+        ...(bizConfig.campaign_settings as Partial<CampaignSettingsState>),
+      }));
     }
   }, [bizConfig]);
 
   const mutation = useMutation({
-    mutationFn: () => updateBusiness(business!, { campaign_settings: settings as unknown as Record<string, unknown> }),
-    onSuccess: () => showToast.success('Campaign settings saved to server'),
-    onError:   (e) => showToast.error('Could not save', errMsg(e)),
+    mutationFn: () =>
+      updateBusiness(business!, {
+        campaign_settings: settings as unknown as Record<string, unknown>,
+      }),
+    onSuccess: () => showToast.success("Campaign settings saved to server"),
+    onError: (e) => showToast.error("Could not save", errMsg(e)),
   });
 
   function update(patch: Partial<CampaignSettingsState>) {
@@ -62,7 +69,11 @@ export default function CampaignSettings() {
   }
 
   if (isLoading) {
-    return <div className="px-4 sm:px-8 py-10"><p className="text-sm text-orika-smoke">Loading settings...</p></div>;
+    return (
+      <div className="px-4 sm:px-8 py-10">
+        <p className="text-sm text-orika-smoke">Loading settings...</p>
+      </div>
+    );
   }
 
   return (
@@ -70,27 +81,46 @@ export default function CampaignSettings() {
       <PageHeader
         title="Campaign Settings"
         subtitle="Configure defaults and approval rules for all campaigns."
-        crumbs={[{ label: 'Campaigns', to: '/campaigns' }, { label: 'Settings' }]}
+        crumbs={[
+          { label: "Campaigns", to: "/campaigns" },
+          { label: "Settings" },
+        ]}
       />
 
-      <SettingsSection title="Approval Workflow" desc="Control who can send campaigns and when approval is required.">
+      <SettingsSection
+        title="Approval Workflow"
+        desc="Control who can send campaigns and when approval is required."
+      >
         <Input
           label="Approval required above this many recipients"
           type="number"
           min={1}
           value={settings.requireApprovalAbove}
-          onChange={(e) => update({ requireApprovalAbove: parseInt(e.target.value) || 50 })}
+          onChange={(e) =>
+            update({ requireApprovalAbove: parseInt(e.target.value) || 50 })
+          }
           surface="dark"
           hint="Campaigns below this number can be sent directly. Above this, a manager must approve."
         />
       </SettingsSection>
 
-      <SettingsSection title="WhatsApp Limits" desc="Meta enforces per-business daily send limits. Set your tier limit here to get warnings.">
+      <SettingsSection
+        title="WhatsApp Limits"
+        desc="Meta enforces per-business daily send limits. Set your tier limit here to get warnings."
+      >
         <div className="space-y-4">
           <div className="rounded-xl border border-[#25D366]/20 bg-[#25D366]/5 px-4 py-3 text-xs">
-            <p className="font-semibold text-[#25D366] mb-1">Current Tier Limits</p>
-            <p className="text-orika-smoke">Tier 1 (new): 1,000 · Tier 2: 10,000 · Tier 3: 100,000 · Tier 4: Unlimited</p>
-            <p className="text-orika-smoke mt-1">Check your tier in Meta Business Manager &rarr; WhatsApp &rarr; Phone Numbers.</p>
+            <p className="font-semibold text-[#25D366] mb-1">
+              Current Tier Limits
+            </p>
+            <p className="text-orika-smoke">
+              Tier 1 (new): 1,000 · Tier 2: 10,000 · Tier 3: 100,000 · Tier 4:
+              Unlimited
+            </p>
+            <p className="text-orika-smoke mt-1">
+              Check your tier in Meta Business Manager &rarr; WhatsApp &rarr;
+              Phone Numbers.
+            </p>
           </div>
           <Input
             label="Your WhatsApp daily send limit"
@@ -98,7 +128,9 @@ export default function CampaignSettings() {
             min={1_000}
             step={1_000}
             value={settings.waDailyLimit}
-            onChange={(e) => update({ waDailyLimit: parseInt(e.target.value) || 1000 })}
+            onChange={(e) =>
+              update({ waDailyLimit: parseInt(e.target.value) || 1000 })
+            }
             surface="dark"
             hint="The system warns you when a campaign audience approaches 80% of this limit."
           />
@@ -110,13 +142,17 @@ export default function CampaignSettings() {
               className="rounded"
             />
             <span className="text-orika-cloud">
-              Auto opt-out contacts who reply <strong>STOP</strong> to WhatsApp messages
+              Auto opt-out contacts who reply <strong>STOP</strong> to WhatsApp
+              messages
             </span>
           </label>
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Email Defaults" desc="Default sender name and unsubscribe configuration.">
+      <SettingsSection
+        title="Email Defaults"
+        desc="Default sender name and unsubscribe configuration."
+      >
         <div className="space-y-4">
           <Input
             label="Default 'From Name'"
@@ -146,7 +182,15 @@ export default function CampaignSettings() {
   );
 }
 
-function SettingsSection({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {
+function SettingsSection({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-4">
       <div className="border-b border-white/5 pb-3">

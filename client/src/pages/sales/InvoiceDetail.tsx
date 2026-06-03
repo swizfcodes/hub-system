@@ -1,59 +1,71 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { CreditCard, Globe, Send, FileDown, RefreshCw, Copy } from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Button } from '@components/ui/Button';
-import { Skeleton } from '@components/ui/Skeleton';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { LineItemsTable } from '@components/sales/shared/LineItemsTable';
-import { PaymentLedger } from '@components/sales/shared/PaymentLedger';
-import { RecordPaymentModal } from '@components/sales/modals/SalesModals';
-import { getInvoice, invoicePdfUrl, sendInvoice, refreshPaymentLinks } from '@services/sales/invoices';
-import { listReceipts } from '@services/sales/receipts';
-import { fmtDate, fmtMoney } from '@lib/format';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  CreditCard,
+  Globe,
+  Send,
+  FileDown,
+  RefreshCw,
+  Copy,
+} from "lucide-react";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Button } from "@components/ui/Button";
+import { Skeleton } from "@components/ui/Skeleton";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { LineItemsTable } from "@components/sales/shared/LineItemsTable";
+import { PaymentLedger } from "@components/sales/shared/PaymentLedger";
+import { RecordPaymentModal } from "@components/sales/modals/SalesModals";
+import {
+  getInvoice,
+  invoicePdfUrl,
+  sendInvoice,
+  refreshPaymentLinks,
+} from "@services/sales/invoices";
+import { listReceipts } from "@services/sales/receipts";
+import { fmtDate, fmtMoney } from "@lib/format";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function InvoiceDetail() {
-  const { id }        = useParams<{ id: string }>();
-  const qc            = useQueryClient();
-  const { currency }  = useActiveBusiness();
+  const { id } = useParams<{ id: string }>();
+  const qc = useQueryClient();
+  const { currency } = useActiveBusiness();
 
   const [showPayment, setShowPayment] = useState(false);
 
   const { data: invoice, isLoading: invLoading } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn:  () => getInvoice(id!),
-    enabled:  !!id,
+    queryKey: ["invoice", id],
+    queryFn: () => getInvoice(id!),
+    enabled: !!id,
   });
 
   const { data: receiptsData } = useQuery({
-    queryKey: ['receipts', { invoice_id: id }],
-    queryFn:  () => listReceipts({ invoice_id: id }),
-    enabled:  !!id,
+    queryKey: ["receipts", { invoice_id: id }],
+    queryFn: () => listReceipts({ invoice_id: id }),
+    enabled: !!id,
   });
 
   const sendMutation = useMutation({
-    mutationFn: (channel: 'email' | 'whatsapp') => sendInvoice(id!, channel),
-    onSuccess:  () => showToast.success('Invoice sent'),
-    onError:    (err) => showToast.error(errMsg(err)),
+    mutationFn: (channel: "email" | "whatsapp") => sendInvoice(id!, channel),
+    onSuccess: () => showToast.success("Invoice sent"),
+    onError: (err) => showToast.error(errMsg(err)),
   });
 
   const refreshLinksMutation = useMutation({
     mutationFn: () => refreshPaymentLinks(id!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['invoice', id] });
-      showToast.success('Payment links refreshed');
+      qc.invalidateQueries({ queryKey: ["invoice", id] });
+      showToast.success("Payment links refreshed");
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
 
   function copyLink(url: string) {
     navigator.clipboard.writeText(url);
-    showToast.success('Link copied to clipboard');
+    showToast.success("Link copied to clipboard");
   }
 
   if (invLoading) {
@@ -74,21 +86,21 @@ export default function InvoiceDetail() {
     );
   }
 
-  const receipts   = receiptsData?.data ?? [];
-  const isPaid     = invoice.status === 'paid';
-  const isVoided   = invoice.status === 'voided';
-  const canPay     = !isPaid && !isVoided;
-  const pdfUrl     = invoicePdfUrl(invoice.invoice_id);
+  const receipts = receiptsData?.data ?? [];
+  const isPaid = invoice.status === "paid";
+  const isVoided = invoice.status === "voided";
+  const canPay = !isPaid && !isVoided;
+  const pdfUrl = invoicePdfUrl(invoice.invoice_id);
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title={invoice.invoice_number}
-        subtitle={`${invoice.contact_name ?? ''} · Issued ${fmtDate(invoice.issue_date)} · Due ${fmtDate(invoice.due_date)}`}
+        subtitle={`${invoice.contact_name ?? ""} · Issued ${fmtDate(invoice.issue_date)} · Due ${fmtDate(invoice.due_date)}`}
         crumbs={[
-          { label: 'Hub', to: '/' },
-          { label: 'Sales', to: '/sales' },
-          { label: 'Invoices' },
+          { label: "Hub", to: "/" },
+          { label: "Sales", to: "/sales" },
+          { label: "Invoices" },
           { label: invoice.invoice_number },
         ]}
         actions={<SalesStatusBadge entity="invoice" status={invoice.status} />}
@@ -98,46 +110,48 @@ export default function InvoiceDetail() {
         {/* Left */}
         <div className="space-y-6">
           {/* Payment links */}
-          {(invoice.paystack_payment_url || invoice.stripe_payment_url) && !isPaid && (
-            <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
-                  Payment Links
-                </h2>
-                <button
-                  onClick={() => refreshLinksMutation.mutate()}
-                  className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
-                  disabled={refreshLinksMutation.isPending}
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Refresh
-                </button>
+          {(invoice.paystack_payment_url || invoice.stripe_payment_url) &&
+            !isPaid && (
+              <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                    Payment Links
+                  </h2>
+                  <button
+                    onClick={() => refreshLinksMutation.mutate()}
+                    className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                    disabled={refreshLinksMutation.isPending}
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Refresh
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {invoice.paystack_payment_url && (
+                    <PaymentLinkRow
+                      label="Paystack — Nigeria (NGN)"
+                      icon={CreditCard}
+                      url={invoice.paystack_payment_url}
+                      accent="#00C2A3"
+                      onCopy={() => copyLink(invoice.paystack_payment_url!)}
+                    />
+                  )}
+                  {invoice.stripe_payment_url && (
+                    <PaymentLinkRow
+                      label="Stripe — International"
+                      icon={Globe}
+                      url={invoice.stripe_payment_url}
+                      accent="#6772E5"
+                      onCopy={() => copyLink(invoice.stripe_payment_url!)}
+                    />
+                  )}
+                </div>
+                <p className="mt-3 text-xs text-orika-smoke/60">
+                  Share these links directly with the customer for secure online
+                  payment.
+                </p>
               </div>
-              <div className="space-y-3">
-                {invoice.paystack_payment_url && (
-                  <PaymentLinkRow
-                    label="Paystack — Nigeria (NGN)"
-                    icon={CreditCard}
-                    url={invoice.paystack_payment_url}
-                    accent="#00C2A3"
-                    onCopy={() => copyLink(invoice.paystack_payment_url!)}
-                  />
-                )}
-                {invoice.stripe_payment_url && (
-                  <PaymentLinkRow
-                    label="Stripe — International"
-                    icon={Globe}
-                    url={invoice.stripe_payment_url}
-                    accent="#6772E5"
-                    onCopy={() => copyLink(invoice.stripe_payment_url!)}
-                  />
-                )}
-              </div>
-              <p className="mt-3 text-xs text-orika-smoke/60">
-                Share these links directly with the customer for secure online payment.
-              </p>
-            </div>
-          )}
+            )}
 
           {/* Lines */}
           {invoice.lines && invoice.lines.length > 0 && (
@@ -148,10 +162,10 @@ export default function InvoiceDetail() {
               <LineItemsTable
                 lines={invoice.lines}
                 totals={{
-                  subtotal:       invoice.subtotal,
+                  subtotal: invoice.subtotal,
                   discount_total: invoice.discount_total,
-                  vat_amount:     invoice.vat_amount,
-                  total_amount:   invoice.total_amount,
+                  vat_amount: invoice.vat_amount,
+                  total_amount: invoice.total_amount,
                 }}
                 currency={invoice.currency ?? currency}
               />
@@ -220,11 +234,14 @@ export default function InvoiceDetail() {
                 <span
                   className={
                     invoice.amount_outstanding > 0
-                      ? 'font-semibold text-amber-400'
-                      : 'font-medium text-orika-smoke'
+                      ? "font-semibold text-amber-400"
+                      : "font-medium text-orika-smoke"
                   }
                 >
-                  {fmtMoney(invoice.amount_outstanding, invoice.currency ?? currency)}
+                  {fmtMoney(
+                    invoice.amount_outstanding,
+                    invoice.currency ?? currency,
+                  )}
                 </span>
               </div>
             </div>
@@ -237,7 +254,10 @@ export default function InvoiceDetail() {
             </h3>
 
             {canPay && (
-              <Button className="w-full justify-start" onClick={() => setShowPayment(true)}>
+              <Button
+                className="w-full justify-start"
+                onClick={() => setShowPayment(true)}
+              >
                 <CreditCard className="h-4 w-4" />
                 Record Payment
               </Button>
@@ -247,7 +267,7 @@ export default function InvoiceDetail() {
               <Button
                 variant="secondary"
                 className="w-full justify-start"
-                onClick={() => sendMutation.mutate('email')}
+                onClick={() => sendMutation.mutate("email")}
                 loading={sendMutation.isPending}
               >
                 <Send className="h-4 w-4" />
@@ -286,8 +306,10 @@ export default function InvoiceDetail() {
           amountOutstanding={invoice.amount_outstanding}
           currency={invoice.currency ?? currency}
           onRecorded={() => {
-            qc.invalidateQueries({ queryKey: ['invoice', id] });
-            qc.invalidateQueries({ queryKey: ['receipts', { invoice_id: id }] });
+            qc.invalidateQueries({ queryKey: ["invoice", id] });
+            qc.invalidateQueries({
+              queryKey: ["receipts", { invoice_id: id }],
+            });
           }}
         />
       )}
@@ -302,9 +324,9 @@ function PaymentLinkRow({
   accent,
   onCopy,
 }: {
-  label:  string;
-  icon:   typeof CreditCard;
-  url:    string;
+  label: string;
+  icon: typeof CreditCard;
+  url: string;
   accent: string;
   onCopy: () => void;
 }) {
@@ -315,7 +337,9 @@ function PaymentLinkRow({
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} />
-        <span className="text-sm font-medium text-orika-cream truncate">{label}</span>
+        <span className="text-sm font-medium text-orika-cream truncate">
+          {label}
+        </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <button

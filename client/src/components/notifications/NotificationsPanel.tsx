@@ -10,16 +10,22 @@
  *  - Closes on outside click or Escape
  */
 
-import { useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
-  Bell, X, CheckCheck, Package, DollarSign,
-  AlertCircle, Info, CheckCircle,
-} from 'lucide-react';
-import { api } from '@services/api';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { cn } from '@lib/cn';
+  Bell,
+  X,
+  CheckCheck,
+  Package,
+  DollarSign,
+  AlertCircle,
+  Info,
+  CheckCircle,
+} from "lucide-react";
+import { api } from "@services/api";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { cn } from "@lib/cn";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,7 +47,7 @@ interface NotificationsResponse {
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function fetchNotifications(): Promise<NotificationsResponse> {
-  const { data } = await api.get<NotificationsResponse>('/notifications', {
+  const { data } = await api.get<NotificationsResponse>("/notifications", {
     params: { limit: 20 },
   });
   return data;
@@ -52,18 +58,22 @@ async function markOneRead(id: string): Promise<void> {
 }
 
 async function markAllReadApi(): Promise<void> {
-  await api.patch('/notifications/read-all');
+  await api.patch("/notifications/read-all");
 }
 
 // ── Notification type icon ────────────────────────────────────────────────────
 
 function NotifIcon({ type }: { type: string }) {
-  const cls = 'h-4 w-4 shrink-0 mt-0.5';
-  if (type === 'approval_required')           return <AlertCircle className={cn(cls, 'text-amber-400')} />;
-  if (type.includes('payment') || type.includes('invoice')) return <DollarSign className={cn(cls, 'text-green-400')} />;
-  if (type.includes('stock')   || type.includes('low'))     return <Package    className={cn(cls, 'text-orange-400')} />;
-  if (type.includes('success') || type.includes('complete')) return <CheckCircle className={cn(cls, 'text-emerald-400')} />;
-  return <Info className={cn(cls, 'text-orika-gold')} />;
+  const cls = "h-4 w-4 shrink-0 mt-0.5";
+  if (type === "approval_required")
+    return <AlertCircle className={cn(cls, "text-amber-400")} />;
+  if (type.includes("payment") || type.includes("invoice"))
+    return <DollarSign className={cn(cls, "text-green-400")} />;
+  if (type.includes("stock") || type.includes("low"))
+    return <Package className={cn(cls, "text-orange-400")} />;
+  if (type.includes("success") || type.includes("complete"))
+    return <CheckCircle className={cn(cls, "text-emerald-400")} />;
+  return <Info className={cn(cls, "text-orika-gold")} />;
 }
 
 // ── Relative time ─────────────────────────────────────────────────────────────
@@ -71,10 +81,10 @@ function NotifIcon({ type }: { type: string }) {
 function relTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1)  return 'just now';
+  if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs  < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
@@ -82,7 +92,7 @@ function relTime(iso: string): string {
 // When the backend emits `notification:new` via socket.io, call:
 //   dispatchNotificationEvent(payload)
 // from wherever socket.io is initialised in the app.
-export const NOTIF_SOCKET_EVENT = 'orika:notification:new';
+export const NOTIF_SOCKET_EVENT = "orika:notification:new";
 export function dispatchNotificationEvent(detail: unknown) {
   window.dispatchEvent(new CustomEvent(NOTIF_SOCKET_EVENT, { detail }));
 }
@@ -95,51 +105,57 @@ interface Props {
 }
 
 export function NotificationsPanel({ open, onClose }: Props) {
-  const navigate  = useNavigate();
-  const qc        = useQueryClient();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { active } = useActiveBusiness();
-  const panelRef  = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['notifications', active],
-    queryFn:  fetchNotifications,
-    enabled:  !!active,
+    queryKey: ["notifications", active],
+    queryFn: fetchNotifications,
+    enabled: !!active,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
 
   const notifications = data?.data ?? [];
-  const unreadCount   = data?.unread_count ?? 0;
+  const unreadCount = data?.unread_count ?? 0;
 
   // Refresh when a socket event fires
   useEffect(() => {
-    const handler = () => qc.invalidateQueries({ queryKey: ['notifications', active] });
+    const handler = () =>
+      qc.invalidateQueries({ queryKey: ["notifications", active] });
     window.addEventListener(NOTIF_SOCKET_EVENT, handler);
     return () => window.removeEventListener(NOTIF_SOCKET_EVENT, handler);
   }, [active, qc]);
 
   const readOne = useMutation({
     mutationFn: markOneRead,
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ['notifications', active] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["notifications", active] }),
   });
 
   const readAll = useMutation({
     mutationFn: markAllReadApi,
-    onSuccess:  () => qc.invalidateQueries({ queryKey: ['notifications', active] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["notifications", active] }),
   });
 
   // Close on outside click or Escape
   useEffect(() => {
     if (!open) return;
-    const onKey   = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onMouse = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onMouse);
+    const onMouse = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node))
+        onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onMouse);
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onMouse);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onMouse);
     };
   }, [open, onClose]);
 
@@ -160,7 +176,9 @@ export function NotificationsPanel({ open, onClose }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-orika-gold" />
-          <span className="text-sm font-semibold text-orika-cream">Notifications</span>
+          <span className="text-sm font-semibold text-orika-cream">
+            Notifications
+          </span>
           {unreadCount > 0 && (
             <span className="rounded-full bg-orika-gold/20 px-2 py-0.5 text-[10px] font-bold text-orika-gold">
               {unreadCount}
@@ -203,8 +221,12 @@ export function NotificationsPanel({ open, onClose }: Props) {
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
             <Bell className="h-8 w-8 text-orika-smoke/30 mb-3" />
-            <p className="text-sm font-medium text-orika-smoke">You're all caught up</p>
-            <p className="text-xs text-orika-smoke/40 mt-1">No notifications right now</p>
+            <p className="text-sm font-medium text-orika-smoke">
+              You're all caught up
+            </p>
+            <p className="text-xs text-orika-smoke/40 mt-1">
+              No notifications right now
+            </p>
           </div>
         ) : (
           notifications.map((n) => (
@@ -212,25 +234,31 @@ export function NotificationsPanel({ open, onClose }: Props) {
               key={n.notification_id}
               onClick={() => handleClick(n)}
               className={cn(
-                'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors',
+                "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
                 n.is_read
-                  ? 'hover:bg-orika-graphite/20'
-                  : 'bg-orika-gold/[0.04] hover:bg-orika-gold/[0.07]',
+                  ? "hover:bg-orika-graphite/20"
+                  : "bg-orika-gold/[0.04] hover:bg-orika-gold/[0.07]",
               )}
             >
               {/* Unread indicator */}
-              <span className={cn(
-                'mt-1.5 h-2 w-2 rounded-full shrink-0 transition-colors',
-                n.is_read ? 'bg-transparent' : 'bg-orika-gold',
-              )} />
+              <span
+                className={cn(
+                  "mt-1.5 h-2 w-2 rounded-full shrink-0 transition-colors",
+                  n.is_read ? "bg-transparent" : "bg-orika-gold",
+                )}
+              />
 
               <NotifIcon type={n.type} />
 
               <div className="flex-1 min-w-0">
-                <p className={cn(
-                  'text-xs leading-snug line-clamp-2',
-                  n.is_read ? 'text-orika-smoke' : 'font-semibold text-orika-cream',
-                )}>
+                <p
+                  className={cn(
+                    "text-xs leading-snug line-clamp-2",
+                    n.is_read
+                      ? "text-orika-smoke"
+                      : "font-semibold text-orika-cream",
+                  )}
+                >
                   {n.title}
                 </p>
                 {n.body && (
@@ -238,7 +266,9 @@ export function NotificationsPanel({ open, onClose }: Props) {
                     {n.body}
                   </p>
                 )}
-                <p className="text-[10px] text-orika-smoke/35 mt-1">{relTime(n.created_at)}</p>
+                <p className="text-[10px] text-orika-smoke/35 mt-1">
+                  {relTime(n.created_at)}
+                </p>
               </div>
             </button>
           ))
@@ -261,9 +291,9 @@ export function NotificationsPanel({ open, onClose }: Props) {
 export function useUnreadCount(): number {
   const { active } = useActiveBusiness();
   const { data } = useQuery({
-    queryKey: ['notifications', active],
-    queryFn:  fetchNotifications,
-    enabled:  !!active,
+    queryKey: ["notifications", active],
+    queryFn: fetchNotifications,
+    enabled: !!active,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });

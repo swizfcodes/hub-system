@@ -1,7 +1,13 @@
-import { TrendingUp, FileText, CheckCircle, AlertCircle, DollarSign } from 'lucide-react';
-import { Skeleton } from '@components/ui/Skeleton';
-import { fmtMoney } from '@lib/format';
-import type { SalesKpis } from '@typedefs/sales';
+import {
+  TrendingUp,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  DollarSign,
+} from "lucide-react";
+import { Skeleton } from "@components/ui/Skeleton";
+import { fmtMoney } from "@lib/format";
+import type { SalesKpis } from "@typedefs/sales";
 
 interface Props {
   kpis: SalesKpis | undefined;
@@ -13,15 +19,20 @@ interface KpiCardProps {
   label: string;
   value: string;
   icon: typeof TrendingUp;
-  accent?: 'gold' | 'sage' | 'danger' | 'default';
+  accent?: "gold" | "sage" | "danger" | "default";
 }
 
-function KpiCard({ label, value, icon: Icon, accent = 'default' }: KpiCardProps) {
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  accent = "default",
+}: KpiCardProps) {
   const accentColor = {
-    gold:    '#C9A86C',
-    sage:    '#8B9D77',
-    danger:  '#C0392B',
-    default: '#C5BEB1',
+    gold: "#C9A86C",
+    sage: "#8B9D77",
+    danger: "#C0392B",
+    default: "#C5BEB1",
   }[accent];
 
   return (
@@ -30,14 +41,11 @@ function KpiCard({ label, value, icon: Icon, accent = 'default' }: KpiCardProps)
         <span className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
           {label}
         </span>
-        <Icon
-          className="h-4 w-4"
-          style={{ color: accentColor }}
-        />
+        <Icon className="h-4 w-4" style={{ color: accentColor }} />
       </div>
       <span
         className="font-display text-xl font-extrabold sm:text-2xl"
-        style={{ color: accentColor === '#C5BEB1' ? '#F0EBE2' : accentColor }}
+        style={{ color: accentColor === "#C5BEB1" ? "#F0EBE2" : accentColor }}
       >
         {value}
       </span>
@@ -45,7 +53,7 @@ function KpiCard({ label, value, icon: Icon, accent = 'default' }: KpiCardProps)
   );
 }
 
-export function SalesKpiStrip({ kpis, isLoading, currency = 'NGN' }: Props) {
+export function SalesKpiStrip({ kpis, isLoading, currency = "NGN" }: Props) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -60,34 +68,34 @@ export function SalesKpiStrip({ kpis, isLoading, currency = 'NGN' }: Props) {
 
   const cards: KpiCardProps[] = [
     {
-      label:  'Pipeline Value',
-      value:  fmtMoney(kpis.pipeline_value, currency),
-      icon:   TrendingUp,
-      accent: 'gold',
+      label: "Pipeline Value",
+      value: fmtMoney(kpis.pipeline_value, currency),
+      icon: TrendingUp,
+      accent: "gold",
     },
     {
-      label:  'Open Quotes',
-      value:  String(kpis.open_quotes),
-      icon:   FileText,
-      accent: 'default',
+      label: "Open Quotes",
+      value: String(kpis.open_quotes),
+      icon: FileText,
+      accent: "default",
     },
     {
-      label:  'Confirmed MTD',
-      value:  String(kpis.confirmed_this_month),
-      icon:   CheckCircle,
-      accent: 'sage',
+      label: "Confirmed MTD",
+      value: String(kpis.confirmed_this_month),
+      icon: CheckCircle,
+      accent: "sage",
     },
     {
-      label:  'Overdue Invoices',
-      value:  String(kpis.overdue_invoices),
-      icon:   AlertCircle,
-      accent: kpis.overdue_invoices > 0 ? 'danger' : 'default',
+      label: "Overdue Invoices",
+      value: String(kpis.overdue_invoices),
+      icon: AlertCircle,
+      accent: kpis.overdue_invoices > 0 ? "danger" : "default",
     },
     {
-      label:  'Revenue MTD',
-      value:  fmtMoney(kpis.revenue_this_month, currency),
-      icon:   DollarSign,
-      accent: 'sage',
+      label: "Revenue MTD",
+      value: fmtMoney(kpis.revenue_this_month, currency),
+      icon: DollarSign,
+      accent: "sage",
     },
   ];
 

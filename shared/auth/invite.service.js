@@ -129,9 +129,10 @@ async function acceptInvite(rawToken, { password, display_name }) {
 
     const {
       rows: [existing],
-    } = await client.query(`SELECT user_id FROM shared.users WHERE email = $1`, [
-      row.email,
-    ]);
+    } = await client.query(
+      `SELECT user_id FROM shared.users WHERE email = $1`,
+      [row.email],
+    );
     if (existing)
       throw Object.assign(
         new Error("An account with this email already exists"),
@@ -198,7 +199,10 @@ async function acceptInvite(rawToken, { password, display_name }) {
     logger.info(
       `[invite] accepted by ${row.email}, user_id=${newUser.user_id}`,
     );
-    return { message: "Account created. You can now log in.", email: row.email };
+    return {
+      message: "Account created. You can now log in.",
+      email: row.email,
+    };
   });
 }
 

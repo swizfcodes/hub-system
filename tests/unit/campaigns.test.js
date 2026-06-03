@@ -159,7 +159,9 @@ describe("Campaigns Service", () => {
 
     it("should validate content length", () => {
       const longContent = "A".repeat(10000); // Very long content
-      const campaign = generateCampaign(TEST_BUSINESS, { content: longContent });
+      const campaign = generateCampaign(TEST_BUSINESS, {
+        content: longContent,
+      });
       expect(campaign.content.length).toBe(10000);
     });
   });
@@ -283,4 +285,3 @@ describe("Campaigns Service", () => {
     });
   });
 });
-

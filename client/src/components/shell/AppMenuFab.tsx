@@ -1,6 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid } from 'lucide-react';
-import { useIsDesktop } from '@hooks/useMediaQuery';
+import { Link, useLocation } from "react-router-dom";
+import { LayoutGrid } from "lucide-react";
+import { useIsDesktop } from "@hooks/useMediaQuery";
 
 /**
  * Floating "← App Menu" button (desktop only). Inspired by the demo's
@@ -13,7 +13,8 @@ export function AppMenuFab() {
 
   // Don't show on Hub home or login.
   if (!isDesktop) return null;
-  if (pathname === '/' || pathname === '/hub' || pathname === '/login') return null;
+  if (pathname === "/" || pathname === "/hub" || pathname === "/login")
+    return null;
 
   return (
     <Link

@@ -29,9 +29,9 @@ describe("Reports Service", () => {
       const report = generateReport();
       expect(report.period_start).toBeTruthy();
       expect(report.period_end).toBeTruthy();
-      expect(
-        new Date(report.period_end) >= new Date(report.period_start),
-      ).toBe(true);
+      expect(new Date(report.period_end) >= new Date(report.period_start)).toBe(
+        true,
+      );
     });
 
     it("should track report creator", () => {

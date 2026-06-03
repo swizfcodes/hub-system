@@ -198,13 +198,14 @@ export const HUB_MODULES: AppModule[] = [
     accent: "rose",
     group: "ops",
   },
-  { 
-    key: 'workspace',
-    label: 'Workspace',
-    description: 'Personal notes & scratch area',
-    icon: Layers, route: '/workspace',
-    accent: 'gold',
-    group: 'main' 
+  {
+    key: "workspace",
+    label: "Workspace",
+    description: "Personal notes & scratch area",
+    icon: Layers,
+    route: "/workspace",
+    accent: "gold",
+    group: "main",
   },
   {
     key: "social",

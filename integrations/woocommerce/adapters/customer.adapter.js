@@ -17,14 +17,17 @@ function toContactPayload(wcCustomer) {
   if (!wcCustomer) return null;
   const billing = wcCustomer.billing || {};
   return {
-    contact_type:  ['customer'],
-    display_name:  [wcCustomer.first_name, wcCustomer.last_name].filter(Boolean).join(' ') || billing.email || 'WooCommerce Customer',
-    first_name:    wcCustomer.first_name || null,
-    last_name:     wcCustomer.last_name  || null,
-    email:         wcCustomer.email      || billing.email  || null,
-    primary_phone: billing.phone         || null,
-    source:        'woocommerce',
-    metadata:      { woocommerce_customer_id: wcCustomer.id },
+    contact_type: ["customer"],
+    display_name:
+      [wcCustomer.first_name, wcCustomer.last_name].filter(Boolean).join(" ") ||
+      billing.email ||
+      "WooCommerce Customer",
+    first_name: wcCustomer.first_name || null,
+    last_name: wcCustomer.last_name || null,
+    email: wcCustomer.email || billing.email || null,
+    primary_phone: billing.phone || null,
+    source: "woocommerce",
+    metadata: { woocommerce_customer_id: wcCustomer.id },
   };
 }
 

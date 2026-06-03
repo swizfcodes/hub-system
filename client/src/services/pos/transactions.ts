@@ -1,44 +1,48 @@
-import { api } from '@services/api';
+import { api } from "@services/api";
 import type {
   PosTransaction,
   PendingTransaction,
   SyncResponse,
-} from '@typedefs/pos';
-import type { ReturnValues } from '@lib/schemas/pos';
+} from "@typedefs/pos";
+import type { ReturnValues } from "@lib/schemas/pos";
 
 // ── Online transaction ────────────────────────────────────────────────────────
 
 export interface CreateTransactionPayload {
-  session_id:      string;
-  contact_id?:     string;
-  lines:           {
-    product_id?:      string;
-    description:      string;
-    quantity:         number;
-    unit_price:       number;
+  session_id: string;
+  contact_id?: string;
+  lines: {
+    product_id?: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
     discount_amount?: number;
   }[];
   payments: {
-    payment_method:    string;
-    amount:            number;
-    reference?:        string;
+    payment_method: string;
+    amount: number;
+    reference?: string;
     paystack_reference?: string;
   }[];
-  fulfilment_type?: 'walk_in' | 'dispatch';
+  fulfilment_type?: "walk_in" | "dispatch";
 }
 
 export async function createTransaction(
   payload: CreateTransactionPayload,
 ): Promise<PosTransaction> {
-  const { data } = await api.post<PosTransaction>('/pos/transactions', payload);
+  const { data } = await api.post<PosTransaction>("/pos/transactions", payload);
   return data;
 }
 
-export async function getTransaction(id: string): Promise<PosTransaction | null> {
+export async function getTransaction(
+  id: string,
+): Promise<PosTransaction | null> {
   try {
     const { data } = await api.get<PosTransaction>(`/pos/transactions/${id}`);
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function voidTransaction(
@@ -52,9 +56,15 @@ export async function voidTransaction(
 
 export async function sendReceipt(
   transactionId: string,
-  options: { channel?: 'whatsapp' | 'email' | 'both' | 'auto'; overrideTo?: string },
+  options: {
+    channel?: "whatsapp" | "email" | "both" | "auto";
+    overrideTo?: string;
+  },
 ): Promise<{ sent: boolean; channel: string; results: unknown }> {
-  const { data } = await api.post(`/pos/transactions/${transactionId}/receipt`, options);
+  const { data } = await api.post(
+    `/pos/transactions/${transactionId}/receipt`,
+    options,
+  );
   return data;
 }
 
@@ -67,7 +77,11 @@ export function receiptPdfUrl(transactionId: string): string {
 export async function generateInvoiceFromTransaction(
   transactionId: string,
   dueDate?: string,
-): Promise<{ invoice_id: string; invoice_number: string; paystack_payment_url?: string }> {
+): Promise<{
+  invoice_id: string;
+  invoice_number: string;
+  paystack_payment_url?: string;
+}> {
   const { data } = await api.post(
     `/pos/transactions/${transactionId}/invoice`,
     { due_date: dueDate },
@@ -98,7 +112,7 @@ export async function verifyManager(
   email: string,
   password: string,
 ): Promise<{ approved: boolean; manager_id: string; display_name: string }> {
-  const { data } = await api.post('/auth/verify-manager', { email, password });
+  const { data } = await api.post("/auth/verify-manager", { email, password });
   return data;
 }
 
@@ -108,13 +122,13 @@ export async function syncOfflineTransactions(
   sessionId: string,
   transactions: PendingTransaction[],
 ): Promise<SyncResponse> {
-  const { data } = await api.post<SyncResponse>('/pos/sync', {
+  const { data } = await api.post<SyncResponse>("/pos/sync", {
     session_id: sessionId,
     transactions: transactions.map((t) => ({
-      offline_id:         t.offline_id,
-      lines:              t.lines,
-      payments:           t.payments,
-      contact_id:         t.contact_id,
+      offline_id: t.offline_id,
+      lines: t.lines,
+      payments: t.payments,
+      contact_id: t.contact_id,
       created_at_offline: t.created_at_offline,
     })),
   });
@@ -127,7 +141,9 @@ export async function getLoyaltyInfo(contactId: string) {
   try {
     const { data } = await api.get(`/loyalty/${contactId}`);
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function redeemLoyaltyPoints(
@@ -137,7 +153,7 @@ export async function redeemLoyaltyPoints(
 ): Promise<{ balance_after: number }> {
   const { data } = await api.post(`/loyalty/${contactId}/redeem`, {
     points,
-    reference_type: 'pos_transaction',
+    reference_type: "pos_transaction",
     reference_id: transactionId,
   });
   return data;

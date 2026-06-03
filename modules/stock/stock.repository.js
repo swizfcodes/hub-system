@@ -220,7 +220,18 @@ module.exports = {
 // dashboard and Product Detail "Stock" tab.
 // ──────────────────────────────────────────────────────────────
 
-async function getOnHand(client, { search, categoryId, locationId, lowStockOnly, outOfStockOnly, limit, offset }) {
+async function getOnHand(
+  client,
+  {
+    search,
+    categoryId,
+    locationId,
+    lowStockOnly,
+    outOfStockOnly,
+    limit,
+    offset,
+  },
+) {
   const { rows } = await client.query(
     `WITH stock_per_loc AS (
        SELECT product_id,
@@ -278,15 +289,17 @@ async function getOnHand(client, { search, categoryId, locationId, lowStockOnly,
       search ? `%${search}%` : null,
       categoryId || null,
       locationId || null,
-      lowStockOnly === true || lowStockOnly === 'true',
-      outOfStockOnly === true || outOfStockOnly === 'true',
+      lowStockOnly === true || lowStockOnly === "true",
+      outOfStockOnly === true || outOfStockOnly === "true",
       limit,
       offset,
     ],
   );
 
   // Totals — separate query so pagination doesn't distort them
-  const { rows: [totals] } = await client.query(
+  const {
+    rows: [totals],
+  } = await client.query(
     `WITH stock_per_loc AS (
        SELECT product_id, SUM(quantity * direction) AS qty
          FROM stock_movements
@@ -306,7 +319,9 @@ LEFT JOIN stock_per_loc spl ON spl.product_id = p.product_id
 }
 
 async function getOnHandByProduct(client, productId) {
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `WITH stock_per_loc AS (
        SELECT COALESCE(to_location_id, from_location_id) AS location_id,
               SUM(quantity * direction) AS qty
@@ -370,7 +385,9 @@ async function listReservations(client, { status, productId, limit, offset }) {
 }
 
 async function findReservationById(client, reservationId) {
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `SELECT r.*, p.sku AS product_sku, p.name AS product_name,
             c.display_name AS reserved_for_name,
             d.title        AS crm_deal_title
@@ -389,8 +406,13 @@ async function findReservationById(client, reservationId) {
 // with cancel allowed from either pending or in_transit
 // ──────────────────────────────────────────────────────────────
 
-async function insertTransferPending(client, { transferNumber, from_location_id, to_location_id, notes, userId }) {
-  const { rows: [transfer] } = await client.query(
+async function insertTransferPending(
+  client,
+  { transferNumber, from_location_id, to_location_id, notes, userId },
+) {
+  const {
+    rows: [transfer],
+  } = await client.query(
     `INSERT INTO stock_transfers
        (transfer_number, from_location_id, to_location_id, status, notes, initiated_by)
      VALUES ($1, $2, $3, 'pending', $4, $5)
@@ -413,7 +435,9 @@ async function insertTransferLines(client, transferId, lines) {
 }
 
 async function findTransferById(client, transferId) {
-  const { rows: [transfer] } = await client.query(
+  const {
+    rows: [transfer],
+  } = await client.query(
     `SELECT t.*,
             fl.name AS from_location_name,
             tl.name AS to_location_name,
@@ -485,14 +509,24 @@ async function updateTransferStatus(client, transferId, status, extra = {}) {
   // extra may include received_by, received_at, notes
   const sets = ["status = $2"];
   const vals = [transferId, status];
-  if (extra.received_by) { vals.push(extra.received_by); sets.push(`received_by = $${vals.length}`); }
-  if (extra.received_at) { vals.push(extra.received_at); sets.push(`received_at = $${vals.length}`); }
+  if (extra.received_by) {
+    vals.push(extra.received_by);
+    sets.push(`received_by = $${vals.length}`);
+  }
+  if (extra.received_at) {
+    vals.push(extra.received_at);
+    sets.push(`received_at = $${vals.length}`);
+  }
   if (extra.cancel_reason) {
     // notes append on cancel so we keep the original transfer note
     vals.push(extra.cancel_reason);
-    sets.push(`notes = COALESCE(notes || E'\\n', '') || ('Cancelled: ' || $${vals.length})`);
+    sets.push(
+      `notes = COALESCE(notes || E'\\n', '') || ('Cancelled: ' || $${vals.length})`,
+    );
   }
-  const { rows: [row] } = await client.query(
+  const {
+    rows: [row],
+  } = await client.query(
     `UPDATE stock_transfers SET ${sets.join(", ")} WHERE transfer_id = $1 RETURNING *`,
     vals,
   );
@@ -503,7 +537,10 @@ async function updateTransferStatus(client, transferId, status, extra = {}) {
 // Quality checks — plain CRUD against the existing table
 // ──────────────────────────────────────────────────────────────
 
-async function listQualityChecks(client, { productId, checkType, result, limit, offset }) {
+async function listQualityChecks(
+  client,
+  { productId, checkType, result, limit, offset },
+) {
   const { rows } = await client.query(
     `SELECT qc.*,
             p.sku AS product_sku, p.name AS product_name,
@@ -521,8 +558,13 @@ async function listQualityChecks(client, { productId, checkType, result, limit, 
   return rows;
 }
 
-async function insertQualityCheck(client, { product_id, check_type, result, notes, userId }) {
-  const { rows: [row] } = await client.query(
+async function insertQualityCheck(
+  client,
+  { product_id, check_type, result, notes, userId },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
     `INSERT INTO quality_checks (product_id, check_type, result, notes, checked_by)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
@@ -531,15 +573,15 @@ async function insertQualityCheck(client, { product_id, check_type, result, note
   return row;
 }
 
-module.exports.getOnHand              = getOnHand;
-module.exports.getOnHandByProduct     = getOnHandByProduct;
-module.exports.listReservations       = listReservations;
-module.exports.findReservationById    = findReservationById;
-module.exports.insertTransferPending  = insertTransferPending;
-module.exports.insertTransferLines    = insertTransferLines;
-module.exports.findTransferById       = findTransferById;
-module.exports.listTransfers          = listTransfers;
-module.exports.getTransferLines       = getTransferLines;
-module.exports.updateTransferStatus   = updateTransferStatus;
-module.exports.listQualityChecks      = listQualityChecks;
-module.exports.insertQualityCheck     = insertQualityCheck;
+module.exports.getOnHand = getOnHand;
+module.exports.getOnHandByProduct = getOnHandByProduct;
+module.exports.listReservations = listReservations;
+module.exports.findReservationById = findReservationById;
+module.exports.insertTransferPending = insertTransferPending;
+module.exports.insertTransferLines = insertTransferLines;
+module.exports.findTransferById = findTransferById;
+module.exports.listTransfers = listTransfers;
+module.exports.getTransferLines = getTransferLines;
+module.exports.updateTransferStatus = updateTransferStatus;
+module.exports.listQualityChecks = listQualityChecks;
+module.exports.insertQualityCheck = insertQualityCheck;

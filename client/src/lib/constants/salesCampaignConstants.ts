@@ -1,10 +1,16 @@
 // ── lib/constants/salesCampaignConstants.ts ───────────────────────────────────
-import { z } from 'zod';
+import { z } from "zod";
 
 export const CAMPAIGN_TEMPLATE_META = {
-  minimal:   { label: 'Minimal',   desc: 'Clean and elegant — products take centre stage' },
-  editorial: { label: 'Editorial', desc: 'Full-bleed hero image with luxury editorial feel' },
-  bold:      { label: 'Bold',      desc: 'High contrast + countdown — maximum urgency'     },
+  minimal: {
+    label: "Minimal",
+    desc: "Clean and elegant — products take centre stage",
+  },
+  editorial: {
+    label: "Editorial",
+    desc: "Full-bleed hero image with luxury editorial feel",
+  },
+  bold: { label: "Bold", desc: "High contrast + countdown — maximum urgency" },
 } as const;
 
 // Which landing-page sections show by default. Used as a fallback whenever a
@@ -12,78 +18,118 @@ export const CAMPAIGN_TEMPLATE_META = {
 // sections were seeded), so the public page and the builder toggles always
 // have something to render. Mirrors the DB default on sales_campaigns.sections.
 export const DEFAULT_CAMPAIGN_SECTIONS: Record<string, boolean> = {
-  hero:            true,
-  countdown:       true,
-  products:        true,
-  inquiry_form:    true,
+  hero: true,
+  countdown: true,
+  products: true,
+  inquiry_form: true,
   whatsapp_button: true,
   stock_indicator: true,
 };
 
 // Brand-aligned accent colours, selectable per campaign. Gold (#C9A86C) is the
 // house colour and the default; the rest are tasteful, on-brand alternatives.
-export const DEFAULT_ACCENT = '#C9A86C';
+export const DEFAULT_ACCENT = "#C9A86C";
 export const CAMPAIGN_ACCENTS: { label: string; value: string }[] = [
-  { label: 'Gold',      value: '#C9A86C' },
-  { label: 'Champagne', value: '#D9BC87' },
-  { label: 'Rose',      value: '#C2728A' },
-  { label: 'Emerald',   value: '#2D6A4F' },
-  { label: 'Royal',     value: '#6C5CE7' },
-  { label: 'Sky',       value: '#2D9CDB' },
+  { label: "Gold", value: "#C9A86C" },
+  { label: "Champagne", value: "#D9BC87" },
+  { label: "Rose", value: "#C2728A" },
+  { label: "Emerald", value: "#2D6A4F" },
+  { label: "Royal", value: "#6C5CE7" },
+  { label: "Sky", value: "#2D9CDB" },
 ];
 
-export const ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
-  pending:          { label: 'Awaiting proof',     color: '#F97316' },
-  proof_submitted:  { label: 'Verifying payment',  color: '#C9A86C' },
-  confirmed:        { label: 'Confirmed',          color: '#2D9CDB' },
-  dispatched:       { label: 'Dispatched',         color: '#7B68EE' },
-  ready_for_pickup: { label: 'Ready for pickup',   color: '#2D6A4F' },
-  completed:        { label: 'Completed',          color: '#2D6A4F' },
-  cancelled:        { label: 'Cancelled',          color: '#EF4444' },
+export const ORDER_STATUS_META: Record<
+  string,
+  { label: string; color: string }
+> = {
+  pending: { label: "Awaiting proof", color: "#F97316" },
+  proof_submitted: { label: "Verifying payment", color: "#C9A86C" },
+  confirmed: { label: "Confirmed", color: "#2D9CDB" },
+  dispatched: { label: "Dispatched", color: "#7B68EE" },
+  ready_for_pickup: { label: "Ready for pickup", color: "#2D6A4F" },
+  completed: { label: "Completed", color: "#2D6A4F" },
+  cancelled: { label: "Cancelled", color: "#EF4444" },
 };
 
 export const NIGERIAN_STATES = [
-  'Abia', 'Abuja', 'Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
-  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Gombe','Imo',
-  'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
-  'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
-  'Yobe','Zamfara',
+  "Abia",
+  "Abuja",
+  "Adamawa",
+  "Akwa Ibom",
+  "Anambra",
+  "Bauchi",
+  "Bayelsa",
+  "Benue",
+  "Borno",
+  "Cross River",
+  "Delta",
+  "Ebonyi",
+  "Edo",
+  "Ekiti",
+  "Enugu",
+  "Gombe",
+  "Imo",
+  "Jigawa",
+  "Kaduna",
+  "Kano",
+  "Katsina",
+  "Kebbi",
+  "Kogi",
+  "Kwara",
+  "Lagos",
+  "Nasarawa",
+  "Niger",
+  "Ogun",
+  "Ondo",
+  "Osun",
+  "Oyo",
+  "Plateau",
+  "Rivers",
+  "Sokoto",
+  "Taraba",
+  "Yobe",
+  "Zamfara",
 ];
 
 // Zod schemas
 export const campaignSchema = z.object({
-  campaign_name:  z.string().min(2, 'Campaign name required'),
-  slug:           z.string().min(2).regex(/^[a-z0-9-]+$/, 'Only lowercase letters, numbers, hyphens'),
-  template:       z.enum(['minimal','editorial','bold']).default('editorial'),
-  headline:       z.string().optional().or(z.literal('')),
-  subheadline:    z.string().optional().or(z.literal('')),
-  body_copy:      z.string().optional().or(z.literal('')),
-  hero_image_url: z.string().optional().or(z.literal('')),
-  accent_color:   z.string().optional().or(z.literal('')),
-  discount_type:  z.enum(['percentage','fixed_amount','none']).default('none'),
+  campaign_name: z.string().min(2, "Campaign name required"),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/, "Only lowercase letters, numbers, hyphens"),
+  template: z.enum(["minimal", "editorial", "bold"]).default("editorial"),
+  headline: z.string().optional().or(z.literal("")),
+  subheadline: z.string().optional().or(z.literal("")),
+  body_copy: z.string().optional().or(z.literal("")),
+  hero_image_url: z.string().optional().or(z.literal("")),
+  accent_color: z.string().optional().or(z.literal("")),
+  discount_type: z.enum(["percentage", "fixed_amount", "none"]).default("none"),
   discount_value: z.number().min(0).optional(),
-  start_date:     z.string().optional().or(z.literal('')),
-  end_date:       z.string().optional().or(z.literal('')),
-  is_evergreen:   z.boolean().default(false),
-  whatsapp_number: z.string().optional().or(z.literal('')),
-  store_location: z.string().optional().or(z.literal('')),
-  redirect_url:   z.string().url().optional().or(z.literal('')),
+  start_date: z.string().optional().or(z.literal("")),
+  end_date: z.string().optional().or(z.literal("")),
+  is_evergreen: z.boolean().default(false),
+  whatsapp_number: z.string().optional().or(z.literal("")),
+  store_location: z.string().optional().or(z.literal("")),
+  redirect_url: z.string().url().optional().or(z.literal("")),
 });
 export type CampaignFormValues = z.infer<typeof campaignSchema>;
 
 export const checkoutSchema = z.object({
-  customer_name:   z.string().min(2, 'Name required'),
-  customer_phone:  z.string().min(10, 'Valid phone required'),
-  customer_email:  z.string().email().optional().or(z.literal('')),
-  fulfilment_type: z.enum(['delivery','pickup']),
-  delivery_address: z.object({
-    line1:    z.string().min(5, 'Address required'),
-    area:     z.string().optional().or(z.literal('')),
-    city:     z.string().min(2, 'City required'),
-    state:    z.string().min(2, 'State required'),
-    landmark: z.string().optional().or(z.literal('')),
-  }).optional(),
-  payment_method:  z.enum(['paystack','bank_transfer']),
+  customer_name: z.string().min(2, "Name required"),
+  customer_phone: z.string().min(10, "Valid phone required"),
+  customer_email: z.string().email().optional().or(z.literal("")),
+  fulfilment_type: z.enum(["delivery", "pickup"]),
+  delivery_address: z
+    .object({
+      line1: z.string().min(5, "Address required"),
+      area: z.string().optional().or(z.literal("")),
+      city: z.string().min(2, "City required"),
+      state: z.string().min(2, "State required"),
+      landmark: z.string().optional().or(z.literal("")),
+    })
+    .optional(),
+  payment_method: z.enum(["paystack", "bank_transfer"]),
   bank_account_id: z.string().uuid().optional(),
 });
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>;

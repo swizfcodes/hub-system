@@ -1,7 +1,18 @@
 // Types mirror per-business catalogue schema (000007_business_catalogue.sql).
 
-export type LocationType = 'warehouse' | 'showroom' | 'pos_terminal' | 'retail_partner' | 'transit';
-export type BarcodeType = 'CODE128' | 'EAN13' | 'QR' | 'UPC' | 'custom' | string;
+export type LocationType =
+  | "warehouse"
+  | "showroom"
+  | "pos_terminal"
+  | "retail_partner"
+  | "transit";
+export type BarcodeType =
+  | "CODE128"
+  | "EAN13"
+  | "QR"
+  | "UPC"
+  | "custom"
+  | string;
 
 export interface ProductCategory {
   category_id: string;
@@ -18,7 +29,7 @@ export interface ProductImage {
   image_id: string;
   product_id: string;
   document_id: string;
-  url?: string;          // resolved at API
+  url?: string; // resolved at API
   is_primary: boolean;
   display_order: number;
   alt_text?: string | null;

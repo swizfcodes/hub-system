@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from "lucide-react";
 
 /**
  * A small notice rendered when the concierge endpoints aren't mounted
@@ -12,9 +12,13 @@ export function ConciergeNotice() {
         <Sparkles className="w-4 h-4" />
       </div>
       <div className="text-sm">
-        <p className="text-orika-cream font-medium">Concierge profile coming soon</p>
+        <p className="text-orika-cream font-medium">
+          Concierge profile coming soon
+        </p>
         <p className="text-orika-cloud text-xs mt-1">
-          Preferences, milestones, and personalised notes for this customer will appear here. This panel will populate once the Concierge module is enabled for your account.
+          Preferences, milestones, and personalised notes for this customer will
+          appear here. This panel will populate once the Concierge module is
+          enabled for your account.
         </p>
       </div>
     </div>

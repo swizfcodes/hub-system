@@ -1,28 +1,30 @@
 // ── POSTotals.tsx ──────────────────────────────────────────────────────────────
-import { usePOSStore, computeTotals } from '@stores/posStore';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { fmtMoney as fmtMoneyTotals } from '@lib/format';
-import { Select } from '@components/ui/Select';
-import type { OrderDiscount } from '@typedefs/pos';
+import { usePOSStore, computeTotals } from "@stores/posStore";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { fmtMoney as fmtMoneyTotals } from "@lib/format";
+import { Select } from "@components/ui/Select";
+import type { OrderDiscount } from "@typedefs/pos";
 
 interface POSTotalsProps {
-  currency?:  string;
+  currency?: string;
   onCheckout: (totals: ReturnType<typeof computeTotals>) => void;
 }
 
-export function POSTotals({ currency = 'NGN', onCheckout }: POSTotalsProps) {
-  const { lines, orderDiscount, loyaltyDisc, setOrderDiscount } = usePOSStore((s) => ({
-    lines:            s.lines,
-    orderDiscount:    s.orderDiscount,
-    loyaltyDisc:      s.loyaltyDisc,
-    setOrderDiscount: s.setOrderDiscount,
-  }));
+export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
+  const { lines, orderDiscount, loyaltyDisc, setOrderDiscount } = usePOSStore(
+    (s) => ({
+      lines: s.lines,
+      orderDiscount: s.orderDiscount,
+      loyaltyDisc: s.loyaltyDisc,
+      setOrderDiscount: s.setOrderDiscount,
+    }),
+  );
 
   // vatRate comes from /settings/businesses/:key via the active-business
   // react-query cache; 0.075 fallback applies until the record loads or
   // if vat_rate is unset on the business config.
   const { vatRate } = useActiveBusiness();
-  const totals      = computeTotals(lines, orderDiscount, loyaltyDisc, vatRate);
+  const totals = computeTotals(lines, orderDiscount, loyaltyDisc, vatRate);
   const hasApproval = lines.some((l) => l.needs_approval);
 
   return (
@@ -30,26 +32,28 @@ export function POSTotals({ currency = 'NGN', onCheckout }: POSTotalsProps) {
       {/* Order discount */}
       <div className="flex items-center gap-2">
         <Select
-          value={orderDiscount?.type ?? 'percentage'}
-          onChange={(e) => setOrderDiscount({
-            type: e.target.value as OrderDiscount['type'],
-            value: orderDiscount?.value ?? 0,
-          })}
+          value={orderDiscount?.type ?? "percentage"}
+          onChange={(e) =>
+            setOrderDiscount({
+              type: e.target.value as OrderDiscount["type"],
+              value: orderDiscount?.value ?? 0,
+            })
+          }
           className="w-28 text-xs"
           options={[
-            { value: 'percentage', label: '% Discount' },
-            { value: 'fixed',      label: 'Fixed Disc' },
+            { value: "percentage", label: "% Discount" },
+            { value: "fixed", label: "Fixed Disc" },
           ]}
         />
         <input
           type="number"
           min={0}
           step="0.01"
-          value={orderDiscount?.value ?? ''}
+          value={orderDiscount?.value ?? ""}
           placeholder="0"
           onChange={(e) =>
             setOrderDiscount({
-              type: orderDiscount?.type ?? 'percentage',
+              type: orderDiscount?.type ?? "percentage",
               value: parseFloat(e.target.value) || 0,
             })
           }
@@ -59,16 +63,35 @@ export function POSTotals({ currency = 'NGN', onCheckout }: POSTotalsProps) {
 
       {/* Totals */}
       <div className="space-y-1 text-sm">
-        <Row label="Subtotal" value={fmtMoneyTotals(totals.line_subtotal, currency)} />
+        <Row
+          label="Subtotal"
+          value={fmtMoneyTotals(totals.line_subtotal, currency)}
+        />
         {totals.order_disc_amt > 0 && (
-          <Row label="Discount" value={`−${fmtMoneyTotals(totals.order_disc_amt, currency)}`} muted />
+          <Row
+            label="Discount"
+            value={`−${fmtMoneyTotals(totals.order_disc_amt, currency)}`}
+            muted
+          />
         )}
         {totals.loyalty_disc_amt > 0 && (
-          <Row label="Loyalty" value={`−${fmtMoneyTotals(totals.loyalty_disc_amt, currency)}`} muted />
+          <Row
+            label="Loyalty"
+            value={`−${fmtMoneyTotals(totals.loyalty_disc_amt, currency)}`}
+            muted
+          />
         )}
-        <Row label={`VAT (${(vatRate * 100).toFixed(1)}%)`} value={fmtMoneyTotals(totals.vat, currency)} muted />
+        <Row
+          label={`VAT (${(vatRate * 100).toFixed(1)}%)`}
+          value={fmtMoneyTotals(totals.vat, currency)}
+          muted
+        />
         <div className="border-t border-white/10 pt-2">
-          <Row label="Total" value={fmtMoneyTotals(totals.total, currency)} bold />
+          <Row
+            label="Total"
+            value={fmtMoneyTotals(totals.total, currency)}
+            bold
+          />
         </div>
       </div>
 
@@ -83,19 +106,39 @@ export function POSTotals({ currency = 'NGN', onCheckout }: POSTotalsProps) {
         disabled={!lines.length || hasApproval}
         className="w-full rounded-lg bg-orika-gold py-3 font-semibold text-orika-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
       >
-        {hasApproval ? 'Awaiting Approval' : `Checkout — ${fmtMoneyTotals(totals.total, currency)}`}
+        {hasApproval
+          ? "Awaiting Approval"
+          : `Checkout — ${fmtMoneyTotals(totals.total, currency)}`}
       </button>
     </div>
   );
 }
 
-function Row({ label, value, muted = false, bold = false }: {
-  label: string; value: string; muted?: boolean; bold?: boolean;
+function Row({
+  label,
+  value,
+  muted = false,
+  bold = false,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  bold?: boolean;
 }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className={muted ? 'text-orika-smoke' : 'text-orika-cloud'}>{label}</span>
-      <span className={bold ? 'font-semibold text-orika-cream' : muted ? 'text-orika-smoke' : 'text-orika-cream'}>
+      <span className={muted ? "text-orika-smoke" : "text-orika-cloud"}>
+        {label}
+      </span>
+      <span
+        className={
+          bold
+            ? "font-semibold text-orika-cream"
+            : muted
+              ? "text-orika-smoke"
+              : "text-orika-cream"
+        }
+      >
         {value}
       </span>
     </div>

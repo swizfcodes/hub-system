@@ -598,10 +598,9 @@ describe("Loyalty Module", () => {
         const min = 1000;
         const max = 500;
         if (max < min) {
-          throw Object.assign(
-            new Error("max_points must be >= min_points"),
-            { status: 400 },
-          );
+          throw Object.assign(new Error("max_points must be >= min_points"), {
+            status: 400,
+          });
         }
       }).toThrow("max_points must be >= min_points");
     });
