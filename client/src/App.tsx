@@ -24,7 +24,18 @@ const PipelineStages = lazy(() => import("@pages/settings/PipelineStages"));
 const DocumentNumbering = lazy(
   () => import("@pages/settings/DocumentNumbering"),
 );
-const StorefrontScents = lazy(() => import("@pages/settings/StorefrontScents"));
+const StorefrontHome = lazy(
+  () => import("@pages/settings/storefront/StorefrontHome"),
+);
+const StorefrontScents = lazy(
+  () => import("@pages/settings/storefront/Scents"),
+);
+const StorefrontSignatures = lazy(
+  () => import("@pages/settings/storefront/Signatures"),
+);
+const StorefrontContent = lazy(
+  () => import("@pages/settings/storefront/Content"),
+);
 const PermissionsPage = lazy(() => import("@pages/settings/Permissions"));
 
 // Contacts module
@@ -279,9 +290,18 @@ export default function App() {
             path="/settings/document-numbering"
             element={<DocumentNumbering />}
           />
+          <Route path="/settings/storefront" element={<StorefrontHome />} />
           <Route
-            path="/settings/storefront-scents"
+            path="/settings/storefront/scents"
             element={<StorefrontScents />}
+          />
+          <Route
+            path="/settings/storefront/signatures"
+            element={<StorefrontSignatures />}
+          />
+          <Route
+            path="/settings/storefront/content"
+            element={<StorefrontContent />}
           />
           <Route path="/settings/permissions" element={<PermissionsPage />} />
 

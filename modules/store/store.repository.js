@@ -318,6 +318,84 @@ async function listSignatures(client) {
   return rows;
 }
 
+// ── SIGNATURES ADMIN (full CRUD) ─────────────────────────────
+// Upsert keyed by slug (PK). Create passes a fresh slug; update passes
+// the existing one. Storefront read-path (listSignatures) already orders
+// by display_order, so reordering is just a number edit here.
+async function upsertSignature(client, s) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO store.signatures
+       (slug, name, size_label, price_label, blurb, image, display_order, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7, now())
+     ON CONFLICT (slug) DO UPDATE SET
+       name          = EXCLUDED.name,
+       size_label    = EXCLUDED.size_label,
+       price_label   = EXCLUDED.price_label,
+       blurb         = EXCLUDED.blurb,
+       image         = EXCLUDED.image,
+       display_order = EXCLUDED.display_order,
+       updated_at    = now()
+     RETURNING *`,
+    [
+      s.slug,
+      s.name,
+      s.size_label || "",
+      s.price_label || "",
+      s.blurb || "",
+      s.image || null,
+      s.display_order ?? 0,
+    ],
+  );
+  return row;
+}
+
+async function deleteSignature(client, slug) {
+  await client.query(`DELETE FROM store.signatures WHERE slug = $1`, [slug]);
+}
+
+// ── SETTINGS (storefront content — singleton row) ────────────
+async function getSettings(client) {
+  const {
+    rows: [row],
+  } = await client.query(`SELECT * FROM store.settings WHERE id = 1`);
+  return row || null;
+}
+
+async function upsertSettings(client, s) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `INSERT INTO store.settings
+       (id, hero_eyebrow, hero_headline, hero_headline_accent, hero_note,
+        hero_image, range_eyebrow, range_title, range_subtitle, updated_at)
+     VALUES (1,$1,$2,$3,$4,$5,$6,$7,$8, now())
+     ON CONFLICT (id) DO UPDATE SET
+       hero_eyebrow         = EXCLUDED.hero_eyebrow,
+       hero_headline        = EXCLUDED.hero_headline,
+       hero_headline_accent = EXCLUDED.hero_headline_accent,
+       hero_note            = EXCLUDED.hero_note,
+       hero_image           = EXCLUDED.hero_image,
+       range_eyebrow        = EXCLUDED.range_eyebrow,
+       range_title          = EXCLUDED.range_title,
+       range_subtitle       = EXCLUDED.range_subtitle,
+       updated_at           = now()
+     RETURNING *`,
+    [
+      s.hero_eyebrow ?? null,
+      s.hero_headline ?? null,
+      s.hero_headline_accent ?? null,
+      s.hero_note ?? null,
+      s.hero_image ?? null,
+      s.range_eyebrow ?? null,
+      s.range_title ?? null,
+      s.range_subtitle ?? null,
+    ],
+  );
+  return row;
+}
+
 // ── CUSTOMERS ────────────────────────────────────────────────
 
 async function findCustomerByEmail(client, email) {
@@ -749,6 +827,11 @@ module.exports = {
   listScents,
   findScentBySlug,
   listSignatures,
+  upsertSignature,
+  deleteSignature,
+  // settings (storefront content)
+  getSettings,
+  upsertSettings,
   // customers + contacts
   findCustomerByEmail,
   insertCustomer,

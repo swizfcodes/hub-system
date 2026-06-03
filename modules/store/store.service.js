@@ -131,6 +131,15 @@ async function getSignatures() {
   });
 }
 
+// ── PUBLIC: SETTINGS (storefront content) ────────────────────
+// Returns the singleton settings row (or null if not seeded — the
+// storefront falls back to its static defaults in that case).
+async function getSettings() {
+  return withStoreContext(async (client) => {
+    return repo.getSettings(client);
+  });
+}
+
 // ── PUBLIC: CHECKOUT ─────────────────────────────────────────
 
 /**
@@ -595,6 +604,55 @@ async function saveScent(family, data) {
   });
 }
 
+// ── SIGNATURES ADMIN (full CRUD) ─────────────────────────────
+
+function slugify(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function listSignaturesAdmin() {
+  return withStoreContext(async (client) => {
+    return { data: await repo.listSignatures(client) };
+  });
+}
+
+// slug from the URL on update; null on create (derive from body.slug || name).
+async function saveSignature(slug, data) {
+  if (!data.name || !data.name.trim()) {
+    throw Object.assign(new Error("name is required"), { status: 400 });
+  }
+  const finalSlug = slug || slugify(data.slug || data.name);
+  if (!finalSlug) {
+    throw Object.assign(new Error("a valid slug or name is required"), {
+      status: 400,
+    });
+  }
+  return withStoreContext(async (client) => {
+    return repo.upsertSignature(client, { ...data, slug: finalSlug });
+  });
+}
+
+async function deleteSignature(slug) {
+  if (!slug) {
+    throw Object.assign(new Error("slug is required"), { status: 400 });
+  }
+  return withStoreContext(async (client) => {
+    await repo.deleteSignature(client, slug);
+    return { deleted: true };
+  });
+}
+
+// ── SETTINGS ADMIN (storefront content) ──────────────────────
+
+async function saveSettings(data) {
+  return withStoreContext(async (client) => {
+    return repo.upsertSettings(client, data || {});
+  });
+}
+
 async function subscribeNewsletter({ email, source }) {
   if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
     throw Object.assign(new Error("A valid email is required"), {
@@ -827,6 +885,7 @@ module.exports = {
   getScents,
   getScentBySlug,
   getSignatures,
+  getSettings,
   // checkout + payments
   createOrder,
   getOrder,
@@ -837,6 +896,11 @@ module.exports = {
   unsubscribeNewsletter,
   listEditableScents,
   saveScent,
+  // storefront content admin
+  listSignaturesAdmin,
+  saveSignature,
+  deleteSignature,
+  saveSettings,
   listSubscribers,
   exportSubscribersCsv,
   submitEnquiry,

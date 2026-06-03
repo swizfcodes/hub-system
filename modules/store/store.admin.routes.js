@@ -37,4 +37,78 @@ router.put(
   },
 );
 
+// ── SIGNATURES ADMIN (full CRUD) ─────────────────────────────
+// Manage the "Four formats" cards on the storefront homepage —
+// name, size/price labels, blurb, hero image and display order.
+// Pre-seeded from the storefront's current four formats (migration
+// 000049); staff can add, edit, reorder and delete from here.
+
+router.get("/signatures", can("settings", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.listSignaturesAdmin());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  "/signatures",
+  body("name").notEmpty(),
+  validate,
+  can("settings", "edit"),
+  async (req, res, next) => {
+    try {
+      // No slug in the URL on create — service derives it from body.slug || name.
+      res.status(201).json(await service.saveSignature(null, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.put(
+  "/signatures/:slug",
+  body("name").notEmpty(),
+  validate,
+  can("settings", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.saveSignature(req.params.slug, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/signatures/:slug",
+  can("settings", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.deleteSignature(req.params.slug));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── SETTINGS ADMIN (storefront content) ──────────────────────
+// Singleton row driving the homepage hero + "Range" section copy.
+
+router.get("/settings", can("settings", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.getSettings());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/settings", can("settings", "edit"), async (req, res, next) => {
+  try {
+    res.json(await service.saveSettings(req.body));
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

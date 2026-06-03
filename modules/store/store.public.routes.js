@@ -117,6 +117,16 @@ router.get("/signatures", async (req, res, next) => {
   }
 });
 
+// ── Settings (storefront content) ────────────────────────────
+
+router.get("/settings", async (req, res, next) => {
+  try {
+    res.json(await service.getSettings());
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ── Orders / checkout ────────────────────────────────────────
 
 router.post(
