@@ -74,18 +74,16 @@ export function ContactDetailTabs({
     { key: "tasks", label: "Tasks" },
     { key: "calendar", label: "Calendar" },
     ...extraTabs,
-    ...(isCustomer
-      ? [
-          { key: "deals", label: "Deals" },
-          { key: "invoices", label: "Invoices" },
-          { key: "concierge", label: "Concierge" },
-        ]
-      : []),
-    ...(isSupplier ? [{ key: "purchasing", label: "Purchasing" }] : []),
-    { key: "notes", label: "Notes" },
-    { key: "documents", label: "Documents" },
-    { key: "properties", label: "Properties" },
-    { key: "audit", label: "Audit" },
+    ...(isCustomer ? [
+      { key: 'deals',     label: 'Deals' },
+      { key: 'invoices',  label: 'Invoices' },
+      { key: 'concierge', label: 'Concierge' },
+    ] : []),
+    ...(isSupplier ? [{ key: 'purchasing', label: 'Purchasing' }] : []),
+    { key: 'notes',      label: 'Notes' },
+    { key: 'documents',  label: 'Documents' },
+    { key: 'properties', label: 'Addresses & tags' },
+    { key: 'audit',      label: 'Audit' },
   ];
 
   return (
@@ -482,16 +480,27 @@ function fmtBytes(n: number): string {
   return `${(n / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${u[i]}`;
 }
 
-function ContactDocumentsTab({
-  contactId,
-  contactName,
-}: {
-  contactId: string;
-  contactName: string;
-}) {
+// Must match the backend's allowed document_type enum (documents.service).
+const CONTACT_DOC_TYPES: { value: string; label: string }[] = [
+  { value: 'other',                   label: 'Other / general' },
+  { value: 'employment_contract',     label: 'Employment contract' },
+  { value: 'nda',                     label: 'NDA' },
+  { value: 'authenticity_certificate',label: 'Authenticity certificate' },
+  { value: 'warranty_card',           label: 'Warranty card' },
+  { value: 'appraisal',               label: 'Appraisal' },
+  { value: 'supplier_invoice',        label: 'Supplier invoice' },
+  { value: 'supplier_quotation',      label: 'Supplier quotation' },
+  { value: 'purchase_order',          label: 'Purchase order' },
+  { value: 'invoice',                 label: 'Invoice' },
+  { value: 'receipt',                 label: 'Receipt' },
+  { value: 'delivery_note',           label: 'Delivery note' },
+];
+
+function ContactDocumentsTab({ contactId, contactName }: { contactId: string; contactName: string }) {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const business = useBusinessStore((s) => s.active);
+  const [docType, setDocType] = useState('other');
 
   const { data, isLoading } = useQuery({
     queryKey: ["contacts", contactId, "documents"],
@@ -505,20 +514,16 @@ function ContactDocumentsTab({
   const docs = data?.data ?? [];
 
   const upload = useMutation({
-    mutationFn: (file: File) =>
-      uploadDocument({
-        file,
-        business: business ?? "",
-        document_type: "contact_document",
-        title: file.name,
-        reference_type: "contact",
-        reference_id: contactId,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["contacts", contactId, "documents"] });
-      showToast.success("Document uploaded");
-    },
-    onError: (e) => showToast.error("Upload failed", errMsg(e)),
+    mutationFn: (file: File) => uploadDocument({
+      file,
+      business: business ?? '',
+      document_type: docType,
+      title: file.name,
+      reference_type: 'contact',
+      reference_id: contactId,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contacts', contactId, 'documents'] }); showToast.success('Document uploaded'); },
+    onError: (e) => showToast.error('Upload failed', errMsg(e)),
   });
   const remove = useMutation({
     mutationFn: (id: string) => deleteDocument(id),
@@ -535,26 +540,20 @@ function ContactDocumentsTab({
         <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
           <FileText className="w-3.5 h-3.5" /> Documents · {docs.length}
         </h3>
-        <input
-          ref={inputRef}
-          type="file"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) upload.mutate(f);
-            if (inputRef.current) inputRef.current.value = "";
-          }}
-        />
-        <Button
-          variant="gold"
-          size="sm"
-          leftIcon={<Upload className="w-3.5 h-3.5" />}
-          loading={upload.isPending}
-          disabled={!business}
-          onClick={() => inputRef.current?.click()}
-        >
-          Upload
-        </Button>
+        <div className="flex items-center gap-2">
+          <select
+            value={docType}
+            onChange={(e) => setDocType(e.target.value)}
+            title="Document type"
+            className="bg-orika-charcoal text-orika-cream border border-orika-graphite rounded-lg px-2.5 py-2 text-xs focus:border-orika-gold focus:outline-none max-w-[10rem]"
+          >
+            {CONTACT_DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <input ref={inputRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate(f); if (inputRef.current) inputRef.current.value = ''; }} />
+          <Button variant="gold" size="sm" leftIcon={<Upload className="w-3.5 h-3.5" />} loading={upload.isPending} disabled={!business} onClick={() => inputRef.current?.click()}>
+            Upload
+          </Button>
+        </div>
       </div>
 
       {!business && (
