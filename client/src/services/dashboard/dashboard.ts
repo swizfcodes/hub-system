@@ -1,77 +1,129 @@
-import { api } from '@services/api';
+import { api } from "@services/api";
 import type {
-  SalesDashboard, FinanceDashboard, StockDashboard,
-  CustomerDashboard, LogisticsDashboard, OverviewData,
-  YesterdaySummary, AppNotification, NotificationPreference,
-} from '@typedefs/dashboard';
+  SalesDashboard,
+  FinanceDashboard,
+  StockDashboard,
+  CustomerDashboard,
+  LogisticsDashboard,
+  OverviewData,
+  YesterdaySummary,
+  AppNotification,
+  NotificationPreference,
+} from "@typedefs/dashboard";
 
 // ── Dashboard API ─────────────────────────────────────────────────────────────
 
-export async function getSalesData(params?: { year?: number; month?: number }): Promise<SalesDashboard | null> {
+export async function getSalesData(params?: {
+  year?: number;
+  month?: number;
+}): Promise<SalesDashboard | null> {
   try {
-    const { data } = await api.get<SalesDashboard>('/dashboards/sales', { params });
+    const { data } = await api.get<SalesDashboard>("/dashboards/sales", {
+      params,
+    });
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-export async function getFinanceData(params?: { year?: number; month?: number }): Promise<FinanceDashboard | null> {
+export async function getFinanceData(params?: {
+  year?: number;
+  month?: number;
+}): Promise<FinanceDashboard | null> {
   try {
-    const { data } = await api.get<FinanceDashboard>('/dashboards/finance', { params });
+    const { data } = await api.get<FinanceDashboard>("/dashboards/finance", {
+      params,
+    });
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function getStockData(): Promise<StockDashboard | null> {
   try {
-    const { data } = await api.get<StockDashboard>('/dashboards/stock');
+    const { data } = await api.get<StockDashboard>("/dashboards/stock");
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-export async function getCustomerData(params?: { year?: number; month?: number }): Promise<CustomerDashboard | null> {
+export async function getCustomerData(params?: {
+  year?: number;
+  month?: number;
+}): Promise<CustomerDashboard | null> {
   try {
-    const { data } = await api.get<CustomerDashboard>('/dashboards/customers', { params });
+    const { data } = await api.get<CustomerDashboard>("/dashboards/customers", {
+      params,
+    });
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-export async function getLogisticsData(params?: { year?: number; month?: number }): Promise<LogisticsDashboard | null> {
+export async function getLogisticsData(params?: {
+  year?: number;
+  month?: number;
+}): Promise<LogisticsDashboard | null> {
   try {
-    const { data } = await api.get<LogisticsDashboard>('/dashboards/logistics', { params });
+    const { data } = await api.get<LogisticsDashboard>(
+      "/dashboards/logistics",
+      { params },
+    );
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-export async function getOverviewData(params?: { year?: number; month?: number }): Promise<OverviewData | null> {
+export async function getOverviewData(params?: {
+  year?: number;
+  month?: number;
+}): Promise<OverviewData | null> {
   try {
-    const { data } = await api.get<OverviewData>('/dashboards/overview', { params });
+    const { data } = await api.get<OverviewData>("/dashboards/overview", {
+      params,
+    });
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function getYesterdaySummary(): Promise<YesterdaySummary | null> {
   try {
-    const { data } = await api.get<YesterdaySummary>('/dashboards/yesterday');
+    const { data } = await api.get<YesterdaySummary>("/dashboards/yesterday");
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function getRetailPartnersData() {
   try {
-    const { data } = await api.get('/dashboards/retail-partners');
+    const { data } = await api.get("/dashboards/retail-partners");
     return data;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // ── Notifications API ─────────────────────────────────────────────────────────
 
 export async function listNotifications(params?: {
-  page?: number; limit?: number; unreadOnly?: boolean;
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
 }): Promise<{ data: AppNotification[]; unread_count: number }> {
   try {
-    const { data } = await api.get('/notifications', { params });
+    const { data } = await api.get("/notifications", { params });
     return data;
-  } catch { return { data: [], unread_count: 0 }; }
+  } catch {
+    return { data: [], unread_count: 0 };
+  }
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
@@ -79,23 +131,34 @@ export async function markNotificationRead(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await api.patch('/notifications/read-all');
+  await api.patch("/notifications/read-all");
 }
 
 export async function getUnreadCount(): Promise<number> {
   try {
-    const { data } = await api.get<{ data: AppNotification[]; unread_count: number }>('/notifications', {
+    const { data } = await api.get<{
+      data: AppNotification[];
+      unread_count: number;
+    }>("/notifications", {
       params: { limit: 1 },
     });
     return data.unread_count;
-  } catch { return 0; }
+  } catch {
+    return 0;
+  }
 }
 
-export async function listNotificationPreferences(): Promise<NotificationPreference[]> {
+export async function listNotificationPreferences(): Promise<
+  NotificationPreference[]
+> {
   try {
-    const { data } = await api.get<{ data: NotificationPreference[] }>('/notifications/preferences');
+    const { data } = await api.get<{ data: NotificationPreference[] }>(
+      "/notifications/preferences",
+    );
     return data.data ?? [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export async function setNotificationPreference(values: {
@@ -104,5 +167,5 @@ export async function setNotificationPreference(values: {
   email_enabled?: boolean;
   whatsapp_enabled?: boolean;
 }): Promise<void> {
-  await api.put('/notifications/preferences', values);
+  await api.put("/notifications/preferences", values);
 }

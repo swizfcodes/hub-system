@@ -75,7 +75,8 @@ describe("Sales Workflow Integration", () => {
         generateSalesOrder(TEST_BUSINESS, { total: 100000 }),
       ];
 
-      const avgValue = orders.reduce((sum, so) => sum + so.total, 0) / orders.length;
+      const avgValue =
+        orders.reduce((sum, so) => sum + so.total, 0) / orders.length;
       expect(avgValue).toBe(75000);
     });
   });
@@ -112,9 +113,7 @@ describe("Sales Workflow Integration", () => {
         ],
       });
 
-      expect(so.items[0].shipped_quantity).toBeLessThan(
-        so.items[0].quantity,
-      );
+      expect(so.items[0].shipped_quantity).toBeLessThan(so.items[0].quantity);
     });
   });
 });

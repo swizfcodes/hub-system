@@ -1,7 +1,7 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid } from 'lucide-react';
-import { HUB_MODULES, SETTINGS_SUBMODULES } from '@lib/constants/modules';
-import { cn } from '@lib/cn';
+import { NavLink, useLocation } from "react-router-dom";
+import { LayoutGrid } from "lucide-react";
+import { HUB_MODULES, SETTINGS_SUBMODULES } from "@lib/constants/modules";
+import { cn } from "@lib/cn";
 
 /**
  * Mobile bottom navigation. The icons shown are CALCULATED PER PAGE
@@ -23,58 +23,91 @@ interface BottomItem {
 }
 
 function bottomItemsForRoute(pathname: string): BottomItem[] | null {
-  if (pathname === '/' || pathname === '/hub') return null;
+  if (pathname === "/" || pathname === "/hub") return null;
 
-  if (pathname.startsWith('/settings')) {
-    const picks = ['business-setup', 'bank-accounts', 'custom-fields', 'permissions'];
+  if (pathname.startsWith("/settings")) {
+    const picks = [
+      "business-setup",
+      "bank-accounts",
+      "custom-fields",
+      "permissions",
+    ];
     const items: BottomItem[] = picks
       .map((k) => SETTINGS_SUBMODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
-      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
-    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+      .map((m) => ({
+        key: m.key,
+        label: m.label.split(" ")[0],
+        route: m.route,
+        icon: m.icon,
+      }));
+    items.push({ key: "apps", label: "Apps", route: "/", icon: LayoutGrid });
     return items;
   }
 
   // On Contacts module: show shortcuts to the most-used sibling modules
-  if (pathname.startsWith('/contacts')) {
-    const picks = ['contacts', 'crm', 'messaging', 'tasks'];
+  if (pathname.startsWith("/contacts")) {
+    const picks = ["contacts", "crm", "messaging", "tasks"];
     const items: BottomItem[] = picks
       .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
-      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
-    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+      .map((m) => ({
+        key: m.key,
+        label: m.label.split(" ")[0],
+        route: m.route,
+        icon: m.icon,
+      }));
+    items.push({ key: "apps", label: "Apps", route: "/", icon: LayoutGrid });
     return items;
   }
 
   // On Procurement / Catalogue: surface the procure-to-pay siblings
-  if (pathname.startsWith('/procurement') || pathname.startsWith('/catalogue')) {
-    const picks = ['catalogue', 'purchasing', 'stock', 'contacts'];
+  if (
+    pathname.startsWith("/procurement") ||
+    pathname.startsWith("/catalogue")
+  ) {
+    const picks = ["catalogue", "purchasing", "stock", "contacts"];
     const items: BottomItem[] = picks
       .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
-      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
-    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+      .map((m) => ({
+        key: m.key,
+        label: m.label.split(" ")[0],
+        route: m.route,
+        icon: m.icon,
+      }));
+    items.push({ key: "apps", label: "Apps", route: "/", icon: LayoutGrid });
     return items;
   }
 
   // On CRM: surface sales-adjacent quick jumps + calendar
-  if (pathname.startsWith('/crm')) {
-    const picks = ['crm', 'contacts', 'calendar', 'sales'];
+  if (pathname.startsWith("/crm")) {
+    const picks = ["crm", "contacts", "calendar", "sales"];
     const items: BottomItem[] = picks
       .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
-      .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
-    items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+      .map((m) => ({
+        key: m.key,
+        label: m.label.split(" ")[0],
+        route: m.route,
+        icon: m.icon,
+      }));
+    items.push({ key: "apps", label: "Apps", route: "/", icon: LayoutGrid });
     return items;
   }
 
   // Default mobile bottom nav
-  const picks = ['dashboard', 'crm', 'sales', 'stock'];
+  const picks = ["dashboard", "crm", "sales", "stock"];
   const items: BottomItem[] = picks
     .map((k) => HUB_MODULES.find((m) => m.key === k))
     .filter((m): m is NonNullable<typeof m> => !!m)
-    .map((m) => ({ key: m.key, label: m.label.split(' ')[0], route: m.route, icon: m.icon }));
-  items.push({ key: 'apps', label: 'Apps', route: '/', icon: LayoutGrid });
+    .map((m) => ({
+      key: m.key,
+      label: m.label.split(" ")[0],
+      route: m.route,
+      icon: m.icon,
+    }));
+  items.push({ key: "apps", label: "Apps", route: "/", icon: LayoutGrid });
   return items;
 }
 
@@ -92,18 +125,23 @@ export function MobileBottomNav() {
       <div className="grid grid-cols-5">
         {items.map((it) => {
           const Icon = it.icon;
-          const active = it.route === '/' ? pathname === '/' : pathname.startsWith(it.route);
+          const active =
+            it.route === "/" ? pathname === "/" : pathname.startsWith(it.route);
           return (
             <NavLink
               key={it.key}
               to={it.route}
               className={cn(
-                'flex flex-col items-center gap-1 py-2.5 transition-colors',
-                active ? 'text-orika-gold' : 'text-orika-smoke hover:text-orika-cream',
+                "flex flex-col items-center gap-1 py-2.5 transition-colors",
+                active
+                  ? "text-orika-gold"
+                  : "text-orika-smoke hover:text-orika-cream",
               )}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[0.6rem] font-semibold tracking-wide uppercase">{it.label}</span>
+              <span className="text-[0.6rem] font-semibold tracking-wide uppercase">
+                {it.label}
+              </span>
             </NavLink>
           );
         })}

@@ -1,153 +1,218 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
-import { AppShell } from '@components/shell/AppShell';
-import { Skeleton } from '@components/ui/Skeleton';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { AppShell } from "@components/shell/AppShell";
+import { Skeleton } from "@components/ui/Skeleton";
 
 // Pages (lazy-loaded for code-splitting)
-const Login                 = lazy(() => import('@pages/Login'));
-const HubHome               = lazy(() => import('@pages/HubHome'));
-const SettingsHome          = lazy(() => import('@pages/settings/SettingsHome'));
-const BusinessSetupList     = lazy(() => import('@pages/settings/business-setup/BusinessSetupList'));
-const BusinessSetupNew      = lazy(() => import('@pages/settings/business-setup/BusinessSetupNew'));
-const BusinessSetupDetail   = lazy(() => import('@pages/settings/business-setup/BusinessSetupDetail'));
-const BankAccounts          = lazy(() => import('@pages/settings/BankAccounts'));
-const TaxRates              = lazy(() => import('@pages/settings/TaxRates'));
-const CurrencyRates         = lazy(() => import('@pages/settings/CurrencyRates'));
-const CustomFields          = lazy(() => import('@pages/settings/CustomFields'));
-const PipelineStages        = lazy(() => import('@pages/settings/PipelineStages'));
-const DocumentNumbering     = lazy(() => import('@pages/settings/DocumentNumbering'));
-const PermissionsPage       = lazy(() => import('@pages/settings/Permissions'));
+const Login = lazy(() => import("@pages/Login"));
+const HubHome = lazy(() => import("@pages/HubHome"));
+const SettingsHome = lazy(() => import("@pages/settings/SettingsHome"));
+const BusinessSetupList = lazy(
+  () => import("@pages/settings/business-setup/BusinessSetupList"),
+);
+const BusinessSetupNew = lazy(
+  () => import("@pages/settings/business-setup/BusinessSetupNew"),
+);
+const BusinessSetupDetail = lazy(
+  () => import("@pages/settings/business-setup/BusinessSetupDetail"),
+);
+const BankAccounts = lazy(() => import("@pages/settings/BankAccounts"));
+const TaxRates = lazy(() => import("@pages/settings/TaxRates"));
+const CurrencyRates = lazy(() => import("@pages/settings/CurrencyRates"));
+const CustomFields = lazy(() => import("@pages/settings/CustomFields"));
+const PipelineStages = lazy(() => import("@pages/settings/PipelineStages"));
+const DocumentNumbering = lazy(
+  () => import("@pages/settings/DocumentNumbering"),
+);
+const StorefrontScents = lazy(() => import("@pages/settings/StorefrontScents"));
+const PermissionsPage = lazy(() => import("@pages/settings/Permissions"));
 
 // Contacts module
-const ContactsHome          = lazy(() => import('@pages/contacts/ContactsHome'));
-const ContactDetail         = lazy(() => import('@pages/contacts/ContactDetail'));
-const ContactNew            = lazy(() => import('@pages/contacts/ContactNew'));
-const StaffOnboard          = lazy(() => import('@pages/contacts/StaffOnboard'));
+const ContactsHome = lazy(() => import("@pages/contacts/ContactsHome"));
+const ContactDetail = lazy(() => import("@pages/contacts/ContactDetail"));
+const ContactNew = lazy(() => import("@pages/contacts/ContactNew"));
+const StaffOnboard = lazy(() => import("@pages/contacts/StaffOnboard"));
 
 // CRM module
-const CrmHome               = lazy(() => import('@pages/crm/CrmHome'));
-const DealDetail            = lazy(() => import('@pages/crm/DealDetail'));
+const CrmHome = lazy(() => import("@pages/crm/CrmHome"));
+const DealDetail = lazy(() => import("@pages/crm/DealDetail"));
 
 // Catalogue module
-const CatalogueHome         = lazy(() => import('@pages/catalogue/CatalogueHome'));
-const ProductDetail         = lazy(() => import('@pages/catalogue/ProductDetail'));
+const CatalogueHome = lazy(() => import("@pages/catalogue/CatalogueHome"));
+const ProductDetail = lazy(() => import("@pages/catalogue/ProductDetail"));
 
 // Procurement module
-const ProcurementHome       = lazy(() => import('@pages/procurement/ProcurementHome'));
-const SuppliersPage         = lazy(() => import('@pages/procurement/SuppliersPage'));
-const SupplierDetail        = lazy(() => import('@pages/procurement/SupplierDetail'));
-const RFQPage               = lazy(() => import('@pages/procurement/RFQPage'));
-const RFQNew                = lazy(() => import('@pages/procurement/RFQNew'));
-const RFQDetail             = lazy(() => import('@pages/procurement/RFQDetail'));
-const POPage                = lazy(() => import('@pages/procurement/POPage'));
-const PONew                 = lazy(() => import('@pages/procurement/PONew'));
-const PODetail              = lazy(() => import('@pages/procurement/PODetail'));
-const BillsPage             = lazy(() => import('@pages/procurement/BillsPage'));
-const BillNew               = lazy(() => import('@pages/procurement/BillNew'));
-const SupplierPortal        = lazy(() => import('@pages/procurement/SupplierPortal'));
+const ProcurementHome = lazy(
+  () => import("@pages/procurement/ProcurementHome"),
+);
+const SuppliersPage = lazy(() => import("@pages/procurement/SuppliersPage"));
+const SupplierDetail = lazy(() => import("@pages/procurement/SupplierDetail"));
+const RFQPage = lazy(() => import("@pages/procurement/RFQPage"));
+const RFQNew = lazy(() => import("@pages/procurement/RFQNew"));
+const RFQDetail = lazy(() => import("@pages/procurement/RFQDetail"));
+const POPage = lazy(() => import("@pages/procurement/POPage"));
+const PONew = lazy(() => import("@pages/procurement/PONew"));
+const PODetail = lazy(() => import("@pages/procurement/PODetail"));
+const BillsPage = lazy(() => import("@pages/procurement/BillsPage"));
+const BillNew = lazy(() => import("@pages/procurement/BillNew"));
+const SupplierPortal = lazy(() => import("@pages/procurement/SupplierPortal"));
 
 // Stock module
-const StockHome             = lazy(() => import('@pages/stock/StockHome'));
-const AlertsPage            = lazy(() => import('@pages/stock/AlertsPage'));
-const CountSession          = lazy(() => import('@pages/stock/CountSession'));
-const ReservationsPage      = lazy(() => import('@pages/stock/ReservationsPage'));
-const TransfersPage         = lazy(() => import('@pages/stock/TransfersPage'));
+const StockHome = lazy(() => import("@pages/stock/StockHome"));
+const AlertsPage = lazy(() => import("@pages/stock/AlertsPage"));
+const CountSession = lazy(() => import("@pages/stock/CountSession"));
+const ReservationsPage = lazy(() => import("@pages/stock/ReservationsPage"));
+const TransfersPage = lazy(() => import("@pages/stock/TransfersPage"));
 
 // Sales module
-const SalesHome             = lazy(() => import('@pages/sales/SalesHome'));
-const QuoteDetail           = lazy(() => import('@pages/sales/QuoteDetail'));
-const OrderDetail           = lazy(() => import('@pages/sales/OrderDetail'));
+const SalesHome = lazy(() => import("@pages/sales/SalesHome"));
+const QuoteDetail = lazy(() => import("@pages/sales/QuoteDetail"));
+const OrderDetail = lazy(() => import("@pages/sales/OrderDetail"));
 
 // POS module — terminal selector + session history share the AppShell
-const POSTerminals          = lazy(() => import('@pages/pos/POSTerminals'));
-const POSSessions           = lazy(() => import('@pages/pos/POSSessions'));
+const POSTerminals = lazy(() => import("@pages/pos/POSTerminals"));
+const POSSessions = lazy(() => import("@pages/pos/POSSessions"));
 
 // POS session — fullscreen, rendered OUTSIDE AppShell (no sidebar/topbar)
-const POSSession            = lazy(() => import('@pages/pos/POSSession'));
+const POSSession = lazy(() => import("@pages/pos/POSSession"));
 
 // Invoicing
-const InvoicesHome  = lazy(() => import('@pages/invoicing/InvoicesHome'));
-const InvoiceDetail = lazy(() => import('@pages/invoicing/InvoiceDetail'));
+const InvoicesHome = lazy(() => import("@pages/invoicing/InvoicesHome"));
+const InvoiceDetail = lazy(() => import("@pages/invoicing/InvoiceDetail"));
 
 // Logistics
-const LogisticsHome  = lazy(() => import('@pages/logistics/LogisticsHome'));
-const DeliveryDetail = lazy(() => import('@pages/logistics/DeliveryDetail'));
+const LogisticsHome = lazy(() => import("@pages/logistics/LogisticsHome"));
+const DeliveryDetail = lazy(() => import("@pages/logistics/DeliveryDetail"));
 
 // Dashboard
-const DashboardPage = lazy(() => import('@pages/dashboard/DashboardPage'));
+const DashboardPage = lazy(() => import("@pages/dashboard/DashboardPage"));
 
 // Accounting
-const AccountingDashboard = lazy(() => import('@pages/accounting/AccountingDashboard'));
-const ChartOfAccounts     = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ChartOfAccounts })));
-const JournalsPage        = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.JournalsPage })));
-const AcctReportsPage     = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReportsPage })));
-const ReconciliationPage  = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.ReconciliationPage })));
-const FiscalPeriodsPage   = lazy(() => import('@pages/accounting/AccountingPages').then((m) => ({ default: m.FiscalPeriodsPage })));
+const AccountingDashboard = lazy(
+  () => import("@pages/accounting/AccountingDashboard"),
+);
+const ChartOfAccounts = lazy(() =>
+  import("@pages/accounting/AccountingPages").then((m) => ({
+    default: m.ChartOfAccounts,
+  })),
+);
+const JournalsPage = lazy(() =>
+  import("@pages/accounting/AccountingPages").then((m) => ({
+    default: m.JournalsPage,
+  })),
+);
+const AcctReportsPage = lazy(() =>
+  import("@pages/accounting/AccountingPages").then((m) => ({
+    default: m.ReportsPage,
+  })),
+);
+const ReconciliationPage = lazy(() =>
+  import("@pages/accounting/AccountingPages").then((m) => ({
+    default: m.ReconciliationPage,
+  })),
+);
+const FiscalPeriodsPage = lazy(() =>
+  import("@pages/accounting/AccountingPages").then((m) => ({
+    default: m.FiscalPeriodsPage,
+  })),
+);
 
 // Expenses
-const ExpensesHome  = lazy(() => import('@pages/expenses/ExpensesHome'));
-const ExpenseDetail = lazy(() => import('@pages/expenses/ExpenseDetail'));
+const ExpensesHome = lazy(() => import("@pages/expenses/ExpensesHome"));
+const ExpenseDetail = lazy(() => import("@pages/expenses/ExpenseDetail"));
 
 // Payroll
-const PayrollHome      = lazy(() => import('@pages/payroll/PayrollHome'));
-const PayrollRunDetail = lazy(() => import('@pages/payroll/PayrollRunDetail'));
-const PayslipDetail    = lazy(() => import('@pages/payroll/PayslipDetail'));
+const PayrollHome = lazy(() => import("@pages/payroll/PayrollHome"));
+const PayrollRunDetail = lazy(() => import("@pages/payroll/PayrollRunDetail"));
+const PayslipDetail = lazy(() => import("@pages/payroll/PayslipDetail"));
 
 // Loyalty
-const LoyaltyDashboard   = lazy(() => import('@pages/loyalty/LoyaltyDashboard'));
-const ContactLoyaltyPage = lazy(() => import('@pages/loyalty/ContactLoyalty'));
-const TiersManager       = lazy(() => import('@pages/loyalty/TiersManager'));
+const LoyaltyDashboard = lazy(() => import("@pages/loyalty/LoyaltyDashboard"));
+const ContactLoyaltyPage = lazy(() => import("@pages/loyalty/ContactLoyalty"));
+const TiersManager = lazy(() => import("@pages/loyalty/TiersManager"));
 
 // Social
-const SocialHome = lazy(() => import('@pages/social/SocialHome'));
-const PostDetail = lazy(() => import('@pages/social/PostDetail'));
+const SocialHome = lazy(() => import("@pages/social/SocialHome"));
+const PostDetail = lazy(() => import("@pages/social/PostDetail"));
 
 // Reports
-const ReportsHome  = lazy(() => import('@pages/reports/ReportsHome'));
-const ReportViewer = lazy(() => import('@pages/reports/ReportViewer'));
-const SavedReports = lazy(() => import('@pages/reports/SavedReports'));
+const ReportsHome = lazy(() => import("@pages/reports/ReportsHome"));
+const ReportViewer = lazy(() => import("@pages/reports/ReportViewer"));
+const SavedReports = lazy(() => import("@pages/reports/SavedReports"));
 
 // Security
-const SecurityDashboard = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.SecurityDashboard })));
-const UsersPage         = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.UsersPage })));
-const RolesPage         = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.RolesPage })));
-const AuditLogPage      = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.AuditLogPage })));
-const AcceptInvitePage  = lazy(() => import('@pages/security/SecurityPages').then((m) => ({ default: m.AcceptInvitePage })));
+const SecurityDashboard = lazy(() =>
+  import("@pages/security/SecurityPages").then((m) => ({
+    default: m.SecurityDashboard,
+  })),
+);
+const UsersPage = lazy(() =>
+  import("@pages/security/SecurityPages").then((m) => ({
+    default: m.UsersPage,
+  })),
+);
+const RolesPage = lazy(() =>
+  import("@pages/security/SecurityPages").then((m) => ({
+    default: m.RolesPage,
+  })),
+);
+const AuditLogPage = lazy(() =>
+  import("@pages/security/SecurityPages").then((m) => ({
+    default: m.AuditLogPage,
+  })),
+);
+const AcceptInvitePage = lazy(() =>
+  import("@pages/security/SecurityPages").then((m) => ({
+    default: m.AcceptInvitePage,
+  })),
+);
 
 // Calendar, Tasks & Workspace
-const CalendarPage  = lazy(() => import('@pages/calendar/CalendarPage'));
-const TasksPage     = lazy(() => import('@pages/tasks/TasksPage'));
-const WorkspacePage = lazy(() => import('@pages/workspace/WorkspacePage'));
+const CalendarPage = lazy(() => import("@pages/calendar/CalendarPage"));
+const TasksPage = lazy(() => import("@pages/tasks/TasksPage"));
+const WorkspacePage = lazy(() => import("@pages/workspace/WorkspacePage"));
 
 // Retail Partners
-const RetailPartnersHome = lazy(() => import('@pages/retail-partners/RetailPartnersHome'));
-const PartnerDetail      = lazy(() => import('@pages/retail-partners/PartnerDetail'));
+const RetailPartnersHome = lazy(
+  () => import("@pages/retail-partners/RetailPartnersHome"),
+);
+const PartnerDetail = lazy(
+  () => import("@pages/retail-partners/PartnerDetail"),
+);
 
 // Public (no auth wrapper)
-const DeliverySignPage = lazy(() => import('@pages/sign/DeliverySignPage'));
+const DeliverySignPage = lazy(() => import("@pages/sign/DeliverySignPage"));
 
 // Marketing — Campaigns
-const CampaignsHome    = lazy(() => import('@pages/campaigns/CampaignsHome'));
-const CampaignBuilder  = lazy(() => import('@pages/campaigns/CampaignBuilder'));
-const CampaignDetail   = lazy(() => import('@pages/campaigns/CampaignDetail'));
-const CampaignSettings = lazy(() => import('@pages/campaigns/CampaignSettings'));
-const SubscribersHome  = lazy(() => import('@pages/campaigns/SubscribersHome'));
-const EnquiriesHome    = lazy(() => import('@pages/campaigns/EnquiriesHome'));
+const CampaignsHome = lazy(() => import("@pages/campaigns/CampaignsHome"));
+const CampaignBuilder = lazy(() => import("@pages/campaigns/CampaignBuilder"));
+const CampaignDetail = lazy(() => import("@pages/campaigns/CampaignDetail"));
+const CampaignSettings = lazy(
+  () => import("@pages/campaigns/CampaignSettings"),
+);
+const SubscribersHome = lazy(() => import("@pages/campaigns/SubscribersHome"));
+const EnquiriesHome = lazy(() => import("@pages/campaigns/EnquiriesHome"));
 
 // SmartComm Messaging
-const MessagingPage    = lazy(() => import('@pages/messaging/MessagingPage'));
+const MessagingPage = lazy(() => import("@pages/messaging/MessagingPage"));
 
 // Document Vault
-const DocumentsVault   = lazy(() => import('@pages/documents/DocumentsVault'));
+const DocumentsVault = lazy(() => import("@pages/documents/DocumentsVault"));
 
 // Sales Campaigns (admin — inside auth wall)
-const SalesCampaignsHome   = lazy(() => import('@pages/salesCampaigns/SalesCampaignsHome'));
-const SalesCampaignBuilder = lazy(() => import('@pages/salesCampaigns/CampaignBuilder'));
+const SalesCampaignsHome = lazy(
+  () => import("@pages/salesCampaigns/SalesCampaignsHome"),
+);
+const SalesCampaignBuilder = lazy(
+  () => import("@pages/salesCampaigns/CampaignBuilder"),
+);
 
 // Storefront (public — OUTSIDE auth wall)
-const StorefrontLanding   = lazy(() => import('@pages/storefront/LandingPage'));
-const StorefrontCheckout  = lazy(() => import('@pages/storefront/Checkout'));
-const StorefrontOrderTrack = lazy(() => import('@pages/storefront/OrderTracking'));
+const StorefrontLanding = lazy(() => import("@pages/storefront/LandingPage"));
+const StorefrontCheckout = lazy(() => import("@pages/storefront/Checkout"));
+const StorefrontOrderTrack = lazy(
+  () => import("@pages/storefront/OrderTracking"),
+);
 
 function PageFallback() {
   return (
@@ -170,84 +235,121 @@ export default function App() {
 
         {/* Public storefront — campaign landing, checkout, order tracking
             (no AppShell, no auth) */}
-        <Route path="/c/:business/:slug"          element={<StorefrontLanding />} />
-        <Route path="/c/:business/:slug/checkout" element={<StorefrontCheckout />} />
-        <Route path="/orders/:business/:token"    element={<StorefrontOrderTrack />} />
+        <Route path="/c/:business/:slug" element={<StorefrontLanding />} />
+        <Route
+          path="/c/:business/:slug/checkout"
+          element={<StorefrontCheckout />}
+        />
+        <Route
+          path="/orders/:business/:token"
+          element={<StorefrontOrderTrack />}
+        />
 
         {/* POS active session — fullscreen, intentionally outside AppShell */}
         <Route path="/pos/session/:sessionId" element={<POSSession />} />
 
         {/* Authenticated — inside the AppShell */}
         <Route element={<AppShell />}>
-          <Route path="/"    element={<HubHome />} />
+          <Route path="/" element={<HubHome />} />
           <Route path="/hub" element={<Navigate to="/" replace />} />
 
           {/* Settings */}
-          <Route path="/settings"                          element={<SettingsHome />} />
-          <Route path="/settings/business-setup"           element={<BusinessSetupList />} />
-          <Route path="/settings/business-setup/new"       element={<BusinessSetupNew />} />
-          <Route path="/settings/business-setup/:key"      element={<BusinessSetupDetail />} />
-          <Route path="/settings/bank-accounts"            element={<BankAccounts />} />
-          <Route path="/settings/tax-rates"                element={<TaxRates />} />
-          <Route path="/settings/currency-rates"           element={<CurrencyRates />} />
-          <Route path="/settings/custom-fields"            element={<CustomFields />} />
-          <Route path="/settings/pipeline-stages"          element={<PipelineStages />} />
-          <Route path="/settings/document-numbering"       element={<DocumentNumbering />} />
-          <Route path="/settings/permissions"              element={<PermissionsPage />} />
+          <Route path="/settings" element={<SettingsHome />} />
+          <Route
+            path="/settings/business-setup"
+            element={<BusinessSetupList />}
+          />
+          <Route
+            path="/settings/business-setup/new"
+            element={<BusinessSetupNew />}
+          />
+          <Route
+            path="/settings/business-setup/:key"
+            element={<BusinessSetupDetail />}
+          />
+          <Route path="/settings/bank-accounts" element={<BankAccounts />} />
+          <Route path="/settings/tax-rates" element={<TaxRates />} />
+          <Route path="/settings/currency-rates" element={<CurrencyRates />} />
+          <Route path="/settings/custom-fields" element={<CustomFields />} />
+          <Route
+            path="/settings/pipeline-stages"
+            element={<PipelineStages />}
+          />
+          <Route
+            path="/settings/document-numbering"
+            element={<DocumentNumbering />}
+          />
+          <Route
+            path="/settings/storefront-scents"
+            element={<StorefrontScents />}
+          />
+          <Route path="/settings/permissions" element={<PermissionsPage />} />
 
           {/* Contacts */}
-          <Route path="/contacts"             element={<ContactsHome />} />
-          <Route path="/contacts/new"         element={<ContactNew />} />
-          <Route path="/contacts/staff/new"   element={<StaffOnboard />} />
-          <Route path="/contacts/:id"         element={<ContactDetail />} />
-          <Route path="/staff" element={<Navigate to="/contacts?tab=staff" replace />} />
+          <Route path="/contacts" element={<ContactsHome />} />
+          <Route path="/contacts/new" element={<ContactNew />} />
+          <Route path="/contacts/staff/new" element={<StaffOnboard />} />
+          <Route path="/contacts/:id" element={<ContactDetail />} />
+          <Route
+            path="/staff"
+            element={<Navigate to="/contacts?tab=staff" replace />}
+          />
 
           {/* CRM */}
-          <Route path="/crm"     element={<CrmHome />} />
+          <Route path="/crm" element={<CrmHome />} />
           <Route path="/crm/:id" element={<DealDetail />} />
 
           {/* Catalogue */}
-          <Route path="/catalogue"     element={<CatalogueHome />} />
+          <Route path="/catalogue" element={<CatalogueHome />} />
           <Route path="/catalogue/:id" element={<ProductDetail />} />
 
           {/* Procurement */}
-          <Route path="/procurement"                          element={<ProcurementHome />} />
-          <Route path="/procurement/suppliers"                element={<SuppliersPage />} />
-          <Route path="/procurement/suppliers/:id"            element={<SupplierDetail />} />
-          <Route path="/procurement/rfqs"                     element={<RFQPage />} />
-          <Route path="/procurement/rfqs/new"                 element={<RFQNew />} />
-          <Route path="/procurement/rfqs/:id"                 element={<RFQDetail />} />
-          <Route path="/procurement/purchase-orders"          element={<POPage />} />
-          <Route path="/procurement/purchase-orders/new"      element={<PONew />} />
-          <Route path="/procurement/purchase-orders/:id"      element={<PODetail />} />
-          <Route path="/procurement/bills"                    element={<BillsPage />} />
-          <Route path="/procurement/bills/new"                element={<BillNew />} />
-          <Route path="/purchasing" element={<Navigate to="/procurement" replace />} />
+          <Route path="/procurement" element={<ProcurementHome />} />
+          <Route path="/procurement/suppliers" element={<SuppliersPage />} />
+          <Route
+            path="/procurement/suppliers/:id"
+            element={<SupplierDetail />}
+          />
+          <Route path="/procurement/rfqs" element={<RFQPage />} />
+          <Route path="/procurement/rfqs/new" element={<RFQNew />} />
+          <Route path="/procurement/rfqs/:id" element={<RFQDetail />} />
+          <Route path="/procurement/purchase-orders" element={<POPage />} />
+          <Route path="/procurement/purchase-orders/new" element={<PONew />} />
+          <Route
+            path="/procurement/purchase-orders/:id"
+            element={<PODetail />}
+          />
+          <Route path="/procurement/bills" element={<BillsPage />} />
+          <Route path="/procurement/bills/new" element={<BillNew />} />
+          <Route
+            path="/purchasing"
+            element={<Navigate to="/procurement" replace />}
+          />
 
           {/* Stock & Inventory */}
-          <Route path="/stock"                  element={<StockHome />} />
-          <Route path="/stock/alerts"           element={<AlertsPage />} />
-          <Route path="/stock/count/:id"        element={<CountSession />} />
-          <Route path="/stock/reservations"     element={<ReservationsPage />} />
-          <Route path="/stock/transfers"        element={<TransfersPage />} />
+          <Route path="/stock" element={<StockHome />} />
+          <Route path="/stock/alerts" element={<AlertsPage />} />
+          <Route path="/stock/count/:id" element={<CountSession />} />
+          <Route path="/stock/reservations" element={<ReservationsPage />} />
+          <Route path="/stock/transfers" element={<TransfersPage />} />
 
           {/* Sales */}
-          <Route path="/sales"                    element={<SalesHome />} />
-          <Route path="/sales/quotations/new"     element={<QuoteDetail />} />
-          <Route path="/sales/quotations/:id"     element={<QuoteDetail />} />
-          <Route path="/sales/orders/:id"         element={<OrderDetail />} />
-          <Route path="/sales/invoices/:id"       element={<InvoiceDetail />} />
+          <Route path="/sales" element={<SalesHome />} />
+          <Route path="/sales/quotations/new" element={<QuoteDetail />} />
+          <Route path="/sales/quotations/:id" element={<QuoteDetail />} />
+          <Route path="/sales/orders/:id" element={<OrderDetail />} />
+          <Route path="/sales/invoices/:id" element={<InvoiceDetail />} />
 
           {/* POS */}
-          <Route path="/pos"          element={<POSTerminals />} />
+          <Route path="/pos" element={<POSTerminals />} />
           <Route path="/pos/sessions" element={<POSSessions />} />
 
           {/* Invoicing */}
-          <Route path="/invoicing"     element={<InvoicesHome />} />
+          <Route path="/invoicing" element={<InvoicesHome />} />
           <Route path="/invoicing/:id" element={<InvoiceDetail />} />
 
           {/* Logistics */}
-          <Route path="/logistics"     element={<LogisticsHome  />} />
+          <Route path="/logistics" element={<LogisticsHome />} />
           <Route path="/logistics/:id" element={<DeliveryDetail />} />
 
           {/* Dashboard */}
@@ -255,44 +357,50 @@ export default function App() {
 
           {/* Workspace / Calendar / Tasks */}
           <Route path="/workspace" element={<WorkspacePage />} />
-          <Route path="/calendar"  element={<CalendarPage  />} />
-          <Route path="/tasks"     element={<TasksPage     />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/tasks" element={<TasksPage />} />
 
           {/* Accounting */}
-          <Route path="/accounting"                element={<AccountingDashboard />} />
-          <Route path="/accounting/accounts"       element={<ChartOfAccounts />} />
-          <Route path="/accounting/journals"       element={<JournalsPage />} />
-          <Route path="/accounting/reports"        element={<AcctReportsPage />} />
-          <Route path="/accounting/reconciliation" element={<ReconciliationPage />} />
-          <Route path="/accounting/periods"        element={<FiscalPeriodsPage />} />
+          <Route path="/accounting" element={<AccountingDashboard />} />
+          <Route path="/accounting/accounts" element={<ChartOfAccounts />} />
+          <Route path="/accounting/journals" element={<JournalsPage />} />
+          <Route path="/accounting/reports" element={<AcctReportsPage />} />
+          <Route
+            path="/accounting/reconciliation"
+            element={<ReconciliationPage />}
+          />
+          <Route path="/accounting/periods" element={<FiscalPeriodsPage />} />
 
           {/* Expenses */}
-          <Route path="/expenses"     element={<ExpensesHome />} />
+          <Route path="/expenses" element={<ExpensesHome />} />
           <Route path="/expenses/:id" element={<ExpenseDetail />} />
 
           {/* Payroll */}
-          <Route path="/payroll"              element={<PayrollHome />} />
-          <Route path="/payroll/runs/:id"     element={<PayrollRunDetail />} />
+          <Route path="/payroll" element={<PayrollHome />} />
+          <Route path="/payroll/runs/:id" element={<PayrollRunDetail />} />
           <Route path="/payroll/payslips/:id" element={<PayslipDetail />} />
 
           {/* Loyalty */}
-          <Route path="/loyalty"                    element={<LoyaltyDashboard />} />
-          <Route path="/loyalty/tiers"              element={<TiersManager />} />
-          <Route path="/loyalty/contact/:contactId" element={<ContactLoyaltyPage />} />
+          <Route path="/loyalty" element={<LoyaltyDashboard />} />
+          <Route path="/loyalty/tiers" element={<TiersManager />} />
+          <Route
+            path="/loyalty/contact/:contactId"
+            element={<ContactLoyaltyPage />}
+          />
 
           {/* Social */}
-          <Route path="/social"     element={<SocialHome />} />
+          <Route path="/social" element={<SocialHome />} />
           <Route path="/social/:id" element={<PostDetail />} />
 
           {/* Campaigns — /new and /settings MUST precede /:id or
               React Router will match "new" as a campaign id. */}
-          <Route path="/campaigns"          element={<CampaignsHome    />} />
-          <Route path="/campaigns/new"      element={<CampaignBuilder  />} />
+          <Route path="/campaigns" element={<CampaignsHome />} />
+          <Route path="/campaigns/new" element={<CampaignBuilder />} />
           <Route path="/campaigns/subscribers" element={<SubscribersHome />} />
           <Route path="/campaigns/enquiries" element={<EnquiriesHome />} />
           <Route path="/campaigns/settings" element={<CampaignSettings />} />
-          <Route path="/campaigns/:id"      element={<CampaignDetail   />} />
-          <Route path="/campaigns/:id/edit" element={<CampaignBuilder  />} />
+          <Route path="/campaigns/:id" element={<CampaignDetail />} />
+          <Route path="/campaigns/:id/edit" element={<CampaignBuilder />} />
 
           {/* SmartComm Messaging */}
           <Route path="/messaging" element={<MessagingPage />} />
@@ -301,23 +409,32 @@ export default function App() {
           <Route path="/documents" element={<DocumentsVault />} />
 
           {/* Sales Campaigns (admin) — /new must precede /:id */}
-          <Route path="/sales-campaigns"     element={<SalesCampaignsHome />} />
-          <Route path="/sales-campaigns/new" element={<SalesCampaignBuilder />} />
-          <Route path="/sales-campaigns/:id" element={<SalesCampaignBuilder />} />
+          <Route path="/sales-campaigns" element={<SalesCampaignsHome />} />
+          <Route
+            path="/sales-campaigns/new"
+            element={<SalesCampaignBuilder />}
+          />
+          <Route
+            path="/sales-campaigns/:id"
+            element={<SalesCampaignBuilder />}
+          />
 
           {/* Reports — /reports/saved MUST precede /:family/:reportType */}
-          <Route path="/reports"                     element={<ReportsHome />} />
-          <Route path="/reports/saved"               element={<SavedReports />} />
-          <Route path="/reports/:family/:reportType" element={<ReportViewer />} />
+          <Route path="/reports" element={<ReportsHome />} />
+          <Route path="/reports/saved" element={<SavedReports />} />
+          <Route
+            path="/reports/:family/:reportType"
+            element={<ReportViewer />}
+          />
 
           {/* Security & Audit */}
-          <Route path="/security"       element={<SecurityDashboard />} />
+          <Route path="/security" element={<SecurityDashboard />} />
           <Route path="/security/users" element={<UsersPage />} />
           <Route path="/security/roles" element={<RolesPage />} />
           <Route path="/security/audit" element={<AuditLogPage />} />
 
           {/* Retail Partners */}
-          <Route path="/retail-partners"     element={<RetailPartnersHome />} />
+          <Route path="/retail-partners" element={<RetailPartnersHome />} />
           <Route path="/retail-partners/:id" element={<PartnerDetail />} />
         </Route>
 

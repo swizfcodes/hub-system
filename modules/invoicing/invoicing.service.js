@@ -476,7 +476,9 @@ async function generatePDF(business, invoiceId) {
     .join("");
 
   // Pre-render payments array → HTML rows
-  const payments = Array.isArray(inv.payments) ? inv.payments.filter(Boolean) : [];
+  const payments = Array.isArray(inv.payments)
+    ? inv.payments.filter(Boolean)
+    : [];
   const paymentsHtml = payments
     .map(
       (p) => `
@@ -495,29 +497,29 @@ async function generatePDF(business, invoiceId) {
   const showPaymentInstructions = !!inv.payment_instructions;
 
   const templateData = {
-    invoice_number:           esc(inv.invoice_number),
-    invoice_type:             esc((inv.invoice_type || "standard").toUpperCase()),
-    status:                   esc((inv.status || "draft").toUpperCase()),
-    issue_date:               fmtDate(inv.issue_date),
-    due_date:                 fmtDate(inv.due_date),
-    contact_name:             esc(inv.contact_name || "—"),
-    email:                    esc(inv.email || "—"),
-    primary_phone:            esc(inv.primary_phone || "—"),
-    notes:                    esc(inv.notes || ""),
-    payment_instructions:     esc(inv.payment_instructions || ""),
-    lines_html:               linesHtml,
-    payments_html:            paymentsHtml,
-    subtotal:                 fmtAmt(inv.subtotal),
-    discount_total:           fmtAmt(inv.discount_total),
-    vat_amount:               fmtAmt(inv.vat_amount),
-    total_amount:             fmtAmt(inv.total_amount),
-    amount_paid:              fmtAmt(inv.amount_paid),
-    amount_outstanding:       fmtAmt(inv.amount_outstanding),
+    invoice_number: esc(inv.invoice_number),
+    invoice_type: esc((inv.invoice_type || "standard").toUpperCase()),
+    status: esc((inv.status || "draft").toUpperCase()),
+    issue_date: fmtDate(inv.issue_date),
+    due_date: fmtDate(inv.due_date),
+    contact_name: esc(inv.contact_name || "—"),
+    email: esc(inv.email || "—"),
+    primary_phone: esc(inv.primary_phone || "—"),
+    notes: esc(inv.notes || ""),
+    payment_instructions: esc(inv.payment_instructions || ""),
+    lines_html: linesHtml,
+    payments_html: paymentsHtml,
+    subtotal: fmtAmt(inv.subtotal),
+    discount_total: fmtAmt(inv.discount_total),
+    vat_amount: fmtAmt(inv.vat_amount),
+    total_amount: fmtAmt(inv.total_amount),
+    amount_paid: fmtAmt(inv.amount_paid),
+    amount_outstanding: fmtAmt(inv.amount_outstanding),
     // Conditional visibility helpers
-    discount_row_style:            showDiscount ? "" : "display:none",
-    payments_section_style:        showPayments ? "" : "display:none",
-    notes_section_style:           showNotes ? "" : "display:none",
-    payment_instructions_style:    showPaymentInstructions ? "" : "display:none",
+    discount_row_style: showDiscount ? "" : "display:none",
+    payments_section_style: showPayments ? "" : "display:none",
+    notes_section_style: showNotes ? "" : "display:none",
+    payment_instructions_style: showPaymentInstructions ? "" : "display:none",
   };
 
   return renderToPDF("invoices", templateData);

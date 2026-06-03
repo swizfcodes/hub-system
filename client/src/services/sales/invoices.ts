@@ -1,11 +1,11 @@
-import { api } from '@services/api';
-import type { Invoice, SalesListResponse } from '@typedefs/sales';
-import type { RecordPaymentValues } from '@lib/schemas/sales';
+import { api } from "@services/api";
+import type { Invoice, SalesListResponse } from "@typedefs/sales";
+import type { RecordPaymentValues } from "@lib/schemas/sales";
 
 // Invoice CRUD lives under the existing /invoicing module.
 // Only payment-link refresh and order→invoice generation are new endpoints
 // added to /sales — see SALES_PATCH_NOTES.md.
-const BASE = '/invoicing';
+const BASE = "/invoicing";
 
 export interface ListInvoicesParams {
   page?: number;
@@ -38,7 +38,10 @@ export async function getInvoice(id: string): Promise<Invoice> {
 export async function recordPayment(
   invoiceId: string,
   values: RecordPaymentValues,
-): Promise<{ invoice: Invoice; receipt: { receipt_id: string; receipt_number: string } }> {
+): Promise<{
+  invoice: Invoice;
+  receipt: { receipt_id: string; receipt_number: string };
+}> {
   const { data } = await api.post<{
     invoice: Invoice;
     receipt: { receipt_id: string; receipt_number: string };
@@ -59,7 +62,7 @@ export async function refreshPaymentLinks(
 
 export async function sendInvoice(
   invoiceId: string,
-  channel: 'email' | 'whatsapp',
+  channel: "email" | "whatsapp",
 ): Promise<{ message: string }> {
   const { data } = await api.post<{ message: string }>(
     `${BASE}/${invoiceId}/send`,
@@ -82,7 +85,9 @@ export function invoicePdfUrl(id: string): string {
 }
 
 /** Fetch the invoice generated from a specific order */
-export async function getInvoiceByOrderId(orderId: string): Promise<Invoice | null> {
+export async function getInvoiceByOrderId(
+  orderId: string,
+): Promise<Invoice | null> {
   try {
     const result = await listInvoices({ orderId });
     return result.data[0] ?? null;

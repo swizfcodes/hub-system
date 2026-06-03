@@ -1,8 +1,8 @@
-import { Star, Phone, Mail } from 'lucide-react';
-import { ContactAvatar } from '../shared/ContactAvatar';
-import { QuickActions } from '../shared/QuickActions';
-import { ContactTypeBadges } from '../shared/ContactTypeBadges';
-import type { Contact } from '@typedefs/contacts';
+import { Star, Phone, Mail } from "lucide-react";
+import { ContactAvatar } from "../shared/ContactAvatar";
+import { QuickActions } from "../shared/QuickActions";
+import { ContactTypeBadges } from "../shared/ContactTypeBadges";
+import type { Contact } from "@typedefs/contacts";
 
 interface Props {
   contact: Contact;
@@ -22,13 +22,21 @@ export function ContactCard({ contact, onClick, style }: Props) {
           <ContactAvatar contact={contact} size="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="font-display text-lg text-orika-cream truncate">{contact.display_name}</h3>
-              {contact.priority_level === 'vip' && (
+              <h3 className="font-display text-lg text-orika-cream truncate">
+                {contact.display_name}
+              </h3>
+              {contact.priority_level === "vip" && (
                 <Star className="w-4 h-4 fill-orika-gold text-orika-gold shrink-0" />
               )}
             </div>
-            {contact.company_name && <p className="text-xs text-orika-smoke truncate">{contact.company_name}</p>}
-            <div className="mt-2"><ContactTypeBadges contact={contact} max={2} /></div>
+            {contact.company_name && (
+              <p className="text-xs text-orika-smoke truncate">
+                {contact.company_name}
+              </p>
+            )}
+            <div className="mt-2">
+              <ContactTypeBadges contact={contact} max={2} />
+            </div>
           </div>
         </div>
 
@@ -47,7 +55,9 @@ export function ContactCard({ contact, onClick, style }: Props) {
       </div>
       <div className="border-t border-orika-graphite/70 px-5 py-3 bg-orika-black/30 flex items-center justify-between">
         <span className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
-          {contact.visible_to?.length === 1 ? contact.visible_to[0] : 'Multi-business'}
+          {contact.visible_to?.length === 1
+            ? contact.visible_to[0]
+            : "Multi-business"}
         </span>
         <QuickActions contact={contact} size="sm" />
       </div>

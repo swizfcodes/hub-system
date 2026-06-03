@@ -1,34 +1,45 @@
-import { useState } from 'react';
-import { Check } from 'lucide-react';
-import { BRAND_SWATCHES } from '@lib/constants/palettes';
-import { contrastRatio, isValidHex, normaliseHex, verdict, type ContrastVerdict } from '@lib/contrast';
-import { Input } from '@components/ui/Input';
-import { cn } from '@lib/cn';
+import { useState } from "react";
+import { Check } from "lucide-react";
+import { BRAND_SWATCHES } from "@lib/constants/palettes";
+import {
+  contrastRatio,
+  isValidHex,
+  normaliseHex,
+  verdict,
+  type ContrastVerdict,
+} from "@lib/contrast";
+import { Input } from "@components/ui/Input";
+import { cn } from "@lib/cn";
 
 interface Props {
   value: string;
   onChange: (hex: string) => void;
   label?: string;
-  surface?: 'dark' | 'light';
+  surface?: "dark" | "light";
 }
 
 const verdictTone: Record<ContrastVerdict, string> = {
-  AAA:         'text-living-sage',
-  AA:          'text-living-sage',
-  'AA-large':  'text-state-warn',
-  fail:        'text-state-danger',
+  AAA: "text-living-sage",
+  AA: "text-living-sage",
+  "AA-large": "text-state-warn",
+  fail: "text-state-danger",
 };
 
 const verdictLabel: Record<ContrastVerdict, string> = {
-  AAA:         'AAA',
-  AA:          'AA',
-  'AA-large':  'AA (large only)',
-  fail:        'Insufficient',
+  AAA: "AAA",
+  AA: "AA",
+  "AA-large": "AA (large only)",
+  fail: "Insufficient",
 };
 
-export function BrandColorPicker({ value, onChange, label='Accent colour', surface='light' }: Props) {
-  const [raw, setRaw] = useState(value || '#C9A86C');
-  const isDark = surface === 'dark';
+export function BrandColorPicker({
+  value,
+  onChange,
+  label = "Accent colour",
+  surface = "light",
+}: Props) {
+  const [raw, setRaw] = useState(value || "#C9A86C");
+  const isDark = surface === "dark";
 
   const handleHexChange = (input: string) => {
     setRaw(input);
@@ -36,14 +47,21 @@ export function BrandColorPicker({ value, onChange, label='Accent colour', surfa
   };
 
   // Contrast vs cream (#F0EAE0) and black (#0A0908) — both surfaces in the app
-  const contrastCream = contrastRatio(value, '#F0EAE0');
-  const contrastBlack = contrastRatio(value, '#0A0908');
+  const contrastCream = contrastRatio(value, "#F0EAE0");
+  const contrastBlack = contrastRatio(value, "#0A0908");
   const vCream = verdict(contrastCream);
   const vBlack = verdict(contrastBlack);
 
   return (
     <div className="space-y-4">
-      <div className={cn('text-[0.7rem] tracking-widest uppercase font-medium', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>{label}</div>
+      <div
+        className={cn(
+          "text-[0.7rem] tracking-widest uppercase font-medium",
+          isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+        )}
+      >
+        {label}
+      </div>
 
       {/* Swatches */}
       <div className="grid grid-cols-6 sm:grid-cols-6 md:grid-cols-12 gap-2.5">
@@ -53,17 +71,24 @@ export function BrandColorPicker({ value, onChange, label='Accent colour', surfa
             <button
               key={sw.hex}
               type="button"
-              onClick={() => { setRaw(sw.hex); onChange(sw.hex); }}
+              onClick={() => {
+                setRaw(sw.hex);
+                onChange(sw.hex);
+              }}
               className={cn(
-                'aspect-square rounded-xl relative transition-all hover:scale-110 hover:shadow-card',
-                active && 'ring-2 ring-offset-2 ring-orika-gold',
-                isDark ? 'ring-offset-orika-charcoal' : 'ring-offset-surface-light',
+                "aspect-square rounded-xl relative transition-all hover:scale-110 hover:shadow-card",
+                active && "ring-2 ring-offset-2 ring-orika-gold",
+                isDark
+                  ? "ring-offset-orika-charcoal"
+                  : "ring-offset-surface-light",
               )}
               style={{ background: sw.hex }}
               title={`${sw.name} · ${sw.hex}`}
               aria-label={sw.name}
             >
-              {active && <Check className="w-4 h-4 text-orika-cream absolute inset-0 m-auto drop-shadow-lg" />}
+              {active && (
+                <Check className="w-4 h-4 text-orika-cream absolute inset-0 m-auto drop-shadow-lg" />
+              )}
             </button>
           );
         })}
@@ -82,23 +107,43 @@ export function BrandColorPicker({ value, onChange, label='Accent colour', surfa
         </div>
         <div
           className="w-16 h-12 rounded-xl border shrink-0"
-          style={{ background: value, borderColor: 'rgba(0,0,0,0.1)' }}
+          style={{ background: value, borderColor: "rgba(0,0,0,0.1)" }}
           aria-label="Preview"
         />
       </div>
 
       {/* WCAG contrast verdicts */}
-      <div className={cn('text-xs grid grid-cols-2 gap-3 p-3 rounded-xl border',
-        isDark ? 'border-orika-graphite bg-orika-black/30' : 'border-orika-cloud/40 bg-white/50')}>
+      <div
+        className={cn(
+          "text-xs grid grid-cols-2 gap-3 p-3 rounded-xl border",
+          isDark
+            ? "border-orika-graphite bg-orika-black/30"
+            : "border-orika-cloud/40 bg-white/50",
+        )}
+      >
         <div>
-          <div className={cn('text-[0.6rem] uppercase tracking-widest font-semibold', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>on cream</div>
-          <div className={cn('text-sm font-mono mt-0.5', verdictTone[vCream])}>
+          <div
+            className={cn(
+              "text-[0.6rem] uppercase tracking-widest font-semibold",
+              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+            )}
+          >
+            on cream
+          </div>
+          <div className={cn("text-sm font-mono mt-0.5", verdictTone[vCream])}>
             {contrastCream.toFixed(2)}:1 · {verdictLabel[vCream]}
           </div>
         </div>
         <div>
-          <div className={cn('text-[0.6rem] uppercase tracking-widest font-semibold', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>on black</div>
-          <div className={cn('text-sm font-mono mt-0.5', verdictTone[vBlack])}>
+          <div
+            className={cn(
+              "text-[0.6rem] uppercase tracking-widest font-semibold",
+              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+            )}
+          >
+            on black
+          </div>
+          <div className={cn("text-sm font-mono mt-0.5", verdictTone[vBlack])}>
             {contrastBlack.toFixed(2)}:1 · {verdictLabel[vBlack]}
           </div>
         </div>

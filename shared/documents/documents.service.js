@@ -5,7 +5,10 @@ const { withSharedContext, nextDocumentNumber } = require("../../config/db");
 const storage = require("../../lib/storage");
 const auditService = require("../audit/audit.service");
 const repo = require("./documents.repository");
-const { optimizeImage, OPTIMISABLE } = require("../../lib/images/optimizeImage");
+const {
+  optimizeImage,
+  OPTIMISABLE,
+} = require("../../lib/images/optimizeImage");
 
 // ─────────────────────────────────────────────────────────────
 // DOCUMENTS SERVICE — Module 12: Documents & Signatures

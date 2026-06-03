@@ -135,7 +135,7 @@ describe("Webhook Processing", () => {
 
       // Ensure amount is present before testing
       payload.data.status = "success";
-      
+
       // Would trigger invoice payment update
       expect(payload.data.status).toBe("success");
       expect(payload.data.amount).toBeTruthy();
@@ -328,4 +328,3 @@ describe("Webhook Processing", () => {
     });
   });
 });
-

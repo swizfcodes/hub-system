@@ -1,5 +1,9 @@
-import { api } from '../api';
-import type { Product, ProductListResponse, ProductCategory } from '@typedefs/catalogue';
+import { api } from "../api";
+import type {
+  Product,
+  ProductListResponse,
+  ProductCategory,
+} from "@typedefs/catalogue";
 
 export interface ProductListParams {
   search?: string;
@@ -9,9 +13,14 @@ export interface ProductListParams {
   limit?: number;
 }
 
-export async function listProducts(params: ProductListParams = {}): Promise<ProductListResponse> {
-  const { data } = await api.get<ProductListResponse | { data: Product[] }>('/catalogue/products', { params });
-  if ('pagination' in data) return data as ProductListResponse;
+export async function listProducts(
+  params: ProductListParams = {},
+): Promise<ProductListResponse> {
+  const { data } = await api.get<ProductListResponse | { data: Product[] }>(
+    "/catalogue/products",
+    { params },
+  );
+  if ("pagination" in data) return data as ProductListResponse;
   return { data: (data as { data: Product[] }).data };
 }
 
@@ -21,6 +30,8 @@ export async function getProduct(id: string): Promise<Product> {
 }
 
 export async function listCategories(): Promise<ProductCategory[]> {
-  const { data } = await api.get<{ data: ProductCategory[] } | ProductCategory[]>('/catalogue/categories');
+  const { data } = await api.get<
+    { data: ProductCategory[] } | ProductCategory[]
+  >("/catalogue/categories");
   return Array.isArray(data) ? data : data.data;
 }

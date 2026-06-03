@@ -2,22 +2,29 @@
  * PermissionMatrix — overview grid: rows=roles, columns=modules, cells=action dots
  * RoleEditor       — per-role detailed permission editor with scope + hidden fields
  */
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, Shield, ChevronDown } from 'lucide-react';
-import { Badge }   from '@components/ui/Badge';
-import { Skeleton } from '@components/ui/Skeleton';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, X, Shield, ChevronDown } from "lucide-react";
+import { Badge } from "@components/ui/Badge";
+import { Skeleton } from "@components/ui/Skeleton";
 import {
-  listRoles, getRoleWithPermissions, getModuleCatalogue,
-  grantPermission, revokePermission } from '@services/security';
+  listRoles,
+  getRoleWithPermissions,
+  getModuleCatalogue,
+  grantPermission,
+  revokePermission,
+} from "@services/security";
 import {
-  ALL_ACTIONS, ACTION_META, RECORD_SCOPE_META,
-  SENSITIVE_FIELDS, MODULE_LABELS,
-} from '@typedefs/security';
-import { showToast } from '@hooks/useToast';
-import { errMsg }    from '@services/api';
-import { cn }        from '@lib/cn';
-import type { Role, ModuleCatalogue } from '@typedefs/security';
+  ALL_ACTIONS,
+  ACTION_META,
+  RECORD_SCOPE_META,
+  SENSITIVE_FIELDS,
+  MODULE_LABELS,
+} from "@typedefs/security";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { cn } from "@lib/cn";
+import type { Role, ModuleCatalogue } from "@typedefs/security";
 
 // ── PermissionMatrix ──────────────────────────────────────────────────────────
 
@@ -26,9 +33,18 @@ interface PermissionMatrixProps {
   selectedRoleId?: string;
 }
 
-export function PermissionMatrix({ onSelectRole, selectedRoleId }: PermissionMatrixProps) {
-  const { data: roles = [],    isLoading: rolesLoading }    = useQuery({ queryKey: ['roles'],    queryFn: () => listRoles() });
-  const { data: catalogue = [], isLoading: catLoading } = useQuery({ queryKey: ['catalogue'], queryFn: getModuleCatalogue });
+export function PermissionMatrix({
+  onSelectRole,
+  selectedRoleId,
+}: PermissionMatrixProps) {
+  const { data: roles = [], isLoading: rolesLoading } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => listRoles(),
+  });
+  const { data: catalogue = [], isLoading: catLoading } = useQuery({
+    queryKey: ["catalogue"],
+    queryFn: getModuleCatalogue,
+  });
 
   // Fetch permissions for each role (only non-system roles to keep the matrix manageable)
   // We do this by fetching each role's permission list
@@ -50,7 +66,10 @@ export function PermissionMatrix({ onSelectRole, selectedRoleId }: PermissionMat
               Role
             </th>
             {modules.map((m) => (
-              <th key={m.module} className="px-3 py-3 text-center text-[0.6rem] uppercase tracking-widest text-orika-smoke min-w-[80px]">
+              <th
+                key={m.module}
+                className="px-3 py-3 text-center text-[0.6rem] uppercase tracking-widest text-orika-smoke min-w-[80px]"
+              >
                 {MODULE_LABELS[m.module] ?? m.module}
               </th>
             ))}
@@ -69,32 +88,41 @@ export function PermissionMatrix({ onSelectRole, selectedRoleId }: PermissionMat
         </tbody>
       </table>
       <p className="px-4 py-2 text-[10px] text-orika-smoke/50">
-        Showing {modules.length} of {catalogue.length} modules. Click a role row to open the full editor.
+        Showing {modules.length} of {catalogue.length} modules. Click a role row
+        to open the full editor.
       </p>
     </div>
   );
 }
 
 function RoleMatrixRow({
-  role, modules, isSelected, onSelect,
+  role,
+  modules,
+  isSelected,
+  onSelect,
 }: {
-  role: Role; modules: ModuleCatalogue[]; isSelected: boolean; onSelect: () => void;
+  role: Role;
+  modules: ModuleCatalogue[];
+  isSelected: boolean;
+  onSelect: () => void;
 }) {
   const { data: roleDetail } = useQuery({
-    queryKey: ['role-detail', role.role_id],
-    queryFn:  () => getRoleWithPermissions(role.role_id),
+    queryKey: ["role-detail", role.role_id],
+    queryFn: () => getRoleWithPermissions(role.role_id),
   });
 
   const permSet = new Set(
-    (roleDetail?.permissions ?? []).map((p) => `${p.module}.${p.action}`)
+    (roleDetail?.permissions ?? []).map((p) => `${p.module}.${p.action}`),
   );
 
   return (
     <tr
       onClick={onSelect}
       className={cn(
-        'cursor-pointer transition-colors hover:bg-orika-graphite/20',
-        isSelected ? 'bg-orika-gold/5 border-l-2 border-orika-gold' : 'bg-orika-charcoal',
+        "cursor-pointer transition-colors hover:bg-orika-graphite/20",
+        isSelected
+          ? "bg-orika-gold/5 border-l-2 border-orika-gold"
+          : "bg-orika-charcoal",
       )}
     >
       <td className="sticky left-0 bg-inherit px-4 py-3 z-10">
@@ -109,9 +137,9 @@ function RoleMatrixRow({
         </div>
       </td>
       {modules.map((m) => {
-        const hasView    = permSet.has(`${m.module}.view`);
+        const hasView = permSet.has(`${m.module}.view`);
         const hasApprove = permSet.has(`${m.module}.approve`);
-        const hasCreate  = permSet.has(`${m.module}.create`);
+        const hasCreate = permSet.has(`${m.module}.create`);
         return (
           <td key={m.module} className="px-3 py-3 text-center">
             {hasApprove ? (
@@ -146,23 +174,32 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
   const qc = useQueryClient();
 
   const { data: role, isLoading } = useQuery({
-    queryKey: ['role-detail', roleId],
-    queryFn:  () => getRoleWithPermissions(roleId),
+    queryKey: ["role-detail", roleId],
+    queryFn: () => getRoleWithPermissions(roleId),
   });
 
   const { data: catalogue = [] } = useQuery({
-    queryKey: ['catalogue'],
-    queryFn:  getModuleCatalogue,
+    queryKey: ["catalogue"],
+    queryFn: getModuleCatalogue,
   });
 
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
 
   const grantMutation = useMutation({
-    mutationFn: ({ module, action, record_scope, hidden_fields }: {
-      module: string; action: string; record_scope?: string; hidden_fields?: string[];
-    }) => grantPermission(roleId, { module, action, record_scope, hidden_fields }),
+    mutationFn: ({
+      module,
+      action,
+      record_scope,
+      hidden_fields,
+    }: {
+      module: string;
+      action: string;
+      record_scope?: string;
+      hidden_fields?: string[];
+    }) =>
+      grantPermission(roleId, { module, action, record_scope, hidden_fields }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['role-detail', roleId] });
+      qc.invalidateQueries({ queryKey: ["role-detail", roleId] });
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
@@ -171,7 +208,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
     mutationFn: ({ module, action }: { module: string; action: string }) =>
       revokePermission(roleId, module, action),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['role-detail', roleId] });
+      qc.invalidateQueries({ queryKey: ["role-detail", roleId] });
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
@@ -179,7 +216,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
   if (isLoading || !role) return <Skeleton className="h-96 rounded-2xl" />;
 
   const permMap = new Map(
-    role.permissions.map((p) => [`${p.module}.${p.action}`, p])
+    role.permissions.map((p) => [`${p.module}.${p.action}`, p]),
   );
 
   const isSystemRole = role.is_system;
@@ -205,20 +242,29 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
           )}
         </div>
         {isSystemRole && (
-          <Badge tone="gold" size="xs">System — read only</Badge>
+          <Badge tone="gold" size="xs">
+            System — read only
+          </Badge>
         )}
       </div>
 
       <div className="space-y-1">
         {catalogue.map((cat) => {
-          const modulePerms = role.permissions.filter((p) => p.module === cat.module);
-          const isExpanded  = expandedModule === cat.module;
+          const modulePerms = role.permissions.filter(
+            (p) => p.module === cat.module,
+          );
+          const isExpanded = expandedModule === cat.module;
 
           return (
-            <div key={cat.module} className="rounded-xl border border-white/5 overflow-hidden">
+            <div
+              key={cat.module}
+              className="rounded-xl border border-white/5 overflow-hidden"
+            >
               {/* Module header */}
               <button
-                onClick={() => setExpandedModule(isExpanded ? null : cat.module)}
+                onClick={() =>
+                  setExpandedModule(isExpanded ? null : cat.module)
+                }
                 className="flex w-full items-center justify-between px-4 py-3 bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -228,22 +274,28 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                   {modulePerms.length > 0 && (
                     <div className="flex gap-1">
                       {modulePerms.map((p) => (
-                        <span key={p.action}
+                        <span
+                          key={p.action}
                           className="rounded px-1 py-0.5 text-[9px] font-semibold uppercase"
                           style={{
-                            color: ACTION_META[p.action as keyof typeof ACTION_META]?.color ?? '#9E9891',
-                            backgroundColor: `${ACTION_META[p.action as keyof typeof ACTION_META]?.color ?? '#9E9891'}20`,
-                          }}>
+                            color:
+                              ACTION_META[p.action as keyof typeof ACTION_META]
+                                ?.color ?? "#9E9891",
+                            backgroundColor: `${ACTION_META[p.action as keyof typeof ACTION_META]?.color ?? "#9E9891"}20`,
+                          }}
+                        >
                           {p.action}
                         </span>
                       ))}
                     </div>
                   )}
                 </div>
-                <ChevronDown className={cn(
-                  'h-4 w-4 text-orika-smoke transition-transform',
-                  isExpanded && 'rotate-180',
-                )} />
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-orika-smoke transition-transform",
+                    isExpanded && "rotate-180",
+                  )}
+                />
               </button>
 
               {/* Action toggles */}
@@ -251,35 +303,44 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                 <div className="border-t border-white/5 bg-orika-black/20 px-4 py-3 space-y-3">
                   {/* Action grid */}
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {ALL_ACTIONS.filter((a) => cat.actions.includes(a)).map((action) => {
-                      const key  = `${cat.module}.${action}`;
-                      const perm = permMap.get(key);
-                      const granted = !!perm;
-                      const meta = ACTION_META[action];
-                      return (
-                        <button key={action}
-                          onClick={() => togglePermission(cat.module, action)}
-                          disabled={isSystemRole}
-                          className={cn(
-                            'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all',
-                            granted
-                              ? 'border-transparent text-orika-cream'
-                              : 'border-white/10 text-orika-smoke hover:border-white/20',
-                            isSystemRole && 'cursor-not-allowed opacity-60',
-                          )}
-                          style={granted ? {
-                            backgroundColor: `${meta.color}20`,
-                            borderColor: `${meta.color}40`,
-                            color: meta.color,
-                          } : {}}
-                        >
-                          {granted
-                            ? <Check className="h-3 w-3 shrink-0" />
-                            : <X className="h-3 w-3 shrink-0 opacity-30" />}
-                          {meta.label}
-                        </button>
-                      );
-                    })}
+                    {ALL_ACTIONS.filter((a) => cat.actions.includes(a)).map(
+                      (action) => {
+                        const key = `${cat.module}.${action}`;
+                        const perm = permMap.get(key);
+                        const granted = !!perm;
+                        const meta = ACTION_META[action];
+                        return (
+                          <button
+                            key={action}
+                            onClick={() => togglePermission(cat.module, action)}
+                            disabled={isSystemRole}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all",
+                              granted
+                                ? "border-transparent text-orika-cream"
+                                : "border-white/10 text-orika-smoke hover:border-white/20",
+                              isSystemRole && "cursor-not-allowed opacity-60",
+                            )}
+                            style={
+                              granted
+                                ? {
+                                    backgroundColor: `${meta.color}20`,
+                                    borderColor: `${meta.color}40`,
+                                    color: meta.color,
+                                  }
+                                : {}
+                            }
+                          >
+                            {granted ? (
+                              <Check className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <X className="h-3 w-3 shrink-0 opacity-30" />
+                            )}
+                            {meta.label}
+                          </button>
+                        );
+                      },
+                    )}
                   </div>
 
                   {/* Record scope + hidden fields for each granted action */}
@@ -288,51 +349,79 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                       <p className="text-[0.6rem] uppercase tracking-widest text-orika-smoke/60">
                         Data access refinement
                       </p>
-                      {modulePerms.filter((p) => p.action === 'view').map((perm) => (
-                        <div key={perm.permission_id} className="flex flex-wrap items-center gap-3">
-                          <span className="text-xs text-orika-smoke w-16">Scope:</span>
-                          <select
-                            value={perm.record_scope}
-                            onChange={(e) => grantMutation.mutate({
-                              module: cat.module, action: perm.action,
-                              record_scope: e.target.value, hidden_fields: perm.hidden_fields,
-                            })}
-                            className="rounded-lg border border-white/10 bg-orika-charcoal px-2 py-1 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                      {modulePerms
+                        .filter((p) => p.action === "view")
+                        .map((perm) => (
+                          <div
+                            key={perm.permission_id}
+                            className="flex flex-wrap items-center gap-3"
                           >
-                            {Object.entries(RECORD_SCOPE_META).map(([v, m]) => (
-                              <option key={v} value={v}>{m.label}</option>
-                            ))}
-                          </select>
+                            <span className="text-xs text-orika-smoke w-16">
+                              Scope:
+                            </span>
+                            <select
+                              value={perm.record_scope}
+                              onChange={(e) =>
+                                grantMutation.mutate({
+                                  module: cat.module,
+                                  action: perm.action,
+                                  record_scope: e.target.value,
+                                  hidden_fields: perm.hidden_fields,
+                                })
+                              }
+                              className="rounded-lg border border-white/10 bg-orika-charcoal px-2 py-1 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                            >
+                              {Object.entries(RECORD_SCOPE_META).map(
+                                ([v, m]) => (
+                                  <option key={v} value={v}>
+                                    {m.label}
+                                  </option>
+                                ),
+                              )}
+                            </select>
 
-                          {/* Hidden fields */}
-                          <span className="text-xs text-orika-smoke">Hide:</span>
-                          <div className="flex flex-wrap gap-1">
-                            {SENSITIVE_FIELDS.map((f) => {
-                              const isHidden = perm.hidden_fields?.includes(f.value);
-                              return (
-                                <button key={f.value}
-                                  onClick={() => {
-                                    const newFields = isHidden
-                                      ? perm.hidden_fields.filter((h) => h !== f.value)
-                                      : [...(perm.hidden_fields ?? []), f.value];
-                                    grantMutation.mutate({
-                                      module: cat.module, action: perm.action,
-                                      record_scope: perm.record_scope, hidden_fields: newFields,
-                                    });
-                                  }}
-                                  className={cn(
-                                    'rounded px-1.5 py-0.5 text-[9px] font-medium transition-all',
-                                    isHidden
-                                      ? 'bg-red-900/30 text-red-400 border border-red-500/30'
-                                      : 'bg-orika-graphite/30 text-orika-smoke/50 border border-transparent hover:border-white/10',
-                                  )}>
-                                  {f.label}
-                                </button>
-                              );
-                            })}
+                            {/* Hidden fields */}
+                            <span className="text-xs text-orika-smoke">
+                              Hide:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {SENSITIVE_FIELDS.map((f) => {
+                                const isHidden = perm.hidden_fields?.includes(
+                                  f.value,
+                                );
+                                return (
+                                  <button
+                                    key={f.value}
+                                    onClick={() => {
+                                      const newFields = isHidden
+                                        ? perm.hidden_fields.filter(
+                                            (h) => h !== f.value,
+                                          )
+                                        : [
+                                            ...(perm.hidden_fields ?? []),
+                                            f.value,
+                                          ];
+                                      grantMutation.mutate({
+                                        module: cat.module,
+                                        action: perm.action,
+                                        record_scope: perm.record_scope,
+                                        hidden_fields: newFields,
+                                      });
+                                    }}
+                                    className={cn(
+                                      "rounded px-1.5 py-0.5 text-[9px] font-medium transition-all",
+                                      isHidden
+                                        ? "bg-red-900/30 text-red-400 border border-red-500/30"
+                                        : "bg-orika-graphite/30 text-orika-smoke/50 border border-transparent hover:border-white/10",
+                                    )}
+                                  >
+                                    {f.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>

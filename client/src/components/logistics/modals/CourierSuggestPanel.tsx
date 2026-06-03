@@ -3,33 +3,44 @@
  * Shows courier suggestions for a delivery address, fetches live quotes,
  * and lets staff pick one. Always suggests — never auto-selects.
  */
-import { useState, useEffect } from 'react';
-import { Zap, Truck, Globe, Info } from 'lucide-react';
-import { suggestCouriers } from '@services/logistics';
-import { COURIER_META, ZONE_LABEL, detectZone } from '@lib/constants/logisticsConstants';
-import { fmtMoney } from '@lib/format';
-import { cn } from '@lib/cn';
-import type { DeliveryAddress, CourierSuggestion, Courier } from '@typedefs/logistics';
+import { useState, useEffect } from "react";
+import { Zap, Truck, Globe, Info } from "lucide-react";
+import { suggestCouriers } from "@services/logistics";
+import {
+  COURIER_META,
+  ZONE_LABEL,
+  detectZone,
+} from "@lib/constants/logisticsConstants";
+import { fmtMoney } from "@lib/format";
+import { cn } from "@lib/cn";
+import type {
+  DeliveryAddress,
+  CourierSuggestion,
+  Courier,
+} from "@typedefs/logistics";
 
 interface CourierSuggestPanelProps {
-  address:   DeliveryAddress | null;
-  selected:  Courier | null;
-  onSelect:  (courier: Courier, fee: number) => void;
+  address: DeliveryAddress | null;
+  selected: Courier | null;
+  onSelect: (courier: Courier, fee: number) => void;
   currency?: string;
 }
 
 const ZONE_ICON = {
-  lagos:         Zap,
-  interstate:    Truck,
+  lagos: Zap,
+  interstate: Truck,
   international: Globe,
 };
 
 export function CourierSuggestPanel({
-  address, selected, onSelect, currency = 'NGN',
+  address,
+  selected,
+  onSelect,
+  currency = "NGN",
 }: CourierSuggestPanelProps) {
   const [suggestions, setSuggestions] = useState<CourierSuggestion[]>([]);
-  const [zone, setZone]               = useState<string | null>(null);
-  const [loading, setLoading]         = useState(false);
+  const [zone, setZone] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!address?.city || !address?.state) {
@@ -68,13 +79,16 @@ export function CourierSuggestPanel({
       {loading ? (
         <div className="space-y-2">
           {[1, 2].map((i) => (
-            <div key={i} className="h-14 rounded-xl bg-orika-graphite/30 animate-pulse" />
+            <div
+              key={i}
+              className="h-14 rounded-xl bg-orika-graphite/30 animate-pulse"
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {suggestions.map((opt) => {
-            const meta      = COURIER_META[opt.courier];
+            const meta = COURIER_META[opt.courier];
             const isSelected = selected === opt.courier;
 
             return (
@@ -83,10 +97,10 @@ export function CourierSuggestPanel({
                 type="button"
                 onClick={() => onSelect(opt.courier, opt.fee ?? 0)}
                 className={cn(
-                  'flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all',
+                  "flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all",
                   isSelected
-                    ? 'border-orika-gold/60 bg-orika-gold/5'
-                    : 'border-white/10 bg-orika-charcoal hover:border-white/20',
+                    ? "border-orika-gold/60 bg-orika-gold/5"
+                    : "border-white/10 bg-orika-charcoal hover:border-white/20",
                 )}
               >
                 {/* Courier colour chip */}
@@ -98,7 +112,9 @@ export function CourierSuggestPanel({
                 {/* Courier info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-orika-cream">{opt.label}</span>
+                    <span className="text-sm font-medium text-orika-cream">
+                      {opt.label}
+                    </span>
                     {opt.recommended && (
                       <span className="rounded-full bg-orika-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-orika-gold">
                         Recommended
@@ -117,7 +133,9 @@ export function CourierSuggestPanel({
                       {fmtMoney(opt.fee, currency)}
                     </p>
                   ) : opt.fee_error ? (
-                    <p className="text-xs text-orika-smoke">Quote unavailable</p>
+                    <p className="text-xs text-orika-smoke">
+                      Quote unavailable
+                    </p>
                   ) : (
                     <p className="text-xs text-orika-smoke">Enter manually</p>
                   )}
@@ -130,7 +148,8 @@ export function CourierSuggestPanel({
 
       <p className="flex items-start gap-1.5 text-[0.65rem] text-orika-smoke/60">
         <Info className="h-3 w-3 shrink-0 mt-px" />
-        Fees are estimates from the courier API. Final fee is confirmed at booking.
+        Fees are estimates from the courier API. Final fee is confirmed at
+        booking.
       </p>
     </div>
   );

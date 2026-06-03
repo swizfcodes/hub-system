@@ -41,8 +41,7 @@ module.exports = async function fetchSocialMetrics() {
               `https://graph.facebook.com/v18.0/${extId.postId}`,
               {
                 params: {
-                  fields:
-                    "likes.summary(true),comments.summary(true),shares",
+                  fields: "likes.summary(true),comments.summary(true),shares",
                   access_token: config.meta.accessToken,
                 },
               },

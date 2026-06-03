@@ -52,8 +52,8 @@ const TEST_PRODUCT = {
   sku: "PROD-001",
   name: "Test Product",
   category_id: "00000000-0000-0000-0000-000000000501",
-  unit_cost: 100.00,
-  selling_price: 150.00,
+  unit_cost: 100.0,
+  selling_price: 150.0,
   stock_quantity: 100,
   reorder_level: 20,
   is_active: true,
@@ -159,7 +159,8 @@ function generateInvoice(business = TEST_BUSINESS, overrides = {}) {
     customer_id: TEST_CUSTOMER.contact_id,
     amount: overrides.amount !== undefined ? overrides.amount : 5000,
     tax_amount: overrides.tax_amount !== undefined ? overrides.tax_amount : 500,
-    total_amount: overrides.total_amount !== undefined ? overrides.total_amount : 5500,
+    total_amount:
+      overrides.total_amount !== undefined ? overrides.total_amount : 5500,
     status: "draft",
     payment_status: "unpaid",
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -185,9 +186,13 @@ function generateInvoice(business = TEST_BUSINESS, overrides = {}) {
  * Generate stock movement data
  */
 function generateStockMovement(business = TEST_BUSINESS, overrides = {}) {
-  const balanceBefore = overrides.balance_before !== undefined ? overrides.balance_before : 90;
+  const balanceBefore =
+    overrides.balance_before !== undefined ? overrides.balance_before : 90;
   const quantity = overrides.quantity !== undefined ? overrides.quantity : 10;
-  const balanceAfter = overrides.balance_after !== undefined ? overrides.balance_after : (balanceBefore + quantity);
+  const balanceAfter =
+    overrides.balance_after !== undefined
+      ? overrides.balance_after
+      : balanceBefore + quantity;
 
   return {
     movement_id: crypto.randomUUID(),
@@ -234,10 +239,17 @@ function generateCampaign(business = TEST_BUSINESS, overrides = {}) {
  * Generate payroll data
  */
 function generatePayroll(business = TEST_BUSINESS, overrides = {}) {
-  const gross = overrides.total_gross !== undefined ? overrides.total_gross : 500000;
-  const deductions = overrides.total_deductions !== undefined ? overrides.total_deductions : 50000;
-  const net = overrides.total_net !== undefined ? overrides.total_net : (gross - deductions);
-  
+  const gross =
+    overrides.total_gross !== undefined ? overrides.total_gross : 500000;
+  const deductions =
+    overrides.total_deductions !== undefined
+      ? overrides.total_deductions
+      : 50000;
+  const net =
+    overrides.total_net !== undefined
+      ? overrides.total_net
+      : gross - deductions;
+
   return {
     payroll_id: crypto.randomUUID(),
     business_id: business.business_id,
@@ -260,9 +272,11 @@ function generatePayroll(business = TEST_BUSINESS, overrides = {}) {
  */
 function generatePosSale(business = TEST_BUSINESS, overrides = {}) {
   const counter = Math.random().toString(36).substring(7);
-  const totalAmount = overrides.total_amount !== undefined ? overrides.total_amount : 15000;
-  const taxAmount = overrides.tax_amount !== undefined ? overrides.tax_amount : 1500;
-  
+  const totalAmount =
+    overrides.total_amount !== undefined ? overrides.total_amount : 15000;
+  const taxAmount =
+    overrides.tax_amount !== undefined ? overrides.tax_amount : 1500;
+
   return {
     sale_id: crypto.randomUUID(),
     business_id: business.business_id,
@@ -271,7 +285,10 @@ function generatePosSale(business = TEST_BUSINESS, overrides = {}) {
     customer_id: TEST_CUSTOMER.contact_id,
     total_amount: totalAmount,
     tax_amount: taxAmount,
-    final_amount: overrides.final_amount !== undefined ? overrides.final_amount : (totalAmount + taxAmount),
+    final_amount:
+      overrides.final_amount !== undefined
+        ? overrides.final_amount
+        : totalAmount + taxAmount,
     payment_method: "cash",
     status: "completed",
     items: [
@@ -946,8 +963,7 @@ function generateSession(user = TEST_USER, overrides = {}) {
     session_id: crypto.randomUUID(),
     user_id: user.user_id,
     ip_address: "192.168.1.1",
-    user_agent:
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     device_fingerprint: crypto.randomBytes(16).toString("hex"),
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     created_at: new Date().toISOString(),
@@ -1009,13 +1025,7 @@ function generatePermission(role = generateRole(), overrides = {}) {
  * Generate role permissions set
  */
 function generateRolePermissions(role = generateRole(), overrides = {}) {
-  const modules = [
-    "invoicing",
-    "sales",
-    "purchasing",
-    "stock",
-    "accounting",
-  ];
+  const modules = ["invoicing", "sales", "purchasing", "stock", "accounting"];
   const permissions = modules.map((module) => ({
     permission_id: crypto.randomUUID(),
     role_id: role.role_id,

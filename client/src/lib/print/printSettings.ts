@@ -13,11 +13,11 @@ export interface BarcodePrintSettings {
   heightMm: number;
 }
 
-const KEY = 'orika_barcode_print_settings';
+const KEY = "orika_barcode_print_settings";
 
 const DEFAULTS: BarcodePrintSettings = {
   silentPrint: false,
-  printerName: '',
+  printerName: "",
   dpi: 203,
   widthMm: 50,
   heightMm: 25,
@@ -25,13 +25,15 @@ const DEFAULTS: BarcodePrintSettings = {
 
 export function getPrintSettings(): BarcodePrintSettings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
   } catch {
     return { ...DEFAULTS };
   }
 }
 
-export function savePrintSettings(patch: Partial<BarcodePrintSettings>): BarcodePrintSettings {
+export function savePrintSettings(
+  patch: Partial<BarcodePrintSettings>,
+): BarcodePrintSettings {
   const next = { ...getPrintSettings(), ...patch };
   localStorage.setItem(KEY, JSON.stringify(next));
   return next;

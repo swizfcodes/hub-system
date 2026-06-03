@@ -1,15 +1,22 @@
-import { api } from '../api';
-import type { Contact, ContactAddress, ContactTimeline, ContactListResponse } from '@typedefs/contacts';
+import { api } from "../api";
+import type {
+  Contact,
+  ContactAddress,
+  ContactTimeline,
+  ContactListResponse,
+} from "@typedefs/contacts";
 
 export interface ListParams {
   search?: string;
-  type?: string;            // single backend filter; we filter multi-types client-side
+  type?: string; // single backend filter; we filter multi-types client-side
   page?: number;
   limit?: number;
 }
 
-export async function listContacts(params: ListParams = {}): Promise<ContactListResponse> {
-  const { data } = await api.get<ContactListResponse>('/contacts', { params });
+export async function listContacts(
+  params: ListParams = {},
+): Promise<ContactListResponse> {
+  const { data } = await api.get<ContactListResponse>("/contacts", { params });
   return data;
 }
 
@@ -18,12 +25,17 @@ export async function getContact(id: string): Promise<Contact> {
   return data;
 }
 
-export async function createContact(payload: Partial<Contact>): Promise<Contact> {
-  const { data } = await api.post<Contact>('/contacts', payload);
+export async function createContact(
+  payload: Partial<Contact>,
+): Promise<Contact> {
+  const { data } = await api.post<Contact>("/contacts", payload);
   return data;
 }
 
-export async function updateContact(id: string, patch: Partial<Contact>): Promise<Contact> {
+export async function updateContact(
+  id: string,
+  patch: Partial<Contact>,
+): Promise<Contact> {
   const { data } = await api.patch<Contact>(`/contacts/${id}`, patch);
   return data;
 }
@@ -38,8 +50,14 @@ export async function getTimeline(id: string): Promise<ContactTimeline> {
   return data;
 }
 
-export async function addAddress(id: string, payload: Partial<ContactAddress>): Promise<ContactAddress> {
-  const { data } = await api.post<ContactAddress>(`/contacts/${id}/addresses`, payload);
+export async function addAddress(
+  id: string,
+  payload: Partial<ContactAddress>,
+): Promise<ContactAddress> {
+  const { data } = await api.post<ContactAddress>(
+    `/contacts/${id}/addresses`,
+    payload,
+  );
   return data;
 }
 
@@ -47,9 +65,14 @@ export async function addAddress(id: string, payload: Partial<ContactAddress>): 
  * searchContacts — quick search for typeaheads.
  * Returns an array (never throws) — suitable for live search dropdowns.
  */
-export async function searchContacts(search: string, limit = 10): Promise<Contact[]> {
+export async function searchContacts(
+  search: string,
+  limit = 10,
+): Promise<Contact[]> {
   try {
-    const { data } = await api.get<{ data: Contact[] }>('/contacts', { params: { search, limit } });
+    const { data } = await api.get<{ data: Contact[] }>("/contacts", {
+      params: { search, limit },
+    });
     return data.data ?? [];
   } catch {
     return [];

@@ -1,1 +1,1 @@
-export * from './campaigns';
+export * from "./campaigns";

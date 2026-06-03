@@ -128,9 +128,7 @@ describe("Logistics Provider Integration", () => {
     it("should provide estimated delivery date", () => {
       const tracking = generateLogisticsTracking();
       expect(tracking.estimated_delivery).toBeTruthy();
-      expect(
-        new Date(tracking.estimated_delivery) > new Date(),
-      ).toBe(true);
+      expect(new Date(tracking.estimated_delivery) > new Date()).toBe(true);
     });
 
     it("should update estimated delivery", () => {
@@ -146,8 +144,7 @@ describe("Logistics Provider Integration", () => {
       });
 
       expect(
-        new Date(tracking.estimated_delivery) <
-          new Date(originalEstimate),
+        new Date(tracking.estimated_delivery) < new Date(originalEstimate),
       ).toBe(true);
     });
   });
@@ -245,7 +242,9 @@ describe("Logistics Provider Integration", () => {
     it("should calculate delivery time", () => {
       const trackings = [
         generateLogisticsTracking(TEST_BUSINESS, {
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date(
+            Date.now() - 2 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
           status: "delivered",
           updated_at: new Date().toISOString(),
         }),
@@ -253,7 +252,8 @@ describe("Logistics Provider Integration", () => {
 
       const createdTime = new Date(trackings[0].created_at).getTime();
       const deliveredTime = new Date(trackings[0].updated_at).getTime();
-      const daysToDeliver = (deliveredTime - createdTime) / (1000 * 60 * 60 * 24);
+      const daysToDeliver =
+        (deliveredTime - createdTime) / (1000 * 60 * 60 * 24);
 
       expect(daysToDeliver).toBeGreaterThan(0);
     });

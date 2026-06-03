@@ -1,34 +1,65 @@
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import {
-  Building2, FileQuestion, FileText, Truck, Receipt, ArrowRight, TrendingUp,
-} from 'lucide-react';
-import { Topbar } from '@components/shell/Topbar';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Card } from '@components/ui/Card';
-import { Badge } from '@components/ui/Badge';
-import { listSuppliers } from '@services/purchasing/suppliers';
-import { listRFQs } from '@services/purchasing/rfqs';
-import { listPOs } from '@services/purchasing/purchaseOrders';
-import { listBills } from '@services/purchasing/bills';
-import { fmtMoney, fmtRelative } from '@lib/format';
-import { cn } from '@lib/cn';
+  Building2,
+  FileQuestion,
+  FileText,
+  Truck,
+  Receipt,
+  ArrowRight,
+  TrendingUp,
+} from "lucide-react";
+import { Topbar } from "@components/shell/Topbar";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Card } from "@components/ui/Card";
+import { Badge } from "@components/ui/Badge";
+import { listSuppliers } from "@services/purchasing/suppliers";
+import { listRFQs } from "@services/purchasing/rfqs";
+import { listPOs } from "@services/purchasing/purchaseOrders";
+import { listBills } from "@services/purchasing/bills";
+import { fmtMoney, fmtRelative } from "@lib/format";
+import { cn } from "@lib/cn";
 
 export default function ProcurementHome() {
   const { active: business } = useActiveBusiness();
-  const { data: sups }  = useQuery({ queryKey: ['purchasing', 'suppliers'], queryFn: () => listSuppliers({ limit: 200 }) });
-  const { data: rfqs }  = useQuery({ queryKey: ['purchasing', 'rfqs', 'all'], queryFn: () => listRFQs({ limit: 100 }) });
-  const { data: pos }   = useQuery({ queryKey: ['purchasing', 'purchase-orders', 'all', business], queryFn: () => listPOs({ limit: 100 }) });
-  const { data: bills } = useQuery({ queryKey: ['purchasing', 'bills'], queryFn: () => listBills() });
+  const { data: sups } = useQuery({
+    queryKey: ["purchasing", "suppliers"],
+    queryFn: () => listSuppliers({ limit: 200 }),
+  });
+  const { data: rfqs } = useQuery({
+    queryKey: ["purchasing", "rfqs", "all"],
+    queryFn: () => listRFQs({ limit: 100 }),
+  });
+  const { data: pos } = useQuery({
+    queryKey: ["purchasing", "purchase-orders", "all", business],
+    queryFn: () => listPOs({ limit: 100 }),
+  });
+  const { data: bills } = useQuery({
+    queryKey: ["purchasing", "bills"],
+    queryFn: () => listBills(),
+  });
 
-  const openRFQs       = (rfqs?.data ?? []).filter((r) => r.status === 'sent' || r.status === 'draft');
-  const responsesReady = (rfqs?.data ?? []).filter((r) => r.status === 'responses_received');
-  const posPending     = (pos?.data ?? []).filter((p) => ['draft', 'sent', 'acknowledged'].includes(p.status));
-  const posIncoming    = (pos?.data ?? []).filter((p) => ['sent', 'acknowledged', 'partially_received'].includes(p.status));
-  const billsPending   = (bills ?? []).filter((b) => b.status === 'pending' || b.status === 'matched');
+  const openRFQs = (rfqs?.data ?? []).filter(
+    (r) => r.status === "sent" || r.status === "draft",
+  );
+  const responsesReady = (rfqs?.data ?? []).filter(
+    (r) => r.status === "responses_received",
+  );
+  const posPending = (pos?.data ?? []).filter((p) =>
+    ["draft", "sent", "acknowledged"].includes(p.status),
+  );
+  const posIncoming = (pos?.data ?? []).filter((p) =>
+    ["sent", "acknowledged", "partially_received"].includes(p.status),
+  );
+  const billsPending = (bills ?? []).filter(
+    (b) => b.status === "pending" || b.status === "matched",
+  );
 
-  const openValue = posIncoming.reduce((s, p) => s + (p.ngn_equivalent || p.total_amount || 0), 0);
+  const openValue = posIncoming.reduce(
+    (s, p) => s + (p.ngn_equivalent || p.total_amount || 0),
+    0,
+  );
 
   return (
     <>
@@ -37,16 +68,51 @@ export default function ProcurementHome() {
         <PageHeader
           title="Procurement"
           subtitle="Everything you've requested, ordered, received, and owe — in one place."
-          crumbs={[{ label: 'Hub', to: '/' }, { label: 'Procurement' }]}
+          crumbs={[{ label: "Hub", to: "/" }, { label: "Procurement" }]}
         />
 
         {/* KPI strip */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-5 mb-6">
-          <Kpi to="/procurement/suppliers" icon={<Building2 className="w-4 h-4" />} label="Suppliers" value={String((sups?.data ?? []).length)} tone="sage" hint="Active master list" />
-          <Kpi to="/procurement/rfqs" icon={<FileQuestion className="w-4 h-4" />} label="Open RFQs"     value={String(openRFQs.length)}       tone="gold"  hint={`${responsesReady.length} with responses`} />
-          <Kpi to="/procurement/purchase-orders" icon={<FileText className="w-4 h-4" />} label="POs awaiting receipt" value={String(posIncoming.length)} tone="gold" hint="From sent → partial" />
-          <Kpi to="/procurement/purchase-orders" icon={<TrendingUp className="w-4 h-4" />} label="Open PO value"    value={fmtMoney(openValue, 'NGN')}    tone="rose"  hint="Sum of incoming POs (NGN)" />
-          <Kpi to="/procurement/bills" icon={<Receipt className="w-4 h-4" />} label="Bills to clear" value={String(billsPending.length)} tone="rose" hint="Pending + matched" />
+          <Kpi
+            to="/procurement/suppliers"
+            icon={<Building2 className="w-4 h-4" />}
+            label="Suppliers"
+            value={String((sups?.data ?? []).length)}
+            tone="sage"
+            hint="Active master list"
+          />
+          <Kpi
+            to="/procurement/rfqs"
+            icon={<FileQuestion className="w-4 h-4" />}
+            label="Open RFQs"
+            value={String(openRFQs.length)}
+            tone="gold"
+            hint={`${responsesReady.length} with responses`}
+          />
+          <Kpi
+            to="/procurement/purchase-orders"
+            icon={<FileText className="w-4 h-4" />}
+            label="POs awaiting receipt"
+            value={String(posIncoming.length)}
+            tone="gold"
+            hint="From sent → partial"
+          />
+          <Kpi
+            to="/procurement/purchase-orders"
+            icon={<TrendingUp className="w-4 h-4" />}
+            label="Open PO value"
+            value={fmtMoney(openValue, "NGN")}
+            tone="rose"
+            hint="Sum of incoming POs (NGN)"
+          />
+          <Kpi
+            to="/procurement/bills"
+            icon={<Receipt className="w-4 h-4" />}
+            label="Bills to clear"
+            value={String(billsPending.length)}
+            tone="rose"
+            hint="Pending + matched"
+          />
         </div>
 
         {/* Action lanes */}
@@ -57,7 +123,15 @@ export default function ProcurementHome() {
             icon={<FileQuestion className="w-5 h-5" />}
             tone="gold"
             empty="No new responses yet."
-            items={responsesReady.slice(0, 5).map((r) => ({ id: r.rfq_id, primary: r.title, secondary: r.rfq_number, hint: fmtRelative(r.updated_at), to: `/procurement/rfqs/${r.rfq_id}` }))}
+            items={responsesReady
+              .slice(0, 5)
+              .map((r) => ({
+                id: r.rfq_id,
+                primary: r.title,
+                secondary: r.rfq_number,
+                hint: fmtRelative(r.updated_at),
+                to: `/procurement/rfqs/${r.rfq_id}`,
+              }))}
           />
           <Lane
             title="POs awaiting receipt"
@@ -66,9 +140,14 @@ export default function ProcurementHome() {
             tone="sage"
             empty="No POs awaiting receipt."
             items={posIncoming.slice(0, 5).map((p) => ({
-              id: p.po_id, primary: p.supplier_name ?? '—', secondary: `${p.po_number} · ${fmtMoney(p.total_amount, p.currency)}`,
-              hint: p.expected_delivery ? `ETA ${fmtRelative(p.expected_delivery)}` : fmtRelative(p.order_date),
-              tone: 'gold', badge: p.status.replace('_', ' '),
+              id: p.po_id,
+              primary: p.supplier_name ?? "—",
+              secondary: `${p.po_number} · ${fmtMoney(p.total_amount, p.currency)}`,
+              hint: p.expected_delivery
+                ? `ETA ${fmtRelative(p.expected_delivery)}`
+                : fmtRelative(p.order_date),
+              tone: "gold",
+              badge: p.status.replace("_", " "),
               to: `/procurement/purchase-orders/${p.po_id}`,
             }))}
           />
@@ -78,7 +157,15 @@ export default function ProcurementHome() {
             icon={<FileText className="w-5 h-5" />}
             tone="rose"
             empty="No POs pending."
-            items={posPending.slice(0, 5).map((p) => ({ id: p.po_id, primary: p.supplier_name ?? '—', secondary: p.po_number, hint: fmtMoney(p.total_amount, p.currency), to: `/procurement/purchase-orders/${p.po_id}` }))}
+            items={posPending
+              .slice(0, 5)
+              .map((p) => ({
+                id: p.po_id,
+                primary: p.supplier_name ?? "—",
+                secondary: p.po_number,
+                hint: fmtMoney(p.total_amount, p.currency),
+                to: `/procurement/purchase-orders/${p.po_id}`,
+              }))}
           />
           <Lane
             title="Bills to clear"
@@ -87,8 +174,11 @@ export default function ProcurementHome() {
             tone="neutral"
             empty="No bills pending."
             items={billsPending.slice(0, 5).map((b) => ({
-              id: b.sup_invoice_id, primary: b.supplier_name ?? '—', secondary: b.supplier_invoice_number,
-              hint: fmtMoney(b.amount, b.currency), badge: b.status,
+              id: b.sup_invoice_id,
+              primary: b.supplier_name ?? "—",
+              secondary: b.supplier_invoice_number,
+              hint: fmtMoney(b.amount, b.currency),
+              badge: b.status,
               to: `/procurement/bills/${b.sup_invoice_id}`,
             }))}
           />
@@ -97,11 +187,17 @@ export default function ProcurementHome() {
         {/* Recent PO activity — derived from the POs already loaded above */}
         {(pos?.data ?? []).length > 0 && (
           <div className="mt-8 space-y-3">
-            <p className="text-[0.65rem] tracking-widest uppercase text-orika-gold font-semibold">Recent Activity</p>
+            <p className="text-[0.65rem] tracking-widest uppercase text-orika-gold font-semibold">
+              Recent Activity
+            </p>
             <div className="space-y-2">
               {(pos?.data ?? [])
                 .slice()
-                .sort((a, b) => new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.updated_at ?? b.created_at).getTime() -
+                    new Date(a.updated_at ?? a.created_at).getTime(),
+                )
                 .slice(0, 6)
                 .map((po) => (
                   <Link
@@ -112,13 +208,21 @@ export default function ProcurementHome() {
                     <FileText className="h-4 w-4 text-orika-smoke shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-orika-cream truncate">
-                        <span className="font-mono text-xs text-orika-gold mr-2">{po.po_number}</span>
-                        {po.supplier_name ?? 'Unknown supplier'}
+                        <span className="font-mono text-xs text-orika-gold mr-2">
+                          {po.po_number}
+                        </span>
+                        {po.supplier_name ?? "Unknown supplier"}
                       </p>
-                      <p className="text-xs text-orika-smoke">{fmtMoney(po.total_amount ?? 0, po.currency ?? 'NGN')}</p>
+                      <p className="text-xs text-orika-smoke">
+                        {fmtMoney(po.total_amount ?? 0, po.currency ?? "NGN")}
+                      </p>
                     </div>
-                    <Badge tone="neutral" size="xs">{po.status}</Badge>
-                    <span className="text-[10px] text-orika-smoke/50 shrink-0">{fmtRelative(po.updated_at ?? po.created_at)}</span>
+                    <Badge tone="neutral" size="xs">
+                      {po.status}
+                    </Badge>
+                    <span className="text-[10px] text-orika-smoke/50 shrink-0">
+                      {fmtRelative(po.updated_at ?? po.created_at)}
+                    </span>
                   </Link>
                 ))}
             </div>
@@ -129,40 +233,98 @@ export default function ProcurementHome() {
   );
 }
 
-function Kpi({ to, icon, label, value, tone, hint }: { to: string; icon: React.ReactNode; label: string; value: string; tone: 'gold'|'rose'|'sage'|'neutral'; hint?: string }) {
+function Kpi({
+  to,
+  icon,
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: "gold" | "rose" | "sage" | "neutral";
+  hint?: string;
+}) {
   const toneCls = {
-    gold: 'bg-orika-gold/15 text-orika-gold',
-    rose: 'bg-bejewelled-rose/15 text-bejewelled-rose',
-    sage: 'bg-living-sage/15 text-living-sage',
-    neutral: 'bg-orika-graphite text-orika-cloud',
+    gold: "bg-orika-gold/15 text-orika-gold",
+    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
+    sage: "bg-living-sage/15 text-living-sage",
+    neutral: "bg-orika-graphite text-orika-cloud",
   }[tone];
   return (
     <Link to={to} className="block">
       <div className="p-4 rounded-2xl border border-orika-graphite bg-orika-charcoal/60 hover:border-orika-gold/40 hover:-translate-y-0.5 transition-all">
-        <div className={cn('inline-flex items-center justify-center w-8 h-8 rounded-lg', toneCls)}>{icon}</div>
-        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mt-2">{label}</div>
-        <div className="text-xl font-display text-orika-cream mt-0.5 tabular-nums truncate">{value}</div>
-        {hint && <div className="text-[0.65rem] text-orika-smoke mt-1">{hint}</div>}
+        <div
+          className={cn(
+            "inline-flex items-center justify-center w-8 h-8 rounded-lg",
+            toneCls,
+          )}
+        >
+          {icon}
+        </div>
+        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mt-2">
+          {label}
+        </div>
+        <div className="text-xl font-display text-orika-cream mt-0.5 tabular-nums truncate">
+          {value}
+        </div>
+        {hint && (
+          <div className="text-[0.65rem] text-orika-smoke mt-1">{hint}</div>
+        )}
       </div>
     </Link>
   );
 }
 
-interface LaneItem { id: string; primary: string; secondary?: string; hint?: string; badge?: string; tone?: 'gold' | 'sage' | 'rose' | 'neutral'; to: string; }
+interface LaneItem {
+  id: string;
+  primary: string;
+  secondary?: string;
+  hint?: string;
+  badge?: string;
+  tone?: "gold" | "sage" | "rose" | "neutral";
+  to: string;
+}
 
-function Lane({ title, description, icon, tone, empty, items }: { title: string; description: string; icon: React.ReactNode; tone: 'gold'|'rose'|'sage'|'neutral'; empty: string; items: LaneItem[] }) {
+function Lane({
+  title,
+  description,
+  icon,
+  tone,
+  empty,
+  items,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  tone: "gold" | "rose" | "sage" | "neutral";
+  empty: string;
+  items: LaneItem[];
+}) {
   const toneCls = {
-    gold: 'bg-orika-gold/15 text-orika-gold',
-    rose: 'bg-bejewelled-rose/15 text-bejewelled-rose',
-    sage: 'bg-living-sage/15 text-living-sage',
-    neutral: 'bg-orika-graphite text-orika-cloud',
+    gold: "bg-orika-gold/15 text-orika-gold",
+    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
+    sage: "bg-living-sage/15 text-living-sage",
+    neutral: "bg-orika-graphite text-orika-cloud",
   }[tone];
   return (
     <Card className="p-5">
       <div className="flex items-start gap-3 mb-4">
-        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', toneCls)}>{icon}</div>
+        <div
+          className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+            toneCls,
+          )}
+        >
+          {icon}
+        </div>
         <div>
-          <h3 className="font-display text-xl text-orika-cream leading-tight">{title}</h3>
+          <h3 className="font-display text-xl text-orika-cream leading-tight">
+            {title}
+          </h3>
           <p className="text-xs text-orika-smoke mt-0.5">{description}</p>
         </div>
       </div>
@@ -174,11 +336,25 @@ function Lane({ title, description, icon, tone, empty, items }: { title: string;
             <Link key={it.id} to={it.to} className="group block">
               <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-orika-charcoal/60 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-orika-cream truncate">{it.primary}</div>
-                  {it.secondary && <div className="text-[0.65rem] text-orika-smoke truncate">{it.secondary}</div>}
+                  <div className="text-sm text-orika-cream truncate">
+                    {it.primary}
+                  </div>
+                  {it.secondary && (
+                    <div className="text-[0.65rem] text-orika-smoke truncate">
+                      {it.secondary}
+                    </div>
+                  )}
                 </div>
-                {it.badge && <Badge tone="neutral" size="xs">{it.badge}</Badge>}
-                {it.hint && <span className="text-[0.65rem] text-orika-smoke whitespace-nowrap">{it.hint}</span>}
+                {it.badge && (
+                  <Badge tone="neutral" size="xs">
+                    {it.badge}
+                  </Badge>
+                )}
+                {it.hint && (
+                  <span className="text-[0.65rem] text-orika-smoke whitespace-nowrap">
+                    {it.hint}
+                  </span>
+                )}
                 <ArrowRight className="w-3.5 h-3.5 text-orika-smoke group-hover:text-orika-gold group-hover:translate-x-0.5 transition-all" />
               </div>
             </Link>

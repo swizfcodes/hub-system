@@ -41,9 +41,7 @@ module.exports = async function sendScheduledReports() {
 
         if (!isDue) continue;
 
-        const { startDate, endDate } = buildReportDateRange(
-          schedule.frequency,
-        );
+        const { startDate, endDate } = buildReportDateRange(schedule.frequency);
 
         const [family, reportType] = report.report_type.split(".");
         const { output } = await reportsService.generate({
@@ -56,7 +54,10 @@ module.exports = async function sendScheduledReports() {
           archive: true,
         });
 
-        if (schedule.channels?.includes("email") && schedule.recipients?.length) {
+        if (
+          schedule.channels?.includes("email") &&
+          schedule.recipients?.length
+        ) {
           for (const email of schedule.recipients) {
             const { subject: subj, html: reportHtml } = renderEmail("scheduled_report", business, {
               report_name: report.report_name,

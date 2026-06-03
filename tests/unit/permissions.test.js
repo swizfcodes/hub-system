@@ -191,11 +191,7 @@ describe("Permissions Middleware", () => {
     it("should mask multiple sensitive fields", () => {
       const role = generateRole();
       const permission = generatePermission(role, {
-        hidden_fields: [
-          "bank_account",
-          "tax_id",
-          "commission_rate",
-        ],
+        hidden_fields: ["bank_account", "tax_id", "commission_rate"],
       });
 
       expect(permission.hidden_fields.length).toBeGreaterThanOrEqual(3);
@@ -223,9 +219,7 @@ describe("Permissions Middleware", () => {
       const role = generateRole();
       const rolePerms = generateRolePermissions(role);
 
-      const salesPerm = rolePerms.permissions.find(
-        (p) => p.module === "sales",
-      );
+      const salesPerm = rolePerms.permissions.find((p) => p.module === "sales");
       expect(salesPerm).toBeDefined();
     });
 
@@ -233,11 +227,9 @@ describe("Permissions Middleware", () => {
       const role = generateRole();
       const rolePerms = generateRolePermissions(role);
 
-      expect(
-        rolePerms.permissions.every(
-          (p) => p.record_scope === "all",
-        ),
-      ).toBe(true);
+      expect(rolePerms.permissions.every((p) => p.record_scope === "all")).toBe(
+        true,
+      );
     });
 
     it("should track granted time", () => {
@@ -383,12 +375,11 @@ describe("Permissions Middleware", () => {
 
     it("should support admin full access", () => {
       const adminRole = generateRole({ role_name: "admin" });
-      const permissions = ["create", "read", "update", "delete"].map(
-        (action) =>
-          generatePermission(adminRole, {
-            action,
-            record_scope: "all",
-          }),
+      const permissions = ["create", "read", "update", "delete"].map((action) =>
+        generatePermission(adminRole, {
+          action,
+          record_scope: "all",
+        }),
       );
 
       expect(permissions.length).toBe(4);
@@ -526,8 +517,7 @@ describe("Permissions Middleware", () => {
       });
 
       expect(
-        new Date(permission2.granted_at) >
-          new Date(permission1.granted_at),
+        new Date(permission2.granted_at) > new Date(permission1.granted_at),
       ).toBe(true);
     });
 
@@ -605,9 +595,7 @@ describe("Permissions Middleware", () => {
         }),
       ];
 
-      expect(
-        permissions.every((p) => p.record_scope === "own"),
-      ).toBe(true);
+      expect(permissions.every((p) => p.record_scope === "own")).toBe(true);
     });
   });
 

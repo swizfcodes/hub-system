@@ -369,10 +369,9 @@ async function markReturned(business, deliveryId, { notes }, user) {
       [deliveryId],
     );
     if (!delivery)
-      throw Object.assign(
-        new Error("Only failed deliveries can be returned"),
-        { status: 400 },
-      );
+      throw Object.assign(new Error("Only failed deliveries can be returned"), {
+        status: 400,
+      });
 
     // Auto-restock — reverse the dispatch stock movement
     const items = await repo.getDeliveryItems(client, deliveryId);
@@ -442,7 +441,9 @@ async function generatePackingSlip(business, deliveryId) {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
-  const items = Array.isArray(delivery.items) ? delivery.items.filter(Boolean) : [];
+  const items = Array.isArray(delivery.items)
+    ? delivery.items.filter(Boolean)
+    : [];
   const itemsHtml = items
     .map(
       (item, i) => `
@@ -458,7 +459,8 @@ async function generatePackingSlip(business, deliveryId) {
   let addressStr = "—";
   if (addrRaw) {
     try {
-      const addrObj = typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
+      const addrObj =
+        typeof addrRaw === "string" ? JSON.parse(addrRaw) : addrRaw;
       addressStr = [addrObj.line1, addrObj.line2, addrObj.city, addrObj.state]
         .filter(Boolean)
         .join(", ");
@@ -468,16 +470,16 @@ async function generatePackingSlip(business, deliveryId) {
   }
 
   const templateData = {
-    delivery_number:  esc(delivery.delivery_number || "—"),
-    contact_name:     esc(delivery.contact_name || "—"),
-    primary_phone:    esc(delivery.primary_phone || "—"),
+    delivery_number: esc(delivery.delivery_number || "—"),
+    contact_name: esc(delivery.contact_name || "—"),
+    primary_phone: esc(delivery.primary_phone || "—"),
     delivery_address: esc(addressStr),
-    courier:          esc(delivery.courier || "—"),
-    waybill_number:   esc(delivery.waybill_number || "—"),
-    created_at:       fmtDate(delivery.created_at),
-    dispatched_at:    fmtDate(delivery.dispatched_at),
-    items_html:       itemsHtml,
-    waybill_style:    delivery.waybill_number ? "" : "display:none",
+    courier: esc(delivery.courier || "—"),
+    waybill_number: esc(delivery.waybill_number || "—"),
+    created_at: fmtDate(delivery.created_at),
+    dispatched_at: fmtDate(delivery.dispatched_at),
+    items_html: itemsHtml,
+    waybill_style: delivery.waybill_number ? "" : "display:none",
   };
 
   return renderToPDF("packing-slip", templateData);

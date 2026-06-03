@@ -154,8 +154,9 @@ describe("Messaging Provider Integration", () => {
     });
 
     it("should support bulk SMS discounts", () => {
-      const bulkMessages = Array.from({ length: 100 }, () =>
-        generateSmsMessage(TEST_BUSINESS, { cost: 40 }), // Discounted rate
+      const bulkMessages = Array.from(
+        { length: 100 },
+        () => generateSmsMessage(TEST_BUSINESS, { cost: 40 }), // Discounted rate
       );
 
       const totalCost = bulkMessages.reduce((sum, m) => sum + m.cost, 0);
@@ -182,9 +183,7 @@ describe("Messaging Provider Integration", () => {
         }),
       ];
 
-      expect(messages[0].recipient_phone).not.toBe(
-        messages[1].recipient_phone,
-      );
+      expect(messages[0].recipient_phone).not.toBe(messages[1].recipient_phone);
     });
   });
 
@@ -211,7 +210,8 @@ describe("Messaging Provider Integration", () => {
         generateSmsMessage(TEST_BUSINESS, { cost: 100 }),
       ];
 
-      const avgCost = messages.reduce((sum, m) => sum + m.cost, 0) / messages.length;
+      const avgCost =
+        messages.reduce((sum, m) => sum + m.cost, 0) / messages.length;
       expect(avgCost).toBeGreaterThan(0);
     });
 
@@ -261,12 +261,10 @@ describe("Messaging Provider Integration", () => {
 
       const stats = {
         total: messages.length,
-        delivered: messages.filter(
-          (m) => m.delivery_status === "delivered",
-        ).length,
-        failed: messages.filter((m) => m.delivery_status === "failed").length,
-        bounced: messages.filter((m) => m.delivery_status === "bounced")
+        delivered: messages.filter((m) => m.delivery_status === "delivered")
           .length,
+        failed: messages.filter((m) => m.delivery_status === "failed").length,
+        bounced: messages.filter((m) => m.delivery_status === "bounced").length,
       };
 
       expect(stats.total).toBe(5);

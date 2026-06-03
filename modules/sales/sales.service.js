@@ -303,25 +303,25 @@ async function generateQuotationPDF(business, quotationId) {
   const showDiscount = Number(q.discount_total) > 0;
 
   const templateData = {
-    quotation_number:       q.quotation_number,
-    status:                 (q.status || "draft").toUpperCase(),
-    issue_date:             fmtDate(q.created_at),
-    valid_until:            fmtDate(q.valid_until),
-    contact_name:           esc(q.contact_name || "—"),
-    email:                  esc(q.email || "—"),
-    primary_phone:          esc(q.primary_phone || "—"),
-    payment_terms:          esc(q.payment_terms || "—"),
-    notes:                  esc(q.notes || ""),
-    terms_conditions:       esc(q.terms_conditions || ""),
-    lines_html:             linesHtml,
-    subtotal:               fmtAmt(q.subtotal),
-    discount_total:         fmtAmt(q.discount_total),
-    vat_amount:             fmtAmt(q.vat_amount),
-    total_amount:           fmtAmt(q.total_amount),
+    quotation_number: q.quotation_number,
+    status: (q.status || "draft").toUpperCase(),
+    issue_date: fmtDate(q.created_at),
+    valid_until: fmtDate(q.valid_until),
+    contact_name: esc(q.contact_name || "—"),
+    email: esc(q.email || "—"),
+    primary_phone: esc(q.primary_phone || "—"),
+    payment_terms: esc(q.payment_terms || "—"),
+    notes: esc(q.notes || ""),
+    terms_conditions: esc(q.terms_conditions || ""),
+    lines_html: linesHtml,
+    subtotal: fmtAmt(q.subtotal),
+    discount_total: fmtAmt(q.discount_total),
+    vat_amount: fmtAmt(q.vat_amount),
+    total_amount: fmtAmt(q.total_amount),
     // Conditional visibility helpers
-    discount_row_style:     showDiscount ? "" : "display:none",
-    notes_section_style:    q.notes ? "" : "display:none",
-    terms_section_style:    q.terms_conditions ? "" : "display:none",
+    discount_row_style: showDiscount ? "" : "display:none",
+    notes_section_style: q.notes ? "" : "display:none",
+    terms_section_style: q.terms_conditions ? "" : "display:none",
   };
 
   return renderToPDF("quotations", templateData);
@@ -471,23 +471,25 @@ async function generateInvoiceFromOrder(
       .join("");
 
     const invoiceTemplateData = {
-      invoice_number:        esc(invoice.invoice_number),
-      status:                esc((invoice.status || "draft").toUpperCase()),
-      issue_date:            fmtDate(invoice.issue_date),
-      due_date:              fmtDate(invoice.due_date),
-      contact_name:          esc(fullOrder.contact_name || "—"),
-      email:                 esc(fullOrder.email || "—"),
-      primary_phone:         esc(fullOrder.primary_phone || "—"),
-      order_number:          esc(fullOrder.order_number || "—"),
-      payment_instructions:  esc(invoice.payment_instructions || ""),
-      paystack_payment_url:  esc(invoice.paystack_payment_url || ""),
-      lines_html:            linesHtml,
-      subtotal:              fmtAmt(invoice.subtotal),
-      vat_amount:            fmtAmt(invoice.vat_amount),
-      total_amount:          fmtAmt(invoice.total_amount),
+      invoice_number: esc(invoice.invoice_number),
+      status: esc((invoice.status || "draft").toUpperCase()),
+      issue_date: fmtDate(invoice.issue_date),
+      due_date: fmtDate(invoice.due_date),
+      contact_name: esc(fullOrder.contact_name || "—"),
+      email: esc(fullOrder.email || "—"),
+      primary_phone: esc(fullOrder.primary_phone || "—"),
+      order_number: esc(fullOrder.order_number || "—"),
+      payment_instructions: esc(invoice.payment_instructions || ""),
+      paystack_payment_url: esc(invoice.paystack_payment_url || ""),
+      lines_html: linesHtml,
+      subtotal: fmtAmt(invoice.subtotal),
+      vat_amount: fmtAmt(invoice.vat_amount),
+      total_amount: fmtAmt(invoice.total_amount),
       // Conditional visibility
-      payment_instructions_style: invoice.payment_instructions ? "" : "display:none",
-      paystack_link_style:        invoice.paystack_payment_url ? "" : "display:none",
+      payment_instructions_style: invoice.payment_instructions
+        ? ""
+        : "display:none",
+      paystack_link_style: invoice.paystack_payment_url ? "" : "display:none",
     };
 
     const pdf = await renderToPDF("invoice", invoiceTemplateData);
@@ -606,14 +608,14 @@ async function generateReceiptPDF(business, receiptId) {
       .replace(/"/g, "&quot;");
 
   const templateData = {
-    receipt_number:   esc(r.receipt_number || r.receipt_id || "—"),
-    invoice_number:   esc(r.invoice_number || "—"),
-    contact_name:     esc(r.contact_name || "—"),
-    issued_at:        fmtDate(r.issued_at),
-    payment_method:   esc(r.payment_method || "—"),
-    amount:           fmtAmt(r.amount),
-    notes:            esc(r.notes || ""),
-    notes_style:      r.notes ? "" : "display:none",
+    receipt_number: esc(r.receipt_number || r.receipt_id || "—"),
+    invoice_number: esc(r.invoice_number || "—"),
+    contact_name: esc(r.contact_name || "—"),
+    issued_at: fmtDate(r.issued_at),
+    payment_method: esc(r.payment_method || "—"),
+    amount: fmtAmt(r.amount),
+    notes: esc(r.notes || ""),
+    notes_style: r.notes ? "" : "display:none",
   };
 
   return renderToPDF("receipt", templateData);

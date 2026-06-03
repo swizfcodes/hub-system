@@ -38,6 +38,7 @@ module.exports = async function sendTaskReminders() {
       }
       await repo.markReminderSent(client, t.task_id);
     }
-    if (due.length) logger.info(`[task-reminders] sent ${due.length} reminder(s)`);
+    if (due.length)
+      logger.info(`[task-reminders] sent ${due.length} reminder(s)`);
   });
 };

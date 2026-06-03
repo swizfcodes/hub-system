@@ -93,7 +93,9 @@ async function handleInbound({ source, entry, messaging }) {
       // Look up the channel's business — the incoming-payload doesn't
       // tell us which brand owns the customer, but the channel row does
       // (it was tagged at channel creation in the contact-lookup step).
-      const { rows: [ch] } = await client.query(
+      const {
+        rows: [ch],
+      } = await client.query(
         `SELECT business FROM shared.message_channels WHERE channel_id = $1`,
         [channelId],
       );

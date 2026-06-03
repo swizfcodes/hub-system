@@ -1,67 +1,75 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Send, CheckCircle, FileDown, XCircle, Clock, ExternalLink
-} from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Button } from '@components/ui/Button';
-import { Skeleton } from '@components/ui/Skeleton';
-import { SalesStatusBadge } from '@components/sales/shared/SalesStatusBadge';
-import { LineItemsTable } from '@components/sales/shared/LineItemsTable';
-import { SendQuoteModal } from '@components/sales/modals/SalesModals';
-import { ConfirmQuoteModal } from '@components/sales/modals/SalesModals';
-import { getQuotation, cancelQuotation } from '@services/sales/quotations';
-import { api } from '@services/api';
-import { fmtDate, fmtMoney, fmtDateTime } from '@lib/format';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { QUOTE_STATUS_META } from '@lib/constants/salesConstants';
-import { cn } from '@lib/cn';
-import type { QuoteStatus } from '@typedefs/sales';
+  Send,
+  CheckCircle,
+  FileDown,
+  XCircle,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Button } from "@components/ui/Button";
+import { Skeleton } from "@components/ui/Skeleton";
+import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
+import { LineItemsTable } from "@components/sales/shared/LineItemsTable";
+import { SendQuoteModal } from "@components/sales/modals/SalesModals";
+import { ConfirmQuoteModal } from "@components/sales/modals/SalesModals";
+import { getQuotation, cancelQuotation } from "@services/sales/quotations";
+import { api } from "@services/api";
+import { fmtDate, fmtMoney, fmtDateTime } from "@lib/format";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { QUOTE_STATUS_META } from "@lib/constants/salesConstants";
+import { cn } from "@lib/cn";
+import type { QuoteStatus } from "@typedefs/sales";
 
 export default function QuoteDetail() {
-  const { id }       = useParams<{ id: string }>();
-  const navigate     = useNavigate();
-  const qc           = useQueryClient();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { currency } = useActiveBusiness();
 
-  const [showSend,       setShowSend]       = useState(false);
-  const [showConfirm,    setShowConfirm]    = useState(false);
-  const [pdfLoading,     setPdfLoading]     = useState(false);
+  const [showSend, setShowSend] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   async function handlePdfPreview() {
     if (!id || pdfLoading) return;
     setPdfLoading(true);
     try {
-      const response = await api.get(`/sales/quotations/${id}/pdf`, { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url  = URL.createObjectURL(blob);
-      const win  = window.open(url, '_blank');
+      const response = await api.get(`/sales/quotations/${id}/pdf`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
       // Revoke after the tab has had time to load the blob
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
-      if (!win) showToast.error('Pop-up blocked — please allow pop-ups for this site.');
+      if (!win)
+        showToast.error("Pop-up blocked — please allow pop-ups for this site.");
     } catch (err) {
-      showToast.error(errMsg(err, 'Could not load PDF'));
+      showToast.error(errMsg(err, "Could not load PDF"));
     } finally {
       setPdfLoading(false);
     }
   }
 
   const { data: quote, isLoading } = useQuery({
-    queryKey: ['quotation', id],
-    queryFn:  () => getQuotation(id!),
-    enabled:  !!id,
+    queryKey: ["quotation", id],
+    queryFn: () => getQuotation(id!),
+    enabled: !!id,
   });
 
   async function handleCancel() {
     if (!id) return;
     try {
       await cancelQuotation(id);
-      qc.invalidateQueries({ queryKey: ['quotation', id] });
-      qc.invalidateQueries({ queryKey: ['quotations'] });
-      showToast.info('Quotation cancelled');
+      qc.invalidateQueries({ queryKey: ["quotation", id] });
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      showToast.info("Quotation cancelled");
     } catch (err) {
       showToast.error(errMsg(err));
     }
@@ -88,25 +96,25 @@ export default function QuoteDetail() {
     );
   }
 
-  const isDraft     = quote.status === 'draft';
-  const isSent      = quote.status === 'sent' || quote.status === 'viewed';
-  const isConfirmed = quote.status === 'confirmed';
-  const isClosed    = quote.status === 'expired' || quote.status === 'cancelled';
-  const canSend     = isDraft || isSent;
-  const canConfirm  = isDraft || isSent;
-  const canCancel   = !isConfirmed && !isClosed;
+  const isDraft = quote.status === "draft";
+  const isSent = quote.status === "sent" || quote.status === "viewed";
+  const isConfirmed = quote.status === "confirmed";
+  const isClosed = quote.status === "expired" || quote.status === "cancelled";
+  const canSend = isDraft || isSent;
+  const canConfirm = isDraft || isSent;
+  const canCancel = !isConfirmed && !isClosed;
 
-  const statusSteps: QuoteStatus[] = ['draft', 'sent', 'viewed', 'confirmed'];
+  const statusSteps: QuoteStatus[] = ["draft", "sent", "viewed", "confirmed"];
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title={quote.quotation_number}
-        subtitle={`${quote.contact_name ?? ''} · Created ${fmtDate(quote.created_at)}`}
+        subtitle={`${quote.contact_name ?? ""} · Created ${fmtDate(quote.created_at)}`}
         crumbs={[
-          { label: 'Hub', to: '/' },
-          { label: 'Sales', to: '/sales' },
-          { label: 'Quotations', to: '/sales' },
+          { label: "Hub", to: "/" },
+          { label: "Sales", to: "/sales" },
+          { label: "Quotations", to: "/sales" },
           { label: quote.quotation_number },
         ]}
         actions={<SalesStatusBadge entity="quotation" status={quote.status} />}
@@ -121,12 +129,15 @@ export default function QuoteDetail() {
               Customer
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <MetaField label="Name"       value={quote.contact_name ?? '—'} />
-              <MetaField label="Email"      value={quote.email ?? '—'} />
-              <MetaField label="Phone"      value={quote.primary_phone ?? '—'} />
-              <MetaField label="Valid Until" value={fmtDate(quote.valid_until)} />
-              <MetaField label="Currency"   value={quote.currency} />
-              <MetaField label="Terms"      value={quote.payment_terms ?? '—'} />
+              <MetaField label="Name" value={quote.contact_name ?? "—"} />
+              <MetaField label="Email" value={quote.email ?? "—"} />
+              <MetaField label="Phone" value={quote.primary_phone ?? "—"} />
+              <MetaField
+                label="Valid Until"
+                value={fmtDate(quote.valid_until)}
+              />
+              <MetaField label="Currency" value={quote.currency} />
+              <MetaField label="Terms" value={quote.payment_terms ?? "—"} />
             </div>
           </div>
 
@@ -139,10 +150,10 @@ export default function QuoteDetail() {
               <LineItemsTable
                 lines={quote.lines}
                 totals={{
-                  subtotal:       quote.subtotal,
+                  subtotal: quote.subtotal,
                   discount_total: quote.discount_total,
-                  vat_amount:     quote.vat_amount,
-                  total_amount:   quote.total_amount,
+                  vat_amount: quote.vat_amount,
+                  total_amount: quote.total_amount,
                 }}
                 currency={quote.currency ?? currency}
               />
@@ -159,7 +170,9 @@ export default function QuoteDetail() {
                   <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
                     Notes
                   </h3>
-                  <p className="text-sm text-orika-cloud leading-relaxed">{quote.notes}</p>
+                  <p className="text-sm text-orika-cloud leading-relaxed">
+                    {quote.notes}
+                  </p>
                 </div>
               )}
               {quote.terms_conditions && (
@@ -185,37 +198,42 @@ export default function QuoteDetail() {
             </h3>
             <div className="space-y-2">
               {statusSteps.map((s) => {
-                const meta      = QUOTE_STATUS_META[s];
-                const isActive  = quote.status === s;
-                const isPast    =
-                  statusSteps.indexOf(s) < statusSteps.indexOf(quote.status as QuoteStatus);
+                const meta = QUOTE_STATUS_META[s];
+                const isActive = quote.status === s;
+                const isPast =
+                  statusSteps.indexOf(s) <
+                  statusSteps.indexOf(quote.status as QuoteStatus);
                 const Icon = meta.icon;
                 return (
                   <div
                     key={s}
                     className={cn(
-                      'flex items-center gap-2.5 text-sm',
+                      "flex items-center gap-2.5 text-sm",
                       isActive
-                        ? 'text-orika-cream'
+                        ? "text-orika-cream"
                         : isPast
-                        ? 'text-orika-smoke'
-                        : 'text-orika-graphite',
+                          ? "text-orika-smoke"
+                          : "text-orika-graphite",
                     )}
                   >
                     <Icon
                       className="h-4 w-4 shrink-0"
                       style={{
-                        color: isActive ? meta.color : isPast ? '#6B7280' : '#2A2A2D',
+                        color: isActive
+                          ? meta.color
+                          : isPast
+                            ? "#6B7280"
+                            : "#2A2A2D",
                       }}
                     />
                     <span>{meta.label}</span>
                     {isActive && (
                       <span className="ml-auto text-xs text-orika-smoke">
-                        {s === 'sent' && quote.sent_at
+                        {s === "sent" && quote.sent_at
                           ? fmtDateTime(quote.sent_at)
-                          : s === 'confirmed' && quote.confirmed_at
-                          ? fmtDateTime(quote.confirmed_at)
-                          : 'Now'}
+                          : s === "confirmed" && quote.confirmed_at
+                            ? fmtDateTime(quote.confirmed_at)
+                            : "Now"}
                       </span>
                     )}
                   </div>
@@ -257,7 +275,7 @@ export default function QuoteDetail() {
               className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud transition-colors hover:border-orika-gold/30 hover:text-orika-gold disabled:opacity-50"
             >
               <FileDown className="h-4 w-4" />
-              {pdfLoading ? 'Loading…' : 'Preview PDF'}
+              {pdfLoading ? "Loading…" : "Preview PDF"}
             </button>
 
             {quote.deal_id && (

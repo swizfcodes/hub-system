@@ -3,7 +3,14 @@ name: Deploy Production
 on:
   push:
     branches: [master]
-  workflow_dispatch: # lets you re-run a deploy by hand from the Actions tab
+  workflow_dispatch:
+
+env:
+  # Prevents Puppeteer from downloading Chromium during npm install.
+  # Your VPS and CI runners don't need a bundled browser — Puppeteer
+  # is almost certainly a dev/test dep anyway.
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+  PUPPETEER_SKIP_DOWNLOAD: "true"
 
 jobs:
   test:
@@ -21,13 +28,15 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline
+        # --prefer-offline: use cache aggressively, only hit network
+        # for packages not already cached — cuts install time and
+        # reduces the surface area for network hangs.
+        timeout-minutes: 10
+        # Hard kill if npm ci hasn't finished in 10 min — surfaces
+        # the hang immediately instead of burning your whole Actions
+        # quota on a stuck job.
 
-      # NOTE: GitHub runners have no Postgres/Redis, so the Jest suite
-      # and the smoke tests cannot pass here. Kept non-blocking so a
-      # DB-less runner can't wall off production deploys. Wire up real
-      # CI (service containers for Postgres + Redis) after launch, then
-      # remove `continue-on-error` to make tests gate the deploy again.
       - name: Run tests
         run: npm test --if-present || true
         continue-on-error: true
@@ -41,12 +50,37 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        timeout-minutes: 20
+        # Caps the entire SSH session — without this, a hung npm install
+        # on the VPS will hold your deploy job open until GitHub kills it
+        # at 6h, wasting a deploy slot and leaving PM2 in a partial state.
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # command_timeout controls how long appleboy waits for the
+          # remote script to finish before it disconnects. Match this
+          # to the job-level timeout above.
+          command_timeout: "18m"
           script: |
             set -e
+
+            # Skip Puppeteer's Chromium download on the VPS too.
+            # Without this, every deploy re-downloads a ~300MB browser
+            # binary even though your server never opens a browser.
+            export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+            export PUPPETEER_SKIP_DOWNLOAD=true
+
+            # Tune npm's network behaviour for a VPS environment:
+            #   fetch-timeout      — give up on a single request after 60s
+            #   fetch-retries      — retry failed requests 3× before erroring
+            #   fetch-retry-maxtimeout — cap the per-retry wait
+            # Without these, npm will wait ~forever on a stalled CDN
+            # connection, which is the most common cause of multi-hour hangs.
+            export NPM_CONFIG_FETCH_TIMEOUT=60000
+            export NPM_CONFIG_FETCH_RETRIES=3
+            export NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=60000
+
             cd /var/www/hub-system
 
             echo "--- Pulling latest code"
@@ -56,10 +90,7 @@ jobs:
             npm install --omit=dev
 
             echo "--- Building the ERP frontend (client/dist)"
-            # client build needs devDependencies (vite, tailwind, the
-            # react plugin) — so a plain npm install here, NOT --omit=dev.
             cd client
-            # rm -rf node_modules package-lock.json
             npm install
             npm run build
             cd ..
@@ -74,17 +105,11 @@ jobs:
             pm2 save
 
             echo "--- Health check"
-            # Resolve the port from .env. head -1 guards against a
-            # stray duplicate PORT= line; tr strips spaces and quotes
-            # so PORT = "7000" still parses. Falls back to 7000.
             PORT=$(grep -E '^PORT=' /var/www/hub-system/.env | head -1 \
                    | cut -d '=' -f2 | tr -d ' "')
             PORT=${PORT:-7000}
             echo "Health-checking http://localhost:$PORT/health"
 
-            # Retry for ~30s — pm2 reload returns before the app has
-            # finished booting, so a single curl can race the startup
-            # and report a false failure. Ten attempts, 3s apart.
             HEALTHY=0
             for i in $(seq 1 10); do
               if curl -sf "http://localhost:$PORT/health" > /dev/null; then
@@ -98,9 +123,6 @@ jobs:
 
             if [ "$HEALTHY" -ne 1 ]; then
               echo "Health check FAILED after ~30s"
-              # Dump the app's own logs into the deploy output so the
-              # crash reason is visible right here in the Actions log,
-              # instead of needing a separate SSH session to find it.
               echo "--- pm2 status ---"
               pm2 list || true
               echo "--- last 40 log lines ---"

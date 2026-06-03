@@ -1,48 +1,56 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, /*useQueryClient*/ } from '@tanstack/react-query';
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery /*useQueryClient*/ } from "@tanstack/react-query";
 import {
-  Download, Send, DollarSign, FileText, FileX,
-  /*ArrowLeft,*/ AlertTriangle, ExternalLink, /*Clock,*/
-} from 'lucide-react';
-import { PageHeader } from '@components/ui/PageHeader';
-import { Button } from '@components/ui/Button';
-import { Skeleton } from '@components/ui/Skeleton';
+  Download,
+  Send,
+  DollarSign,
+  FileText,
+  FileX,
+  /*ArrowLeft,*/ AlertTriangle,
+  ExternalLink /*Clock,*/,
+} from "lucide-react";
+import { PageHeader } from "@components/ui/PageHeader";
+import { Button } from "@components/ui/Button";
+import { Skeleton } from "@components/ui/Skeleton";
 import {
   InvoiceStatusBadge,
   // CreditNoteStatusBadge,
-} from '@components/invoicing/InvoiceDisplay';
+} from "@components/invoicing/InvoiceDisplay";
 import {
   RecordPaymentModal,
   SendInvoiceModal,
   CreditNoteModal,
   WriteOffModal,
-} from '@components/invoicing/InvoiceModals';
-import { getInvoice, invoicePdfUrl } from '@services/invoicing/invoices';
+} from "@components/invoicing/InvoiceModals";
+import { getInvoice, invoicePdfUrl } from "@services/invoicing/invoices";
 //import { issueCreditNote, setCreditNoteStatus } from '@services/invoicing/creditNotes';
-import { PAYMENT_METHOD_LABEL, WRITE_OFF_SUGGEST_DAYS } from '@lib/constants/invoicingConstants';
-import { useActiveBusiness } from '@hooks/useActiveBusiness';
-import { fmtMoney, fmtDate, fmtDateTime } from '@lib/format';
+import {
+  PAYMENT_METHOD_LABEL,
+  WRITE_OFF_SUGGEST_DAYS,
+} from "@lib/constants/invoicingConstants";
+import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { fmtMoney, fmtDate, fmtDateTime } from "@lib/format";
 //import { showToast } from '@hooks/useToast';
 //import { errMsg } from '@services/api';
 //import { useMutation } from '@tanstack/react-query';
-import { cn } from '@lib/cn';
+import { cn } from "@lib/cn";
 
 export default function InvoiceDetail() {
-  const { id }            = useParams<{ id: string }>();
-  const navigate          = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   //const qc                = useQueryClient();
-  const { currency }      = useActiveBusiness();
+  const { currency } = useActiveBusiness();
 
-  const [showPayment,    setShowPayment]    = useState(false);
-  const [showSend,       setShowSend]       = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [showSend, setShowSend] = useState(false);
   const [showCreditNote, setShowCreditNote] = useState(false);
-  const [showWriteOff,   setShowWriteOff]   = useState(false);
+  const [showWriteOff, setShowWriteOff] = useState(false);
 
-  const { data: invoice, isLoading, /*error*/ } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn:  () => getInvoice(id!),
-    enabled:  !!id,
+  const { data: invoice, isLoading /*error*/ } = useQuery({
+    queryKey: ["invoice", id],
+    queryFn: () => getInvoice(id!),
+    enabled: !!id,
   });
 
   // const issueMutation = useMutation({
@@ -83,7 +91,11 @@ export default function InvoiceDetail() {
     return (
       <div className="px-8 py-16 text-center">
         <p className="text-orika-smoke">Invoice not found.</p>
-        <Button variant="ghost" className="mt-4" onClick={() => navigate('/invoices')}>
+        <Button
+          variant="ghost"
+          className="mt-4"
+          onClick={() => navigate("/invoices")}
+        >
           Back to Invoices
         </Button>
       </div>
@@ -93,19 +105,27 @@ export default function InvoiceDetail() {
   // ── Write-off suggestion ────────────────────────────────────────────────────
 
   const daysSinceDue = invoice.due_date
-    ? Math.floor((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor(
+        (Date.now() - new Date(invoice.due_date).getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
     : 0;
 
   const showWriteOffSuggestion =
     daysSinceDue >= WRITE_OFF_SUGGEST_DAYS &&
     invoice.amount_outstanding > 0 &&
-    !['paid', 'voided'].includes(invoice.status);
+    !["paid", "voided"].includes(invoice.status);
 
   // ── Payment instructions URL detection ─────────────────────────────────────
 
   const isUrl = (str: string | null | undefined) => {
     if (!str) return false;
-    try { new URL(str); return true; } catch { return false; }
+    try {
+      new URL(str);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -116,7 +136,7 @@ export default function InvoiceDetail() {
         title={invoice.invoice_number}
         subtitle={`${invoice.contact_name} · Issued ${fmtDate(invoice.issue_date)}`}
         crumbs={[
-          { label: 'Invoices', to: '/invoices' },
+          { label: "Invoices", to: "/invoices" },
           { label: invoice.invoice_number },
         ]}
         actions={
@@ -125,18 +145,24 @@ export default function InvoiceDetail() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => window.open(invoicePdfUrl(invoice.invoice_id), '_blank')}
+              onClick={() =>
+                window.open(invoicePdfUrl(invoice.invoice_id), "_blank")
+              }
             >
               <Download className="h-4 w-4" />
               PDF
             </Button>
-            {['draft', 'sent', 'overdue'].includes(invoice.status) && (
-              <Button variant="secondary" size="sm" onClick={() => setShowSend(true)}>
+            {["draft", "sent", "overdue"].includes(invoice.status) && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowSend(true)}
+              >
                 <Send className="h-4 w-4" />
                 Send
               </Button>
             )}
-            {invoice.amount_outstanding > 0 && invoice.status !== 'voided' && (
+            {invoice.amount_outstanding > 0 && invoice.status !== "voided" && (
               <Button size="sm" onClick={() => setShowPayment(true)}>
                 <DollarSign className="h-4 w-4" />
                 Record Payment
@@ -175,27 +201,31 @@ export default function InvoiceDetail() {
           <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
             Invoice Details
           </p>
-          <DetailRow label="Customer"   value={invoice.contact_name} />
-          <DetailRow label="Type"       value={invoice.invoice_type.replace(/_/g, ' ')} capitalize />
+          <DetailRow label="Customer" value={invoice.contact_name} />
+          <DetailRow
+            label="Type"
+            value={invoice.invoice_type.replace(/_/g, " ")}
+            capitalize
+          />
           <DetailRow label="Issue Date" value={fmtDate(invoice.issue_date)} />
           <DetailRow
             label="Due Date"
             value={fmtDate(invoice.due_date)}
-            highlight={invoice.status === 'overdue' ? 'danger' : undefined}
+            highlight={invoice.status === "overdue" ? "danger" : undefined}
           />
           {invoice.sent_at && (
-            <DetailRow label="Sent"  value={fmtDateTime(invoice.sent_at)} />
+            <DetailRow label="Sent" value={fmtDateTime(invoice.sent_at)} />
           )}
           {invoice.paid_at && (
-            <DetailRow label="Paid"  value={fmtDateTime(invoice.paid_at)} />
+            <DetailRow label="Paid" value={fmtDateTime(invoice.paid_at)} />
           )}
-          {invoice.notes && (
-            <DetailRow label="Notes" value={invoice.notes} />
-          )}
+          {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
           {/* Payment instructions / link */}
           {invoice.payment_instructions && (
             <div className="flex justify-between gap-2 pt-1">
-              <span className="text-xs text-orika-smoke shrink-0">Payment Link</span>
+              <span className="text-xs text-orika-smoke shrink-0">
+                Payment Link
+              </span>
               {isUrl(invoice.payment_instructions) ? (
                 <a
                   href={invoice.payment_instructions}
@@ -220,21 +250,45 @@ export default function InvoiceDetail() {
           <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
             Summary
           </p>
-          <AmountRow label="Subtotal"     value={invoice.subtotal}        currency={currency} />
+          <AmountRow
+            label="Subtotal"
+            value={invoice.subtotal}
+            currency={currency}
+          />
           {invoice.discount_total > 0 && (
-            <AmountRow label="Discount"   value={-invoice.discount_total} currency={currency} muted />
+            <AmountRow
+              label="Discount"
+              value={-invoice.discount_total}
+              currency={currency}
+              muted
+            />
           )}
-          <AmountRow label="VAT"          value={invoice.vat_amount}      currency={currency} muted />
+          <AmountRow
+            label="VAT"
+            value={invoice.vat_amount}
+            currency={currency}
+            muted
+          />
           <div className="border-t border-white/10 pt-3">
-            <AmountRow label="Total"      value={invoice.total_amount}    currency={currency} bold />
+            <AmountRow
+              label="Total"
+              value={invoice.total_amount}
+              currency={currency}
+              bold
+            />
           </div>
-          <AmountRow label="Paid"         value={invoice.amount_paid}     currency={currency} muted />
-          <div className={cn('border-t border-white/10 pt-3')}>
+          <AmountRow
+            label="Paid"
+            value={invoice.amount_paid}
+            currency={currency}
+            muted
+          />
+          <div className={cn("border-t border-white/10 pt-3")}>
             <AmountRow
               label="Outstanding"
               value={invoice.amount_outstanding}
               currency={currency}
-              highlight={invoice.amount_outstanding > 0 ? 'warning' : 'success'}
+              highlight={invoice.amount_outstanding > 0 ? "warning" : "success"}
               bold
             />
           </div>
@@ -252,7 +306,14 @@ export default function InvoiceDetail() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                {['Description', 'Qty', 'Unit Price', 'Discount', 'VAT', 'Total'].map((h) => (
+                {[
+                  "Description",
+                  "Qty",
+                  "Unit Price",
+                  "Discount",
+                  "VAT",
+                  "Total",
+                ].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke"
@@ -265,13 +326,19 @@ export default function InvoiceDetail() {
             <tbody className="divide-y divide-white/5">
               {invoice.lines.map((line) => (
                 <tr key={line.line_id}>
-                  <td className="px-4 py-3 text-orika-cream">{line.description}</td>
-                  <td className="px-4 py-3 text-orika-smoke tabular-nums">{line.quantity}</td>
+                  <td className="px-4 py-3 text-orika-cream">
+                    {line.description}
+                  </td>
+                  <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                    {line.quantity}
+                  </td>
                   <td className="px-4 py-3 text-orika-smoke tabular-nums">
                     {fmtMoney(line.unit_price, currency)}
                   </td>
                   <td className="px-4 py-3 text-orika-smoke tabular-nums">
-                    {line.discount_amount > 0 ? fmtMoney(line.discount_amount, currency) : '—'}
+                    {line.discount_amount > 0
+                      ? fmtMoney(line.discount_amount, currency)
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-orika-smoke tabular-nums">
                     {fmtMoney(line.vat_amount, currency)}
@@ -297,25 +364,29 @@ export default function InvoiceDetail() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5">
-                {['Date', 'Method', 'Reference', 'Amount', 'Status'].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke"
-                  >
-                    {h}
-                  </th>
-                ))}
+                {["Date", "Method", "Reference", "Amount", "Status"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {invoice.payments.map((p) => (
                 <tr key={p.payment_id}>
-                  <td className="px-4 py-3 text-orika-smoke">{fmtDate(p.payment_date)}</td>
+                  <td className="px-4 py-3 text-orika-smoke">
+                    {fmtDate(p.payment_date)}
+                  </td>
                   <td className="px-4 py-3 text-orika-cloud">
                     {PAYMENT_METHOD_LABEL[p.payment_method]}
                   </td>
                   <td className="px-4 py-3 text-orika-smoke font-mono text-xs">
-                    {p.reference ?? p.paystack_reference ?? '—'}
+                    {p.reference ?? p.paystack_reference ?? "—"}
                   </td>
                   <td className="px-4 py-3 font-semibold text-orika-cream tabular-nums">
                     {fmtMoney(p.amount, currency)}
@@ -339,7 +410,7 @@ export default function InvoiceDetail() {
         <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
           Credit Notes
         </p>
-        {!['paid', 'voided'].includes(invoice.status) && (
+        {!["paid", "voided"].includes(invoice.status) && (
           <Button
             variant="ghost"
             size="sm"
@@ -352,7 +423,7 @@ export default function InvoiceDetail() {
       </div>
 
       {/* More actions */}
-      {!['paid', 'voided'].includes(invoice.status) && (
+      {!["paid", "voided"].includes(invoice.status) && (
         <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
           {!showWriteOffSuggestion && (
             <Button
@@ -411,23 +482,26 @@ export default function InvoiceDetail() {
 // ── Local helper components ────────────────────────────────────────────────────
 
 function DetailRow({
-  label, value, capitalize = false, highlight,
+  label,
+  value,
+  capitalize = false,
+  highlight,
 }: {
   label: string;
   value: string;
   capitalize?: boolean;
-  highlight?: 'danger' | 'warning';
+  highlight?: "danger" | "warning";
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
       <span className="text-orika-smoke shrink-0">{label}</span>
       <span
         className={cn(
-          'text-right',
-          capitalize && 'capitalize',
-          highlight === 'danger'  && 'text-red-400 font-medium',
-          highlight === 'warning' && 'text-amber-400 font-medium',
-          !highlight && 'text-orika-cream',
+          "text-right",
+          capitalize && "capitalize",
+          highlight === "danger" && "text-red-400 font-medium",
+          highlight === "warning" && "text-amber-400 font-medium",
+          !highlight && "text-orika-cream",
         )}
       >
         {value}
@@ -437,25 +511,32 @@ function DetailRow({
 }
 
 function AmountRow({
-  label, value, currency, muted = false, bold = false, highlight,
+  label,
+  value,
+  currency,
+  muted = false,
+  bold = false,
+  highlight,
 }: {
-  label:      string;
-  value:      number;
-  currency:   string;
-  muted?:     boolean;
-  bold?:      boolean;
-  highlight?: 'warning' | 'success';
+  label: string;
+  value: number;
+  currency: string;
+  muted?: boolean;
+  bold?: boolean;
+  highlight?: "warning" | "success";
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className={muted ? 'text-orika-smoke' : 'text-orika-cloud'}>{label}</span>
+      <span className={muted ? "text-orika-smoke" : "text-orika-cloud"}>
+        {label}
+      </span>
       <span
         className={cn(
-          'tabular-nums',
-          bold ? 'font-semibold' : '',
-          highlight === 'warning' && value > 0 ? 'text-amber-400' : '',
-          highlight === 'success' && value === 0 ? 'text-green-400' : '',
-          !highlight && (muted ? 'text-orika-smoke' : 'text-orika-cream'),
+          "tabular-nums",
+          bold ? "font-semibold" : "",
+          highlight === "warning" && value > 0 ? "text-amber-400" : "",
+          highlight === "success" && value === 0 ? "text-green-400" : "",
+          !highlight && (muted ? "text-orika-smoke" : "text-orika-cream"),
         )}
       >
         {fmtMoney(value, currency)}

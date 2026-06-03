@@ -57,9 +57,9 @@ describe("Notifications Service", () => {
     });
 
     it("should track read timestamp", () => {
-      const notif = generateNotification(TEST_BUSINESS, { 
+      const notif = generateNotification(TEST_BUSINESS, {
         read: true,
-        read_at: new Date().toISOString()
+        read_at: new Date().toISOString(),
       });
       expect(notif.read_at).toBeTruthy();
     });
@@ -115,7 +115,9 @@ describe("Documents Service", () => {
     });
 
     it("should support contract documents", () => {
-      const doc = generateDocument(TEST_BUSINESS, { document_type: "contract" });
+      const doc = generateDocument(TEST_BUSINESS, {
+        document_type: "contract",
+      });
       expect(doc.document_type).toBe("contract");
     });
   });

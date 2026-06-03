@@ -66,7 +66,10 @@ describe("Sales Service", () => {
 
     it("should aggregate subtotal", () => {
       const so = generateSalesOrder();
-      const itemsTotal = so.items.reduce((sum, item) => sum + item.line_total, 0);
+      const itemsTotal = so.items.reduce(
+        (sum, item) => sum + item.line_total,
+        0,
+      );
       expect(itemsTotal).toBe(so.subtotal);
     });
   });

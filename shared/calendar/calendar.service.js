@@ -68,10 +68,9 @@ async function listInRange(query) {
   // Hard cap on range to prevent expensive queries.
   const MAX_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
   if (endAt - startAt > MAX_RANGE_MS) {
-    throw Object.assign(
-      new Error("Date range cannot exceed 366 days"),
-      { status: 400 },
-    );
+    throw Object.assign(new Error("Date range cannot exceed 366 days"), {
+      status: 400,
+    });
   }
 
   return withSharedContext((client) =>

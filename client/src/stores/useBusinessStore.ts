@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { usePOSStore } from './posStore';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { usePOSStore } from "./posStore";
 
 interface BusinessState {
   active: string | null; // business_key
@@ -23,6 +23,6 @@ export const useBusinessStore = create<BusinessState>()(
         pos.clearCart();
       },
     }),
-    { name: 'orika_active_business' },
+    { name: "orika_active_business" },
   ),
 );

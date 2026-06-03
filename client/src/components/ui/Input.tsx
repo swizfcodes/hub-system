@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@lib/cn';
+import React from "react";
+import { cn } from "@lib/cn";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,17 +7,36 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   error?: string;
   leftIcon?: React.ReactNode;
   rightSlot?: React.ReactNode;
-  surface?: 'dark' | 'light';
+  surface?: "dark" | "light";
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, hint, error, leftIcon, rightSlot, className, surface='light', id, ...rest }, ref) => {
+  (
+    {
+      label,
+      hint,
+      error,
+      leftIcon,
+      rightSlot,
+      className,
+      surface = "light",
+      id,
+      ...rest
+    },
+    ref,
+  ) => {
     const inputId = id || rest.name || React.useId();
-    const isDark = surface === 'dark';
+    const isDark = surface === "dark";
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className={cn('block font-medium text-[0.7rem] tracking-widest uppercase mb-2 ml-1', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>
+          <label
+            htmlFor={inputId}
+            className={cn(
+              "block font-medium text-[0.7rem] tracking-widest uppercase mb-2 ml-1",
+              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+            )}
+          >
             {label}
           </label>
         )}
@@ -31,18 +50,21 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             className={cn(
-              'w-full rounded-xl py-3.5 px-4 text-sm font-medium transition-all',
-              'focus:outline-none focus:ring-1',
-              leftIcon && 'pl-11',
-              rightSlot && 'pr-12',
+              "w-full rounded-xl py-3.5 px-4 text-sm font-medium transition-all",
+              "focus:outline-none focus:ring-1",
+              leftIcon && "pl-11",
+              rightSlot && "pr-12",
               isDark
-                ? 'bg-orika-charcoal text-orika-cream border border-orika-graphite focus:border-orika-gold focus:ring-orika-gold placeholder-orika-smoke/60'
-                : 'bg-white text-orika-black border border-orika-cloud/40 focus:border-orika-black focus:ring-orika-black placeholder-orika-cloud/70 shadow-sm',
-              error && 'border-state-danger focus:border-state-danger focus:ring-state-danger',
+                ? "bg-orika-charcoal text-orika-cream border border-orika-graphite focus:border-orika-gold focus:ring-orika-gold placeholder-orika-smoke/60"
+                : "bg-white text-orika-black border border-orika-cloud/40 focus:border-orika-black focus:ring-orika-black placeholder-orika-cloud/70 shadow-sm",
+              error &&
+                "border-state-danger focus:border-state-danger focus:ring-state-danger",
               className,
             )}
             aria-invalid={!!error}
-            aria-describedby={error ? `${inputId}-err` : hint ? `${inputId}-hint` : undefined}
+            aria-describedby={
+              error ? `${inputId}-err` : hint ? `${inputId}-hint` : undefined
+            }
             {...rest}
           />
           {rightSlot && (
@@ -52,12 +74,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error ? (
-          <p id={`${inputId}-err`} className="mt-1.5 text-xs font-medium text-state-danger ml-1">{error}</p>
+          <p
+            id={`${inputId}-err`}
+            className="mt-1.5 text-xs font-medium text-state-danger ml-1"
+          >
+            {error}
+          </p>
         ) : hint ? (
-          <p id={`${inputId}-hint`} className={cn('mt-1.5 text-[0.7rem] ml-1', isDark ? 'text-orika-smoke' : 'text-text-on-light-muted')}>{hint}</p>
+          <p
+            id={`${inputId}-hint`}
+            className={cn(
+              "mt-1.5 text-[0.7rem] ml-1",
+              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+            )}
+          >
+            {hint}
+          </p>
         ) : null}
       </div>
     );
   },
 );
-Input.displayName = 'Input';
+Input.displayName = "Input";

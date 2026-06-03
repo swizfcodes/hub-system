@@ -248,7 +248,7 @@ function buildTemplateData(business, tx) {
       )
       .join(" • "),
     discount_row_style: showDiscount ? "" : "display:none",
-    change_row_style:   showChange ? "" : "display:none",
+    change_row_style: showChange ? "" : "display:none",
   };
 }
 

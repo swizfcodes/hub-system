@@ -8,7 +8,7 @@ const logger = require("../../config/logger");
 function _notImplemented(method) {
   const err = Object.assign(
     new Error(`WooCommerce integration not yet implemented: ${method}`),
-    { status: 501 }
+    { status: 501 },
   );
   return Promise.reject(err);
 }

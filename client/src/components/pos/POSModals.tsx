@@ -13,65 +13,82 @@
  * needed). Do NOT add `import { DiscountGate } from './POSModals'` — that
  * is a circular self-import and will break at runtime.
  */
-import { useState } from 'react';
+import { useState } from "react";
 import {
-  MessageCircle, Mail, FileText, RotateCcw,
-  Clock, Play, Trash2, Shield,
-} from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { Modal } from '@components/ui/Modal';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
-import { Textarea } from '@components/ui/Textarea';
-import { Select } from '@components/ui/Select';
-import { usePOSStore } from '@stores/posStore';
+  MessageCircle,
+  Mail,
+  FileText,
+  RotateCcw,
+  Clock,
+  Play,
+  Trash2,
+  Shield,
+} from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { Modal } from "@components/ui/Modal";
+import { Button } from "@components/ui/Button";
+import { Input } from "@components/ui/Input";
+import { Textarea } from "@components/ui/Textarea";
+import { Select } from "@components/ui/Select";
+import { usePOSStore } from "@stores/posStore";
 import {
   sendReceipt,
   generateInvoiceFromTransaction,
   verifyManager,
   createReturn,
-} from '@services/pos/transactions';
-import { closeSession } from '@services/pos/sessions';
+} from "@services/pos/transactions";
+import { closeSession } from "@services/pos/sessions";
 import {
-  closeSessionSchema, managerVerifySchema, returnSchema,
-  type CloseSessionValues, type ManagerVerifyValues, type ReturnValues,
-} from '@lib/schemas/pos';
-import { VARIANCE_STATUS_META } from '@lib/constants/posConstants';
-import { fmtMoney, fmtDateTime } from '@lib/format';
-import { showToast } from '@hooks/useToast';
-import { errMsg } from '@services/api';
-import type { PosTransaction, XReport, ZReport, ParkedTransaction } from '@typedefs/pos';
+  closeSessionSchema,
+  managerVerifySchema,
+  returnSchema,
+  type CloseSessionValues,
+  type ManagerVerifyValues,
+  type ReturnValues,
+} from "@lib/schemas/pos";
+import { VARIANCE_STATUS_META } from "@lib/constants/posConstants";
+import { fmtMoney, fmtDateTime } from "@lib/format";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
+import type {
+  PosTransaction,
+  XReport,
+  ZReport,
+  ParkedTransaction,
+} from "@typedefs/pos";
 
 // ── ReceiptModal ───────────────────────────────────────────────────────────────
 
 interface ReceiptModalProps {
-  open:        boolean;
+  open: boolean;
   transaction: PosTransaction;
-  currency?:   string;
-  onNewSale:   () => void;
-  onClose:     () => void;
-  onInvoice?:  (invoiceId: string) => void;
+  currency?: string;
+  onNewSale: () => void;
+  onClose: () => void;
+  onInvoice?: (invoiceId: string) => void;
 }
 
 export function ReceiptModal({
   open,
   transaction,
-  currency = 'NGN',
+  currency = "NGN",
   onNewSale,
   onClose,
   onInvoice,
 }: ReceiptModalProps) {
-  const [sending,   setSending]   = useState(false);
+  const [sending, setSending] = useState(false);
   const [invoicing, setInvoicing] = useState(false);
 
-  async function handleSend(channel: 'whatsapp' | 'email') {
+  async function handleSend(channel: "whatsapp" | "email") {
     setSending(true);
     try {
       await sendReceipt(transaction.transaction_id, { channel });
       showToast.success(
-        channel === 'whatsapp' ? 'Receipt sent via WhatsApp' : 'Receipt sent via email',
+        channel === "whatsapp"
+          ? "Receipt sent via WhatsApp"
+          : "Receipt sent via email",
       );
     } catch (err) {
       showToast.error(errMsg(err));
@@ -83,7 +100,9 @@ export function ReceiptModal({
   async function handleInvoice() {
     setInvoicing(true);
     try {
-      const result = await generateInvoiceFromTransaction(transaction.transaction_id);
+      const result = await generateInvoiceFromTransaction(
+        transaction.transaction_id,
+      );
       showToast.success(`Invoice ${result.invoice_number} generated`);
       onInvoice?.(result.invoice_id);
     } catch (err) {
@@ -115,11 +134,15 @@ export function ReceiptModal({
       <div className="space-y-5">
         {/* Summary */}
         <div className="rounded-xl border border-green-500/30 bg-green-900/10 px-4 py-4 text-center">
-          <p className="text-xs text-green-300 uppercase tracking-widest">Paid</p>
+          <p className="text-xs text-green-300 uppercase tracking-widest">
+            Paid
+          </p>
           <p className="font-display text-2xl font-extrabold text-green-300">
             {fmtMoney(transaction.total_amount, currency)}
           </p>
-          <p className="mt-1 text-xs text-green-400/70">{transaction.transaction_number}</p>
+          <p className="mt-1 text-xs text-green-400/70">
+            {transaction.transaction_number}
+          </p>
           {parseFloat(String(transaction.change_given)) > 0 && (
             <p className="mt-2 text-sm font-medium text-green-300">
               Change: {fmtMoney(transaction.change_given, currency)}
@@ -135,7 +158,7 @@ export function ReceiptModal({
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="secondary"
-              onClick={() => handleSend('whatsapp')}
+              onClick={() => handleSend("whatsapp")}
               disabled={!hasPhone || sending}
               loading={sending}
             >
@@ -144,7 +167,7 @@ export function ReceiptModal({
             </Button>
             <Button
               variant="secondary"
-              onClick={() => handleSend('email')}
+              onClick={() => handleSend("email")}
               disabled={!hasEmail || sending}
               loading={sending}
             >
@@ -154,7 +177,8 @@ export function ReceiptModal({
           </div>
           {!hasPhone && !hasEmail && (
             <p className="text-xs text-orika-smoke/60">
-              No contact method on file — link a customer to send digital receipts.
+              No contact method on file — link a customer to send digital
+              receipts.
             </p>
           )}
         </div>
@@ -179,9 +203,9 @@ export function ReceiptModal({
 // ── SessionCloseModal ──────────────────────────────────────────────────────────
 
 interface SessionCloseModalProps {
-  open:      boolean;
-  onClose:   () => void;
-  onClosed:  () => void;
+  open: boolean;
+  onClose: () => void;
+  onClosed: () => void;
   currency?: string;
 }
 
@@ -189,23 +213,23 @@ export function SessionCloseModal({
   open,
   onClose,
   onClosed,
-  currency = 'NGN',
+  currency = "NGN",
 }: SessionCloseModalProps) {
   const { session, pendingCount } = usePOSStore((s) => ({
-    session:      s.session,
+    session: s.session,
     pendingCount: s.pendingCount,
   }));
 
   const form = useForm<CloseSessionValues>({
     resolver: zodResolver(closeSessionSchema),
-    defaultValues: { actual_cash: 0, reconciliation_notes: '' },
+    defaultValues: { actual_cash: 0, reconciliation_notes: "" },
   });
 
   const mutation = useMutation({
     mutationFn: (values: CloseSessionValues) =>
       closeSession(session!.session_id, values),
     onSuccess: () => {
-      showToast.success('Session closed');
+      showToast.success("Session closed");
       form.reset();
       onClosed();
     },
@@ -221,7 +245,11 @@ export function SessionCloseModal({
       surface="light"
       footer={
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
             Cancel
           </Button>
           <Button
@@ -237,8 +265,8 @@ export function SessionCloseModal({
       <div className="space-y-4">
         {pendingCount > 0 && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-900/10 px-4 py-3 text-sm text-amber-300">
-            {pendingCount} transaction{pendingCount > 1 ? 's are' : ' is'} still syncing.
-            Wait for sync to complete before closing the session.
+            {pendingCount} transaction{pendingCount > 1 ? "s are" : " is"} still
+            syncing. Wait for sync to complete before closing the session.
           </div>
         )}
 
@@ -270,7 +298,9 @@ export function SessionCloseModal({
                 type="number"
                 step="0.01"
                 min={0}
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  field.onChange(parseFloat(e.target.value) || 0)
+                }
                 error={fieldState.error?.message}
                 placeholder="Count the physical cash"
               />
@@ -286,7 +316,11 @@ export function SessionCloseModal({
               <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
                 Notes (optional)
               </label>
-              <Textarea {...field} rows={2} placeholder="Any discrepancies or notes..." />
+              <Textarea
+                {...field}
+                rows={2}
+                placeholder="Any discrepancies or notes..."
+              />
             </div>
           )}
         />
@@ -298,14 +332,14 @@ export function SessionCloseModal({
 // ── ParkedDrawer ───────────────────────────────────────────────────────────────
 
 interface ParkedDrawerProps {
-  open:    boolean;
+  open: boolean;
   onClose: () => void;
 }
 
 export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
   const { parked, resumeParked, discardParked } = usePOSStore((s) => ({
-    parked:        s.parked,
-    resumeParked:  s.resumeParked,
+    parked: s.parked,
+    resumeParked: s.resumeParked,
     discardParked: s.discardParked,
   }));
 
@@ -314,17 +348,17 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       {/* Drawer */}
       <div className="fixed inset-y-0 right-0 z-50 w-72 border-l border-white/5 bg-orika-black shadow-2xl flex flex-col">
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
           <h2 className="text-sm font-semibold text-orika-cream">
             Parked ({parked.length})
           </h2>
-          <button onClick={onClose} className="text-orika-smoke hover:text-orika-cream transition-colors">
+          <button
+            onClick={onClose}
+            className="text-orika-smoke hover:text-orika-cream transition-colors"
+          >
             ✕
           </button>
         </div>
@@ -349,11 +383,14 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
                   </p>
                 )}
                 <p className="text-xs text-orika-smoke">
-                  {p.lines.length} item{p.lines.length !== 1 ? 's' : ''}
+                  {p.lines.length} item{p.lines.length !== 1 ? "s" : ""}
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { resumeParked(p.park_id); onClose(); }}
+                    onClick={() => {
+                      resumeParked(p.park_id);
+                      onClose();
+                    }}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-orika-gold/10 py-1.5 text-xs font-medium text-orika-gold hover:bg-orika-gold/20 transition-colors"
                   >
                     <Play className="h-3 w-3" />
@@ -378,15 +415,15 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
 // ── DiscountGate ───────────────────────────────────────────────────────────────
 
 interface DiscountGateProps {
-  open:       boolean;
-  onClose:    () => void;
+  open: boolean;
+  onClose: () => void;
   onApproved: (managerId: string, displayName: string) => void;
 }
 
 export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
   const form = useForm<ManagerVerifyValues>({
     resolver: zodResolver(managerVerifySchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(data: ManagerVerifyValues) {
@@ -398,7 +435,9 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
         form.reset();
       }
     } catch {
-      form.setError('password', { message: 'Invalid credentials or not a manager' });
+      form.setError("password", {
+        message: "Invalid credentials or not a manager",
+      });
     }
   }
 
@@ -411,7 +450,9 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
       surface="light"
       footer={
         <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             onClick={form.handleSubmit(onSubmit)}
             loading={form.formState.isSubmitting}
@@ -424,7 +465,8 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
     >
       <div className="space-y-4">
         <p className="text-sm text-orika-smoke/80">
-          One or more items are priced below the minimum selling price. A manager must approve to continue.
+          One or more items are priced below the minimum selling price. A
+          manager must approve to continue.
         </p>
         <Controller
           name="email"
@@ -434,7 +476,11 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
               <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
                 Manager Email
               </label>
-              <Input {...field} type="email" error={fieldState.error?.message} />
+              <Input
+                {...field}
+                type="email"
+                error={fieldState.error?.message}
+              />
             </div>
           )}
         />
@@ -446,7 +492,11 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
               <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
                 Password
               </label>
-              <Input {...field} type="password" error={fieldState.error?.message} />
+              <Input
+                {...field}
+                type="password"
+                error={fieldState.error?.message}
+              />
             </div>
           )}
         />
@@ -459,32 +509,32 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
 // Uses DiscountGate directly (same file) — no self-import needed.
 
 interface ReturnModalProps {
-  open:        boolean;
-  onClose:     () => void;
+  open: boolean;
+  onClose: () => void;
   transaction: PosTransaction;
-  currency?:   string;
-  onReturned:  () => void;
+  currency?: string;
+  onReturned: () => void;
 }
 
 export function ReturnModal({
   open,
   onClose,
   transaction,
-  currency = 'NGN',
+  currency = "NGN",
   onReturned,
 }: ReturnModalProps) {
   const [showGate, setShowGate] = useState(false);
   const [managerId, setManagerId] = useState<string | null>(null);
-  const [managerName, setManagerName] = useState<string>('');
+  const [managerName, setManagerName] = useState<string>("");
   const [qtys, setQtys] = useState<Record<string, number>>({});
 
   const form = useForm<ReturnValues>({
     resolver: zodResolver(returnSchema),
     defaultValues: {
-      lines:         [],
-      refund_method: 'cash',
-      return_reason: '',
-      manager_id:    '',
+      lines: [],
+      refund_method: "cash",
+      return_reason: "",
+      manager_id: "",
     },
   });
 
@@ -504,7 +554,7 @@ export function ReturnModal({
   function handleApproved(mId: string, mName: string) {
     setManagerId(mId);
     setManagerName(mName);
-    form.setValue('manager_id', mId);
+    form.setValue("manager_id", mId);
     setShowGate(false);
   }
 
@@ -513,15 +563,15 @@ export function ReturnModal({
       .filter((l) => l.product_id && (qtys[l.product_id] ?? 0) > 0)
       .map((l) => ({
         product_id: l.product_id!,
-        quantity:   qtys[l.product_id!],
+        quantity: qtys[l.product_id!],
       }));
 
     if (!lines.length) {
-      showToast.error('Select at least one item to return');
+      showToast.error("Select at least one item to return");
       return;
     }
     if (!managerId) {
-      showToast.error('Manager approval is required');
+      showToast.error("Manager approval is required");
       return;
     }
     mutation.mutate({ ...data, lines, manager_id: managerId });
@@ -580,7 +630,9 @@ export function ReturnModal({
                 className="flex items-center gap-3 rounded-lg border border-black/10 px-3 py-2.5"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm text-orika-smoke">{line.description}</p>
+                  <p className="truncate text-sm text-orika-smoke">
+                    {line.description}
+                  </p>
                   <p className="text-xs text-orika-smoke/60">
                     {fmtMoney(line.unit_price, currency)} × {line.quantity} sold
                   </p>
@@ -603,13 +655,17 @@ export function ReturnModal({
                     }
                     className="w-14 rounded border border-black/10 px-2 py-1 text-center text-sm focus:border-orika-gold/40 focus:outline-none"
                   />
-                  <span className="text-xs text-orika-smoke">/ {line.quantity}</span>
+                  <span className="text-xs text-orika-smoke">
+                    / {line.quantity}
+                  </span>
                 </div>
               </div>
             ))}
 
             {productLines.length === 0 && (
-              <p className="text-sm text-orika-smoke">No returnable items on this transaction.</p>
+              <p className="text-sm text-orika-smoke">
+                No returnable items on this transaction.
+              </p>
             )}
           </div>
 
@@ -624,9 +680,9 @@ export function ReturnModal({
                 <Select
                   {...field}
                   options={[
-                    { value: 'cash', label: 'Cash' },
-                    { value: 'bank_transfer', label: 'Bank Transfer' },
-                    { value: 'pos_card', label: 'POS Card' },
+                    { value: "cash", label: "Cash" },
+                    { value: "bank_transfer", label: "Bank Transfer" },
+                    { value: "pos_card", label: "POS Card" },
                   ]}
                 />
               </div>
@@ -666,19 +722,21 @@ export function ReturnModal({
 // Inline component (not a modal) — embed inside a Modal or page.
 
 interface XZReportProps {
-  report:    XReport | ZReport;
+  report: XReport | ZReport;
   currency?: string;
 }
 
-export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
-  const isZ = report.report_type === 'Z';
+export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
+  const isZ = report.report_type === "Z";
 
   return (
     <div className="space-y-4 text-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-semibold text-orika-cream">{report.terminal_name}</p>
+          <p className="font-semibold text-orika-cream">
+            {report.terminal_name}
+          </p>
           <p className="text-xs text-orika-smoke">
             Opened {fmtDateTime(report.opened_at)} · {report.opened_by}
           </p>
@@ -698,9 +756,18 @@ export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
         <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
           Revenue
         </p>
-        <ReportRow label="Cash"          value={fmtMoney(report.revenue.cash_total, currency)} />
-        <ReportRow label="Bank Transfer" value={fmtMoney(report.revenue.transfer_total, currency)} />
-        <ReportRow label="Card"          value={fmtMoney(report.revenue.card_total, currency)} />
+        <ReportRow
+          label="Cash"
+          value={fmtMoney(report.revenue.cash_total, currency)}
+        />
+        <ReportRow
+          label="Bank Transfer"
+          value={fmtMoney(report.revenue.transfer_total, currency)}
+        />
+        <ReportRow
+          label="Card"
+          value={fmtMoney(report.revenue.card_total, currency)}
+        />
         <div className="border-t border-white/10 pt-2">
           <ReportRow
             label="Total Revenue"
@@ -719,12 +786,15 @@ export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
           label="Completed"
           value={String(
             (report as XReport).transactions?.completed ??
-            (report as ZReport).transactions?.total ??
-            0,
+              (report as ZReport).transactions?.total ??
+              0,
           )}
         />
         {(report.transactions as any).voided > 0 && (
-          <ReportRow label="Voided" value={String((report.transactions as any).voided)} />
+          <ReportRow
+            label="Voided"
+            value={String((report.transactions as any).voided)}
+          />
         )}
       </div>
 
@@ -737,15 +807,24 @@ export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
           <>
             <ReportRow
               label="Opening Float"
-              value={fmtMoney((report as ZReport).cash_drawer.opening_float, currency)}
+              value={fmtMoney(
+                (report as ZReport).cash_drawer.opening_float,
+                currency,
+              )}
             />
             <ReportRow
               label="Expected"
-              value={fmtMoney((report as ZReport).cash_drawer.expected_cash, currency)}
+              value={fmtMoney(
+                (report as ZReport).cash_drawer.expected_cash,
+                currency,
+              )}
             />
             <ReportRow
               label="Actual"
-              value={fmtMoney((report as ZReport).cash_drawer.actual_cash, currency)}
+              value={fmtMoney(
+                (report as ZReport).cash_drawer.actual_cash,
+                currency,
+              )}
             />
             <div className="border-t border-white/10 pt-2">
               <VarianceRow
@@ -764,15 +843,24 @@ export function XZReportView({ report, currency = 'NGN' }: XZReportProps) {
           <>
             <ReportRow
               label="Opening Float"
-              value={fmtMoney((report as XReport).cash_drawer.opening_float, currency)}
+              value={fmtMoney(
+                (report as XReport).cash_drawer.opening_float,
+                currency,
+              )}
             />
             <ReportRow
               label="Cash Sales"
-              value={fmtMoney((report as XReport).cash_drawer.cash_sales, currency)}
+              value={fmtMoney(
+                (report as XReport).cash_drawer.cash_sales,
+                currency,
+              )}
             />
             <ReportRow
               label="Expected in Till"
-              value={fmtMoney((report as XReport).cash_drawer.expected_cash_on_hand, currency)}
+              value={fmtMoney(
+                (report as XReport).cash_drawer.expected_cash_on_hand,
+                currency,
+              )}
             />
           </>
         )}
@@ -798,8 +886,8 @@ function ReportRow({
       <span
         className={
           bold
-            ? 'font-semibold text-orika-cream tabular-nums'
-            : 'text-orika-cream tabular-nums'
+            ? "font-semibold text-orika-cream tabular-nums"
+            : "text-orika-cream tabular-nums"
         }
       >
         {value}

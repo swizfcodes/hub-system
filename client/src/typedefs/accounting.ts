@@ -3,9 +3,14 @@
 // reports, fiscal periods and bank reconciliation. Derived from the page/
 // component consumers and the backend accounting service contract.
 
-export type AccountType = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+export type AccountType =
+  | "asset"
+  | "liability"
+  | "equity"
+  | "income"
+  | "expense";
 
-export type AgingBucket = 'current' | '31_60' | '61_90' | '90_plus';
+export type AgingBucket = "current" | "31_60" | "61_90" | "90_plus";
 
 // ── Chart of accounts ─────────────────────────────────────────────────────────
 export interface Account {
@@ -137,7 +142,7 @@ export interface CashFlowReport {
 export interface FiscalPeriod {
   period_id: string;
   name: string;
-  period_type: 'monthly' | 'quarterly' | 'annual' | string;
+  period_type: "monthly" | "quarterly" | "annual" | string;
   start_date: string;
   end_date: string;
   is_closed: boolean;
@@ -181,8 +186,8 @@ export interface APAgingRow {
   contact_id: string;
   contact_name: string;
   current: number;
-  '31_60': number;
-  '61_90': number;
-  '90_plus': number;
+  "31_60": number;
+  "61_90": number;
+  "90_plus": number;
   total: number;
 }

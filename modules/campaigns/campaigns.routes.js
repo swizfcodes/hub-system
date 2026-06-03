@@ -36,7 +36,6 @@ router.post(
   },
 );
 
-
 // ─── SAVED SEGMENTS (must come BEFORE /:id routes) ──────
 
 router.get("/segments", can("campaigns", "view"), async (req, res, next) => {
@@ -118,22 +117,18 @@ router.delete(
 
 // ─── NEWSLETTER SUBSCRIBERS (must come BEFORE /:id) ─────
 
-router.get(
-  "/subscribers",
-  can("campaigns", "view"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await storeService.listSubscribers({
-          search: req.query.search,
-          status: req.query.status,
-        }),
-      );
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+router.get("/subscribers", can("campaigns", "view"), async (req, res, next) => {
+  try {
+    res.json(
+      await storeService.listSubscribers({
+        search: req.query.search,
+        status: req.query.status,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get(
   "/subscribers/export",
@@ -158,23 +153,19 @@ router.get(
 
 // ─── STOREFRONT ENQUIRIES (must come BEFORE /:id) ───────
 
-router.get(
-  "/enquiries",
-  can("campaigns", "view"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await storeService.listEnquiries({
-          search: req.query.search,
-          status: req.query.status,
-          type: req.query.type,
-        }),
-      );
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+router.get("/enquiries", can("campaigns", "view"), async (req, res, next) => {
+  try {
+    res.json(
+      await storeService.listEnquiries({
+        search: req.query.search,
+        status: req.query.status,
+        type: req.query.type,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.patch(
   "/enquiries/:id/status",
@@ -306,7 +297,6 @@ router.post(
 );
 
 // ─── SAVED SEGMENTS ───────────────────────────────────────────
-
 
 // ─── SCHEDULING ───────────────────────────────────────────────
 

@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
-import { Upload, Image as ImageIcon, X, Loader2 } from 'lucide-react';
-import { uploadLogo } from '@services/uploads';
-import { showToast } from '@hooks/useToast';
-import { cn } from '@lib/cn';
+import { useRef, useState } from "react";
+import { Upload, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { uploadLogo } from "@services/uploads";
+import { showToast } from "@hooks/useToast";
+import { cn } from "@lib/cn";
 
 interface Props {
   value?: string | null;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/svg+xml';
+const ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
 
 export function LogoDropZone({ value, onChange, businessKey }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -20,21 +20,24 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
 
   const handleFile = async (file: File) => {
     if (!file.type.match(/^image\/(png|jpeg|webp|svg\+xml)$/)) {
-      showToast.error('Unsupported format', 'PNG, JPG, WEBP or SVG only.');
+      showToast.error("Unsupported format", "PNG, JPG, WEBP or SVG only.");
       return;
     }
     if (file.size > MAX_BYTES) {
-      showToast.error('File too large', 'Logos must be 5MB or less.');
+      showToast.error("File too large", "Logos must be 5MB or less.");
       return;
     }
     setUploading(true);
     try {
-      const res = await uploadLogo(file, businessKey || 'new');
+      const res = await uploadLogo(file, businessKey || "new");
       onChange(res.url);
-      showToast.success('Logo uploaded');
+      showToast.success("Logo uploaded");
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } } };
-      showToast.error('Upload failed', err.response?.data?.message ?? 'Try again');
+      showToast.error(
+        "Upload failed",
+        err.response?.data?.message ?? "Try again",
+      );
     } finally {
       setUploading(false);
     }
@@ -42,10 +45,15 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
 
   return (
     <div className="space-y-2">
-      <div className="text-[0.7rem] tracking-widest uppercase font-medium text-text-on-light-muted">Logo</div>
+      <div className="text-[0.7rem] tracking-widest uppercase font-medium text-text-on-light-muted">
+        Logo
+      </div>
 
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault();
@@ -58,10 +66,12 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
         tabIndex={0}
         aria-label="Upload logo"
         className={cn(
-          'relative cursor-pointer rounded-2xl border-2 border-dashed transition-all',
-          'flex flex-col items-center justify-center text-center p-6 sm:p-8',
-          dragging ? 'border-orika-gold bg-orika-gold/[0.06]' : 'border-orika-cloud/60 hover:border-orika-black',
-          'bg-white/50',
+          "relative cursor-pointer rounded-2xl border-2 border-dashed transition-all",
+          "flex flex-col items-center justify-center text-center p-6 sm:p-8",
+          dragging
+            ? "border-orika-gold bg-orika-gold/[0.06]"
+            : "border-orika-cloud/60 hover:border-orika-black",
+          "bg-white/50",
         )}
       >
         <input
@@ -69,20 +79,32 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
           type="file"
           accept={ACCEPT}
           className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
         />
         {value ? (
           <div className="relative">
-            <img src={value} alt="Logo preview" className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl bg-orika-cream p-2 border border-orika-cloud/40" />
+            <img
+              src={value}
+              alt="Logo preview"
+              className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl bg-orika-cream p-2 border border-orika-cloud/40"
+            />
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onChange(null); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(null);
+              }}
               className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-orika-black text-orika-cream hover:bg-state-danger flex items-center justify-center transition-colors"
               aria-label="Remove logo"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            <p className="mt-3 text-xs text-text-on-light-muted">Click or drop to replace</p>
+            <p className="mt-3 text-xs text-text-on-light-muted">
+              Click or drop to replace
+            </p>
           </div>
         ) : uploading ? (
           <>
@@ -92,10 +114,18 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
         ) : (
           <>
             <div className="w-12 h-12 rounded-xl bg-orika-cream border border-orika-cloud/40 text-orika-black/60 flex items-center justify-center mb-3">
-              {dragging ? <Upload className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+              {dragging ? (
+                <Upload className="w-5 h-5" />
+              ) : (
+                <ImageIcon className="w-5 h-5" />
+              )}
             </div>
-            <p className="text-sm font-medium text-orika-black">{dragging ? 'Release to upload' : 'Drop your logo here'}</p>
-            <p className="mt-1 text-xs text-text-on-light-muted">or click to browse · PNG, JPG, WEBP, SVG up to 5MB</p>
+            <p className="text-sm font-medium text-orika-black">
+              {dragging ? "Release to upload" : "Drop your logo here"}
+            </p>
+            <p className="mt-1 text-xs text-text-on-light-muted">
+              or click to browse · PNG, JPG, WEBP, SVG up to 5MB
+            </p>
           </>
         )}
       </div>

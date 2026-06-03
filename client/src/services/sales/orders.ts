@@ -1,11 +1,11 @@
-import { api } from '@services/api';
-import type { SalesOrder, SalesListResponse, Invoice } from '@typedefs/sales';
+import { api } from "@services/api";
+import type { SalesOrder, SalesListResponse, Invoice } from "@typedefs/sales";
 import type {
   HandToLogisticsValues,
   GenerateInvoiceValues,
-} from '@lib/schemas/sales';
+} from "@lib/schemas/sales";
 
-const BASE = '/sales/orders';
+const BASE = "/sales/orders";
 
 export interface ListOrdersParams {
   page?: number;

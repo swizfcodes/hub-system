@@ -1,10 +1,13 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE = '/api';
-const TOKEN_KEY = 'orika_token';
-const USER_KEY  = 'orika_user';
+const API_BASE = "/api";
+const TOKEN_KEY = "orika_token";
+const USER_KEY = "orika_user";
 
-export interface LoginPayload { email: string; password: string; }
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
 
 export interface AuthResponse {
   accessToken: string;
@@ -21,7 +24,10 @@ export interface AuthResponse {
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  const { data } = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, payload);
+  const { data } = await axios.post<AuthResponse>(
+    `${API_BASE}/auth/login`,
+    payload,
+  );
   return data;
 }
 
@@ -40,12 +46,16 @@ export function clearToken(): void {
   localStorage.removeItem(USER_KEY);
 }
 
-export function storeUser(user: AuthResponse['user']): void {
+export function storeUser(user: AuthResponse["user"]): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-export function getUser(): AuthResponse['user'] | null {
+export function getUser(): AuthResponse["user"] | null {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }

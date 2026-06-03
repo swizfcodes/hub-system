@@ -4,10 +4,12 @@
 // mounted once the webhook is uncommented in routes/index.js.
 
 const express = require("express");
-const router  = express.Router();
+const router = express.Router();
 
 router.all("*", (req, res) => {
-  res.status(501).json({ message: "WooCommerce webhook handler not yet implemented" });
+  res
+    .status(501)
+    .json({ message: "WooCommerce webhook handler not yet implemented" });
 });
 
 module.exports = router;

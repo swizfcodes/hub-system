@@ -1,10 +1,15 @@
 // Types mirror shared.contacts / shared.contact_addresses / shared.contact_tags.
 // Source of truth: hub-system/shared/contacts/contacts.repository.js + migration 000003.
 
-export type ContactType = 'customer' | 'supplier' | 'staff' | 'retail_partner';
-export type PriorityLevel = 'vip' | 'regular' | 'new';
-export type ContactSource = 'walk_in' | 'social_media' | 'referral' | 'website' | 'event';
-export type AddressType = 'delivery' | 'billing' | 'office' | 'home' | 'other';
+export type ContactType = "customer" | "supplier" | "staff" | "retail_partner";
+export type PriorityLevel = "vip" | "regular" | "new";
+export type ContactSource =
+  | "walk_in"
+  | "social_media"
+  | "referral"
+  | "website"
+  | "event";
+export type AddressType = "delivery" | "billing" | "office" | "home" | "other";
 
 export interface ContactAddress {
   address_id: string;
@@ -42,7 +47,7 @@ export interface Contact {
   first_name?: string | null;
   last_name?: string | null;
   company_name?: string | null;
-  gender?: 'M' | 'F' | 'other' | 'prefer_not' | null;
+  gender?: "M" | "F" | "other" | "prefer_not" | null;
   date_of_birth?: string | null;
   tin?: string | null;
   cac_number?: string | null;
@@ -68,7 +73,7 @@ export interface ContactTimeline {
     activity_id: string;
     activity_type: string;
     summary: string;
-    direction?: 'in' | 'out';
+    direction?: "in" | "out";
     performed_at: string;
     is_auto: boolean;
   }>;

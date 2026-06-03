@@ -13,13 +13,16 @@ function toProductPayload(wcProduct, business) {
   if (!wcProduct) return null;
   return {
     business,
-    name:          wcProduct.name,
-    sku:           wcProduct.sku || null,
-    description:   wcProduct.description || null,
+    name: wcProduct.name,
+    sku: wcProduct.sku || null,
+    description: wcProduct.description || null,
     selling_price: parseFloat(wcProduct.price) || 0,
-    cost_price:    0,
-    source:        'woocommerce',
-    metadata:      { woocommerce_product_id: wcProduct.id, woocommerce_slug: wcProduct.slug },
+    cost_price: 0,
+    source: "woocommerce",
+    metadata: {
+      woocommerce_product_id: wcProduct.id,
+      woocommerce_slug: wcProduct.slug,
+    },
   };
 }
 

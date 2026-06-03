@@ -190,10 +190,12 @@ router.get(
   async (req, res, next) => {
     try {
       const limit = Math.min(parseInt(req.query.limit) || 20, 50);
-      const from  = req.query.from || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const from =
+        req.query.from ||
+        new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
       const conditions = ["user_id = $1", "occurred_at >= $2::timestamptz"];
-      const params     = [req.user.user_id, from];
+      const params = [req.user.user_id, from];
 
       if (req.query.business) {
         params.push(req.query.business);

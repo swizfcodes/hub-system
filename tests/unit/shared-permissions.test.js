@@ -568,12 +568,7 @@ describe("Shared Permissions Service", () => {
 
     it("should reject invalid module", () => {
       const role = generateRole();
-      const validModules = [
-        "invoicing",
-        "sales",
-        "purchasing",
-        "accounting",
-      ];
+      const validModules = ["invoicing", "sales", "purchasing", "accounting"];
 
       expect(validModules).toContain("invoicing");
       expect(validModules).not.toContain("invalid_module");

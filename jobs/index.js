@@ -39,15 +39,8 @@ function start() {
     "*/10 * * * *",
     require("./expireReservations"),
   );
-  register(
-    "syncCurrencyRates",
-    "0 9 * * 1-5", 
-    require("./syncCurrencyRates"),
-  );
-  register(
-    "syncShopifyStock", "*/15 * * * *",
-    require("./syncShopifyStock"),
-  );
+  register("syncCurrencyRates", "0 9 * * 1-5", require("./syncCurrencyRates"));
+  register("syncShopifyStock", "*/15 * * * *", require("./syncShopifyStock"));
   // register(
   //   "syncWooCommerceStock",
   //   "*/15 * * * *",
@@ -94,11 +87,7 @@ function start() {
     "0 0 1 * *",
     require("./sendPartnerPaymentReminders"),
   );
-  register(
-    "fetchSocialMetrics",
-    "0 3 * * *",
-    require("./fetchSocialMetrics"),
-  );
+  register("fetchSocialMetrics", "0 3 * * *", require("./fetchSocialMetrics"));
   // Weekly digest (Mondays 7am) and monthly digest (1st 7am).
   register(
     "sendScheduledReportsWeekly",
@@ -123,11 +112,7 @@ function start() {
     require("./updateCampaignStatuses"),
   );
   // Task reminders — notify the assignee when remind_at has passed.
-  register(
-    "sendTaskReminders",
-    "*/5 * * * *",
-    require("./sendTaskReminders"),
-  );
+  register("sendTaskReminders", "*/5 * * * *", require("./sendTaskReminders"));
 
   jobs.forEach(({ name, task }) => {
     task.start();

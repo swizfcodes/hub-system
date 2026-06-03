@@ -8,8 +8,8 @@ import {
   addSubtask as addSubtaskCore,
   setSubtaskDone as setSubtaskDoneCore,
   deleteSubtask as deleteSubtaskCore,
-} from '@services/contacts/tasks';
-import type { Subtask, Task, TaskStatus } from '@typedefs/tasks';
+} from "@services/contacts/tasks";
+import type { Subtask, Task, TaskStatus } from "@typedefs/tasks";
 
 export {
   listTasks,
@@ -19,7 +19,7 @@ export {
   updateTask,
   deleteTask,
   listSubtasks,
-} from '@services/contacts/tasks';
+} from "@services/contacts/tasks";
 
 // The UI calls addSubtask(taskId, title, display_order?); the core service takes a payload.
 // display_order is forwarded so drag-and-drop ordering is preserved.

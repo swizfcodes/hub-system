@@ -60,8 +60,8 @@ export interface BankAccount {
   updated_at: string;
 }
 
-export type TaxType = 'sales' | 'purchases' | 'payroll';
-export type TaxAppliesTo = 'all' | 'goods' | 'services' | 'salaries' | 'basic';
+export type TaxType = "sales" | "purchases" | "payroll";
+export type TaxAppliesTo = "all" | "goods" | "services" | "salaries" | "basic";
 
 export interface TaxRate {
   tax_id: string;
@@ -87,10 +87,21 @@ export interface CurrencyRate {
 }
 
 export type FieldType =
-  | 'text' | 'number' | 'decimal' | 'date' | 'boolean' | 'select' | 'multi_select';
+  | "text"
+  | "number"
+  | "decimal"
+  | "date"
+  | "boolean"
+  | "select"
+  | "multi_select";
 
 export type EntityType =
-  | 'product' | 'contact' | 'supplier' | 'retail_partner' | 'deal' | 'invoice';
+  | "product"
+  | "contact"
+  | "supplier"
+  | "retail_partner"
+  | "deal"
+  | "invoice";
 
 export interface CustomField {
   field_id: string;

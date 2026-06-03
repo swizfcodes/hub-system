@@ -1,7 +1,12 @@
 export type PermissionAction =
-  | 'view' | 'create' | 'edit' | 'delete' | 'approve' | 'export';
+  | "view"
+  | "create"
+  | "edit"
+  | "delete"
+  | "approve"
+  | "export";
 
-export type RecordScope = 'all' | 'own' | 'team';
+export type RecordScope = "all" | "own" | "team";
 
 export interface Role {
   role_id: string;

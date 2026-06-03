@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Modal } from './Modal';
-import { Button } from './Button';
-import { Input } from './Input';
+import React, { useState } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Modal } from "./Modal";
+import { Button } from "./Button";
+import { Input } from "./Input";
 
 export interface ConfirmationModalProps {
   open: boolean;
@@ -14,23 +14,34 @@ export interface ConfirmationModalProps {
   confirmPhrase?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  tone?: 'danger' | 'warn';
+  tone?: "danger" | "warn";
   loading?: boolean;
 }
 
 export function ConfirmationModal({
-  open, onClose, onConfirm, title, message, confirmPhrase,
-  confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone='danger', loading,
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmPhrase,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  tone = "danger",
+  loading,
 }: ConfirmationModalProps) {
-  const [typed, setTyped] = useState('');
+  const [typed, setTyped] = useState("");
   const phraseOk = !confirmPhrase || typed.trim() === confirmPhrase;
 
   const handleConfirm = async () => {
     await onConfirm();
-    setTyped('');
+    setTyped("");
   };
 
-  const handleClose = () => { setTyped(''); onClose(); };
+  const handleClose = () => {
+    setTyped("");
+    onClose();
+  };
 
   return (
     <Modal
@@ -40,7 +51,9 @@ export function ConfirmationModal({
       size="sm"
       title={
         <span className="flex items-center gap-3">
-          <span className={`w-9 h-9 rounded-full flex items-center justify-center ${tone === 'danger' ? 'bg-state-danger/15 text-state-danger' : 'bg-state-warn/15 text-state-warn'}`}>
+          <span
+            className={`w-9 h-9 rounded-full flex items-center justify-center ${tone === "danger" ? "bg-state-danger/15 text-state-danger" : "bg-state-warn/15 text-state-warn"}`}
+          >
             <AlertTriangle className="w-4 h-4" />
           </span>
           {title}
@@ -48,14 +61,27 @@ export function ConfirmationModal({
       }
       footer={
         <>
-          <Button variant="outline-light" onClick={handleClose} disabled={loading}>{cancelLabel}</Button>
-          <Button variant={tone === 'danger' ? 'danger' : 'primary'} disabled={!phraseOk} loading={loading} onClick={handleConfirm}>
+          <Button
+            variant="outline-light"
+            onClick={handleClose}
+            disabled={loading}
+          >
+            {cancelLabel}
+          </Button>
+          <Button
+            variant={tone === "danger" ? "danger" : "primary"}
+            disabled={!phraseOk}
+            loading={loading}
+            onClick={handleConfirm}
+          >
             {confirmLabel}
           </Button>
         </>
       }
     >
-      <div className="text-sm text-orika-black/80 leading-relaxed">{message}</div>
+      <div className="text-sm text-orika-black/80 leading-relaxed">
+        {message}
+      </div>
       {confirmPhrase && (
         <div className="mt-5">
           <Input

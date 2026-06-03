@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import { Tag, AlertCircle } from 'lucide-react';
-import { ProductImage } from './ProductImage';
-import { ProductPrice } from './ProductPrice';
-import { Badge } from '@components/ui/Badge';
-import type { Product } from '@typedefs/catalogue';
+import { useNavigate } from "react-router-dom";
+import { Tag, AlertCircle } from "lucide-react";
+import { ProductImage } from "./ProductImage";
+import { ProductPrice } from "./ProductPrice";
+import { Badge } from "@components/ui/Badge";
+import type { Product } from "@typedefs/catalogue";
 
 interface Props {
   product: Product;
@@ -19,15 +19,31 @@ export function ProductCard({ product, index = 0 }: Props) {
       className="group cursor-pointer rounded-2xl border border-orika-graphite bg-orika-charcoal/70 overflow-hidden hover:border-orika-gold/40 hover:shadow-card-lg hover:-translate-y-1 transition-all animate-tile-in"
     >
       <div className="aspect-square overflow-hidden bg-orika-black/40">
-        <ProductImage product={product} size="xl" className="w-full h-full rounded-none group-hover:scale-105 transition-transform duration-700" />
+        <ProductImage
+          product={product}
+          size="xl"
+          className="w-full h-full rounded-none group-hover:scale-105 transition-transform duration-700"
+        />
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-medium text-sm text-orika-cream truncate flex-1">{product.name}</h3>
-          {!product.is_active && <Badge tone="warn" size="xs">Inactive</Badge>}
+          <h3 className="font-medium text-sm text-orika-cream truncate flex-1">
+            {product.name}
+          </h3>
+          {!product.is_active && (
+            <Badge tone="warn" size="xs">
+              Inactive
+            </Badge>
+          )}
         </div>
-        <div className="text-[0.65rem] text-orika-smoke font-mono mb-2 truncate">{product.sku}</div>
-        <ProductPrice cost={product.cost_price} selling={product.selling_price} currency={product.currency} />
+        <div className="text-[0.65rem] text-orika-smoke font-mono mb-2 truncate">
+          {product.sku}
+        </div>
+        <ProductPrice
+          cost={product.cost_price}
+          selling={product.selling_price}
+          currency={product.currency}
+        />
         {product.category_name && (
           <div className="mt-2 inline-flex items-center gap-1 text-[0.6rem] text-orika-smoke">
             <Tag className="w-2.5 h-2.5" />

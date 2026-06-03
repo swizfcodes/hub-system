@@ -61,7 +61,10 @@ describe("POS Integration", () => {
 
     it("should aggregate line totals", () => {
       const sale = generatePosSale();
-      const itemsTotal = sale.items.reduce((sum, item) => sum + item.line_total, 0);
+      const itemsTotal = sale.items.reduce(
+        (sum, item) => sum + item.line_total,
+        0,
+      );
       expect(itemsTotal).toBe(sale.total_amount);
     });
 
@@ -262,7 +265,10 @@ describe("POS Integration", () => {
         generatePosSale(TEST_BUSINESS),
       ];
 
-      const totalSales = sales.reduce((sum, sale) => sum + sale.final_amount, 0);
+      const totalSales = sales.reduce(
+        (sum, sale) => sum + sale.final_amount,
+        0,
+      );
       expect(totalSales).toBeGreaterThan(0);
     });
 
@@ -321,4 +327,3 @@ describe("POS Integration", () => {
     });
   });
 });
-

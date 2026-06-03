@@ -230,7 +230,10 @@ describe("Payroll Service", () => {
         }),
       );
 
-      const annualGross = yearPayrolls.reduce((sum, p) => sum + p.total_gross, 0);
+      const annualGross = yearPayrolls.reduce(
+        (sum, p) => sum + p.total_gross,
+        0,
+      );
       expect(annualGross).toBeGreaterThan(0);
     });
 
@@ -279,11 +282,14 @@ describe("Payroll Service", () => {
     });
 
     it("should support multi-business isolation", () => {
-      const payroll1 = generatePayroll(TEST_BUSINESS, { period_name: "2024-01" });
-      const payroll2 = generatePayroll(TEST_BUSINESS, { period_name: "2024-02" });
+      const payroll1 = generatePayroll(TEST_BUSINESS, {
+        period_name: "2024-01",
+      });
+      const payroll2 = generatePayroll(TEST_BUSINESS, {
+        period_name: "2024-02",
+      });
 
       expect(payroll1.business_id).toBe(payroll2.business_id);
     });
   });
 });
-

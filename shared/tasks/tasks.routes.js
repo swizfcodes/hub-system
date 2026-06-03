@@ -95,7 +95,9 @@ router.patch(
   body("priority").optional().isString(),
   body("assigned_to").optional({ nullable: true, checkFalsy: true }).isUUID(),
   body("due_at").optional({ nullable: true, checkFalsy: true }).isISO8601(),
-  body("reminder_minutes").optional({ nullable: true, checkFalsy: true }).isInt({ min: 0 }),
+  body("reminder_minutes")
+    .optional({ nullable: true, checkFalsy: true })
+    .isInt({ min: 0 }),
   body("is_personal").optional().isBoolean(),
   validate,
   can("tasks", "edit"),

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, RefreshCw } from 'lucide-react';
-import { useBusinessSwitchStore } from '@stores/useBusinessSwitchStore';
-import { useBusinessStore } from '@stores/useBusinessStore';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, RefreshCw } from "lucide-react";
+import { useBusinessSwitchStore } from "@stores/useBusinessSwitchStore";
+import { useBusinessStore } from "@stores/useBusinessStore";
 
 /** How long the guarded switch takes — gives every screen time to refetch
  *  in the new context behind the blur. */
@@ -17,7 +17,8 @@ const SWITCH_MS = 5000;
 export function BusinessSwitchManager() {
   const qc = useQueryClient();
   const setActive = useBusinessStore((s) => s.setActive);
-  const { phase, fromName, toName, toKey, accent, cancel, begin, finish } = useBusinessSwitchStore();
+  const { phase, fromName, toName, toKey, accent, cancel, begin, finish } =
+    useBusinessSwitchStore();
   const [progress, setProgress] = useState(0);
 
   // When the user confirms (phase → 'switching'): flip the active business so
@@ -25,7 +26,7 @@ export function BusinessSwitchManager() {
   // React Query cache so all mounted screens refetch fresh data for the new
   // context, then run the timed progress and lift the overlay.
   useEffect(() => {
-    if (phase !== 'switching' || !toKey) return;
+    if (phase !== "switching" || !toKey) return;
 
     setActive(toKey);
     qc.clear();
@@ -39,16 +40,22 @@ export function BusinessSwitchManager() {
     }, 60);
     const done = setTimeout(() => finish(), SWITCH_MS);
 
-    return () => { clearInterval(tick); clearTimeout(done); };
+    return () => {
+      clearInterval(tick);
+      clearTimeout(done);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, toKey]);
 
-  if (phase === 'idle') return null;
+  if (phase === "idle") return null;
 
-  if (phase === 'confirm') {
+  if (phase === "confirm") {
     return createPortal(
       <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-orika-black/70 backdrop-blur-md" onClick={cancel} />
+        <div
+          className="absolute inset-0 bg-orika-black/70 backdrop-blur-md"
+          onClick={cancel}
+        />
         <div className="relative w-full max-w-md rounded-3xl border border-orika-graphite bg-orika-charcoal shadow-modal p-7 animate-scale-in">
           <div className="flex items-center gap-2 text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-4">
             <RefreshCw className="w-3.5 h-3.5" /> Switch business context
@@ -57,19 +64,35 @@ export function BusinessSwitchManager() {
             Switch to {toName}?
           </h2>
           <div className="flex items-center gap-2 text-sm text-orika-cloud mb-2">
-            <span className="px-2.5 py-1 rounded-lg bg-orika-graphite text-orika-cream">{fromName}</span>
+            <span className="px-2.5 py-1 rounded-lg bg-orika-graphite text-orika-cream">
+              {fromName}
+            </span>
             <ArrowRight className="w-4 h-4 text-orika-smoke" />
-            <span className="px-2.5 py-1 rounded-lg text-orika-black font-semibold" style={{ background: accent }}>{toName}</span>
+            <span
+              className="px-2.5 py-1 rounded-lg text-orika-black font-semibold"
+              style={{ background: accent }}
+            >
+              {toName}
+            </span>
           </div>
           <p className="text-sm text-orika-smoke leading-relaxed mb-6">
-            The whole app will reload its data for <strong className="text-orika-cloud">{toName}</strong>.
-            Anything unsaved in {fromName} should be saved first. This takes a few seconds.
+            The whole app will reload its data for{" "}
+            <strong className="text-orika-cloud">{toName}</strong>. Anything
+            unsaved in {fromName} should be saved first. This takes a few
+            seconds.
           </p>
           <div className="flex justify-end gap-3">
-            <button onClick={cancel} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-orika-cloud hover:text-orika-cream hover:bg-white/5 transition-colors">
+            <button
+              onClick={cancel}
+              className="px-4 py-2.5 rounded-xl text-sm font-semibold text-orika-cloud hover:text-orika-cream hover:bg-white/5 transition-colors"
+            >
               Cancel
             </button>
-            <button onClick={begin} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-orika-black transition-all hover:-translate-y-0.5" style={{ background: accent }}>
+            <button
+              onClick={begin}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-orika-black transition-all hover:-translate-y-0.5"
+              style={{ background: accent }}
+            >
               Yes, switch
             </button>
           </div>
@@ -82,8 +105,15 @@ export function BusinessSwitchManager() {
   // phase === 'switching' — full-screen blur + branded loader
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-orika-black/80 backdrop-blur-xl animate-fade-in">
-      <div className="w-[120px] h-[120px] rounded-full bg-orika-black border flex items-center justify-center animate-splash-pulse shadow-glow-md p-4 overflow-hidden" style={{ borderColor: `${accent}80` }}>
-        <img src="/assets/images/logos/orika-logo-white.png" alt="Orika" className="w-full h-full object-contain" />
+      <div
+        className="w-[120px] h-[120px] rounded-full bg-orika-black border flex items-center justify-center animate-splash-pulse shadow-glow-md p-4 overflow-hidden"
+        style={{ borderColor: `${accent}80` }}
+      >
+        <img
+          src="/assets/images/logos/orika-logo-white.png"
+          alt="Orika"
+          className="w-full h-full object-contain"
+        />
       </div>
 
       <div className="mt-9 flex items-center gap-3 text-lg font-display font-light">
@@ -96,7 +126,10 @@ export function BusinessSwitchManager() {
       </p>
 
       <div className="w-[220px] h-[3px] bg-orika-graphite rounded-sm mt-8 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-[#8A6A30] via-orika-gold to-[#D9BC87] rounded-sm transition-all duration-150" style={{ width: `${progress}%` }} />
+        <div
+          className="h-full bg-gradient-to-r from-[#8A6A30] via-orika-gold to-[#D9BC87] rounded-sm transition-all duration-150"
+          style={{ width: `${progress}%` }}
+        />
       </div>
       <p className="font-display italic font-light text-sm text-orika-smoke mt-6 tracking-wide">
         Loading {toName} data…

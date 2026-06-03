@@ -7,7 +7,7 @@ export type {
   EventType,
   CalendarEvent,
   ClashResponse,
-} from '@typedefs/calendar';
+} from "@typedefs/calendar";
 
 export type {
   TaskStatus,
@@ -15,9 +15,9 @@ export type {
   Task,
   Subtask,
   TaskBoard,
-} from '@typedefs/tasks';
+} from "@typedefs/tasks";
 
-import type { ClashResponse } from '@typedefs/calendar';
+import type { ClashResponse } from "@typedefs/calendar";
 
 // A single clash entry (the element type of ClashResponse.clashes).
-export type ClashInfo = ClashResponse['clashes'][number];
+export type ClashInfo = ClashResponse["clashes"][number];

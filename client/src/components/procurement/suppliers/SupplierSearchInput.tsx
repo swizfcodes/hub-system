@@ -3,44 +3,58 @@
  * Typeahead for selecting a supplier. Replaces the 200-item Select dropdown
  * in PONew and RFQNew — searches /api/purchasing/suppliers?search=q live.
  */
-import { useEffect, useRef, useState } from 'react';
-import { Search, X, Building2 } from 'lucide-react';
-import { api } from '@services/api';
-import { cn } from '@lib/cn';
+import { useEffect, useRef, useState } from "react";
+import { Search, X, Building2 } from "lucide-react";
+import { api } from "@services/api";
+import { cn } from "@lib/cn";
 
 export interface SupplierOption {
-  supplier_id:        string;
-  display_name:       string;
-  supplier_code:      string;
+  supplier_id: string;
+  display_name: string;
+  supplier_code: string;
   preferred_currency?: string;
 }
 
 interface Props {
-  value:     SupplierOption | null;
-  onChange:  (s: SupplierOption | null) => void;
-  label?:    string;
+  value: SupplierOption | null;
+  onChange: (s: SupplierOption | null) => void;
+  label?: string;
   required?: boolean;
-  error?:    string;
-  surface?:  'dark' | 'light';
+  error?: string;
+  surface?: "dark" | "light";
 }
 
-export function SupplierSearchInput({ value, onChange, label, required, error, surface = 'dark' }: Props) {
-  const [query,   setQuery]   = useState('');
+export function SupplierSearchInput({
+  value,
+  onChange,
+  label,
+  required,
+  error,
+  surface = "dark",
+}: Props) {
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<SupplierOption[]>([]);
-  const [open,    setOpen]    = useState(false);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const debRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
-    if (!query.trim()) { setResults([]); setOpen(false); return; }
+    if (!query.trim()) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
     setLoading(true);
     debRef.current = setTimeout(async () => {
       try {
-        const { data } = await api.get<{ data: SupplierOption[] }>('/purchasing/suppliers', {
-          params: { search: query.trim(), limit: 8 },
-        });
+        const { data } = await api.get<{ data: SupplierOption[] }>(
+          "/purchasing/suppliers",
+          {
+            params: { search: query.trim(), limit: 8 },
+          },
+        );
         setResults(data.data ?? []);
         setOpen(true);
       } finally {
@@ -51,25 +65,51 @@ export function SupplierSearchInput({ value, onChange, label, required, error, s
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
+        setOpen(false);
     }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const isDark = surface === 'dark';
+  const isDark = surface === "dark";
 
   if (value) {
     return (
       <div ref={wrapRef}>
-        {label && <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-orika-smoke' : 'text-text-on-light-muted'}`}>{label}{required && <span className="text-red-400 ml-0.5">*</span>}</label>}
-        <div className={cn('flex items-center gap-3 rounded-xl border px-3 py-2.5', isDark ? 'border-orika-gold/40 bg-orika-gold/5' : 'border-orika-gold/40 bg-orika-gold/5')}>
+        {label && (
+          <label
+            className={`mb-1.5 block text-xs font-medium ${isDark ? "text-orika-smoke" : "text-text-on-light-muted"}`}
+          >
+            {label}
+            {required && <span className="text-red-400 ml-0.5">*</span>}
+          </label>
+        )}
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-xl border px-3 py-2.5",
+            isDark
+              ? "border-orika-gold/40 bg-orika-gold/5"
+              : "border-orika-gold/40 bg-orika-gold/5",
+          )}
+        >
           <Building2 className="h-4 w-4 shrink-0 text-orika-gold" />
           <div className="min-w-0 flex-1">
-            <p className={`truncate text-sm font-medium ${isDark ? 'text-orika-cream' : 'text-orika-black'}`}>{value.display_name}</p>
+            <p
+              className={`truncate text-sm font-medium ${isDark ? "text-orika-cream" : "text-orika-black"}`}
+            >
+              {value.display_name}
+            </p>
             <p className="text-xs text-orika-smoke">{value.supplier_code}</p>
           </div>
-          <button type="button" onClick={() => { onChange(null); setQuery(''); }} className="text-orika-smoke hover:text-orika-cream">
+          <button
+            type="button"
+            onClick={() => {
+              onChange(null);
+              setQuery("");
+            }}
+            className="text-orika-smoke hover:text-orika-cream"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -79,20 +119,30 @@ export function SupplierSearchInput({ value, onChange, label, required, error, s
 
   return (
     <div ref={wrapRef} className="relative">
-      {label && <label className={`mb-1.5 block text-xs font-medium ${isDark ? 'text-orika-smoke' : 'text-text-on-light-muted'}`}>{label}{required && <span className="text-red-400 ml-0.5">*</span>}</label>}
+      {label && (
+        <label
+          className={`mb-1.5 block text-xs font-medium ${isDark ? "text-orika-smoke" : "text-text-on-light-muted"}`}
+        >
+          {label}
+          {required && <span className="text-red-400 ml-0.5">*</span>}
+        </label>
+      )}
       <div className="relative">
-        {loading
-          ? <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-orika-smoke/30 border-t-orika-gold" />
-          : <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
-        }
+        {loading ? (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-orika-smoke/30 border-t-orika-gold" />
+        ) : (
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
+        )}
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search suppliers by name or code..."
-          className={cn('w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm focus:outline-none', isDark
-            ? 'border-white/10 bg-orika-graphite text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50'
-            : 'border-orika-cloud/40 bg-white text-orika-black shadow-sm focus:border-orika-black focus:ring-1 focus:ring-orika-black'
+          className={cn(
+            "w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm focus:outline-none",
+            isDark
+              ? "border-white/10 bg-orika-graphite text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50"
+              : "border-orika-cloud/40 bg-white text-orika-black shadow-sm focus:border-orika-black focus:ring-1 focus:ring-orika-black",
           )}
         />
       </div>
@@ -100,12 +150,25 @@ export function SupplierSearchInput({ value, onChange, label, required, error, s
       {open && results.length > 0 && (
         <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-orika-black shadow-xl overflow-hidden">
           {results.map((s) => (
-            <button key={s.supplier_id} type="button" onClick={() => { onChange(s); setQuery(''); setOpen(false); }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors">
+            <button
+              key={s.supplier_id}
+              type="button"
+              onClick={() => {
+                onChange(s);
+                setQuery("");
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+            >
               <Building2 className="h-4 w-4 shrink-0 text-orika-smoke" />
               <div>
-                <p className="text-sm font-medium text-orika-cream">{s.display_name}</p>
-                <p className="text-xs text-orika-smoke">{s.supplier_code}{s.preferred_currency ? ` · ${s.preferred_currency}` : ''}</p>
+                <p className="text-sm font-medium text-orika-cream">
+                  {s.display_name}
+                </p>
+                <p className="text-xs text-orika-smoke">
+                  {s.supplier_code}
+                  {s.preferred_currency ? ` · ${s.preferred_currency}` : ""}
+                </p>
               </div>
             </button>
           ))}
@@ -113,7 +176,9 @@ export function SupplierSearchInput({ value, onChange, label, required, error, s
       )}
       {open && query.trim() && results.length === 0 && !loading && (
         <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-orika-black shadow-xl px-4 py-3">
-          <p className="text-sm text-orika-smoke">No suppliers found for &ldquo;{query}&rdquo;</p>
+          <p className="text-sm text-orika-smoke">
+            No suppliers found for &ldquo;{query}&rdquo;
+          </p>
         </div>
       )}
     </div>
