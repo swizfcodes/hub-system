@@ -12,7 +12,7 @@ const inviteService = require("./invite.service");
 // POST /api/auth/login
 router.post(
   "/login",
-  body("email").isEmail().normalizeEmail(),
+  body("email").isEmail().trim().toLowerCase(),
   body("password").isLength({ min: 8 }),
   validate,
   async (req, res, next) => {
@@ -109,7 +109,7 @@ router.post(
   "/invite",
   verifyToken,
   can("settings", "approve"),
-  body("email").isEmail().normalizeEmail(),
+  body("email").isEmail().trim().toLowerCase(),
   body("role_id").isUUID(),
   body("businesses").isArray(),
   body("display_name").isString().notEmpty(),

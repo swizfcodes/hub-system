@@ -72,7 +72,7 @@ router.post(
   body("first_name").optional().isString(),
   body("last_name").optional().isString(),
   body("primary_phone").optional().isString(),
-  body("email").optional().isEmail(),
+  body("email").optional().isEmail().trim().toLowerCase(),
   body("base_salary").optional().isFloat({ min: 0 }),
   body("create_login").optional().isBoolean(),
   body("permitted_businesses").optional().isArray(),
@@ -226,7 +226,7 @@ router.post(
 router.post(
   "/:id/provision-login",
   param("id").isUUID(),
-  body("email").optional().isEmail(),
+  body("email").optional().isEmail().trim().toLowerCase(),
   body("default_business").optional().isString(),
   body("permitted_businesses").optional().isArray(),
   validate,
