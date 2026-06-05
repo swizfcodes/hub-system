@@ -41,3 +41,5 @@ test-fail2.txt
 scripts/seedStorefrontProducts.js
 BACKEND_ENDPOINTS_DOCUMENTATION.md
 scripts/stockUpStoreProduct.js
+ACCOUNTING_ANALYSIS.md
+API_CONTRACT_AUDIT.md

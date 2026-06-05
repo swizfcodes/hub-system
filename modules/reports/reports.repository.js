@@ -24,14 +24,14 @@ async function getSalesByPeriod(
   const truncFn =
     { day: "day", week: "week", month: "month" }[groupBy] || "day";
   const { rows } = await client.query(
-    `SELECT date_trunc($3, i.invoice_date)::date AS period,
+    `SELECT date_trunc($3, i.issue_date)::date AS period,
             COUNT(DISTINCT i.invoice_id)::int  AS invoice_count,
             COUNT(DISTINCT i.contact_id)::int  AS customer_count,
             COALESCE(SUM(i.subtotal), 0)       AS subtotal,
-            COALESCE(SUM(i.tax_amount), 0)     AS tax,
+            COALESCE(SUM(i.vat_amount), 0)     AS tax,
             COALESCE(SUM(i.total_amount), 0)   AS total
      FROM invoices i
-     WHERE i.invoice_date BETWEEN $1 AND $2
+     WHERE i.issue_date BETWEEN $1 AND $2
        AND i.status IN ('paid','partially_paid')
      GROUP BY period
      ORDER BY period ASC`,
@@ -51,7 +51,7 @@ async function getSalesByProduct(client, { startDate, endDate, limit = 100 }) {
      JOIN invoices i ON i.invoice_id = il.invoice_id
      JOIN products p ON p.product_id = il.product_id
      LEFT JOIN product_categories pc ON pc.category_id = p.category_id
-     WHERE i.invoice_date BETWEEN $1 AND $2
+     WHERE i.issue_date BETWEEN $1 AND $2
        AND i.status IN ('paid','partially_paid')
      GROUP BY p.sku, p.name, p.category_id, pc.name
      ORDER BY revenue DESC
@@ -68,7 +68,7 @@ async function getSalesByCustomer(client, { startDate, endDate, limit = 100 }) {
             COALESCE(SUM(i.total_amount), 0)    AS total_spend
      FROM invoices i
      JOIN shared.contacts c ON c.contact_id = i.contact_id
-     WHERE i.invoice_date BETWEEN $1 AND $2
+     WHERE i.issue_date BETWEEN $1 AND $2
        AND i.status IN ('paid','partially_paid')
      GROUP BY c.contact_id, c.display_name, c.priority_level
      ORDER BY total_spend DESC
@@ -86,7 +86,7 @@ async function getProfitAndLoss(client, { startDate, endDate }) {
     `WITH income AS (
        SELECT COALESCE(SUM(amount_paid), 0) AS total
        FROM invoices
-       WHERE invoice_date BETWEEN $1 AND $2
+       WHERE issue_date BETWEEN $1 AND $2
          AND status IN ('paid','partially_paid')
      ),
      expenses AS (
@@ -106,7 +106,7 @@ async function getProfitAndLoss(client, { startDate, endDate }) {
 
 async function getOutstandingInvoices(client, { asOfDate }) {
   const { rows } = await client.query(
-    `SELECT i.invoice_number, i.invoice_date, i.due_date,
+    `SELECT i.invoice_number, i.issue_date, i.due_date,
             c.display_name AS customer,
             i.total_amount, i.amount_paid, i.amount_outstanding,
             (CURRENT_DATE - i.due_date)::int AS days_overdue,
@@ -114,7 +114,7 @@ async function getOutstandingInvoices(client, { asOfDate }) {
      FROM invoices i
      JOIN shared.contacts c ON c.contact_id = i.contact_id
      WHERE i.status IN ('sent','partially_paid','overdue')
-       AND i.invoice_date <= $1
+       AND i.issue_date <= $1
      ORDER BY i.due_date ASC`,
     [asOfDate],
   );
@@ -211,36 +211,50 @@ async function getLowStockItems(client) {
 // ── PAYROLL REPORTS ──────────────────────────────────────────
 
 async function getPayrollSummary(client, { startDate, endDate }) {
+  // Schema note: a payroll run is identified by run_id and dated by
+  // period_month/period_year (not period_start/period_end). Per-staff
+  // figures live in `payslips`, not a "payroll_items" table.
   const { rows } = await client.query(
-    `SELECT pr.payroll_id, pr.period_start, pr.period_end, pr.status,
-            COUNT(pi.payroll_item_id)::int     AS staff_count,
-            COALESCE(SUM(pi.gross_pay), 0)     AS total_gross,
-            COALESCE(SUM(pi.paye), 0)          AS total_paye,
-            COALESCE(SUM(pi.pension_employee), 0) AS total_pension,
-            COALESCE(SUM(pi.nhf), 0)           AS total_nhf,
-            COALESCE(SUM(pi.net_pay), 0)       AS total_net
+    `SELECT pr.run_id                                         AS payroll_id,
+            pr.run_number,
+            make_date(pr.period_year, pr.period_month, 1)     AS period_start,
+            (make_date(pr.period_year, pr.period_month, 1)
+              + INTERVAL '1 month' - INTERVAL '1 day')::date  AS period_end,
+            pr.status,
+            COUNT(ps.payslip_id)::int                  AS staff_count,
+            COALESCE(SUM(ps.gross_salary), 0)          AS total_gross,
+            COALESCE(SUM(ps.paye_deduction), 0)        AS total_paye,
+            COALESCE(SUM(ps.pension_employee), 0)      AS total_pension,
+            COALESCE(SUM(ps.nhf_deduction), 0)         AS total_nhf,
+            COALESCE(SUM(ps.net_salary), 0)            AS total_net
      FROM payroll_runs pr
-     LEFT JOIN payroll_items pi ON pi.payroll_id = pr.payroll_id
-     WHERE pr.period_end BETWEEN $1 AND $2
-     GROUP BY pr.payroll_id
-     ORDER BY pr.period_end DESC`,
+     LEFT JOIN payslips ps ON ps.run_id = pr.run_id
+     WHERE make_date(pr.period_year, pr.period_month, 1) BETWEEN $1 AND $2
+     GROUP BY pr.run_id
+     ORDER BY pr.period_year DESC, pr.period_month DESC`,
     [startDate, endDate],
   );
   return rows;
 }
 
 async function getStaffPayrollDetail(client, { payrollId }) {
+  // payrollId is the payroll_runs.run_id. Per-staff figures come from
+  // `payslips` joined to staff_profiles → contacts for names.
   const { rows } = await client.query(
     `SELECT c.display_name AS staff_name,
             sp.employee_number, sp.job_title, sp.department,
-            pi.gross_pay, pi.allowances, pi.paye,
-            pi.pension_employee, pi.pension_employer,
-            pi.nhf, pi.itf, pi.other_deductions,
-            pi.net_pay
-     FROM payroll_items pi
-     JOIN shared.staff_profiles sp ON sp.profile_id = pi.staff_profile_id
-     JOIN shared.contacts c       ON c.contact_id = sp.contact_id
-     WHERE pi.payroll_id = $1
+            ps.gross_salary AS gross_pay,
+            (ps.housing_allowance + ps.transport_allowance
+              + ps.other_allowances)            AS allowances,
+            ps.paye_deduction AS paye,
+            ps.pension_employee, ps.pension_employer,
+            ps.nhf_deduction AS nhf,
+            ps.other_deductions,
+            ps.net_salary AS net_pay
+     FROM payslips ps
+     JOIN shared.staff_profiles sp ON sp.profile_id = ps.profile_id
+     JOIN shared.contacts c        ON c.contact_id = sp.contact_id
+     WHERE ps.run_id = $1
      ORDER BY c.display_name ASC`,
     [payrollId],
   );

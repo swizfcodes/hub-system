@@ -15,6 +15,18 @@ async function postEntry(
   client,
   { entryDate, description, referenceType, referenceId, postedBy, lines },
 ) {
+  // Guard: every line must carry a resolved account_id. Callers resolve
+  // codes via getAccountId(), which returns null for a missing/inactive
+  // account — fail loudly here rather than inserting a NULL account_id
+  // (NOT NULL FK) or silently posting to the wrong place.
+  const missing = lines.findIndex((l) => !l.account_id);
+  if (missing !== -1) {
+    throw new Error(
+      `postEntry: line ${missing} has no account_id — a chart-of-accounts ` +
+        `code likely failed to resolve (missing or archived account).`,
+    );
+  }
+
   const totalDebit = lines.reduce((s, l) => s + parseFloat(l.debit || 0), 0);
   const totalCredit = lines.reduce((s, l) => s + parseFloat(l.credit || 0), 0);
   if (Math.abs(totalDebit - totalCredit) > 0.01) {
@@ -75,9 +87,16 @@ async function reverseEntry(client, { entryId, postedBy }) {
     lines: reversalLines,
   });
 
-  // Mark original as reversed
+  // Mark the ORIGINAL as reversed (metadata / UI), and link the reversal
+  // back to the original via reversal_of. Reports include BOTH the original
+  // and its reversal so they cancel to zero — is_reversed is informational,
+  // not a reporting filter (see reports.service / repo report queries).
   await client.query(
-    `UPDATE journal_entries SET is_reversed=true, reversal_of=$1 WHERE entry_id=$2`,
+    `UPDATE journal_entries SET is_reversed=true WHERE entry_id=$1`,
+    [entryId],
+  );
+  await client.query(
+    `UPDATE journal_entries SET reversal_of=$1 WHERE entry_id=$2`,
     [entryId, reversal.entry_id],
   );
 

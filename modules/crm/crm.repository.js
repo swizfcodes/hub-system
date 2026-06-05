@@ -292,6 +292,20 @@ async function deletePreference(client, preferenceId) {
   return row || null;
 }
 
+// Delete by (contact_id, preference_key) — the concierge UI deletes by key
+// rather than by preference_id.
+async function deletePreferenceByKey(client, contactId, key) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `DELETE FROM customer_preferences
+     WHERE contact_id = $1 AND preference_key = $2
+     RETURNING preference_id, contact_id, preference_key`,
+    [contactId, key],
+  );
+  return row || null;
+}
+
 // ── CUSTOMER MILESTONES ──────────────────────────────────────
 // Per-business dated events on a contact (birthday, anniversary).
 // The sendMilestoneReminders cron READS this table — this module
@@ -439,6 +453,7 @@ module.exports = {
   insertPreference,
   updatePreference,
   deletePreference,
+  deletePreferenceByKey,
   // milestones
   listMilestones,
   findMilestoneById,

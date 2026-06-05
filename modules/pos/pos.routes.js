@@ -196,6 +196,28 @@ router.post(
   },
 );
 
+// Offline queue flush — replay queued sales idempotently (dedupe on
+// offline_id). Returns a per-item result list.
+router.post(
+  "/sync",
+  body("transactions").isArray(),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.syncOfflineTransactions(
+          req.business,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.get(
   "/transactions/:id",
   param("id").isUUID(),

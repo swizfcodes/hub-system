@@ -262,12 +262,13 @@ async function insertTransaction(
     totalPaid,
     change,
     fulfilment_type,
+    offline_id,
   },
 ) {
   const {
     rows: [tx],
   } = await client.query(
-    `INSERT INTO pos_transactions (transaction_number, session_id, contact_id, served_by, subtotal, discount_total, vat_amount, total_amount, amount_paid, change_given, fulfilment_type, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed') RETURNING *`,
+    `INSERT INTO pos_transactions (transaction_number, session_id, contact_id, served_by, subtotal, discount_total, vat_amount, total_amount, amount_paid, change_given, fulfilment_type, offline_id, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'completed') RETURNING *`,
     [
       txNumber,
       session_id,
@@ -280,9 +281,23 @@ async function insertTransaction(
       totalPaid,
       change,
       fulfilment_type || "walk_in",
+      offline_id || null,
     ],
   );
   return tx;
+}
+
+// Idempotency lookup for offline POS sync — has this offline_id already
+// been recorded as a transaction?
+async function findTransactionByOfflineId(client, offlineId) {
+  const {
+    rows: [tx],
+  } = await client.query(
+    `SELECT transaction_id, transaction_number
+     FROM pos_transactions WHERE offline_id = $1`,
+    [offlineId],
+  );
+  return tx || null;
 }
 
 async function insertTransactionLine(
@@ -389,6 +404,7 @@ module.exports = {
   getManagers,
   validateOpenSession,
   insertTransaction,
+  findTransactionByOfflineId,
   insertTransactionLine,
   insertPaymentSplit,
   updateSessionTotals,

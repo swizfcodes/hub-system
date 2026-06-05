@@ -203,6 +203,27 @@ async function listQuoteLinesByRFQAndSupplier(client, { rfqId, supplierId }) {
   return rows;
 }
 
+// All supplier quotes submitted against an RFQ, with the supplier's name
+// and the quoted line's product/quantity for the comparison table.
+async function listQuotesByRFQ(client, rfqId) {
+  const { rows } = await client.query(
+    `SELECT sq.quote_id, sq.rfq_id, sq.supplier_id, sq.rfq_line_id,
+            sq.unit_price, sq.currency, sq.lead_time_days, sq.valid_until,
+            sq.notes, sq.status, sq.created_at,
+            c.display_name AS supplier_name,
+            rl.product_id, rl.quantity_needed,
+            rl.description AS line_description
+     FROM supplier_quotes sq
+     JOIN suppliers s       ON s.supplier_id = sq.supplier_id
+     JOIN shared.contacts c ON c.contact_id = s.contact_id
+     LEFT JOIN rfq_lines rl ON rl.line_id = sq.rfq_line_id
+     WHERE sq.rfq_id = $1
+     ORDER BY sq.created_at ASC`,
+    [rfqId],
+  );
+  return rows;
+}
+
 async function updateSupplierQuoteStatus(client, quoteId, status) {
   await client.query(
     `UPDATE supplier_quotes SET status = $2 WHERE quote_id = $1`,
@@ -547,6 +568,7 @@ module.exports = {
   insertSupplierQuote,
   findSupplierQuoteById,
   listQuoteLinesByRFQAndSupplier,
+  listQuotesByRFQ,
   updateSupplierQuoteStatus,
   // purchase orders
   listPOs,
