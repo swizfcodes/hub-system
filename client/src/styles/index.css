@@ -63,6 +63,46 @@ body {
   border-radius: 2px;
 }
 
+/* ═══ HELP CENTER PROSE ═══ */
+.prose-help h3 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #f0eae0;
+  margin: 1.25rem 0 0.5rem;
+}
+.prose-help h3:first-child {
+  margin-top: 0;
+}
+.prose-help p {
+  margin: 0.5rem 0;
+}
+.prose-help ol,
+.prose-help ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+.prose-help ol {
+  list-style: decimal;
+}
+.prose-help ul {
+  list-style: disc;
+}
+.prose-help li {
+  margin: 0.25rem 0;
+}
+.prose-help strong {
+  color: #f0eae0;
+  font-weight: 600;
+}
+.prose-help a {
+  color: #c9a86c;
+  text-decoration: none;
+}
+.prose-help a:hover {
+  text-decoration: underline;
+}
+
 /* ═══ APP-WIDE ANIMATIONS ═══ */
 @keyframes splash-pulse {
   0%,

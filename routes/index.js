@@ -112,6 +112,7 @@ router.use(
 router.use("/calendar", protect, require("../shared/calendar/calendar.routes"));
 router.use("/tasks", protect, require("../shared/tasks/tasks.routes"));
 router.use("/audit", protect, require("../shared/audit/audit.routes"));
+router.use("/help", protect, require("../modules/help/help.routes"));
 
 // ── Protected — business modules (require business context) ─
 router.use("/crm", protect, require("../modules/crm/crm.routes"));
