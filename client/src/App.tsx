@@ -375,6 +375,9 @@ export default function App() {
           {/* Stock & Inventory */}
           <Route path="/stock" element={<StockHome />} />
           <Route path="/stock/alerts" element={<AlertsPage />} />
+          {/* CountSession is a self-contained wizard (no id needed); the
+              "New count" button navigates to /stock/count */}
+          <Route path="/stock/count" element={<CountSession />} />
           <Route path="/stock/count/:id" element={<CountSession />} />
           <Route path="/stock/reservations" element={<ReservationsPage />} />
           <Route path="/stock/transfers" element={<TransfersPage />} />

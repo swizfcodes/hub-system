@@ -20,6 +20,7 @@ import {
   listRFQs,
   listQuotesForRFQ,
   generatePOFromQuote,
+  sendRFQ,
 } from "@services/purchasing/rfqs";
 import { listSuppliers } from "@services/purchasing/suppliers";
 import { fmtDate, fmtRelative, fmtMoney } from "@lib/format";
@@ -32,9 +33,10 @@ export default function RFQDetail() {
   const navigate = useNavigate();
   const [showTokens, setShowTokens] = useState(false);
   const [generatingPO, setGeneratingPO] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
 
   // Backend doesn't have GET /rfqs/:id — we look up via list + filter.
-  const { data: rfqList, isLoading } = useQuery({
+  const { data: rfqList, isLoading, refetch } = useQuery({
     queryKey: ["purchasing", "rfqs", "all"],
     queryFn: () => listRFQs({ limit: 200 }),
   });
@@ -126,6 +128,26 @@ export default function RFQDetail() {
                     <Button
                       variant="gold"
                       leftIcon={<Send className="w-4 h-4" />}
+                      loading={sending}
+                      onClick={async () => {
+                        setSending(true);
+                        try {
+                          await sendRFQ(rfq.rfq_id);
+                          showToast.success(
+                            "RFQ sent",
+                            "Suppliers can now submit quotes via their portal links.",
+                          );
+                          await refetch();
+                        } catch (e: unknown) {
+                          showToast.error(
+                            "Failed to send RFQ",
+                            (e as { message?: string })?.message ??
+                              "Unknown error",
+                          );
+                        } finally {
+                          setSending(false);
+                        }
+                      }}
                     >
                       Send to suppliers
                     </Button>
