@@ -147,6 +147,14 @@ export async function deactivateLogin(
   );
   return data;
 }
+export async function activateLogin(
+  id: string,
+): Promise<{ user_id: string; is_active: boolean }> {
+  const { data } = await api.post<{ user_id: string; is_active: boolean }>(
+    `/staff/${id}/activate-login`,
+  );
+  return data;
+}
 export async function resetPassword(id: string): Promise<CredentialsResponse> {
   const { data } = await api.post<CredentialsResponse>(
     `/staff/${id}/reset-password`,

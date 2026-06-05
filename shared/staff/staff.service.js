@@ -585,6 +585,29 @@ async function deactivateLogin(profileId, user) {
   });
 }
 
+async function activateLogin(profileId, user) {
+  return withSharedContext(async (client) => {
+    const u = await repo.findUserByProfileId(client, profileId);
+    if (!u) {
+      throw Object.assign(new Error("Login not found"), { status: 404 });
+    }
+    if (u.is_active) {
+      throw Object.assign(new Error("Login is already active"), { status: 400 });
+    }
+    await repo.updateUser(client, u.user_id, { is_active: true });
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name,
+      module: "staff",
+      action: "activate_login",
+      table: "shared.users",
+      recordId: u.user_id,
+      metadata: { sensitive: true },
+    });
+    return { user_id: u.user_id, is_active: true };
+  });
+}
+
 async function resetPassword(profileId, user) {
   return withSharedContext(async (client) => {
     const u = await repo.findUserByProfileId(client, profileId);
@@ -1180,6 +1203,7 @@ module.exports = {
   // login
   provisionLogin,
   deactivateLogin,
+  activateLogin,
   resetPassword,
   // roles
   listRoles,

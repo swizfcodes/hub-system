@@ -39,7 +39,7 @@ const NAV_GROUPS: { label: string; modules: string[] }[] = [
       "workspace",
     ],
   },
-  { label: "System", modules: ["settings", "security", "documents"] },
+  { label: "System", modules: ["settings", "security", "documents", "help"] },
 ];
 
 export function Sidebar() {

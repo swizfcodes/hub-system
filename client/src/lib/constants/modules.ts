@@ -25,6 +25,7 @@ import {
   Landmark,
   Sparkles,
   Layers,
+  HelpCircle,
 } from "lucide-react";
 
 export interface AppModule {
@@ -301,6 +302,15 @@ export const HUB_MODULES: AppModule[] = [
     accent: "gold",
     group: "system",
   },
+  {
+    key: "help",
+    label: "Help Center",
+    description: "Guides, workflows & FAQs",
+    icon: HelpCircle,
+    route: "/help",
+    accent: "gold",
+    group: "system",
+  },
 ];
 
 export const SETTINGS_SUBMODULES: AppModule[] = [
@@ -386,5 +396,14 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
     group: "system",
     // Orika Living (diffusers) is the only business with a storefront.
     businesses: ["diffusers"],
+  },
+  {
+    key: "help-editor",
+    label: "Help Center Editor",
+    description: "Manage guides and FAQs",
+    icon: HelpCircle,
+    route: "/settings/help-editor",
+    accent: "gold",
+    group: "system",
   },
 ];

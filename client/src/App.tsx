@@ -206,6 +206,10 @@ const CampaignSettings = lazy(
 const SubscribersHome = lazy(() => import("@pages/campaigns/SubscribersHome"));
 const EnquiriesHome = lazy(() => import("@pages/campaigns/EnquiriesHome"));
 
+// Help Center
+const HelpCenter = lazy(() => import("@pages/help/HelpCenter"));
+const HelpEditor = lazy(() => import("@pages/settings/HelpEditor"));
+
 // SmartComm Messaging
 const MessagingPage = lazy(() => import("@pages/messaging/MessagingPage"));
 
@@ -325,6 +329,7 @@ export default function App() {
             }
           />
           <Route path="/settings/permissions" element={<PermissionsPage />} />
+          <Route path="/settings/help-editor" element={<HelpEditor />} />
 
           {/* Contacts */}
           <Route path="/contacts" element={<ContactsHome />} />
@@ -454,6 +459,9 @@ export default function App() {
 
           {/* Document Vault */}
           <Route path="/documents" element={<DocumentsVault />} />
+
+          {/* Help Center */}
+          <Route path="/help" element={<HelpCenter />} />
 
           {/* Sales Campaigns (admin) — /new must precede /:id */}
           <Route path="/sales-campaigns" element={<SalesCampaignsHome />} />
