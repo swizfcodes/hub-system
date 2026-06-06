@@ -63,7 +63,7 @@ router.get(
 
 router.post(
   "/",
-  body("employee_number").isString().notEmpty(),
+  body("employee_number").optional().isString(),
   body("business").isString().notEmpty(),
   body("job_title").isString().notEmpty(),
   body("employment_type").isIn(["full_time", "part_time", "contract"]),

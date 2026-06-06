@@ -39,13 +39,13 @@ import {
   DASHBOARD_SECTIONS,
   BRAND_OPTIONS,
   PERIOD_OPTIONS,
-  DEFAULT_VISIBLE_SECTIONS,
   getPeriodParams,
   type SectionKey,
   type BrandOption,
 } from "@lib/constants/dashboardConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useAuthStore } from "@stores/useAuthStore";
+import { usePermissions } from "@hooks/usePermissions";
 import { useUiStore } from "@stores/useUiStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { CommandPalette } from "@components/search/CommandPalette";
@@ -68,12 +68,14 @@ export default function DashboardPage() {
   // Dashboard controls
   const [brand, setBrand] = useState<BrandOption>("jewelry");
   const [period, setPeriod] = useState("this_month");
-  const [visibleSections, setVisibleSections] = useState<SectionKey[]>(() => {
+  const [manualHidden, setManualHidden] = useState<SectionKey[]>(() => {
+    // Store only sections the user has explicitly *hidden*, not all visible ones.
+    // This way newly-permitted sections appear by default without localStorage bloat.
     try {
-      const saved = localStorage.getItem("dashboard_sections");
-      return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_SECTIONS;
+      const saved = localStorage.getItem("dashboard_sections_hidden");
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_VISIBLE_SECTIONS;
+      return [];
     }
   });
   const [showSectionPicker, setShowSectionPicker] = useState(false);
@@ -118,9 +120,24 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  // Permissions — check if user can see finance (approve-level)
-  // In real app pull from useAuth(); hardcoded true for owner for now
-  const canViewFinance = true;
+  // ── Permissions ────────────────────────────────────────────────────────────
+  const { hasPermission, hasAnyPermission } = usePermissions();
+
+  // Which sections the user is actually allowed to see (derived from permissions).
+  const permittedSections = DASHBOARD_SECTIONS.filter((s) =>
+    hasAnyPermission(s.modules.map((m) => ({ module: m, action: "view" }))),
+  ).map((s) => s.key);
+
+  // Sections that are permitted AND not manually hidden by the user.
+  const visibleSections = permittedSections.filter(
+    (k) => !manualHidden.includes(k),
+  );
+
+  // Finance detail (net profit, bank balances) is visible only when the user
+  // has approve OR view on accounting.
+  const canViewFinance =
+    hasPermission("accounting", "approve") ||
+    hasPermission("accounting", "view");
 
   // Build alerts from live data
   const alerts: AlertItem[] = [];
@@ -164,13 +181,13 @@ export default function DashboardPage() {
     setLastRefresh(new Date());
   }
 
-  // Toggle section visibility
+  // Toggle section visibility (toggles user's hidden-override for permitted sections)
   function toggleSection(key: SectionKey) {
-    setVisibleSections((prev) => {
+    setManualHidden((prev) => {
       const next = prev.includes(key)
         ? prev.filter((s) => s !== key)
         : [...prev, key];
-      localStorage.setItem("dashboard_sections", JSON.stringify(next));
+      localStorage.setItem("dashboard_sections_hidden", JSON.stringify(next));
       return next;
     });
   }
@@ -294,7 +311,9 @@ export default function DashboardPage() {
               </button>
               {showSectionPicker && (
                 <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-orika-charcoal shadow-xl p-2">
-                  {DASHBOARD_SECTIONS.map((s) => (
+                  {DASHBOARD_SECTIONS.filter((s) =>
+                    permittedSections.includes(s.key),
+                  ).map((s) => (
                     <label
                       key={s.key}
                       className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-orika-graphite/30"
@@ -310,6 +329,11 @@ export default function DashboardPage() {
                       </span>
                     </label>
                   ))}
+                  {permittedSections.length === 0 && (
+                    <p className="text-[10px] text-orika-smoke px-2 py-2">
+                      No sections permitted
+                    </p>
+                  )}
                 </div>
               )}
             </div>

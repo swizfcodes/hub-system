@@ -1,11 +1,16 @@
-import { Briefcase, MapPin, Building2 } from "lucide-react";
+import { useState } from "react";
+import { Briefcase, MapPin, Building2, Pencil } from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
+import { Button } from "@components/ui/Button";
 import { RestrictedField } from "../shared/RestrictedField";
+import { EditStaffModal } from "./EditStaffModal";
 import { fmtDate, fmtMoney } from "@lib/format";
 import type { StaffProfile } from "@typedefs/staff";
 
 export function EmploymentTab({ staff }: { staff: StaffProfile }) {
+  const [editing, setEditing] = useState(false);
+
   const yearsTenure = staff.start_date
     ? Math.floor(
         ((Date.now() - new Date(staff.start_date).getTime()) /
@@ -43,6 +48,14 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
               </Badge>
             </div>
           </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Pencil className="w-3.5 h-3.5" />}
+            onClick={() => setEditing(true)}
+          >
+            Edit
+          </Button>
         </div>
       </Card>
 
@@ -112,6 +125,12 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
           themselves. Reads are audit-logged.
         </p>
       </section>
+
+      <EditStaffModal
+        staff={staff}
+        open={editing}
+        onClose={() => setEditing(false)}
+      />
     </div>
   );
 }

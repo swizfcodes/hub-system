@@ -83,6 +83,17 @@ router.get("/me", verifyToken, async (req, res, next) => {
   }
 });
 
+// GET /api/auth/me/permissions — returns the current user's flat permission list
+// Reuses the Redis cache already used by the permissions middleware.
+router.get("/me/permissions", verifyToken, async (req, res, next) => {
+  try {
+    const permissions = await authService.getMyPermissions(req.user.role_id);
+    res.json({ permissions });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/auth/change-password
 router.post(
   "/change-password",

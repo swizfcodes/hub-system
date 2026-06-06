@@ -59,3 +59,22 @@ export function getUser(): AuthResponse["user"] | null {
     return null;
   }
 }
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  const { data } = await axios.post<{ message: string }>(
+    `${API_BASE}/auth/change-password`,
+    { currentPassword, newPassword },
+    { headers: { Authorization: `Bearer ${getToken()}` } },
+  );
+  return data;
+}
+
+export async function fetchMe(): Promise<AuthResponse["user"] & { avatar_url?: string }> {
+  const { data } = await axios.get(`${API_BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  return data;
+}

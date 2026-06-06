@@ -152,6 +152,7 @@ async function updateProfile(client, profileId, fields) {
     "department",
     "job_title",
     "employment_type",
+    "start_date",
     "end_date",
     "reports_to",
     "bank_name",

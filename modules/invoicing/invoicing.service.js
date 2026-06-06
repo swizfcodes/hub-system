@@ -13,6 +13,7 @@ const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./invoicing.repository");
 const loyaltyService = require("../loyalty/loyalty.service");
+const optimusService = require("../../integrations/optimus/optimus.service");
 
 async function list(
   business,
@@ -284,6 +285,41 @@ async function recordPayment(business, invoiceId, data, user) {
     const inv = await repo.getInvoiceNumberAndContact(client, invoiceId);
     contactId = inv?.contact_id || null;
 
+    // ── Optimus Pay: provision a virtual account before inserting the payment ──
+    let optimusTransactionRef = data.optimus_transaction_ref || null;
+    let optimusVirtualAccount = data.optimus_virtual_account || null;
+    let optimusBankName = data.optimus_bank_name || null;
+
+    if (data.payment_method === "optimus_pay" && !optimusVirtualAccount) {
+      // Fetch enough customer info to provision the virtual account.
+      // Contact details live in shared.contacts — join through the invoice.
+      const {
+        rows: [invDetail],
+      } = await client.query(
+        `SELECT i.invoice_id, i.total, i.invoice_number,
+                c.first_name, c.last_name, c.email, c.phone, c.contact_id
+         FROM invoices i
+         LEFT JOIN shared.contacts c ON c.contact_id = i.contact_id
+         WHERE i.invoice_id = $1`,
+        [invoiceId],
+      );
+
+      optimusTransactionRef = `inv-${invoiceId}`;
+      const vaResult = await optimusService.openVirtualAccount({
+        amountKobo: Math.round(data.amount * 100),
+        transactionRef: optimusTransactionRef,
+        description: `Payment for Invoice ${invDetail?.invoice_number || invoiceId}`,
+        customerRef: invDetail?.contact_id || invoiceId,
+        firstname: invDetail?.first_name || "Customer",
+        surname: invDetail?.last_name || "N/A",
+        email: invDetail?.email || `noreply+${invoiceId}@orikahub.com`,
+        mobileNo: (invDetail?.phone || "").replace(/[^0-9]/g, "") || "2340000000000",
+      });
+
+      optimusVirtualAccount = vaResult.accountNumber;
+      optimusBankName = vaResult.bankName;
+    }
+
     const p = await repo.insertPayment(client, {
       invoiceId,
       payment_date: data.payment_date,
@@ -291,7 +327,14 @@ async function recordPayment(business, invoiceId, data, user) {
       payment_method: data.payment_method,
       reference: data.reference,
       paystack_reference: data.paystack_reference,
-      is_confirmed: data.is_confirmed,
+      optimus_transaction_ref: optimusTransactionRef,
+      optimus_virtual_account: optimusVirtualAccount,
+      optimus_bank_name: optimusBankName,
+      // Optimus Pay payments are unconfirmed until the webhook fires.
+      is_confirmed:
+        data.payment_method === "optimus_pay"
+          ? false
+          : data.is_confirmed,
       userId: user.user_id,
       notes: data.notes,
     });
@@ -302,7 +345,7 @@ async function recordPayment(business, invoiceId, data, user) {
     // Post the cash collection journal: DR Bank/Cash, CR Accounts Receivable.
     // Only for confirmed payments — gateway payments pending confirmation are
     // posted by their webhook once confirmed (see postPaymentJournal).
-    if (data.is_confirmed !== false) {
+    if (data.payment_method !== "optimus_pay" && data.is_confirmed !== false) {
       await postPaymentJournal(client, {
         payment: p,
         invoiceNumber: inv?.invoice_number,
@@ -324,7 +367,7 @@ async function recordPayment(business, invoiceId, data, user) {
     return p;
   });
 
-  if (contactId && data.is_confirmed !== false) {
+  if (contactId && data.is_confirmed !== false && data.payment_method !== "optimus_pay") {
     loyaltyService
       .awardPoints(
         business,

@@ -75,8 +75,10 @@ async function runMigration(client, filename) {
     await client.query("BEGIN");
     await client.query(content);
 
-    // Record the migration (table may not exist for first migration)
+    // Record the migration (table may not exist for first migrations).
+    // Use a SAVEPOINT so a failure here doesn't abort the main transaction.
     try {
+      await client.query("SAVEPOINT record_migration");
       await client.query(
         `INSERT INTO shared.migrations (filename, applied_by, checksum, execution_ms, status)
          VALUES ($1, $2, $3, $4, 'applied')
@@ -88,8 +90,10 @@ async function runMigration(client, filename) {
           Date.now() - start,
         ],
       );
+      await client.query("RELEASE SAVEPOINT record_migration");
     } catch {
-      // Table doesn't exist yet — first migration creates it
+      // Table doesn't exist yet — roll back only the INSERT, not the migration
+      await client.query("ROLLBACK TO SAVEPOINT record_migration");
     }
 
     await client.query("COMMIT");

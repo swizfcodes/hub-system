@@ -136,6 +136,65 @@ router.post(
   },
 );
 
+// ─────────────────────────────────────────────────────────────
+// POST /uploads/avatar
+//
+// Body (multipart/form-data):
+//   file: the image file
+//
+// Saves avatar, updates the caller's contact.avatar_url, returns the URL.
+// No special permission needed — any logged-in user can set their own avatar.
+// ─────────────────────────────────────────────────────────────
+router.post("/avatar", uploadLogo.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file provided" });
+    }
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    let outBuffer = req.file.buffer;
+    let ext = path.extname(req.file.originalname).toLowerCase() || ".png";
+    if (req.file.mimetype !== "image/svg+xml") {
+      const opt = await optimizeImage(req.file.buffer, {
+        mimeType: req.file.mimetype,
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 80,
+      });
+      if (opt.optimised) {
+        outBuffer = opt.buffer;
+        ext = `.${opt.extension}`;
+      }
+    }
+
+    const id = require("crypto").randomBytes(8).toString("hex");
+    const safe = `avatar-${id}${ext}`;
+    const result = await storage.save(outBuffer, safe, "avatars");
+    const url = publicUrlFor(result.filePath);
+
+    // Update the caller's contact record with the new avatar URL
+    const { pool } = require("../../config/db");
+    await pool.query(
+      `UPDATE shared.contacts SET avatar_url = $1
+       WHERE contact_id = (
+         SELECT c.contact_id FROM shared.users u
+         JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
+         JOIN shared.contacts c ON c.contact_id = sp.contact_id
+         WHERE u.user_id = $2
+       )`,
+      [url, userId],
+    );
+
+    logger.info(`[uploads] Avatar saved: ${url} for user ${userId}`);
+    res.status(201).json({ url, filename: path.basename(result.filePath), size: result.fileSize });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Multer error formatter ──────────────────────────────────
 router.use((err, _req, res, next) => {
   if (err instanceof multer.MulterError) {

@@ -40,6 +40,10 @@ router.use(
   require("../integrations/flutterwave/flutterwave.webhook"),
 );
 router.use(
+  "/webhooks/optimus",
+  require("../integrations/optimus/optimus.webhook"),
+);
+router.use(
   "/webhooks/shopify",
   require("../integrations/shopify/shopify.webhook"),
 );

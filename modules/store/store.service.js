@@ -10,6 +10,7 @@ const {
 const { sendEmail } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
 const paystackService = require("../../integrations/paystack/paystack.service");
+const optimusService = require("../../integrations/optimus/optimus.service");
 const journalService = require("../accounting/journal.service");
 const stockService = require("../stock/stock.service");
 const config = require("../../config/config");
@@ -149,7 +150,7 @@ async function getSettings() {
  * store.customers row and a shared.contacts row (so web buyers
  * appear in the ERP CRM).
  */
-async function createOrder({ delivery_address, items }) {
+async function createOrder({ delivery_address, items, payment_method = "paystack" }) {
   if (!delivery_address || !delivery_address.email) {
     throw Object.assign(new Error("delivery_address with email is required"), {
       status: 400,
@@ -251,12 +252,49 @@ async function createOrder({ delivery_address, items }) {
     // orders. The buyer's contact + customer records ARE created above so
     // they appear in CRM regardless of whether they complete payment.
 
+    if (payment_method === "optimus_pay") {
+      // Provision a virtual account; store its details on the order row.
+      const [firstName, ...rest] = (delivery_address.full_name || "Customer").split(" ");
+      const lastName = rest.join(" ") || "N/A";
+      const transactionRef = `store-${order.id}`;
+
+      const vaResult = await optimusService.openVirtualAccount({
+        amountKobo: totalKobo,
+        transactionRef,
+        description: `Orika Living order #${order.id}`,
+        customerRef: customer.id,
+        firstname: firstName,
+        surname: lastName,
+        email: delivery_address.email,
+        mobileNo: (delivery_address.phone || "").replace(/[^0-9]/g, "") || "2340000000000",
+      });
+
+      await repo.setOrderOptimusRef(client, order.id, {
+        transactionRef,
+        virtualAccount: vaResult.accountNumber,
+        bankName: vaResult.bankName,
+      });
+
+      return {
+        ok: true,
+        order_id: order.id,
+        payment_method: "optimus_pay",
+        optimus_transaction_ref: transactionRef,
+        optimus_virtual_account: vaResult.accountNumber,
+        optimus_bank_name: vaResult.bankName,
+        amount_kobo: totalKobo,
+        email: delivery_address.email,
+      };
+    }
+
+    // Default: Paystack
     const reference = `orika_${order.id}`;
     await repo.setOrderPaystackRef(client, order.id, reference);
 
     return {
       ok: true,
       order_id: order.id,
+      payment_method: "paystack",
       reference,
       amount_kobo: totalKobo,
       email: delivery_address.email,
@@ -528,6 +566,167 @@ async function verifyAndFulfil(reference) {
       logger.warn(
         `[store] confirmation email failed for ${order.id}: ${err.message}`,
       );
+    }
+
+    return { ok: true, order_id: order.id, status: "paid" };
+  });
+}
+
+/**
+ * Fulfil a store order that was paid via Optimus Pay virtual account.
+ * Called by the Optimus Pay webhook handler — no external verification
+ * needed since the webhook already validated the event before calling here.
+ *
+ * Steps mirror verifyAndFulfil exactly (stock → revenue journal → COGS
+ * journal → mark paid → ERP sales order → confirmation email) except we
+ * load the order by optimus_transaction_ref instead of paystack_ref, and
+ * there is no amount re-check (the Optimus webhook already confirmed it).
+ */
+async function fulfillOptimusOrder(transactionRef) {
+  return withBusinessContext(STORE_BUSINESS, async (client) => {
+    const order = await repo.findOrderByOptimusRef(client, transactionRef);
+    if (!order) {
+      throw Object.assign(
+        new Error(`No store order found for Optimus ref: ${transactionRef}`),
+        { status: 404 },
+      );
+    }
+
+    // Idempotency — already fulfilled orders short-circuit.
+    if (order.status !== "pending") {
+      return { ok: true, already: true, order_id: order.id, status: order.status };
+    }
+
+    const lines = order.items || [];
+
+    // 1. Stock movements
+    for (const item of lines) {
+      try {
+        await stockService.recordMovement(client, {
+          business: STORE_BUSINESS,
+          productId: item.erp_product_id,
+          movementType: "sold",
+          quantity: item.quantity,
+          direction: -1,
+          referenceType: "store_order",
+          referenceId: order.id,
+          performedBy: null,
+        });
+      } catch (err) {
+        logger.error(
+          `[store/optimus] stock movement failed for order ${order.id}, product ${item.erp_product_id}: ${err.message}`,
+        );
+        throw err;
+      }
+    }
+
+    // 2. Revenue journal
+    const { getVatRate } = require("../../config/businesses");
+    const vatRate = getVatRate(STORE_BUSINESS);
+    const grossNaira = Number(order.total_kobo) / 100;
+    const netNaira = parseFloat((grossNaira / (1 + vatRate)).toFixed(2));
+    const vatNaira = parseFloat((grossNaira - netNaira).toFixed(2));
+
+    const bankAcc  = await journalService.getAccountId(client, "1210");
+    const salesAcc = await journalService.getAccountId(client, "4100");
+    const vatAcc   = await journalService.getAccountId(client, "2210");
+
+    let revenueEntry = null;
+    if (bankAcc && salesAcc) {
+      const revLines = [
+        { account_id: bankAcc,  debit: grossNaira, credit: 0 },
+        { account_id: salesAcc, debit: 0,          credit: netNaira },
+      ];
+      if (vatAcc && vatNaira > 0) {
+        revLines.push({ account_id: vatAcc, debit: 0, credit: vatNaira });
+      } else {
+        revLines[1].credit = grossNaira;
+      }
+      revenueEntry = await journalService.postEntry(client, {
+        business: STORE_BUSINESS,
+        description: `Optimus Pay — web order ${order.id}`,
+        lines: revLines,
+        postedBy: config.systemUserId,
+      });
+    }
+
+    // 3. COGS journal
+    let cogsEntry = null;
+    try {
+      const cogsAcc  = await journalService.getAccountId(client, "5100");
+      const invAcc   = await journalService.getAccountId(client, "1310");
+      if (cogsAcc && invAcc) {
+        const cogsLines = [];
+        for (const item of lines) {
+          const costNaira = ((item.cost_kobo || 0) * item.quantity) / 100;
+          if (costNaira > 0) {
+            cogsLines.push({ account_id: cogsAcc, debit: costNaira, credit: 0 });
+            cogsLines.push({ account_id: invAcc,  debit: 0,         credit: costNaira });
+          }
+        }
+        if (cogsLines.length) {
+          cogsEntry = await journalService.postEntry(client, {
+            business: STORE_BUSINESS,
+            description: `COGS — Optimus Pay web order ${order.id}`,
+            lines: cogsLines,
+            postedBy: config.systemUserId,
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn(`[store/optimus] COGS journal skipped for ${order.id}: ${err.message}`);
+    }
+
+    // 4. Mark paid (atomic guard against double-fulfilment)
+    const paidOrder = await repo.markOrderPaidWithJournals(client, order.id, {
+      journalEntryId: revenueEntry?.entry_id || revenueEntry?.entryId || null,
+      cogsEntryId:    cogsEntry?.entry_id   || cogsEntry?.entryId   || null,
+    });
+    if (!paidOrder) {
+      throw Object.assign(new Error("Order was concurrently fulfilled"), { status: 409 });
+    }
+
+    // 5. Create ERP sales order
+    try {
+      const addr = order.delivery_address || {};
+      let contact = addr.email ? await repo.findContactByEmail(client, addr.email) : null;
+      if (!contact) {
+        contact = await repo.insertContact(client, {
+          displayName: addr.full_name || addr.email || "Web customer",
+          email: addr.email,
+          phone: addr.phone,
+        });
+      }
+      const orderNumber = await nextDocumentNumber(client, STORE_BUSINESS, "sales_order");
+      const salesOrder = await repo.insertSalesOrderForWeb(client, {
+        orderNumber,
+        contactId: contact.contact_id,
+        totalNaira: grossNaira,
+      });
+      await repo.insertSalesOrderLinesForWeb(client, { orderId: salesOrder.order_id, lineItems: lines });
+      await repo.linkStoreOrderToSalesOrder(client, order.id, salesOrder.order_id);
+      await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
+    } catch (err) {
+      logger.error(`[store/optimus] sales order creation failed for ${order.id}: ${err.message}`);
+      throw err;
+    }
+
+    if (order.customer_id) {
+      await repo.incrementCustomerOrders(client, order.customer_id);
+    }
+
+    // 6. Confirmation email — best effort
+    try {
+      const addr = order.delivery_address || {};
+      const { subject, html } = renderEmail("order_confirmation", STORE_BUSINESS, {
+        customer_name: addr.full_name,
+        order_id: order.id,
+        items: order.items || [],
+        total: grossNaira,
+      });
+      await sendEmail({ to: addr.email, subject, html, business: STORE_BUSINESS });
+    } catch (err) {
+      logger.warn(`[store/optimus] confirmation email failed for ${order.id}: ${err.message}`);
     }
 
     return { ok: true, order_id: order.id, status: "paid" };
@@ -890,6 +1089,7 @@ module.exports = {
   createOrder,
   getOrder,
   verifyAndFulfil,
+  fulfillOptimusOrder,
   verifyWebhookSignature,
   // newsletter + enquiries
   subscribeNewsletter,

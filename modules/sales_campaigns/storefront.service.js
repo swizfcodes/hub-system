@@ -13,6 +13,7 @@ const logger = require("../../config/logger");
 const crypto = require("crypto");
 const config = require("../../config/config");
 const axios = require("axios");
+const optimusService = require("../../integrations/optimus/optimus.service");
 const businesses = require("../../config/businesses");
 
 // ── LANDING PAGE DATA ─────────────────────────────────────────────────────────
@@ -279,6 +280,47 @@ async function placeOrder(business, slug, data, req) {
       });
     }
 
+    // ── Handle Optimus Pay virtual account provisioning ───────────────────────
+    let optimusVirtualAccount = null;
+    let optimusBankName = null;
+    let optimusTransactionRef = null;
+    if (data.payment_method === "optimus_pay") {
+      try {
+        const vaResult = await optimusService.openVirtualAccount({
+          amountKobo: Math.round(totalAmount * 100),
+          transactionRef: order.order_id,
+          description: `Payment for Order ${orderNumber} — ${campaign.campaign_name}`,
+          customerRef: order.order_id,
+          firstname: (data.customer_name || "Customer").split(" ")[0],
+          surname: (data.customer_name || "Customer").split(" ").slice(1).join(" ") || "N/A",
+          email: data.customer_email || `${data.customer_phone}@orikahub.com`,
+          mobileNo: (data.customer_phone || "").replace(/[^0-9]/g, "") || "2340000000000",
+        });
+        optimusVirtualAccount = vaResult.accountNumber;
+        optimusBankName = vaResult.bankName;
+        optimusTransactionRef = vaResult.transactionRef;
+
+        // Persist virtual account details on the order row
+        await client.query(
+          `UPDATE campaign_orders
+           SET optimus_transaction_ref = $1,
+               optimus_virtual_account = $2,
+               optimus_bank_name       = $3
+           WHERE order_id = $4`,
+          [optimusTransactionRef, optimusVirtualAccount, optimusBankName, order.order_id],
+        );
+      } catch (err) {
+        logger.error(
+          `[storefront] Optimus Pay provisioning failed for order ${orderNumber}: ${err.message}`,
+        );
+        // Surface error to caller so checkout can fall back gracefully
+        throw Object.assign(
+          new Error("Could not provision payment account. Please try again or choose another method."),
+          { status: 502 },
+        );
+      }
+    }
+
     // Notify staff of new order (bank transfer pending proof)
     if (data.payment_method === "bank_transfer") {
       await notifyStaffOfPendingOrder(
@@ -301,6 +343,10 @@ async function placeOrder(business, slug, data, req) {
       total_amount: totalAmount,
       payment_method: data.payment_method,
       paystack_url: paystackUrl,
+      // Optimus Pay: show these to the customer so they know where to transfer
+      optimus_virtual_account: optimusVirtualAccount,
+      optimus_bank_name: optimusBankName,
+      optimus_transaction_ref: optimusTransactionRef,
       status: order.status,
     };
   });
@@ -436,6 +482,25 @@ async function handlePaystackConfirmation(business, orderId) {
   }
 }
 
+// Called from the Optimus Pay webhook when a virtual account receives payment.
+async function handleOptimusConfirmation(business, orderId) {
+  const adminSvc = require("./admin.service");
+  const systemUser = {
+    user_id: null,
+    display_name: "Optimus Pay Webhook",
+    email: "system",
+  };
+  try {
+    await adminSvc.confirmOrder(business, orderId, systemUser);
+    logger.info(`[storefront] Optimus Pay auto-confirmed order ${orderId}`);
+  } catch (err) {
+    logger.error(
+      `[storefront] Optimus Pay confirmation failed for order ${orderId}:`,
+      err.message,
+    );
+  }
+}
+
 // ── NOTIFICATION HELPERS ──────────────────────────────────────────────────────
 
 async function notifyStaffOfLead(client, business, campaign, lead, contactId) {
@@ -527,6 +592,7 @@ module.exports = {
   submitProof,
   getOrderByToken,
   handlePaystackConfirmation,
+  handleOptimusConfirmation,
 };
 
 // ── storefront.routes.js ──────────────────────────────────────────────────────
@@ -593,7 +659,7 @@ pubRouter.post(
   body("customer_name").isString().notEmpty(),
   body("customer_phone").isString().notEmpty(),
   body("items").isArray({ min: 1 }),
-  body("payment_method").isIn(["paystack", "bank_transfer"]),
+  body("payment_method").isIn(["paystack", "bank_transfer", "optimus_pay"]),
   body("fulfilment_type").isIn(["delivery", "pickup"]),
   validate,
   async (req, res, next) => {

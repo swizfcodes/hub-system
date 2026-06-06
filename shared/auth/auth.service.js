@@ -5,7 +5,11 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const config = require("../../config/config");
 const { withSharedContext } = require("../../config/db");
-const { invalidatePermissionCache } = require("../../config/redis");
+const {
+  invalidatePermissionCache,
+  getCachedPermissions,
+  cachePermissions,
+} = require("../../config/redis");
 const auditService = require("../../shared/audit/audit.service");
 const repo = require("./auth.repository");
 
@@ -240,6 +244,28 @@ async function revokeAllSessions(userId, actingUser) {
   });
 }
 
+/**
+ * Return the flat permission list for a role_id.
+ * Reuses the same Redis cache as the permissions middleware so there's no
+ * extra DB hit if the middleware has already warmed the cache.
+ */
+async function getMyPermissions(roleId) {
+  let permissions = await getCachedPermissions(roleId);
+  if (!permissions) {
+    await withSharedContext(async (client) => {
+      const result = await client.query(
+        `SELECT module, action, record_scope
+         FROM shared.permissions
+         WHERE role_id = $1`,
+        [roleId],
+      );
+      permissions = result.rows;
+    });
+    await cachePermissions(roleId, permissions);
+  }
+  return permissions;
+}
+
 module.exports = {
   login,
   refresh,
@@ -250,4 +276,5 @@ module.exports = {
   listActiveSessions,
   revokeSession,
   revokeAllSessions,
+  getMyPermissions,
 };

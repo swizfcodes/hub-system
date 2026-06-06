@@ -92,7 +92,7 @@ async function findUserProfile(client, userId) {
   const { rows } = await client.query(
     `SELECT u.user_id, u.email, u.default_business, u.permitted_businesses,
             sp.profile_id, sp.job_title, sp.department,
-            c.display_name, c.primary_phone,
+            c.display_name, c.primary_phone, c.avatar_url, c.contact_id,
             r.role_name
      FROM shared.users u
      LEFT JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
