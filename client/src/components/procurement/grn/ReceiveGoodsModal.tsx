@@ -22,11 +22,6 @@ interface Props {
   po: PurchaseOrder;
 }
 
-/**
- * Q8 answer C — partial receipts + per-line QC (accept/partial/reject + reason).
- * Calls POST /api/purchasing/purchase-orders/:id/receive which already records
- * stock movements via stockService.recordMovement (we verified in the backend).
- */
 export function ReceiveGoodsModal({ open, onClose, po }: Props) {
   const qc = useQueryClient();
 
@@ -48,11 +43,12 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<GRNValues>({
     resolver: zodResolver(grnSchema),
     defaultValues: {
-      warehouse_location_id: "",
+      receiving_location_id: "",
       notes: "",
       lines: openLines.map((l) => ({
         po_line_id: l.line_id,
@@ -70,7 +66,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
   useEffect(() => {
     if (open) {
       reset({
-        warehouse_location_id: "",
+        receiving_location_id: "",
         notes: "",
         lines: openLines.map((l) => ({
           po_line_id: l.line_id,
@@ -86,8 +82,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
   const mutation = useMutation({
     mutationFn: (v: GRNValues) =>
       receiveGoods(po.po_id, {
-        ...v,
-        warehouse_location_id: v.warehouse_location_id || undefined,
+        receiving_location_id: v.receiving_location_id || undefined,
         notes: v.notes || undefined,
         lines: v.lines.map((l) => ({
           po_line_id: l.po_line_id,
@@ -99,7 +94,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["purchasing", "po", po.po_id] });
-      qc.invalidateQueries({ queryKey: ["purchasing", "pos"] });
+      qc.invalidateQueries({ queryKey: ["purchasing", "purchase-orders"] });
       showToast.success("Goods received", "Stock updated automatically.");
       reset();
       onClose();
@@ -138,7 +133,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
       surface="light"
       size="xl"
       title="Receive goods"
-      description="Accept or reject each line with a reason. Accepted goods land in stock immediately."
+      description="Accept or reject each line. Accepted goods land in stock immediately."
       footer={
         <>
           <Button
@@ -164,7 +159,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
           <Select
-            {...register("warehouse_location_id")}
+            {...register("receiving_location_id")}
             label="Receiving location"
             placeholder="Pick a location (optional)"
             options={warehouses.map((l) => ({
@@ -184,7 +179,20 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
           {fields.map((f, i) => {
             const line = openLines[i];
             const w = linesWatch?.[i];
+            const remaining = line.quantity_ordered - line.quantity_received;
             const isPartial = w && w.quantity_rejected > 0;
+
+            function acceptAll() {
+              setValue(`lines.${i}.quantity_accepted`, remaining, { shouldValidate: true });
+              setValue(`lines.${i}.quantity_rejected`, 0, { shouldValidate: true });
+              setValue(`lines.${i}.rejection_reason`, "");
+            }
+
+            function rejectAll() {
+              setValue(`lines.${i}.quantity_accepted`, 0, { shouldValidate: true });
+              setValue(`lines.${i}.quantity_rejected`, remaining, { shouldValidate: true });
+            }
+
             return (
               <div
                 key={f.id}
@@ -253,10 +261,10 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
                     {errors.lines[i]?.quantity_received?.message}
                   </p>
                 )}
-                {/* Quick QC chips */}
+                {/* Quick QC chips — now wired up */}
                 <div className="mt-3 flex gap-2 flex-wrap text-xs">
-                  <QuickChip label="Accept all" tone="sage" />
-                  <QuickChip label="Reject all" tone="danger" />
+                  <QuickChip label="Accept all" tone="sage" onClick={acceptAll} />
+                  <QuickChip label="Reject all" tone="danger" onClick={rejectAll} />
                 </div>
               </div>
             );
@@ -266,11 +274,8 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
         <div className="rounded-xl bg-orika-cream/40 border border-orika-cloud/40 p-3 flex items-start gap-2 text-xs text-orika-black/70">
           <Check className="w-3.5 h-3.5 text-living-sage mt-0.5 shrink-0" />
           <p>
-            Accepted quantities are added to stock automatically (the receive
-            endpoint records a{" "}
-            <code className="font-mono">stock_movements</code> entry per line).
-            Rejected lines stay with the supplier; a Return-to-Vendor doc isn't
-            yet implemented.
+            Accepted quantities are added to stock immediately. Rejected lines
+            stay with the supplier.
           </p>
         </div>
       </div>
@@ -281,14 +286,18 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
 function QuickChip({
   label,
   tone,
+  onClick,
 }: {
   label: string;
   tone: "sage" | "danger";
+  onClick: () => void;
 }) {
   return (
-    <span
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] uppercase tracking-widest font-medium",
+        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-80",
         tone === "sage"
           ? "bg-living-sage/15 text-living-sage"
           : "bg-state-danger/15 text-state-danger",
@@ -300,6 +309,6 @@ function QuickChip({
         <X className="w-2.5 h-2.5" />
       )}
       {label}
-    </span>
+    </button>
   );
 }

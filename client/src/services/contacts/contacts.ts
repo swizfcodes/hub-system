@@ -1,3 +1,4 @@
+import axios from "axios";
 import { api } from "../api";
 import type {
   Contact,
@@ -77,4 +78,36 @@ export async function searchContacts(
   } catch {
     return [];
   }
+}
+
+// ── Walk-in QR (permanent, per-business) ──────────────────────────────────────
+
+export async function getWalkinQR(
+  business: string,
+): Promise<{ qr_code_url: string; join_url: string }> {
+  const { data } = await api.get<{ qr_code_url: string; join_url: string }>(
+    `/contacts/register-qr/${business}`,
+  );
+  return data;
+}
+
+export interface WalkinRegistrationPayload {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  address_city?: string;
+  address_state?: string;
+  wants_birthday?: boolean;
+  birthday_month?: number;
+  birthday_day?: number;
+}
+
+const walkinApi = axios.create({ baseURL: "/api/contacts" });
+
+export async function submitWalkinRegistration(
+  business: string,
+  payload: WalkinRegistrationPayload,
+): Promise<void> {
+  await walkinApi.post(`/register/${business}`, payload);
 }

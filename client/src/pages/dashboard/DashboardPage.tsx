@@ -83,36 +83,53 @@ export default function DashboardPage() {
 
   const params = getPeriodParams(period);
 
-  // All data queries
+  // ── Permissions — resolved before queries so enabled flags are correct ──────
+  const { hasPermission, hasAnyPermission, isLoading: permsLoading } = usePermissions();
+
+  const canSeeSales     = hasAnyPermission([{ module: "sales", action: "view" }, { module: "pos", action: "view" }, { module: "invoicing", action: "view" }]);
+  const canSeeFinance   = hasAnyPermission([{ module: "accounting", action: "view" }, { module: "invoicing", action: "view" }, { module: "expenses", action: "view" }]);
+  const canSeeStock     = hasAnyPermission([{ module: "stock", action: "view" }, { module: "catalogue", action: "view" }, { module: "purchasing", action: "view" }]);
+  const canSeeCustomers = hasAnyPermission([{ module: "crm", action: "view" }, { module: "contacts", action: "view" }]);
+  const canSeeLogistics = hasPermission("logistics", "view");
+  const canSeeRetail    = hasPermission("retail-partners", "view");
+
+  // All data queries — each fires only when permissions have loaded and the
+  // user actually has access to that module. This prevents wasted 403 requests.
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["dash-sales", brand, period],
     queryFn: () => getSalesData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeSales,
   });
   const { data: financeData, isLoading: financeLoading } = useQuery({
     queryKey: ["dash-finance", brand, period],
     queryFn: () => getFinanceData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeFinance,
   });
   const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ["dash-stock", brand],
     queryFn: () => getStockData(),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeStock,
   });
   const { data: customerData, isLoading: customerLoading } = useQuery({
     queryKey: ["dash-customers", brand, period],
     queryFn: () => getCustomerData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeCustomers,
   });
   const { data: logisticsData, isLoading: logisticsLoading } = useQuery({
     queryKey: ["dash-logistics", brand, period],
     queryFn: () => getLogisticsData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeLogistics,
   });
   const { data: yesterday } = useQuery({
     queryKey: ["dash-yesterday", brand],
     queryFn: () => getYesterdaySummary(),
     staleTime: 30 * 60_000,
+    enabled: !permsLoading && canSeeSales,
   });
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-count"],
@@ -120,21 +137,26 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  // ── Permissions ────────────────────────────────────────────────────────────
-  const { hasPermission, hasAnyPermission } = usePermissions();
-
-  // Which sections the user is actually allowed to see (derived from permissions).
-  const permittedSections = DASHBOARD_SECTIONS.filter((s) =>
-    hasAnyPermission(s.modules.map((m) => ({ module: m, action: "view" }))),
-  ).map((s) => s.key);
+  // ── Section visibility ──────────────────────────────────────────────────────
+  // Map the pre-computed permission booleans onto section keys so the section
+  // picker and render logic stay in sync with the query enabled flags above.
+  const permittedSections = DASHBOARD_SECTIONS.filter((s) => {
+    if (s.key === "sales")     return canSeeSales;
+    if (s.key === "finance")   return canSeeFinance;
+    if (s.key === "customers") return canSeeCustomers;
+    if (s.key === "stock")     return canSeeStock;
+    if (s.key === "logistics") return canSeeLogistics;
+    if (s.key === "retail")    return canSeeRetail;
+    return false;
+  }).map((s) => s.key);
 
   // Sections that are permitted AND not manually hidden by the user.
   const visibleSections = permittedSections.filter(
     (k) => !manualHidden.includes(k),
   );
 
-  // Finance detail (net profit, bank balances) is visible only when the user
-  // has approve OR view on accounting.
+  // Finance detail (net profit, bank balances) unblurred only for
+  // users with accounting:approve or accounting:view.
   const canViewFinance =
     hasPermission("accounting", "approve") ||
     hasPermission("accounting", "view");

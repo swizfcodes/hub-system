@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import {
@@ -9,6 +9,8 @@ import {
   Receipt,
   ArrowRight,
   TrendingUp,
+  Zap,
+  GitMerge,
 } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
@@ -22,6 +24,7 @@ import { fmtMoney, fmtRelative } from "@lib/format";
 import { cn } from "@lib/cn";
 
 export default function ProcurementHome() {
+  const navigate = useNavigate();
   const { active: business } = useActiveBusiness();
   const { data: sups } = useQuery({
     queryKey: ["purchasing", "suppliers"],
@@ -70,6 +73,65 @@ export default function ProcurementHome() {
           subtitle="Everything you've requested, ordered, received, and owe — in one place."
           crumbs={[{ label: "Hub", to: "/" }, { label: "Procurement" }]}
         />
+
+        {/* ── Start procurement — mode picker ─────────────────── */}
+        <div className="grid gap-4 sm:grid-cols-2 mb-8">
+          {/* Quick Purchase */}
+          <button
+            onClick={() => navigate("/procurement/purchase-orders/new?mode=quick")}
+            className="group relative text-left rounded-2xl border border-orika-gold/30 bg-orika-gold/5 p-5 hover:border-orika-gold/60 hover:bg-orika-gold/10 transition-all"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orika-gold/20 text-orika-gold">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[0.6rem] uppercase tracking-widest text-orika-gold font-semibold mb-1">
+                  Quick purchase
+                </div>
+                <h3 className="font-display text-xl text-orika-cream leading-tight">
+                  PO + Receive
+                </h3>
+                <p className="mt-1.5 text-xs text-orika-smoke leading-relaxed">
+                  You know the supplier, product, and price. Create a PO and
+                  receive goods in two steps — no RFQ needed.
+                </p>
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-orika-gold font-medium">
+                  Start quick purchase{" "}
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </button>
+
+          {/* Full Cycle */}
+          <button
+            onClick={() => navigate("/procurement/rfqs/new")}
+            className="group relative text-left rounded-2xl border border-living-sage/30 bg-living-sage/5 p-5 hover:border-living-sage/60 hover:bg-living-sage/10 transition-all"
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-living-sage/20 text-living-sage">
+                <GitMerge className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[0.6rem] uppercase tracking-widest text-living-sage font-semibold mb-1">
+                  Full cycle
+                </div>
+                <h3 className="font-display text-xl text-orika-cream leading-tight">
+                  RFQ → Quotes → PO → GRN → Bill
+                </h3>
+                <p className="mt-1.5 text-xs text-orika-smoke leading-relaxed">
+                  Need competitive quotes first? Send an RFQ to multiple
+                  suppliers, pick the best price, then convert to a PO.
+                </p>
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-living-sage font-medium">
+                  Start with an RFQ{" "}
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
 
         {/* KPI strip */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-5 mb-6">

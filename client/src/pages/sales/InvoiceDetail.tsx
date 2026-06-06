@@ -18,7 +18,7 @@ import { PaymentLedger } from "@components/sales/shared/PaymentLedger";
 import { RecordPaymentModal } from "@components/sales/modals/SalesModals";
 import {
   getInvoice,
-  invoicePdfUrl,
+  openInvoicePdf,
   sendInvoice,
   refreshPaymentLinks,
 } from "@services/sales/invoices";
@@ -90,7 +90,6 @@ export default function InvoiceDetail() {
   const isPaid = invoice.status === "paid";
   const isVoided = invoice.status === "voided";
   const canPay = !isPaid && !isVoided;
-  const pdfUrl = invoicePdfUrl(invoice.invoice_id);
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
@@ -275,15 +274,13 @@ export default function InvoiceDetail() {
               </Button>
             )}
 
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => openInvoicePdf(invoice.invoice_id)}
               className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
             >
               <FileDown className="h-4 w-4" />
               Download PDF
-            </a>
+            </button>
 
             {invoice.order_id && (
               <a

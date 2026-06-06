@@ -17,7 +17,7 @@ import {
   COMPLIANCE_OUTPUTS,
   formatPeriod,
 } from "@lib/constants/payrollConstants";
-import { complianceUrl } from "@services/payroll";
+import { openCompliancePdf } from "@services/payroll";
 import { fmtMoney } from "@lib/format";
 import { cn } from "@lib/cn";
 import type {
@@ -322,12 +322,10 @@ export function ComplianceOutputsPanel({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {COMPLIANCE_OUTPUTS.map((output) => (
-          <a
+          <button
             key={output.key}
-            href={complianceUrl(runId, output.key)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-start gap-3 rounded-xl border border-white/5 bg-orika-graphite/30 px-4 py-3 hover:border-white/15 transition-colors group"
+            onClick={() => openCompliancePdf(runId, output.key)}
+            className="flex items-start gap-3 rounded-xl border border-white/5 bg-orika-graphite/30 px-4 py-3 hover:border-white/15 transition-colors group text-left"
           >
             <Download className="h-4 w-4 shrink-0 mt-0.5 text-orika-smoke group-hover:text-orika-gold transition-colors" />
             <div className="min-w-0">
@@ -345,7 +343,7 @@ export function ComplianceOutputsPanel({
                 </p>
               )}
             </div>
-          </a>
+          </button>
         ))}
       </div>
 

@@ -228,6 +228,8 @@ const StorefrontCheckout = lazy(() => import("@pages/storefront/Checkout"));
 const StorefrontOrderTrack = lazy(
   () => import("@pages/storefront/OrderTracking"),
 );
+const QRJoinForm = lazy(() => import("@pages/storefront/QRJoinForm"));
+const WalkinRegisterForm = lazy(() => import("@pages/storefront/WalkinRegisterForm"));
 
 function PageFallback() {
   return (
@@ -259,6 +261,12 @@ export default function App() {
           path="/orders/:business/:token"
           element={<StorefrontOrderTrack />}
         />
+
+        {/* QR code lead capture — scanned at popup/physical events */}
+        <Route path="/join/:business/:slug" element={<QRJoinForm />} />
+
+        {/* Permanent walk-in registration — scanned at the counter */}
+        <Route path="/register/:business" element={<WalkinRegisterForm />} />
 
         {/* POS active session — fullscreen, intentionally outside AppShell */}
         <Route path="/pos/session/:sessionId" element={<POSSession />} />

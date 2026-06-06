@@ -112,15 +112,16 @@ async function insertCampaign(client, data) {
     rows: [campaign],
   } = await client.query(
     `INSERT INTO sales_campaigns
-       (campaign_name, slug, template, status, headline, subheadline, body_copy,
+       (campaign_name, slug, campaign_type, template, status, headline, subheadline, body_copy,
         hero_image_url, discount_type, discount_value, sections,
         start_date, end_date, is_evergreen, whatsapp_number, inquiry_email,
         store_location, redirect_url, created_by, accent_color)
-     VALUES ($1,$2,$3,'draft',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+     VALUES ($1,$2,$3,$4,'draft',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING *`,
     [
       data.campaign_name,
       data.slug,
+      data.campaign_type || "online",
       data.template || "editorial",
       data.headline || null,
       data.subheadline || null,
@@ -153,6 +154,7 @@ async function updateCampaign(client, campaignId, fields) {
   const allowed = [
     "campaign_name",
     "slug",
+    "campaign_type",
     "template",
     "status",
     "headline",
@@ -541,22 +543,36 @@ async function getAnalytics(client, campaignId) {
 // ── LEADS ─────────────────────────────────────────────────────────────────────
 
 async function insertLead(client, data) {
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(" ") || data.name || null;
   const {
     rows: [lead],
   } = await client.query(
     `INSERT INTO shared.campaign_leads
-       (campaign_id, business, slug, name, phone, email, message, lead_type, source)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+       (campaign_id, business, slug,
+        name, first_name, last_name,
+        phone, email, message,
+        address_city, address_state,
+        wants_birthday, birthday_month, birthday_day,
+        lead_type, source)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     RETURNING *`,
     [
       data.campaign_id,
       data.business,
       data.slug,
-      data.name || null,
-      data.phone || null,
-      data.email || null,
-      data.message || null,
+      fullName,
+      data.first_name || null,
+      data.last_name  || null,
+      data.phone      || null,
+      data.email      || null,
+      data.message    || null,
+      data.address_city  || null,
+      data.address_state || null,
+      data.wants_birthday   ? true : false,
+      data.birthday_month   || null,
+      data.birthday_day     || null,
       data.lead_type || "form",
-      data.source || null,
+      data.source    || null,
     ],
   );
   return lead;
@@ -567,6 +583,32 @@ async function updateLeadContact(client, leadId, contactId) {
     `UPDATE shared.campaign_leads SET hub_contact_id = $2 WHERE lead_id = $1`,
     [leadId, contactId],
   );
+}
+
+async function listLeads(client, { campaignId, business, limit = 50, offset = 0 }) {
+  const { rows } = await client.query(
+    `SELECT lead_id, first_name, last_name, name, phone, email,
+            address_city, address_state,
+            wants_birthday, birthday_month, birthday_day,
+            lead_type, source, hub_contact_id, created_at
+     FROM shared.campaign_leads
+     WHERE campaign_id = $1 AND business = $2
+     ORDER BY created_at DESC
+     LIMIT $3 OFFSET $4`,
+    [campaignId, business, limit, offset],
+  );
+  return rows;
+}
+
+async function countLeads(client, { campaignId, business }) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT COUNT(*) AS total FROM shared.campaign_leads
+     WHERE campaign_id = $1 AND business = $2`,
+    [campaignId, business],
+  );
+  return parseInt(row.total, 10);
 }
 
 module.exports = {
@@ -592,4 +634,6 @@ module.exports = {
   getAnalytics,
   insertLead,
   updateLeadContact,
+  listLeads,
+  countLeads,
 };

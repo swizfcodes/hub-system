@@ -98,6 +98,7 @@ export const campaignSchema = z.object({
     .string()
     .min(2)
     .regex(/^[a-z0-9-]+$/, "Only lowercase letters, numbers, hyphens"),
+  campaign_type: z.enum(["online", "popup_event"]).default("online"),
   template: z.enum(["minimal", "editorial", "bold"]).default("editorial"),
   headline: z.string().optional().or(z.literal("")),
   subheadline: z.string().optional().or(z.literal("")),

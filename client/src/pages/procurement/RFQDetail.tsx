@@ -17,7 +17,7 @@ import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
 import { EmptyState } from "@components/ui/EmptyState";
 import {
-  listRFQs,
+  getRFQ,
   listQuotesForRFQ,
   generatePOFromQuote,
 } from "@services/purchasing/rfqs";
@@ -33,12 +33,11 @@ export default function RFQDetail() {
   const [showTokens, setShowTokens] = useState(false);
   const [generatingPO, setGeneratingPO] = useState<string | null>(null);
 
-  // Backend doesn't have GET /rfqs/:id — we look up via list + filter.
-  const { data: rfqList, isLoading } = useQuery({
-    queryKey: ["purchasing", "rfqs", "all"],
-    queryFn: () => listRFQs({ limit: 200 }),
+  const { data: rfq, isLoading } = useQuery({
+    queryKey: ["purchasing", "rfq", id],
+    queryFn: () => getRFQ(id!),
+    enabled: !!id,
   });
-  const rfq = rfqList?.data.find((r) => r.rfq_id === id);
 
   const { data: quotes = [] } = useQuery({
     queryKey: ["purchasing", "rfq-quotes", id],

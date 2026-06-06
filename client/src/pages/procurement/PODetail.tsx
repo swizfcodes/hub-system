@@ -1,6 +1,6 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   FileText,
@@ -8,6 +8,8 @@ import {
   Receipt,
   ArrowDownToLine,
   Building2,
+  Zap,
+  Send,
 } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
@@ -15,9 +17,12 @@ import { Skeleton } from "@components/ui/Skeleton";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
-import { getPO, listReceiptsForPO } from "@services/purchasing/purchaseOrders";
+import { getPO, listReceiptsForPO, sendPO } from "@services/purchasing/purchaseOrders";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
 import { fmtDate, fmtDateTime, fmtMoney } from "@lib/format";
 import { ReceiveGoodsModal } from "@components/procurement/grn/ReceiveGoodsModal";
+import { QuickReceiveModal } from "@components/procurement/grn/QuickReceiveModal";
 import type { POStatus } from "@typedefs/purchasing";
 
 const STATUS_TONE: Record<
@@ -37,7 +42,19 @@ const STATUS_TONE: Record<
 export default function PODetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [receiving, setReceiving] = useState(false);
+  const [quickReceiving, setQuickReceiving] = useState(false);
+
+  const sendMutation = useMutation({
+    mutationFn: () => sendPO(id!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["purchasing", "po", id] });
+      showToast.success("PO sent", "Status updated to sent.");
+    },
+    onError: (e) => showToast.error("Could not send PO", errMsg(e)),
+  });
 
   const { data: po, isLoading } = useQuery({
     queryKey: ["purchasing", "po", id],
@@ -50,12 +67,21 @@ export default function PODetail() {
     enabled: !!id,
   });
 
+  // draft is included — the backend has no status check on receiveGoods,
+  // and non-tech users should be able to receive immediately after creation.
   const isReceivable =
-    po && ["sent", "acknowledged", "partially_received"].includes(po.status);
+    po && ["draft", "sent", "acknowledged", "partially_received"].includes(po.status);
   const totalReceived =
     po?.lines?.reduce((s, l) => s + (l.quantity_received ?? 0), 0) ?? 0;
   const totalOrdered =
     po?.lines?.reduce((s, l) => s + (l.quantity_ordered ?? 0), 0) ?? 0;
+
+  // Auto-open the quick receive modal when coming from ?receive=1 (quick purchase flow)
+  useEffect(() => {
+    if (po && isReceivable && searchParams.get("receive") === "1") {
+      setQuickReceiving(true);
+    }
+  }, [po?.po_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -309,15 +335,40 @@ export default function PODetail() {
                 )}
               </Card>
 
-              {isReceivable && (
+              {/* Send PO — only shown on draft so the full cycle can progress */}
+              {po.status === "draft" && (
                 <Button
-                  variant="gold"
+                  variant="secondary"
                   fullWidth
-                  leftIcon={<ArrowDownToLine className="w-4 h-4" />}
-                  onClick={() => setReceiving(true)}
+                  leftIcon={<Send className="w-4 h-4" />}
+                  loading={sendMutation.isPending}
+                  onClick={() => sendMutation.mutate()}
                 >
-                  Receive goods
+                  Confirm &amp; send to supplier
                 </Button>
+              )}
+
+              {isReceivable && (
+                <div className="space-y-2">
+                  {/* Quick receive — all items accepted at once */}
+                  <Button
+                    variant="gold"
+                    fullWidth
+                    leftIcon={<Zap className="w-4 h-4" />}
+                    onClick={() => setQuickReceiving(true)}
+                  >
+                    Receive all at once
+                  </Button>
+                  {/* Full GRN — per-line accept / reject / partial */}
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    leftIcon={<ArrowDownToLine className="w-4 h-4" />}
+                    onClick={() => setReceiving(true)}
+                  >
+                    Receive with QC
+                  </Button>
+                </div>
               )}
               <Link to={`/procurement/bills/new?po_id=${po.po_id}`}>
                 <Button
@@ -333,6 +384,11 @@ export default function PODetail() {
             <ReceiveGoodsModal
               open={receiving}
               onClose={() => setReceiving(false)}
+              po={po}
+            />
+            <QuickReceiveModal
+              open={quickReceiving}
+              onClose={() => setQuickReceiving(false)}
               po={po}
             />
           </div>

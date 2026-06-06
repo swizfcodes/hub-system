@@ -95,6 +95,11 @@ router.use(
   });
 }
 
+// ── Walk-in self-registration (public POST + staff QR GET) ────
+// Must be mounted BEFORE the protected /contacts router so the
+// public POST /register/:business is not blocked by verifyToken.
+router.use("/contacts", require("../shared/contacts/contacts.public.routes"));
+
 // ── Protected — shared modules (no business schema needed) ─
 router.use("/contacts", protect, require("../shared/contacts/contacts.routes"));
 router.use(
