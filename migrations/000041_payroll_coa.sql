@@ -3,7 +3,6 @@
 -- Apply to BOTH business schemas: jewelry and diffusers.
 -- ============================================================
 
-BEGIN;
 
 -- JEWELRY
 INSERT INTO jewelry.chart_of_accounts
@@ -27,4 +26,3 @@ VALUES
   ('2330', 'NHF Payable',              'liability', 'current_liability', true)
 ON CONFLICT (account_code) DO NOTHING;
 
-COMMIT;

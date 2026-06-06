@@ -24,7 +24,6 @@
 -- wants those roles managing social posts.
 -- ============================================================
 
-BEGIN;
 
 -- ── Owner: full access to social ──────────────────────────────
 DO $$
@@ -75,5 +74,3 @@ END $$;
 -- take effect immediately. Otherwise existing user sessions will
 -- continue to read stale cached permissions until they expire
 -- (default TTL set in config/redis.js).
-
-COMMIT;

@@ -15,7 +15,6 @@
 --   2. shared.social_post_metrics   — daily engagement snapshots
 -- ============================================================
 
-BEGIN;
 
 -- ─────────────────────────────────────────────────────────────
 -- 1. social_posts
@@ -145,5 +144,3 @@ CREATE INDEX IF NOT EXISTS idx_social_post_metrics_recent
 COMMENT ON TABLE shared.social_post_metrics IS
     'Engagement snapshots for published social posts. Module 14 — Social Media Management.';
 
-
-COMMIT;

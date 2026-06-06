@@ -3,7 +3,6 @@
 -- Tier CRUD support + configurable loyalty settings
 -- ============================================================
 
-BEGIN;
 
 -- Add loyalty settings to business_config
 -- Stores: points_rate, expiry_months, notifications, etc.
@@ -54,5 +53,3 @@ CREATE INDEX IF NOT EXISTS idx_jewelry_loyalty_tiers_active
 
 CREATE INDEX IF NOT EXISTS idx_diffusers_loyalty_tiers_active
     ON diffusers.loyalty_tiers (display_order) WHERE display_order > 0;
-
-COMMIT;

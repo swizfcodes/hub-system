@@ -17,7 +17,6 @@
 --   5. Backfill old 'pos_sale' movement_type rows to 'sold'
 -- ============================================================
 
-BEGIN;
 
 -- ─────────────────────────────────────────────────────────────
 -- 1. business_config — drop JSONB columns that duplicate
@@ -127,7 +126,6 @@ UPDATE diffusers.stock_movements
     SET movement_type = 'sold'
     WHERE movement_type = 'pos_sale';
 
-COMMIT;
 
 -- ============================================================
 -- POST-MIGRATION NOTES

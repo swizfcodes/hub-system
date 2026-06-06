@@ -19,7 +19,6 @@
 -- never clobbers values edited in the ERP.
 -- ============================================================
 
-BEGIN;
 
 -- ── store.settings — singleton storefront content ───────────
 CREATE TABLE IF NOT EXISTS store.settings (
@@ -69,4 +68,3 @@ INSERT INTO store.signatures (slug, name, size_label, price_label, blurb, displa
    'Scent beyond the home — a compact companion for the drive.', 3)
 ON CONFLICT (slug) DO NOTHING;
 
-COMMIT;

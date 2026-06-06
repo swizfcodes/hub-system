@@ -26,7 +26,6 @@
 -- Anything finer-grained is left to the in-app permissions admin UI.
 -- ============================================================
 
-BEGIN;
 
 -- ── Owner & Manager: full access to both modules ─────────────
 DO $$
@@ -85,5 +84,3 @@ END $$;
 -- applying this migration, restart the API server or flush the
 -- Redis permission cache so the new rows take effect immediately
 -- rather than after the cache TTL expires.
-
-COMMIT;

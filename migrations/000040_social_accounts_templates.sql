@@ -3,7 +3,6 @@
 -- and nullable scheduled_at (for drafts). Shared schema.
 -- ============================================================
 
-BEGIN;
 
 -- Drafts have no scheduled_at.
 ALTER TABLE shared.social_posts
@@ -52,4 +51,3 @@ CREATE TABLE IF NOT EXISTS shared.social_hashtag_sets (
 CREATE INDEX IF NOT EXISTS idx_social_hashtag_sets_business
   ON shared.social_hashtag_sets (business);
 
-COMMIT;

@@ -12,7 +12,6 @@
 -- Lagos LIRS) and a nil CIT return (annual). This module covers that.
 -- ============================================================
 
-BEGIN;
 
 -- ── Chart of accounts additions (idempotent) ────────────────
 -- account_code is UNIQUE per schema, so ON CONFLICT is safe.
@@ -155,4 +154,3 @@ FROM shared.roles r,
 WHERE r.role_name IN ('owner', 'manager')
 ON CONFLICT (role_id, module, action) DO NOTHING;
 
-COMMIT;
