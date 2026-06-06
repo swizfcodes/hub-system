@@ -5,6 +5,7 @@ import type {
   CampaignOrderResult,
   OrderTracking,
   CampaignAnalytics,
+  CampaignLead,
   CartItem,
   CheckoutForm,
 } from "@typedefs/salesCampaign";
@@ -183,15 +184,52 @@ export async function submitLead(
   business: string,
   slug: string,
   lead: {
+    // Legacy inquiry form fields
     name?: string;
+    message?: string;
+    // QR scan fields
+    first_name?: string;
+    last_name?: string;
     phone?: string;
     email?: string;
-    message?: string;
-    lead_type?: string;
+    address_city?: string;
+    address_state?: string;
+    wants_birthday?: boolean;
+    birthday_month?: number;
+    birthday_day?: number;
+    lead_type?: "form" | "whatsapp_tap" | "qr_scan";
     source?: string | null;
   },
-): Promise<void> {
-  await pub.post(`/${business}/${slug}/leads`, lead);
+): Promise<{ lead_id: string }> {
+  const { data } = await pub.post<{ lead_id: string }>(
+    `/${business}/${slug}/leads`,
+    lead,
+  );
+  return data;
+}
+
+export async function generateQrCode(
+  campaignId: string,
+): Promise<{ qr_code_url: string; join_url: string }> {
+  const { data } = await api.post<{ qr_code_url: string; join_url: string }>(
+    `/sales-campaigns/${campaignId}/qr-code`,
+  );
+  return data;
+}
+
+export async function listLeads(
+  campaignId: string,
+  params?: { page?: number; limit?: number },
+): Promise<{
+  data: CampaignLead[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const { data } = await api.get(`/sales-campaigns/${campaignId}/leads`, {
+    params,
+  });
+  return data;
 }
 
 export async function placeOrder(

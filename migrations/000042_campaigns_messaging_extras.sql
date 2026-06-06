@@ -3,7 +3,6 @@
 -- thread assignment/status, message reactions.
 -- ============================================================
 
-BEGIN;
 
 -- ── CAMPAIGNS: saved segments (per business schema) ──────────
 CREATE TABLE IF NOT EXISTS jewelry.saved_segments (
@@ -89,4 +88,3 @@ CREATE TABLE IF NOT EXISTS shared.message_reactions (
 CREATE INDEX IF NOT EXISTS idx_reactions_message
   ON shared.message_reactions (message_id);
 
-COMMIT;

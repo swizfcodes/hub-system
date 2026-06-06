@@ -3,7 +3,6 @@
 -- Apply once (shared schema).
 -- ============================================================
 
-BEGIN;
 
 -- Private calendar events (shown as "Busy" to other users).
 ALTER TABLE shared.calendar_events
@@ -13,4 +12,3 @@ ALTER TABLE shared.calendar_events
 ALTER TABLE shared.tasks
   ADD COLUMN IF NOT EXISTS is_personal BOOLEAN NOT NULL DEFAULT false;
 
-COMMIT;

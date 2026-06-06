@@ -23,7 +23,7 @@ import {
   CreditNoteModal,
   WriteOffModal,
 } from "@components/invoicing/InvoiceModals";
-import { getInvoice, invoicePdfUrl } from "@services/invoicing/invoices";
+import { getInvoice, openInvoicePdf } from "@services/invoicing/invoices";
 //import { issueCreditNote, setCreditNoteStatus } from '@services/invoicing/creditNotes';
 import {
   PAYMENT_METHOD_LABEL,
@@ -146,7 +146,7 @@ export default function InvoiceDetail() {
               variant="secondary"
               size="sm"
               onClick={() =>
-                window.open(invoicePdfUrl(invoice.invoice_id), "_blank")
+                openInvoicePdf(invoice.invoice_id)
               }
             >
               <Download className="h-4 w-4" />

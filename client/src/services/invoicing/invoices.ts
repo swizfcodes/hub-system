@@ -94,9 +94,25 @@ export async function writeOffInvoice(
 }
 
 // ── PDF ───────────────────────────────────────────────────────────────────────
+// Must go through axios so the Authorization header is included.
+// window.open(url) is a raw browser request — no token, always 401.
 
-export function invoicePdfUrl(invoiceId: string): string {
-  return `${api.defaults.baseURL}/invoicing/${invoiceId}/pdf`;
+export async function openInvoicePdf(invoiceId: string): Promise<void> {
+  const response = await api.get(`/invoicing/${invoiceId}/pdf`, {
+    responseType: "blob",
+  });
+  const blob = new Blob([response.data], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  // Revoke the object URL after the tab has had time to load it
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  if (!win) {
+    // Fallback: trigger a download if the browser blocked the popup
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `invoice-${invoiceId}.pdf`;
+    a.click();
+  }
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────

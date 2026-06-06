@@ -73,6 +73,20 @@ const config = {
     baseUrl: "https://api.paystack.co",
   },
 
+  optimusPay: {
+    apiKey: process.env.OPTIMUS_PAY_API_KEY,
+    clientSecret: process.env.OPTIMUS_PAY_CLIENT_SECRET,
+    // Swap to https://api.onepipe.io for production
+    baseUrl:
+      process.env.NODE_ENV === "production"
+        ? "https://api.onepipe.io"
+        : process.env.OPTIMUS_PAY_BASE_URL ||
+          "https://409a9dcf-73e5-41bb-aa2e-ba6c286173a3.mock.pstmn.io",
+    notificationUrl:
+      process.env.OPTIMUS_PAY_NOTIFICATION_URL ||
+      `${process.env.HUB_BASE_URL || "http://localhost:3000"}/api/webhooks/optimus`,
+  },
+
   flutterwave: {
     secretKey: process.env.FLUTTERWAVE_SECRET_KEY,
     webhookSecret: process.env.FLUTTERWAVE_WEBHOOK_SECRET,

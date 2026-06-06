@@ -9,7 +9,7 @@ import {
   EarningsRow,
   DeductionRow,
 } from "@components/payroll/PayrollComponents";
-import { getPayslip, payslipPdfUrl, sendPayslip } from "@services/payroll";
+import { getPayslip, openPayslipPdf, sendPayslip } from "@services/payroll";
 import { formatPeriod } from "@lib/constants/payrollConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { fmtMoney } from "@lib/format";
@@ -85,16 +85,14 @@ export default function PayslipDetail() {
         ]}
         actions={
           <div className="flex gap-2">
-            <a
-              href={payslipPdfUrl(id!)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openPayslipPdf(id!)}
             >
-              <Button variant="secondary" size="sm">
-                <Download className="h-4 w-4" />
-                Download PDF
-              </Button>
-            </a>
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
             {payslip.email && (
               <Button size="sm" onClick={handleSend} loading={sending}>
                 <Send className="h-4 w-4" />

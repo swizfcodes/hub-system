@@ -557,6 +557,35 @@ async function setOrderPaystackRef(client, orderId, ref) {
   return row || null;
 }
 
+async function setOrderOptimusRef(
+  client,
+  orderId,
+  { transactionRef, virtualAccount, bankName },
+) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE store.orders
+     SET optimus_transaction_ref = $2,
+         optimus_virtual_account = $3,
+         optimus_bank_name       = $4
+     WHERE id = $1
+     RETURNING *`,
+    [orderId, transactionRef, virtualAccount, bankName],
+  );
+  return row || null;
+}
+
+async function findOrderByOptimusRef(client, transactionRef) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM store.orders WHERE optimus_transaction_ref = $1`,
+    [transactionRef],
+  );
+  return row || null;
+}
+
 async function findOrderById(client, id) {
   const {
     rows: [row],
@@ -846,6 +875,8 @@ module.exports = {
   // orders
   insertOrder,
   setOrderPaystackRef,
+  setOrderOptimusRef,
+  findOrderByOptimusRef,
   findOrderById,
   findOrderByRef,
   markOrderPaidWithJournals,

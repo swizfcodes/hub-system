@@ -5,6 +5,7 @@ import {
   Plus,
   UserPlus,
   BookUser,
+  QrCode,
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
 import { ContactRailRow } from "@components/contacts/shell/ContactRailRow";
 import { ContactCard } from "@components/contacts/shell/ContactCard";
 import { QuickAddModal } from "@components/contacts/modals/QuickAddModal";
+import WalkinQRModal from "@components/contacts/modals/WalkinQRModal";
 import { listContacts } from "@services/contacts/contacts";
 import { CONTACT_TYPE_META } from "@lib/constants/contactTypes";
 import { useIsDesktop } from "@hooks/useMediaQuery";
@@ -48,6 +50,7 @@ export default function ContactsHome() {
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [walkinQROpen, setWalkinQROpen] = useState(false);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<DirectoryFilterValues>({
     search: "",
@@ -106,6 +109,14 @@ export default function ContactsHome() {
           actions={
             <>
               <ViewSwitcher value={view} onChange={setView} />
+              <button
+                title="Walk-in registration QR"
+                onClick={() => setWalkinQROpen(true)}
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-orika-graphite px-3 py-2 text-xs text-orika-cloud hover:border-orika-gold/40 hover:text-orika-gold transition"
+              >
+                <QrCode className="w-4 h-4" />
+                <span className="hidden sm:inline">Walk-in QR</span>
+              </button>
               <Button
                 variant="secondary"
                 size="md"
@@ -249,6 +260,10 @@ export default function ContactsHome() {
         onClose={() => setQuickAddOpen(false)}
         defaultType={activeTab !== "all" ? activeTab : undefined}
         onCreated={(id) => navigate(`/contacts/${id}`)}
+      />
+      <WalkinQRModal
+        open={walkinQROpen}
+        onClose={() => setWalkinQROpen(false)}
       />
     </>
   );

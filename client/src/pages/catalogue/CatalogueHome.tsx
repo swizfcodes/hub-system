@@ -146,6 +146,7 @@ export default function CatalogueHome() {
         {tab === "locations" && (
           <LocationsTab
             creating={creatingLocation}
+            onOpen={() => setCreatingLocation(true)}
             onClose={() => setCreatingLocation(false)}
           />
         )}
@@ -624,9 +625,11 @@ const LOCATION_TYPES = [
 
 function LocationsTab({
   creating,
+  onOpen,
   onClose,
 }: {
   creating: boolean;
+  onOpen: () => void;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -679,7 +682,7 @@ function LocationsTab({
             <Button
               variant="gold"
               leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onClose}
+              onClick={onOpen}
             >
               New location
             </Button>

@@ -131,6 +131,9 @@ async function insertPayment(
     payment_method,
     reference,
     paystack_reference,
+    optimus_transaction_ref,
+    optimus_virtual_account,
+    optimus_bank_name,
     is_confirmed,
     userId,
     notes,
@@ -141,8 +144,9 @@ async function insertPayment(
   } = await client.query(
     `INSERT INTO invoice_payments
        (invoice_id, payment_date, amount, payment_method, reference,
-        paystack_reference, is_confirmed, recorded_by, notes)
-     VALUES ($1, COALESCE($2, CURRENT_DATE), $3, $4, $5, $6, $7, $8, $9)
+        paystack_reference, optimus_transaction_ref, optimus_virtual_account,
+        optimus_bank_name, is_confirmed, recorded_by, notes)
+     VALUES ($1, COALESCE($2, CURRENT_DATE), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
       invoiceId,
@@ -151,6 +155,9 @@ async function insertPayment(
       payment_method,
       reference || null,
       paystack_reference || null,
+      optimus_transaction_ref || null,
+      optimus_virtual_account || null,
+      optimus_bank_name || null,
       is_confirmed !== undefined ? is_confirmed : true,
       userId,
       notes || null,

@@ -1,11 +1,10 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useUiStore } from "@stores/useUiStore";
-import { useAuthStore } from "@stores/useAuthStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { HUB_MODULES } from "@lib/constants/modules";
 import { BusinessSwitcher } from "./BusinessSwitcher";
-import { initialsOf } from "@lib/format";
+import { AccountMenu } from "./AccountMenu";
 import { cn } from "@lib/cn";
 
 const NAV_GROUPS: { label: string; modules: string[] }[] = [
@@ -51,8 +50,7 @@ export function Sidebar() {
   } = useUiStore();
   const isDesktop = useIsDesktop();
   const location = useLocation();
-  const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
+  // user + signOut are handled by AccountMenu now
 
   const isOnSettings = location.pathname.startsWith("/settings");
   const collapsed = isDesktop ? sidebarCollapsed : false;
@@ -164,36 +162,9 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* Footer — Account menu */}
         <div className="px-3 py-3 border-t border-orika-graphite/70 shrink-0">
-          <div
-            className={cn(
-              "flex items-center gap-3 px-2 py-2 rounded-lg",
-              collapsed && "justify-center",
-            )}
-          >
-            <div className="w-9 h-9 rounded-full bg-orika-gold text-orika-black font-bold flex items-center justify-center text-xs shrink-0">
-              {initialsOf(user?.display_name || user?.email || "User")}
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0 leading-tight">
-                <div className="text-sm font-medium text-orika-cream truncate">
-                  {user?.display_name || user?.email || "Account"}
-                </div>
-                <div className="text-[0.65rem] text-orika-smoke">Signed in</div>
-              </div>
-            )}
-            {!collapsed && (
-              <button
-                onClick={signOut}
-                className="p-2 text-orika-smoke hover:text-state-danger transition-colors"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <AccountMenu collapsed={collapsed} />
         </div>
 
         {/* Collapse handle (desktop only) */}

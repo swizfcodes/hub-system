@@ -63,7 +63,7 @@ export async function createPO(
 }
 
 export interface ReceivePayload {
-  warehouse_location_id?: string;
+  receiving_location_id?: string;
   notes?: string;
   lines: Array<{
     po_line_id: string;
@@ -81,6 +81,13 @@ export async function receiveGoods(
   const { data } = await api.post<GoodsReceipt>(
     `/purchasing/purchase-orders/${poId}/receive`,
     payload,
+  );
+  return data;
+}
+
+export async function sendPO(poId: string): Promise<PurchaseOrder> {
+  const { data } = await api.post<PurchaseOrder>(
+    `/purchasing/purchase-orders/${poId}/send`,
   );
   return data;
 }

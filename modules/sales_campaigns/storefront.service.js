@@ -13,7 +13,10 @@ const logger = require("../../config/logger");
 const crypto = require("crypto");
 const config = require("../../config/config");
 const axios = require("axios");
+const optimusService = require("../../integrations/optimus/optimus.service");
 const businesses = require("../../config/businesses");
+const { sendEmail } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 
 // ── LANDING PAGE DATA ─────────────────────────────────────────────────────────
 
@@ -104,7 +107,13 @@ async function trackEvent(
   });
 }
 
-// ── INQUIRY LEAD ──────────────────────────────────────────────────────────────
+// ── INQUIRY / QR LEAD ────────────────────────────────────────────────────────
+//
+// Handles both the existing inquiry form (lead_type = 'form') and the new
+// QR scan capture at physical / popup events (lead_type = 'qr_scan').
+// QR leads collect first_name, last_name, phone, email, optional city/state,
+// and an opt-in birthday field. Both paths auto-create a CRM contact and
+// send a welcome email + in-app staff notification.
 
 async function submitLead(business, slug, data, req) {
   return withBusinessContext(business, async (client) => {
@@ -113,45 +122,86 @@ async function submitLead(business, slug, data, req) {
       throw Object.assign(new Error("Campaign not available"), { status: 400 });
     }
 
-    // Auto-create or find contact
+    const firstName  = (data.first_name || "").trim();
+    const lastName   = (data.last_name  || "").trim();
+    const fullName   = [firstName, lastName].filter(Boolean).join(" ") || data.name || data.phone;
+    const leadType   = data.lead_type || "form";
+
+    // ── Auto-create or find CRM contact ──────────────────────
     let contactId = null;
     if (data.phone) {
-      const {
-        rows: [existing],
-      } = await client.query(
+      const { rows: [existing] } = await client.query(
         `SELECT contact_id FROM shared.contacts WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
         [data.phone],
       );
       if (existing) {
         contactId = existing.contact_id;
+        // Update email if we now have it and it was missing
+        if (data.email) {
+          await client.query(
+            `UPDATE shared.contacts SET email = COALESCE(email, $2) WHERE contact_id = $1`,
+            [contactId, data.email],
+          );
+        }
       } else {
-        const {
-          rows: [newContact],
-        } = await client.query(
-          `INSERT INTO shared.contacts (display_name, primary_phone, email, contact_type, visible_to)
-           VALUES ($1,$2,$3,ARRAY['customer']::text[],ARRAY[$4]) RETURNING contact_id`,
-          [data.name || data.phone, data.phone, data.email || null, business],
+        const { rows: [newContact] } = await client.query(
+          `INSERT INTO shared.contacts
+             (display_name, first_name, last_name, primary_phone, email,
+              contact_type, visible_to)
+           VALUES ($1,$2,$3,$4,$5,ARRAY['customer']::text[],ARRAY[$6])
+           RETURNING contact_id`,
+          [
+            fullName,
+            firstName || null,
+            lastName  || null,
+            data.phone,
+            data.email || null,
+            business,
+          ],
         );
         contactId = newContact.contact_id;
       }
     }
 
+    // ── Persist lead ─────────────────────────────────────────
     const lead = await repo.insertLead(client, {
-      campaign_id: campaign.campaign_id,
+      campaign_id:     campaign.campaign_id,
       business,
       slug,
-      name: data.name,
-      phone: data.phone,
-      email: data.email,
-      message: data.message,
-      lead_type: data.lead_type || "form",
-      source: data.source || null,
+      first_name:      firstName  || null,
+      last_name:       lastName   || null,
+      name:            fullName,
+      phone:           data.phone   || null,
+      email:           data.email   || null,
+      message:         data.message || null,
+      address_city:    data.address_city  || null,
+      address_state:   data.address_state || null,
+      wants_birthday:  !!data.wants_birthday,
+      birthday_month:  data.wants_birthday ? (data.birthday_month || null) : null,
+      birthday_day:    data.wants_birthday ? (data.birthday_day   || null) : null,
+      lead_type:       leadType,
+      source:          data.source || null,
     });
 
-    if (contactId)
-      await repo.updateLeadContact(client, lead.lead_id, contactId);
+    if (contactId) await repo.updateLeadContact(client, lead.lead_id, contactId);
 
-    // Notify campaign owner / staff
+    // ── Welcome email (QR scan leads only — and only if email provided) ───
+    if (leadType === "qr_scan" && data.email) {
+      const shopUrl = campaign.redirect_url || "https://orikaliving.com/products";
+      try {
+        const { subject, html } = renderEmail("campaign_lead_welcome", business, {
+          first_name:    firstName || fullName,
+          campaign_name: campaign.campaign_name,
+          shop_url:      shopUrl,
+        });
+        await sendEmail({ to: data.email, subject, html, business });
+      } catch (emailErr) {
+        // Non-fatal — log and continue so the lead is never lost over an email failure
+        logger.warn(`[campaign_lead] welcome email failed for ${data.email}: ${emailErr.message}`);
+      }
+    }
+
+    // ── In-app staff notification ─────────────────────────────
     await notifyStaffOfLead(client, business, campaign, lead, contactId);
 
     return { submitted: true, lead_id: lead.lead_id };
@@ -279,6 +329,47 @@ async function placeOrder(business, slug, data, req) {
       });
     }
 
+    // ── Handle Optimus Pay virtual account provisioning ───────────────────────
+    let optimusVirtualAccount = null;
+    let optimusBankName = null;
+    let optimusTransactionRef = null;
+    if (data.payment_method === "optimus_pay") {
+      try {
+        const vaResult = await optimusService.openVirtualAccount({
+          amountKobo: Math.round(totalAmount * 100),
+          transactionRef: order.order_id,
+          description: `Payment for Order ${orderNumber} — ${campaign.campaign_name}`,
+          customerRef: order.order_id,
+          firstname: (data.customer_name || "Customer").split(" ")[0],
+          surname: (data.customer_name || "Customer").split(" ").slice(1).join(" ") || "N/A",
+          email: data.customer_email || `${data.customer_phone}@orikahub.com`,
+          mobileNo: (data.customer_phone || "").replace(/[^0-9]/g, "") || "2340000000000",
+        });
+        optimusVirtualAccount = vaResult.accountNumber;
+        optimusBankName = vaResult.bankName;
+        optimusTransactionRef = vaResult.transactionRef;
+
+        // Persist virtual account details on the order row
+        await client.query(
+          `UPDATE campaign_orders
+           SET optimus_transaction_ref = $1,
+               optimus_virtual_account = $2,
+               optimus_bank_name       = $3
+           WHERE order_id = $4`,
+          [optimusTransactionRef, optimusVirtualAccount, optimusBankName, order.order_id],
+        );
+      } catch (err) {
+        logger.error(
+          `[storefront] Optimus Pay provisioning failed for order ${orderNumber}: ${err.message}`,
+        );
+        // Surface error to caller so checkout can fall back gracefully
+        throw Object.assign(
+          new Error("Could not provision payment account. Please try again or choose another method."),
+          { status: 502 },
+        );
+      }
+    }
+
     // Notify staff of new order (bank transfer pending proof)
     if (data.payment_method === "bank_transfer") {
       await notifyStaffOfPendingOrder(
@@ -301,6 +392,10 @@ async function placeOrder(business, slug, data, req) {
       total_amount: totalAmount,
       payment_method: data.payment_method,
       paystack_url: paystackUrl,
+      // Optimus Pay: show these to the customer so they know where to transfer
+      optimus_virtual_account: optimusVirtualAccount,
+      optimus_bank_name: optimusBankName,
+      optimus_transaction_ref: optimusTransactionRef,
       status: order.status,
     };
   });
@@ -436,6 +531,25 @@ async function handlePaystackConfirmation(business, orderId) {
   }
 }
 
+// Called from the Optimus Pay webhook when a virtual account receives payment.
+async function handleOptimusConfirmation(business, orderId) {
+  const adminSvc = require("./admin.service");
+  const systemUser = {
+    user_id: null,
+    display_name: "Optimus Pay Webhook",
+    email: "system",
+  };
+  try {
+    await adminSvc.confirmOrder(business, orderId, systemUser);
+    logger.info(`[storefront] Optimus Pay auto-confirmed order ${orderId}`);
+  } catch (err) {
+    logger.error(
+      `[storefront] Optimus Pay confirmation failed for order ${orderId}:`,
+      err.message,
+    );
+  }
+}
+
 // ── NOTIFICATION HELPERS ──────────────────────────────────────────────────────
 
 async function notifyStaffOfLead(client, business, campaign, lead, contactId) {
@@ -446,16 +560,25 @@ async function notifyStaffOfLead(client, business, campaign, lead, contactId) {
      WHERE r.role_name IN ('owner','manager') AND (ur.business = $1 OR ur.business = '*')`,
     [business],
   );
+  const isQR       = lead.lead_type === "qr_scan";
+  const displayName = lead.name || lead.phone || "Someone";
+  const title = isQR
+    ? `New visitor — ${campaign.campaign_name}`
+    : `New inquiry — ${campaign.campaign_name}`;
+  const body = isQR
+    ? `${displayName} scanned the QR code and joined`
+    : `${displayName} submitted an inquiry form`;
+
   for (const m of managers) {
     await notifService.create(client, {
       userId: m.user_id,
       business,
       type: "campaign_lead",
-      title: `New inquiry — ${campaign.campaign_name}`,
-      body: `${lead.name || lead.phone} submitted an inquiry form`,
+      title,
+      body,
       referenceType: "campaign_lead",
       referenceId: lead.lead_id,
-      actionUrl: `/sales-campaigns/${campaign.campaign_id}/orders`,
+      actionUrl: `/sales-campaigns/${campaign.campaign_id}/leads`,
     });
   }
 }
@@ -527,6 +650,7 @@ module.exports = {
   submitProof,
   getOrderByToken,
   handlePaystackConfirmation,
+  handleOptimusConfirmation,
 };
 
 // ── storefront.routes.js ──────────────────────────────────────────────────────
@@ -562,25 +686,41 @@ pubRouter.post(
   },
 );
 
-// POST /api/c/:business/:slug/leads — inquiry form
+// POST /api/c/:business/:slug/leads — inquiry form OR QR scan capture
+// QR scan requires: first_name, last_name, phone, email (both)
+// Inquiry form:     name, phone, email, message (original behaviour)
 pubRouter.post(
   "/:business/:slug/leads",
-  body("name").optional().isString(),
-  body("phone").optional().isString(),
-  body("email").optional().isEmail(),
+  body("lead_type").optional().isIn(["form", "whatsapp_tap", "qr_scan"]),
+  body("first_name").optional().isString().trim(),
+  body("last_name").optional().isString().trim(),
+  body("name").optional().isString().trim(),
+  body("phone").optional().isString().trim(),
+  body("email").optional().isEmail().normalizeEmail({ gmail_dots: false }),
+  body("address_city").optional().isString().trim(),
+  body("address_state").optional().isString().trim(),
+  body("wants_birthday").optional().isBoolean(),
+  body("birthday_month").optional().isInt({ min: 1, max: 12 }),
+  body("birthday_day").optional().isInt({ min: 1, max: 31 }),
   validate,
   async (req, res, next) => {
+    // QR scan: require at least phone + email
+    if (req.body.lead_type === "qr_scan") {
+      if (!req.body.phone || !req.body.email) {
+        return res
+          .status(400)
+          .json({ error: "phone and email are required for QR scan registration" });
+      }
+    }
     try {
-      res
-        .status(201)
-        .json(
-          await svc.submitLead(
-            req.params.business,
-            req.params.slug,
-            req.body,
-            req,
-          ),
-        );
+      res.status(201).json(
+        await svc.submitLead(
+          req.params.business,
+          req.params.slug,
+          req.body,
+          req,
+        ),
+      );
     } catch (e) {
       next(e);
     }
@@ -593,7 +733,7 @@ pubRouter.post(
   body("customer_name").isString().notEmpty(),
   body("customer_phone").isString().notEmpty(),
   body("items").isArray({ min: 1 }),
-  body("payment_method").isIn(["paystack", "bank_transfer"]),
+  body("payment_method").isIn(["paystack", "bank_transfer", "optimus_pay"]),
   body("fulfilment_type").isIn(["delivery", "pickup"]),
   validate,
   async (req, res, next) => {

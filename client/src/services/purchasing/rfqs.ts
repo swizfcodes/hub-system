@@ -1,6 +1,11 @@
 import { api } from "../api";
 import type { RFQ, SupplierQuote, RFQStatus } from "@typedefs/purchasing";
 
+export async function getRFQ(id: string): Promise<RFQ> {
+  const { data } = await api.get<RFQ>(`/purchasing/rfqs/${id}`);
+  return data;
+}
+
 export async function listRFQs(
   params: { status?: RFQStatus; page?: number; limit?: number } = {},
 ): Promise<{ data: RFQ[] }> {

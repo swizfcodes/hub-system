@@ -116,7 +116,7 @@ export const grLineSchema = z
 export type GRLineValues = z.infer<typeof grLineSchema>;
 
 export const grnSchema = z.object({
-  warehouse_location_id: z.string().uuid().optional().or(z.literal("")),
+  receiving_location_id: z.string().uuid().optional().or(z.literal("")),
   notes: z.string().max(1000).optional().or(z.literal("")),
   lines: z.array(grLineSchema).min(1),
 });

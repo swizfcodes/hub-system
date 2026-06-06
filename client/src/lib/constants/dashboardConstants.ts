@@ -1,21 +1,53 @@
 // ── Section definitions ───────────────────────────────────────────────────────
+//
+// `modules`: which permission modules unlock this section.
+//   A user sees the section if they have `view` on ANY of these modules.
+// `financeApproveModule`: if set, the finance values are unblurred only when
+//   the user also has `approve` (or `view`) on this module.
 
 export const DASHBOARD_SECTIONS = [
-  { key: "sales", label: "Sales", icon: "📈", requiresApprove: false },
-  { key: "finance", label: "Finance", icon: "💰", requiresApprove: true },
+  {
+    key: "sales",
+    label: "Sales",
+    icon: "📈",
+    requiresApprove: false,
+    modules: ["sales", "pos", "invoicing"],
+  },
+  {
+    key: "finance",
+    label: "Finance",
+    icon: "💰",
+    requiresApprove: true,
+    modules: ["accounting", "invoicing", "expenses"],
+    financeApproveModule: "accounting",
+  },
   {
     key: "customers",
     label: "Customers & CRM",
     icon: "👥",
     requiresApprove: false,
+    modules: ["crm", "contacts"],
   },
-  { key: "stock", label: "Inventory", icon: "📦", requiresApprove: false },
-  { key: "logistics", label: "Logistics", icon: "🚚", requiresApprove: false },
+  {
+    key: "stock",
+    label: "Inventory",
+    icon: "📦",
+    requiresApprove: false,
+    modules: ["stock", "catalogue", "purchasing"],
+  },
+  {
+    key: "logistics",
+    label: "Logistics",
+    icon: "🚚",
+    requiresApprove: false,
+    modules: ["logistics"],
+  },
   {
     key: "retail",
     label: "Retail Partners",
     icon: "🏪",
     requiresApprove: false,
+    modules: ["retail-partners"],
   },
 ] as const;
 

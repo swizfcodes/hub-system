@@ -464,6 +464,69 @@ async function uploadHeroImage(
   });
 }
 
+// ── LEADS ─────────────────────────────────────────────────────────────────────
+
+async function listLeads(business, campaignId, { page = 1, limit = 50 } = {}) {
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.findCampaignById(client, campaignId);
+    if (!campaign)
+      throw Object.assign(new Error("Campaign not found"), { status: 404 });
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const [rows, total] = await Promise.all([
+      repo.listLeads(client, { campaignId, business, limit: parseInt(limit), offset }),
+      repo.countLeads(client, { campaignId, business }),
+    ]);
+    return { data: rows, total, page: parseInt(page), limit: parseInt(limit) };
+  });
+}
+
+// ── QR CODE ───────────────────────────────────────────────────────────────────
+
+async function generateQrCode(business, campaignId, user) {
+  const QRCode = require("qrcode");
+  const config  = require("../../config/config");
+
+  return withBusinessContext(business, async (client) => {
+    const campaign = await repo.findCampaignById(client, campaignId);
+    if (!campaign)
+      throw Object.assign(new Error("Campaign not found"), { status: 404 });
+
+    // The QR code points to the public join page (frontend SPA route)
+    const baseUrl  = config.appBaseUrl || "https://app.orikaliving.com";
+    const joinUrl  = `${baseUrl}/join/${business}/${campaign.slug}`;
+
+    // Render as a data URL (PNG) — store the SVG string for download later
+    const svgString = await QRCode.toString(joinUrl, {
+      type:        "svg",
+      margin:      2,
+      color:       { dark: "#1a1a1a", light: "#ffffff" },
+      errorCorrectionLevel: "H",
+    });
+
+    // Store the SVG inline as a data-URI so it can be served without a separate file
+    const svgDataUri = `data:image/svg+xml;base64,${Buffer.from(svgString).toString("base64")}`;
+
+    const updated = await repo.updateCampaign(client, campaignId, {
+      qr_code_url: svgDataUri,
+    });
+
+    await auditService.log(client, {
+      userId:   user.user_id,
+      userName: user.display_name,
+      business,
+      module:   "sales_campaigns",
+      action:   "edit",
+      table:    "sales_campaigns",
+      recordId: campaignId,
+      after:    { qr_code_url: joinUrl },
+    });
+
+    logger.info(`[sales_campaigns] QR generated for "${campaign.campaign_name}" → ${joinUrl}`);
+    return { qr_code_url: svgDataUri, join_url: joinUrl };
+  });
+}
+
 module.exports = {
   listCampaigns,
   getCampaign,
@@ -480,6 +543,8 @@ module.exports = {
   confirmOrder,
   cancelOrder,
   getAnalytics,
+  listLeads,
+  generateQrCode,
 };
 
 // ── admin.routes.js ───────────────────────────────────────────────────────────
@@ -514,9 +579,10 @@ router.post(
   can("sales_campaigns", "create"),
   body("campaign_name").isString().notEmpty(),
   body("slug").isString().notEmpty(),
+  body("campaign_type").optional().isIn(["online", "popup_event"]),
   body("template").optional().isIn(["minimal", "editorial", "bold"]),
-  body("start_date").optional().isISO8601(),
-  body("end_date").optional().isISO8601(),
+  body("start_date").optional({ checkFalsy: true }).isISO8601(),
+  body("end_date").optional({ checkFalsy: true }).isISO8601(),
   validate,
   async (req, res, next) => {
     try {
@@ -630,8 +696,6 @@ router.post(
     }
   },
 );
-
-// Products
 router.put(
   "/:id/products",
   param("id").isUUID(),
@@ -759,6 +823,41 @@ router.post(
           req.user,
         ),
       );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// GET /sales-campaigns/:id/leads
+router.get(
+  "/:id/leads",
+  param("id").isUUID(),
+  validate,
+  can("sales_campaigns", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await svc.listLeads(req.business, req.params.id, {
+          page:  req.query.page  || 1,
+          limit: req.query.limit || 50,
+        }),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// POST /sales-campaigns/:id/qr-code
+router.post(
+  "/:id/qr-code",
+  param("id").isUUID(),
+  validate,
+  can("sales_campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.generateQrCode(req.business, req.params.id, req.user));
     } catch (e) {
       next(e);
     }

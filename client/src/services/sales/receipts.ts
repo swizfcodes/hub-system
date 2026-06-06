@@ -25,6 +25,7 @@ export async function getReceipt(id: string): Promise<Receipt> {
   return data;
 }
 
-export function receiptPdfUrl(id: string): string {
-  return `${api.defaults.baseURL}/sales/receipts/${id}/pdf`;
+export async function openReceiptPdf(id: string): Promise<void> {
+  const { openPdf } = await import("@lib/openPdf");
+  return openPdf(`/sales/receipts/${id}/pdf`, `receipt-${id}.pdf`);
 }

@@ -141,6 +141,7 @@ router.post(
   body("items").isArray({ min: 1 }),
   body("items.*.product_id").isUUID(),
   body("items.*.quantity").isInt({ min: 1 }),
+  body("payment_method").optional().isIn(["paystack", "optimus_pay"]),
   validate,
   async (req, res, next) => {
     try {
@@ -207,6 +208,24 @@ router.get(
   async (req, res, next) => {
     try {
       res.json(await service.verifyAndFulfil(req.query.reference));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ── Optimus Pay ──────────────────────────────────────────────
+
+// Client-initiated verify — called on the return URL after the
+// customer has completed a bank transfer via Optimus Pay virtual account.
+// Idempotent with the server-to-server webhook.
+router.get(
+  "/optimus/verify",
+  query("transaction_ref").isString().notEmpty(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(await service.fulfillOptimusOrder(req.query.transaction_ref));
     } catch (e) {
       next(e);
     }

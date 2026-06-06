@@ -151,20 +151,12 @@ async function createStaff(data, user) {
       contactId = contact.contact_id;
     }
 
-    // Uniqueness check on employee_number.
-    const existing = await repo.findProfileByEmployeeNumber(
-      client,
-      data.employee_number,
-    );
-    if (existing) {
-      throw Object.assign(new Error("employee_number already in use"), {
-        status: 409,
-      });
-    }
+    // Auto-generate employee_number: HUB-EMP-XXXX
+    const employeeNumber = data.employee_number || await generateEmployeeNumber(client);
 
     const profile = await repo.insertProfile(client, {
       contact_id: contactId,
-      employee_number: data.employee_number,
+      employee_number: employeeNumber,
       business: data.business,
       department: data.department,
       job_title: data.job_title,
@@ -259,6 +251,24 @@ async function updateStaff(profileId, fields, user) {
     }
 
     const after = await repo.updateProfile(client, profileId, fields);
+
+    // Update linked contact fields if any were provided.
+    const contactFields = {};
+    for (const key of ["first_name", "last_name", "primary_phone", "whatsapp_number", "email", "gender", "date_of_birth"]) {
+      if (fields[key] !== undefined) contactFields[key] = fields[key];
+    }
+    if (Object.keys(contactFields).length && before.contact_id) {
+      // Update display_name if first/last name changed
+      if (contactFields.first_name || contactFields.last_name) {
+        const fn = contactFields.first_name || before.first_name || "";
+        const ln = contactFields.last_name || before.last_name || "";
+        contactFields.display_name = `${fn} ${ln}`.trim();
+      }
+      await client.query(
+        `UPDATE shared.contacts SET ${Object.keys(contactFields).map((k, i) => `${k} = $${i + 1}`).join(", ")}, updated_at = now() WHERE contact_id = $${Object.keys(contactFields).length + 1}`,
+        [...Object.values(contactFields), before.contact_id],
+      );
+    }
 
     // If salary changed, create a new contract row to preserve history.
     if (
@@ -729,6 +739,14 @@ async function revokeRole(profileId, { role_name, business }, user) {
 function userHasAnyRole(user, roleNames) {
   if (!user || !Array.isArray(user.roles)) return false;
   return user.roles.some((r) => roleNames.includes(r));
+}
+
+async function generateEmployeeNumber(client) {
+  const { rows } = await client.query(
+    `SELECT COUNT(*)::int AS total FROM shared.staff_profiles`,
+  );
+  const next = (rows[0]?.total || 0) + 1;
+  return `HUB-EMP-${String(next).padStart(4, "0")}`;
 }
 
 function maskField(value) {

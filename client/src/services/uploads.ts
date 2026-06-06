@@ -6,6 +6,16 @@ export interface UploadResponse {
   size: number;
 }
 
+/** Uploads an avatar. Backend: POST /api/uploads/avatar (multipart). */
+export async function uploadAvatar(file: File): Promise<UploadResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<UploadResponse>("/uploads/avatar", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
 /** Uploads a logo file. Backend: POST /api/uploads/logo (multipart). */
 export async function uploadLogo(
   file: File,

@@ -10,7 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Zap } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { Button } from "@components/ui/Button";
@@ -38,6 +38,7 @@ export default function PONew() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [params] = useSearchParams();
+  const isQuickMode = params.get("mode") === "quick";
   const [selectedSupplier, setSelectedSupplier] =
     useState<SupplierOption | null>(null);
   const [lineDescriptions, setLineDescriptions] = useState<
@@ -102,7 +103,12 @@ export default function PONew() {
     onSuccess: (po) => {
       qc.invalidateQueries({ queryKey: ["purchasing", "purchase-orders"] });
       showToast.success(`PO ${po.po_number} created`);
-      navigate(`/procurement/purchase-orders/${po.po_id}`);
+      // Quick mode: go straight to the detail page with receive modal pre-opened
+      if (isQuickMode) {
+        navigate(`/procurement/purchase-orders/${po.po_id}?receive=1`);
+      } else {
+        navigate(`/procurement/purchase-orders/${po.po_id}`);
+      }
     },
     onError: (e) => showToast.error("Could not save", errMsg(e)),
   });
@@ -129,6 +135,19 @@ export default function PONew() {
             Cancel
           </Button>
         </div>
+
+        {/* Quick mode banner */}
+        {isQuickMode && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-orika-gold/30 bg-orika-gold/[0.06] px-4 py-3">
+            <Zap className="h-4 w-4 text-orika-gold mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-orika-gold">Quick purchase mode</p>
+              <p className="text-xs text-orika-smoke mt-0.5">
+                After creating the PO you'll be taken straight to receive the goods — no extra steps.
+              </p>
+            </div>
+          </div>
+        )}
 
         <header className="mb-6">
           <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
@@ -303,14 +322,17 @@ export default function PONew() {
                 step="0.01"
                 label="Other charges"
               />
-              <Input
-                {...register("exchange_rate", { valueAsNumber: true })}
-                type="number"
-                step="0.0001"
-                label="FX rate -> NGN"
-                hint="Locked at approval"
-                className="sm:col-span-2"
-              />
+              {/* Exchange rate only needed for non-NGN currencies */}
+              {currency !== "NGN" && (
+                <Input
+                  {...register("exchange_rate", { valueAsNumber: true })}
+                  type="number"
+                  step="0.0001"
+                  label="Exchange rate (to NGN)"
+                  hint="Rate locked at time of creation"
+                  className="sm:col-span-2"
+                />
+              )}
             </div>
             <div className="mt-5 rounded-xl bg-orika-black/40 border border-orika-graphite p-4">
               <Total label="Subtotal" value={fmtMoney(subtotal, currency)} />

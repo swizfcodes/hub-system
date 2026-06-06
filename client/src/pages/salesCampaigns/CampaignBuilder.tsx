@@ -15,7 +15,11 @@ import {
   Link,
   ImagePlus,
   RotateCw,
+  QrCode,
+  Users,
+  Download,
 } from "lucide-react";
+import CampaignLeads from "@components/campaigns/CampaignLeads";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -37,6 +41,7 @@ import {
   removeCampaignProduct,
   addBankAccount,
   removeBankAccount,
+  generateQrCode,
 } from "@services/salesCampaign";
 import {
   campaignSchema,
@@ -65,6 +70,7 @@ const STEPS = [
   { id: 2, label: "Products", desc: "What you're selling" },
   { id: 3, label: "Payment", desc: "Bank accounts" },
   { id: 4, label: "Settings", desc: "Sharing & sections" },
+  { id: 5, label: "Leads", desc: "Captured contacts" },
 ];
 
 export default function CampaignBuilder() {
@@ -77,6 +83,7 @@ export default function CampaignBuilder() {
   const [campaignId, setCampaignId] = useState<string | null>(id ?? null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [generatingQr, setGeneratingQr] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [heroUploading, setHeroUploading] = useState(false);
   const heroInputRef = useRef<HTMLInputElement>(null);
@@ -146,6 +153,7 @@ export default function CampaignBuilder() {
   } = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
+      campaign_type: "online",
       template: "editorial",
       discount_type: "none",
       is_evergreen: false,
@@ -158,6 +166,7 @@ export default function CampaignBuilder() {
       reset({
         campaign_name: existing.campaign_name,
         slug: existing.slug,
+        campaign_type: existing.campaign_type ?? "online",
         template: existing.template,
         headline: existing.headline ?? "",
         subheadline: existing.subheadline ?? "",
@@ -213,6 +222,20 @@ export default function CampaignBuilder() {
       showToast.error(e.message);
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function handleGenerateQr() {
+    if (!campaignId) return;
+    setGeneratingQr(true);
+    try {
+      await generateQrCode(campaignId);
+      qc.invalidateQueries({ queryKey: ["sales-campaign", campaignId] });
+      showToast.success("QR code generated — ready to print!");
+    } catch (e: any) {
+      showToast.error(e.message ?? "QR code generation failed");
+    } finally {
+      setGeneratingQr(false);
     }
   }
 
@@ -304,9 +327,9 @@ export default function CampaignBuilder() {
         }
       />
 
-      {/* Step indicator */}
+      {/* Step indicator — step 5 (Leads) only shown for existing campaigns */}
       <div className="flex items-center gap-1">
-        {STEPS.map((s, i) => (
+        {STEPS.filter((s) => s.id < 5 || campaignId).map((s, i, arr) => (
           <div key={s.id} className="flex items-center gap-1 flex-1">
             <button
               onClick={() => (campaignId ? setStep(s.id) : undefined)}
@@ -329,11 +352,17 @@ export default function CampaignBuilder() {
                       : "bg-white/10 text-orika-smoke/50",
                 )}
               >
-                {s.id < step ? "✓" : s.id}
+                {s.id === 5 ? (
+                  <Users className="h-3 w-3" />
+                ) : s.id < step ? (
+                  "✓"
+                ) : (
+                  s.id
+                )}
               </span>
               <span className="hidden sm:block">{s.label}</span>
             </button>
-            {i < STEPS.length - 1 && (
+            {i < arr.length - 1 && (
               <div className="h-px w-4 bg-white/10 shrink-0" />
             )}
           </div>
@@ -423,6 +452,57 @@ export default function CampaignBuilder() {
             <p className="text-[11px] text-orika-smoke/60 mt-2">
               Used for buttons, prices and highlights on your campaign page.
             </p>
+          </div>
+
+          {/* Campaign type */}
+          <div>
+            <p className="text-sm font-medium text-orika-cream mb-3">
+              Campaign type
+            </p>
+            <Controller
+              name="campaign_type"
+              control={control}
+              render={({ field }) => (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {(
+                    [
+                      {
+                        value: "online",
+                        label: "Online Campaign",
+                        desc: "Share a link or QR to your landing page",
+                        icon: "🌐",
+                      },
+                      {
+                        value: "popup_event",
+                        label: "Popup / Physical Event",
+                        desc: "Capture walk-in visitors with a QR scan",
+                        icon: "🏪",
+                      },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => field.onChange(opt.value)}
+                      className={cn(
+                        "rounded-2xl border p-4 text-left transition-all",
+                        field.value === opt.value
+                          ? "border-orika-gold bg-orika-gold/5"
+                          : "border-white/10 bg-orika-graphite hover:border-white/20",
+                      )}
+                    >
+                      <span className="text-2xl">{opt.icon}</span>
+                      <p className="text-sm font-semibold text-orika-cream mt-2">
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-orika-smoke mt-0.5">
+                        {opt.desc}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -964,18 +1044,68 @@ export default function CampaignBuilder() {
                   Share on WhatsApp
                 </Button>
               </a>
-              {existing.qr_code_url && (
-                <div className="text-center">
-                  <img
-                    src={existing.qr_code_url}
-                    alt="QR code"
-                    className="h-32 w-32 mx-auto rounded-xl"
-                  />
-                  <p className="text-xs text-orika-smoke mt-2">
-                    Print this QR code on in-store signage
-                  </p>
-                </div>
-              )}
+              {/* QR code panel */}
+              <div className="rounded-xl border border-white/8 bg-orika-charcoal p-4 space-y-3">
+                <p className="text-xs font-semibold text-orika-cream flex items-center gap-2">
+                  <QrCode className="h-3.5 w-3.5 text-orika-gold" />
+                  QR Code — Popup / Walk-in Capture
+                </p>
+                {existing.qr_code_url ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <img
+                      src={existing.qr_code_url}
+                      alt="QR code"
+                      className="h-36 w-36 rounded-xl bg-white p-2"
+                    />
+                    <p className="text-xs text-orika-smoke text-center">
+                      Print this on banners, table cards, or receipts. Visitors
+                      scan it and fill in their details in under 10 seconds.
+                    </p>
+                    <div className="flex gap-2 w-full">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        fullWidth
+                        leftIcon={<Download className="h-3.5 w-3.5" />}
+                        onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = existing.qr_code_url!;
+                          a.download = `${existing.slug}-qr.svg`;
+                          a.click();
+                        }}
+                      >
+                        Download SVG
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        fullWidth
+                        loading={generatingQr}
+                        onClick={handleGenerateQr}
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-orika-smoke">
+                      Generate a QR code that visitors can scan at your event
+                      to register in seconds.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      fullWidth
+                      loading={generatingQr}
+                      leftIcon={<QrCode className="h-3.5 w-3.5" />}
+                      onClick={handleGenerateQr}
+                    >
+                      Generate QR Code
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -988,6 +1118,15 @@ export default function CampaignBuilder() {
               Back
             </Button>
             <div className="flex gap-2">
+              {campaignId && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<Users className="h-4 w-4" />}
+                  onClick={() => setStep(5)}
+                >
+                  View Leads
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() => navigate("/sales-campaigns")}
@@ -1005,6 +1144,40 @@ export default function CampaignBuilder() {
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 5: LEADS ────────────────────────────────────────────────────── */}
+      {step === 5 && campaignId && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-orika-cream">
+                Captured leads
+              </p>
+              <p className="text-xs text-orika-smoke mt-0.5">
+                Everyone who scanned your QR code or submitted the inquiry form.
+              </p>
+            </div>
+          </div>
+
+          <CampaignLeads campaignId={campaignId} business={business ?? ""} />
+
+          <div className="flex justify-between pt-2">
+            <Button
+              variant="ghost"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => setStep(4)}
+            >
+              Back to Settings
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/sales-campaigns")}
+            >
+              Done
+            </Button>
           </div>
         </div>
       )}

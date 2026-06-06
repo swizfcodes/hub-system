@@ -4,12 +4,6 @@
 import { api } from "@services/api";
 import type { PayrollRun, Payslip } from "@typedefs/payroll";
 
-// Base URL for building direct-download links (PDF / compliance files).
-// api.defaults.baseURL already points at the API root (e.g. "/api").
-function apiBase(): string {
-  const base = (api.defaults.baseURL ?? "/api").replace(/\/$/, "");
-  return base;
-}
 
 export interface PayrollRunListResponse {
   data: PayrollRun[];
@@ -86,10 +80,12 @@ export async function sendPayslip(
   await api.post(`/payroll/payslips/${payslipId}/send`, { channel });
 }
 
-export function payslipPdfUrl(payslipId: string): string {
-  return `${apiBase()}/payroll/payslips/${payslipId}/pdf`;
+export async function openPayslipPdf(payslipId: string): Promise<void> {
+  const { openPdf } = await import("@lib/openPdf");
+  return openPdf(`/payroll/payslips/${payslipId}/pdf`, `payslip-${payslipId}.pdf`);
 }
 
-export function complianceUrl(runId: string, outputKey: string): string {
-  return `${apiBase()}/payroll/runs/${runId}/compliance/${outputKey}`;
+export async function openCompliancePdf(runId: string, outputKey: string): Promise<void> {
+  const { openPdf } = await import("@lib/openPdf");
+  return openPdf(`/payroll/runs/${runId}/compliance/${outputKey}`, `${outputKey}.pdf`);
 }

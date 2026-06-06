@@ -23,7 +23,6 @@
 -- Idempotent throughout. Safe to re-run.
 -- ============================================================
 
-BEGIN;
 
 -- ── 1. notification_preferences uniqueness ───────────────────
 -- De-dupe first in case any duplicate (user, type) rows already
@@ -81,5 +80,3 @@ END $$;
 -- The permission middleware caches per role in Redis. Restart the
 -- API or flush the permission cache after applying so the new
 -- discounts rows take effect immediately.
-
-COMMIT;

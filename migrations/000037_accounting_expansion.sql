@@ -8,7 +8,6 @@
 -- Account-code reference: ACCT_INTEGRATION_REPORT.md
 -- ============================================================
 
-BEGIN;
 
 -- ────────────────────────────────────────────────────────────
 -- 1. System user — posted_by for machine-generated journals
@@ -101,4 +100,3 @@ VALUES
   ('6700', 'Purchases — Non-stock',       'expense',   'cost_of_goods',     false)
 ON CONFLICT (account_code) DO NOTHING;
 
-COMMIT;

@@ -24,7 +24,6 @@
 -- Idempotent throughout. Safe to re-run.
 -- ============================================================
 
-BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS store;
 
@@ -219,5 +218,3 @@ DROP TRIGGER IF EXISTS trg_store_orders_updated_at ON store.orders;
 CREATE TRIGGER trg_store_orders_updated_at
   BEFORE UPDATE ON store.orders
   FOR EACH ROW EXECUTE FUNCTION store.set_updated_at();
-
-COMMIT;

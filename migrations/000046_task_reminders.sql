@@ -6,7 +6,6 @@
 -- personal. shared.tasks is a shared table, so these are single columns.
 -- ============================================================
 
-BEGIN;
 
 ALTER TABLE shared.tasks
   ADD COLUMN IF NOT EXISTS reminder_minutes  INT,                       -- lead time before due_at
@@ -21,4 +20,3 @@ CREATE INDEX IF NOT EXISTS idx_tasks_remind_pending
   ON shared.tasks (remind_at)
   WHERE remind_at IS NOT NULL AND reminder_sent = false AND is_deleted = false;
 
-COMMIT;

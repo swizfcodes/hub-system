@@ -18,7 +18,6 @@
 -- Idempotent: ON CONFLICT DO NOTHING. Safe to re-run / fresh installs.
 -- ============================================================
 
-BEGIN;
 
 INSERT INTO shared.permissions (role_id, module, action, record_scope, hidden_fields)
 SELECT r.role_id, 'audit', a.action, 'all', '{}'
@@ -32,4 +31,3 @@ ON CONFLICT (role_id, module, action) DO NOTHING;
 -- applying this migration, restart the API server (or flush the
 -- Redis permission cache) so the new rows take effect immediately.
 
-COMMIT;

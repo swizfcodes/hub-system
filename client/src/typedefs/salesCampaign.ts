@@ -52,6 +52,7 @@ export interface SalesCampaign {
   campaign_id: string;
   campaign_name: string;
   slug: string;
+  campaign_type: CampaignType;
   template: CampaignTemplate;
   status: CampaignStatus;
   headline?: string | null;
@@ -135,3 +136,23 @@ export interface CampaignAnalytics {
   orders_placed: number;
   by_source: Record<string, number>;
 }
+
+export interface CampaignLead {
+  lead_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  wants_birthday: boolean;
+  birthday_month: number | null;
+  birthday_day: number | null;
+  lead_type: "form" | "whatsapp_tap" | "qr_scan";
+  source: string | null;
+  hub_contact_id: string | null;
+  created_at: string;
+}
+
+export type CampaignType = "online" | "popup_event";

@@ -3,7 +3,7 @@ import { fmtMoney, fmtDate } from "@lib/format";
 import { PAYMENT_METHOD_META } from "@lib/constants/salesConstants";
 import { Skeleton } from "@components/ui/Skeleton";
 import type { InvoicePayment, Receipt } from "@typedefs/sales";
-import { receiptPdfUrl } from "@services/sales/receipts";
+import { openReceiptPdf } from "@services/sales/receipts";
 
 interface Props {
   payments: InvoicePayment[];
@@ -78,10 +78,8 @@ export function PaymentLedger({
                 {fmtMoney(payment.amount, currency)}
               </span>
               {receipt && (
-                <a
-                  href={receiptPdfUrl(receipt.receipt_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => openReceiptPdf(receipt.receipt_id)}
                   className="flex items-center gap-1 text-xs text-orika-smoke transition-colors hover:text-orika-gold"
                   title={`Receipt ${receipt.receipt_number}`}
                 >
@@ -89,7 +87,7 @@ export function PaymentLedger({
                   <span className="hidden sm:inline">
                     {receipt.receipt_number}
                   </span>
-                </a>
+                </button>
               )}
             </div>
           </div>

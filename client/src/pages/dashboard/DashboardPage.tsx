@@ -39,13 +39,13 @@ import {
   DASHBOARD_SECTIONS,
   BRAND_OPTIONS,
   PERIOD_OPTIONS,
-  DEFAULT_VISIBLE_SECTIONS,
   getPeriodParams,
   type SectionKey,
   type BrandOption,
 } from "@lib/constants/dashboardConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useAuthStore } from "@stores/useAuthStore";
+import { usePermissions } from "@hooks/usePermissions";
 import { useUiStore } from "@stores/useUiStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { CommandPalette } from "@components/search/CommandPalette";
@@ -68,12 +68,14 @@ export default function DashboardPage() {
   // Dashboard controls
   const [brand, setBrand] = useState<BrandOption>("jewelry");
   const [period, setPeriod] = useState("this_month");
-  const [visibleSections, setVisibleSections] = useState<SectionKey[]>(() => {
+  const [manualHidden, setManualHidden] = useState<SectionKey[]>(() => {
+    // Store only sections the user has explicitly *hidden*, not all visible ones.
+    // This way newly-permitted sections appear by default without localStorage bloat.
     try {
-      const saved = localStorage.getItem("dashboard_sections");
-      return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_SECTIONS;
+      const saved = localStorage.getItem("dashboard_sections_hidden");
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_VISIBLE_SECTIONS;
+      return [];
     }
   });
   const [showSectionPicker, setShowSectionPicker] = useState(false);
@@ -81,36 +83,53 @@ export default function DashboardPage() {
 
   const params = getPeriodParams(period);
 
-  // All data queries
+  // ── Permissions — resolved before queries so enabled flags are correct ──────
+  const { hasPermission, hasAnyPermission, isLoading: permsLoading } = usePermissions();
+
+  const canSeeSales     = hasAnyPermission([{ module: "sales", action: "view" }, { module: "pos", action: "view" }, { module: "invoicing", action: "view" }]);
+  const canSeeFinance   = hasAnyPermission([{ module: "accounting", action: "view" }, { module: "invoicing", action: "view" }, { module: "expenses", action: "view" }]);
+  const canSeeStock     = hasAnyPermission([{ module: "stock", action: "view" }, { module: "catalogue", action: "view" }, { module: "purchasing", action: "view" }]);
+  const canSeeCustomers = hasAnyPermission([{ module: "crm", action: "view" }, { module: "contacts", action: "view" }]);
+  const canSeeLogistics = hasPermission("logistics", "view");
+  const canSeeRetail    = hasPermission("retail-partners", "view");
+
+  // All data queries — each fires only when permissions have loaded and the
+  // user actually has access to that module. This prevents wasted 403 requests.
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ["dash-sales", brand, period],
     queryFn: () => getSalesData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeSales,
   });
   const { data: financeData, isLoading: financeLoading } = useQuery({
     queryKey: ["dash-finance", brand, period],
     queryFn: () => getFinanceData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeFinance,
   });
   const { data: stockData, isLoading: stockLoading } = useQuery({
     queryKey: ["dash-stock", brand],
     queryFn: () => getStockData(),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeStock,
   });
   const { data: customerData, isLoading: customerLoading } = useQuery({
     queryKey: ["dash-customers", brand, period],
     queryFn: () => getCustomerData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeCustomers,
   });
   const { data: logisticsData, isLoading: logisticsLoading } = useQuery({
     queryKey: ["dash-logistics", brand, period],
     queryFn: () => getLogisticsData(params),
     refetchInterval: 5 * 60_000,
+    enabled: !permsLoading && canSeeLogistics,
   });
   const { data: yesterday } = useQuery({
     queryKey: ["dash-yesterday", brand],
     queryFn: () => getYesterdaySummary(),
     staleTime: 30 * 60_000,
+    enabled: !permsLoading && canSeeSales,
   });
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-count"],
@@ -118,9 +137,29 @@ export default function DashboardPage() {
     refetchInterval: 60_000,
   });
 
-  // Permissions — check if user can see finance (approve-level)
-  // In real app pull from useAuth(); hardcoded true for owner for now
-  const canViewFinance = true;
+  // ── Section visibility ──────────────────────────────────────────────────────
+  // Map the pre-computed permission booleans onto section keys so the section
+  // picker and render logic stay in sync with the query enabled flags above.
+  const permittedSections = DASHBOARD_SECTIONS.filter((s) => {
+    if (s.key === "sales")     return canSeeSales;
+    if (s.key === "finance")   return canSeeFinance;
+    if (s.key === "customers") return canSeeCustomers;
+    if (s.key === "stock")     return canSeeStock;
+    if (s.key === "logistics") return canSeeLogistics;
+    if (s.key === "retail")    return canSeeRetail;
+    return false;
+  }).map((s) => s.key);
+
+  // Sections that are permitted AND not manually hidden by the user.
+  const visibleSections = permittedSections.filter(
+    (k) => !manualHidden.includes(k),
+  );
+
+  // Finance detail (net profit, bank balances) unblurred only for
+  // users with accounting:approve or accounting:view.
+  const canViewFinance =
+    hasPermission("accounting", "approve") ||
+    hasPermission("accounting", "view");
 
   // Build alerts from live data
   const alerts: AlertItem[] = [];
@@ -164,13 +203,13 @@ export default function DashboardPage() {
     setLastRefresh(new Date());
   }
 
-  // Toggle section visibility
+  // Toggle section visibility (toggles user's hidden-override for permitted sections)
   function toggleSection(key: SectionKey) {
-    setVisibleSections((prev) => {
+    setManualHidden((prev) => {
       const next = prev.includes(key)
         ? prev.filter((s) => s !== key)
         : [...prev, key];
-      localStorage.setItem("dashboard_sections", JSON.stringify(next));
+      localStorage.setItem("dashboard_sections_hidden", JSON.stringify(next));
       return next;
     });
   }
@@ -294,7 +333,9 @@ export default function DashboardPage() {
               </button>
               {showSectionPicker && (
                 <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-orika-charcoal shadow-xl p-2">
-                  {DASHBOARD_SECTIONS.map((s) => (
+                  {DASHBOARD_SECTIONS.filter((s) =>
+                    permittedSections.includes(s.key),
+                  ).map((s) => (
                     <label
                       key={s.key}
                       className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-orika-graphite/30"
@@ -310,6 +351,11 @@ export default function DashboardPage() {
                       </span>
                     </label>
                   ))}
+                  {permittedSections.length === 0 && (
+                    <p className="text-[10px] text-orika-smoke px-2 py-2">
+                      No sections permitted
+                    </p>
+                  )}
                 </div>
               )}
             </div>

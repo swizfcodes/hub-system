@@ -4,7 +4,6 @@
 -- Apply once (shared schema) — invite_tokens & users are shared.
 -- ============================================================
 
-BEGIN;
 
 -- ── Invite tokens ──────────────────────────────────────────────
 -- One-time, single-use links for new-user onboarding. Raw token is
@@ -80,4 +79,3 @@ ON TRUE
 WHERE r.role_name = 'manager'
 ON CONFLICT (role_id, module, action) DO NOTHING;
 
-COMMIT;

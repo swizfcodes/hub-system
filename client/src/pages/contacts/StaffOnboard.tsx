@@ -145,7 +145,6 @@ export default function StaffOnboard() {
   const STEP_FIELDS: Record<string, Array<keyof StaffOnboardValues>> = {
     person: ["contact_id", "first_name", "last_name", "primary_phone", "email"],
     employment: [
-      "employee_number",
       "business",
       "job_title",
       "employment_type",
@@ -301,13 +300,6 @@ export default function StaffOnboard() {
                 </header>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    {...register("employee_number")}
-                    label="Employee number"
-                    placeholder="HUB-EMP-0001"
-                    hint="Permanent"
-                    error={errors.employee_number?.message}
-                  />
                   <Select
                     {...register("business")}
                     label="Primary business"

@@ -6,7 +6,6 @@
 -- house gold (#C9A86C). Selectable from the campaign builder.
 -- ============================================================
 
-BEGIN;
 
 ALTER TABLE jewelry.sales_campaigns
   ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#C9A86C';
@@ -14,4 +13,3 @@ ALTER TABLE jewelry.sales_campaigns
 ALTER TABLE diffusers.sales_campaigns
   ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#C9A86C';
 
-COMMIT;

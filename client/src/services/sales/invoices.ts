@@ -80,8 +80,9 @@ export async function voidInvoice(
   return data;
 }
 
-export function invoicePdfUrl(id: string): string {
-  return `${api.defaults.baseURL}/invoicing/${id}/pdf`;
+export async function openInvoicePdf(id: string): Promise<void> {
+  const { openPdf } = await import("@lib/openPdf");
+  return openPdf(`/invoicing/${id}/pdf`, `invoice-${id}.pdf`);
 }
 
 /** Fetch the invoice generated from a specific order */
