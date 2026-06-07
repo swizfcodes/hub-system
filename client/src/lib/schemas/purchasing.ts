@@ -67,7 +67,7 @@ export type QuoteSubmissionValues = z.infer<typeof quoteSubmissionSchema>;
 
 // ── Purchase Order ──
 export const poLineSchema = z.object({
-  product_id: z.string().uuid(),
+  product_id: z.string().uuid().optional().or(z.literal("")),
   quantity_ordered: z.number().int().min(1),
   unit_price: z.number().min(0),
 });

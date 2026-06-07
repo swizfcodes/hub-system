@@ -334,7 +334,7 @@ async function createPO(business, data, user) {
     for (const l of data.lines) {
       await repo.insertPOLine(client, {
         po_id: po.po_id,
-        product_id: l.product_id,
+        product_id: l.product_id || null,
         quantity_ordered: l.quantity_ordered,
         unit_price: l.unit_price,
       });

@@ -370,6 +370,38 @@ async function getTransactionProductLines(client, transactionId) {
   return rows;
 }
 
+// Find the invoice that was generated from a specific POS transaction.
+// Used by confirmTransactionPayment to find the invoice to settle.
+async function findInvoiceByPosTransactionId(client, transactionId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT i.invoice_id, i.invoice_number, i.total_amount, i.status,
+            i.contact_id, c.email, c.whatsapp_number
+     FROM invoices i
+     LEFT JOIN shared.contacts c ON c.contact_id = i.contact_id
+     WHERE i.pos_transaction_id = $1
+     LIMIT 1`,
+    [transactionId],
+  );
+  return row || null;
+}
+
+// Fetch the primary bank account for a business. Used when generating
+// a transfer invoice so we can embed account details as payment_instructions.
+async function findPrimaryBankAccount(client, business) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT account_id, bank_name, account_name, account_number, sort_code, currency
+     FROM shared.bank_accounts
+     WHERE business = $1 AND is_primary = true AND is_active = true
+     LIMIT 1`,
+    [business],
+  );
+  return row || null;
+}
+
 module.exports = {
   getTerminals,
   findTerminalById,
@@ -395,4 +427,6 @@ module.exports = {
   findTransactionById,
   voidTransaction,
   getTransactionProductLines,
+  findInvoiceByPosTransactionId,
+  findPrimaryBankAccount,
 };

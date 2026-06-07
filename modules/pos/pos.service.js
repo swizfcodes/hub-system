@@ -12,6 +12,7 @@ const sessionSvc = require("./session.service");
 const receiptSvc = require("./receipt.service");
 const repo = require("./pos.repository");
 const loyaltyService = require("../loyalty/loyalty.service");
+const invoicingSvc = require("../invoicing/invoicing.service");
 
 // ─────────────────────────────────────────────────────────────
 // POS service — coordination layer for the point of sale.
@@ -805,6 +806,203 @@ async function syncOfflineTransactions(business, transactions, user) {
   return { results, synced: results.filter((r) => r.status === "synced").length };
 }
 
+// ─────────────────────────────────────────────────────────────
+// INVOICE FROM POS TRANSACTION
+//
+// Creates a formal invoice from a completed POS transaction.
+// Used for bank-transfer walk-in sales where the customer needs
+// a document showing the company's account details.
+//
+// Idempotent — if an invoice already exists for this transaction
+// the existing one is returned without creating a duplicate.
+// ─────────────────────────────────────────────────────────────
+async function createInvoiceFromTransaction(business, transactionId, { due_date } = {}, user) {
+  return withBusinessContext(business, async (client) => {
+    // 1. Fetch and validate the transaction
+    const tx = await repo.findTransactionById(client, transactionId);
+    if (!tx)
+      throw Object.assign(new Error("Transaction not found"), { status: 404 });
+    if (tx.status !== "completed")
+      throw Object.assign(
+        new Error(`Cannot invoice a ${tx.status} transaction`),
+        { status: 400 },
+      );
+
+    // 2. Idempotency — return existing invoice if already generated
+    const existing = await repo.findInvoiceByPosTransactionId(client, transactionId);
+    if (existing) {
+      const bankAccount = await repo.findPrimaryBankAccount(client, business);
+      return { ...existing, bank_account: bankAccount || null };
+    }
+
+    // 3. Get business primary bank account for payment instructions
+    const bankAccount = await repo.findPrimaryBankAccount(client, business);
+    const paymentInstructions = bankAccount
+      ? [
+          `Please transfer the total amount to:`,
+          `Bank: ${bankAccount.bank_name}`,
+          `Account Name: ${bankAccount.account_name}`,
+          `Account Number: ${bankAccount.account_number}`,
+          bankAccount.sort_code ? `Sort Code: ${bankAccount.sort_code}` : null,
+          ``,
+          `Use receipt number ${tx.transaction_number} as your transfer reference.`,
+        ]
+          .filter((l) => l !== null)
+          .join("\n")
+      : null;
+
+    // 4. Create the invoice record
+    const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
+    const vatRate = getVatRate(business);
+    let subtotal = 0, vatTotal = 0;
+    for (const l of tx.lines || []) {
+      const net =
+        parseFloat(l.unit_price) * parseInt(l.quantity) -
+        parseFloat(l.discount_amount || 0);
+      subtotal += net;
+      vatTotal += net * vatRate;
+    }
+    subtotal   = Math.round(subtotal  * 100) / 100;
+    vatTotal   = Math.round(vatTotal  * 100) / 100;
+    const total = Math.round((subtotal + vatTotal) * 100) / 100;
+
+    // due_date defaults to 7 days from today
+    const resolvedDueDate =
+      due_date ||
+      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const { rows: [inv] } = await client.query(
+      `INSERT INTO invoices
+         (invoice_number, invoice_type, contact_id, pos_transaction_id,
+          status, issue_date, due_date,
+          subtotal, discount_total, vat_amount, total_amount,
+          currency, payment_instructions, created_by)
+       VALUES ($1,'pos_sale',$2,$3,
+               'draft', CURRENT_DATE, $4,
+               $5, 0, $6, $7,
+               'NGN', $8, $9)
+       RETURNING *`,
+      [
+        invoiceNumber,
+        tx.contact_id || null,
+        transactionId,
+        resolvedDueDate,
+        subtotal, vatTotal, total,
+        paymentInstructions,
+        user.user_id,
+      ],
+    );
+
+    // 5. Copy transaction lines to invoice_lines
+    const lines = tx.lines || [];
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      const net =
+        parseFloat(l.unit_price) * parseInt(l.quantity) -
+        parseFloat(l.discount_amount || 0);
+      const vatAmt = Math.round(net * vatRate * 100) / 100;
+      await client.query(
+        `INSERT INTO invoice_lines
+           (invoice_id, product_id, description, quantity, unit_price,
+            discount_amount, vat_rate, vat_amount, line_total, display_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [
+          inv.invoice_id,
+          l.product_id || null,
+          l.description,
+          l.quantity,
+          l.unit_price,
+          l.discount_amount || 0,
+          vatRate,
+          vatAmt,
+          Math.round((net + vatAmt) * 100) / 100,
+          i,
+        ],
+      );
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "pos",
+      action: "create",
+      table: "invoices",
+      recordId: inv.invoice_id,
+      after: inv,
+    });
+
+    return { ...inv, bank_account: bankAccount || null };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONFIRM BANK TRANSFER PAYMENT
+//
+// Called by staff once they verify the bank transfer has arrived
+// (checked on the POS machine / banking app). Finds the invoice
+// linked to the transaction, records the payment as confirmed,
+// marks the invoice paid, and sends the itemised receipt by email.
+// ─────────────────────────────────────────────────────────────
+async function confirmTransactionPayment(business, transactionId, { reference, notes } = {}, user) {
+  // 1. Find the linked invoice
+  const inv = await withBusinessContext(business, async (client) =>
+    repo.findInvoiceByPosTransactionId(client, transactionId),
+  );
+  if (!inv)
+    throw Object.assign(
+      new Error(
+        "No invoice found for this transaction. Generate an invoice first.",
+      ),
+      { status: 404 },
+    );
+  if (inv.status === "paid")
+    throw Object.assign(new Error("Invoice is already marked as paid"), {
+      status: 409,
+    });
+
+  // 2. Record the payment against the invoice (triggers journal + loyalty)
+  await invoicingSvc.recordPayment(
+    business,
+    inv.invoice_id,
+    {
+      amount: parseFloat(inv.total_amount),
+      payment_method: "bank_transfer",
+      reference: reference || null,
+      is_confirmed: true,
+      notes: notes || "Confirmed at POS terminal",
+    },
+    user,
+  );
+
+  // 3. Send receipt by email — non-fatal if contact has no email
+  let receiptSent = false;
+  let receiptError = null;
+  try {
+    const result = await receiptSvc.sendReceipt(
+      business,
+      transactionId,
+      { channel: "email", invoiceNumber: inv.invoice_number },
+      user,
+    );
+    receiptSent = result.sent === true;
+    if (!result.sent) receiptError = result.reason || "No email address on file";
+  } catch (err) {
+    logger.warn(
+      `[pos] receipt email failed after payment confirm for tx ${transactionId}: ${err.message}`,
+    );
+    receiptError = err.message;
+  }
+
+  return {
+    confirmed: true,
+    invoice_id: inv.invoice_id,
+    invoice_number: inv.invoice_number,
+    receipt_sent: receiptSent,
+    receipt_error: receiptError,
+  };
+}
+
 module.exports = {
   getTerminals,
   createTerminal,
@@ -822,5 +1020,6 @@ module.exports = {
   voidTransaction,
   sendReceipt,
   downloadReceiptPDF,
-  syncOfflineTransactions,
+  createInvoiceFromTransaction,
+  confirmTransactionPayment,
 };

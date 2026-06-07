@@ -279,6 +279,60 @@ router.post(
   },
 );
 
+// Generate a formal invoice from a completed POS transaction.
+// Embeds the company's primary bank account as payment_instructions
+// so the customer can transfer the exact amount.
+// Idempotent — re-requesting returns the existing invoice.
+router.post(
+  "/transactions/:id/invoice",
+  param("id").isUUID(),
+  body("due_date").optional().isISO8601(),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await service.createInvoiceFromTransaction(
+            req.business,
+            req.params.id,
+            req.body,
+            req.user,
+          ),
+        );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Confirm that a bank transfer has been received.
+// Staff calls this after verifying the transfer on the POS machine.
+// Marks the linked invoice paid and sends the receipt by email.
+router.post(
+  "/transactions/:id/confirm-payment",
+  param("id").isUUID(),
+  body("reference").optional().isString(),
+  body("notes").optional().isString(),
+  validate,
+  can("pos", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.confirmTransactionPayment(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // Download receipt as PDF — streams to the browser.
 router.get(
   "/transactions/:id/receipt.pdf",

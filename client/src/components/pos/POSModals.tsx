@@ -13,7 +13,7 @@
  * needed). Do NOT add `import { DiscountGate } from './POSModals'` — that
  * is a circular self-import and will break at runtime.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MessageCircle,
   Mail,
@@ -23,6 +23,10 @@ import {
   Play,
   Trash2,
   Shield,
+  CheckCircle2,
+  CreditCard,
+  Building2,
+  Copy,
 } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,9 +40,11 @@ import { usePOSStore } from "@stores/posStore";
 import {
   sendReceipt,
   generateInvoiceFromTransaction,
+  confirmTransactionPayment,
   verifyManager,
   createReturn,
 } from "@services/pos/transactions";
+import type { PosInvoiceResult } from "@services/pos/transactions";
 import { closeSession } from "@services/pos/sessions";
 import {
   closeSessionSchema,
@@ -60,6 +66,12 @@ import type {
 } from "@typedefs/pos";
 
 // ── ReceiptModal ───────────────────────────────────────────────────────────────
+// 3-state flow:
+//   'default'  → post-payment options (WhatsApp / Email / Generate Invoice)
+//   'invoice'  → bank transfer details + Confirm Payment Received button
+//   'confirmed'→ payment confirmed, receipt emailed, ready for new sale
+
+type ReceiptView = "default" | "invoice" | "confirmed";
 
 interface ReceiptModalProps {
   open: boolean;
@@ -78,8 +90,34 @@ export function ReceiptModal({
   onClose,
   onInvoice,
 }: ReceiptModalProps) {
+  const [view, setView] = useState<ReceiptView>("default");
   const [sending, setSending] = useState(false);
   const [invoicing, setInvoicing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<PosInvoiceResult | null>(null);
+  const [reference, setReference] = useState("");
+  const [confirmResult, setConfirmResult] = useState<{
+    receipt_sent: boolean;
+    receipt_error: string | null;
+    invoice_number: string;
+  } | null>(null);
+
+  // Reset to default view whenever a new transaction comes through
+  useEffect(() => {
+    setView("default");
+    setInvoiceData(null);
+    setReference("");
+    setConfirmResult(null);
+  }, [transaction.transaction_id]);
+
+  // Reset view state when modal closes / reopens
+  function handleNewSale() {
+    setView("default");
+    setInvoiceData(null);
+    setReference("");
+    setConfirmResult(null);
+    onNewSale();
+  }
 
   async function handleSend(channel: "whatsapp" | "email") {
     setSending(true);
@@ -103,7 +141,8 @@ export function ReceiptModal({
       const result = await generateInvoiceFromTransaction(
         transaction.transaction_id,
       );
-      showToast.success(`Invoice ${result.invoice_number} generated`);
+      setInvoiceData(result);
+      setView("invoice");
       onInvoice?.(result.invoice_id);
     } catch (err) {
       showToast.error(errMsg(err));
@@ -112,91 +151,290 @@ export function ReceiptModal({
     }
   }
 
+  async function handleConfirmPayment() {
+    setConfirming(true);
+    try {
+      const result = await confirmTransactionPayment(
+        transaction.transaction_id,
+        { reference: reference.trim() || undefined },
+      );
+      setConfirmResult(result);
+      setView("confirmed");
+    } catch (err) {
+      showToast.error(errMsg(err));
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  function copyToClipboard(text: string, label: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast.success(`${label} copied`);
+    });
+  }
+
   const hasPhone = !!transaction.primary_phone;
   const hasEmail = !!transaction.contact_id;
+
+  // ── View: default ─────────────────────────────────────────────────────────────
+  const defaultBody = (
+    <div className="space-y-5">
+      {/* Summary */}
+      <div className="rounded-xl border border-green-500/30 bg-green-900/10 px-4 py-4 text-center">
+        <p className="text-xs text-green-300 uppercase tracking-widest">Paid</p>
+        <p className="font-display text-2xl font-extrabold text-green-300">
+          {fmtMoney(transaction.total_amount, currency)}
+        </p>
+        <p className="mt-1 text-xs text-green-400/70">
+          {transaction.transaction_number}
+        </p>
+        {parseFloat(String(transaction.change_given)) > 0 && (
+          <p className="mt-2 text-sm font-medium text-green-300">
+            Change: {fmtMoney(transaction.change_given, currency)}
+          </p>
+        )}
+      </div>
+
+      {/* Receipt delivery */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+          Send Receipt
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => handleSend("whatsapp")}
+            disabled={!hasPhone || sending}
+            loading={sending}
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => handleSend("email")}
+            disabled={!hasEmail || sending}
+            loading={sending}
+          >
+            <Mail className="h-4 w-4" />
+            Email
+          </Button>
+        </div>
+        {!hasPhone && !hasEmail && (
+          <p className="text-xs text-orika-smoke/60">
+            No contact method on file — link a customer to send digital
+            receipts.
+          </p>
+        )}
+      </div>
+
+      {/* Invoice option */}
+      <Button
+        variant="ghost"
+        className="w-full justify-start text-orika-smoke"
+        onClick={handleInvoice}
+        loading={invoicing}
+      >
+        <FileText className="h-4 w-4" />
+        Generate Invoice (Bank Transfer)
+      </Button>
+    </div>
+  );
+
+  // ── View: invoice ─────────────────────────────────────────────────────────────
+  const invoiceBody = invoiceData && (
+    <div className="space-y-5">
+      {/* Invoice reference */}
+      <div className="rounded-xl border border-orika-gold/20 bg-orika-gold/5 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-orika-smoke uppercase tracking-widest">
+              Invoice
+            </p>
+            <p className="text-base font-semibold text-orika-cream">
+              {invoiceData.invoice_number}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-orika-smoke">Amount Due</p>
+            <p className="text-lg font-extrabold text-orika-gold">
+              {fmtMoney(invoiceData.total_amount, currency)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bank account details */}
+      {invoiceData.bank_account ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Transfer To
+          </p>
+          <div className="rounded-xl border border-white/5 bg-orika-charcoal divide-y divide-white/5">
+            <BankDetailRow
+              label="Bank"
+              value={invoiceData.bank_account.bank_name}
+            />
+            <BankDetailRow
+              label="Account Name"
+              value={invoiceData.bank_account.account_name}
+            />
+            <BankDetailRow
+              label="Account Number"
+              value={invoiceData.bank_account.account_number}
+              onCopy={() =>
+                copyToClipboard(
+                  invoiceData.bank_account!.account_number,
+                  "Account number",
+                )
+              }
+            />
+            {invoiceData.bank_account.sort_code && (
+              <BankDetailRow
+                label="Sort Code"
+                value={invoiceData.bank_account.sort_code}
+              />
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-900/10 px-4 py-3 text-xs text-amber-300">
+          No bank account configured — add one in Settings → Bank Accounts.
+        </div>
+      )}
+
+      {/* Reference input */}
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+          Transfer Reference <span className="text-orika-smoke/50">(optional)</span>
+        </label>
+        <Input
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          placeholder="e.g. ORI-20240607-001"
+        />
+        <p className="mt-1 text-xs text-orika-smoke/50">
+          Enter the reference from the bank alert once payment arrives.
+        </p>
+      </div>
+    </div>
+  );
+
+  // ── View: confirmed ───────────────────────────────────────────────────────────
+  const confirmedBody = confirmResult && (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-green-500/30 bg-green-900/10 px-4 py-6 text-center">
+        <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-green-400" />
+        <p className="text-sm font-semibold text-green-300">
+          Payment Confirmed
+        </p>
+        <p className="mt-1 text-xs text-green-400/70">
+          Invoice {confirmResult.invoice_number} marked as paid
+        </p>
+      </div>
+
+      {confirmResult.receipt_sent ? (
+        <div className="rounded-lg border border-white/5 bg-orika-charcoal px-4 py-3 flex items-center gap-3">
+          <Mail className="h-4 w-4 text-orika-smoke shrink-0" />
+          <p className="text-sm text-orika-smoke">
+            Receipt emailed to customer
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-900/10 px-4 py-3 text-xs text-amber-300">
+          {confirmResult.receipt_error
+            ? `Receipt not sent: ${confirmResult.receipt_error}`
+            : "No email on file — receipt was not sent automatically."}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Modal titles ──────────────────────────────────────────────────────────────
+  const titleMap: Record<ReceiptView, string> = {
+    default: "Transaction Complete",
+    invoice: "Bank Transfer Invoice",
+    confirmed: "Payment Confirmed",
+  };
+
+  // ── Footer ────────────────────────────────────────────────────────────────────
+  const footer = (
+    <div className="flex gap-3">
+      {view === "invoice" && (
+        <Button
+          variant="ghost"
+          className="text-orika-smoke"
+          onClick={() => setView("default")}
+          disabled={confirming}
+        >
+          Back
+        </Button>
+      )}
+      {view === "invoice" && (
+        <Button
+          className="flex-1"
+          onClick={handleConfirmPayment}
+          loading={confirming}
+          disabled={!invoiceData?.bank_account}
+        >
+          <CreditCard className="h-4 w-4" />
+          Confirm Payment Received
+        </Button>
+      )}
+      {(view === "default" || view === "confirmed") && (
+        <Button className="flex-1" onClick={handleNewSale}>
+          <RotateCcw className="h-4 w-4" />
+          New Sale
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Transaction Complete"
+      title={titleMap[view]}
       size="sm"
       surface="light"
-      footer={
-        <div className="flex gap-3">
-          <Button className="flex-1" onClick={onNewSale}>
-            <RotateCcw className="h-4 w-4" />
-            New Sale
-          </Button>
-        </div>
-      }
+      footer={footer}
     >
-      <div className="space-y-5">
-        {/* Summary */}
-        <div className="rounded-xl border border-green-500/30 bg-green-900/10 px-4 py-4 text-center">
-          <p className="text-xs text-green-300 uppercase tracking-widest">
-            Paid
-          </p>
-          <p className="font-display text-2xl font-extrabold text-green-300">
-            {fmtMoney(transaction.total_amount, currency)}
-          </p>
-          <p className="mt-1 text-xs text-green-400/70">
-            {transaction.transaction_number}
-          </p>
-          {parseFloat(String(transaction.change_given)) > 0 && (
-            <p className="mt-2 text-sm font-medium text-green-300">
-              Change: {fmtMoney(transaction.change_given, currency)}
-            </p>
-          )}
-        </div>
+      {view === "default" && defaultBody}
+      {view === "invoice" && invoiceBody}
+      {view === "confirmed" && confirmedBody}
+    </Modal>
+  );
+}
 
-        {/* Receipt delivery */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
-            Send Receipt
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => handleSend("whatsapp")}
-              disabled={!hasPhone || sending}
-              loading={sending}
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleSend("email")}
-              disabled={!hasEmail || sending}
-              loading={sending}
-            >
-              <Mail className="h-4 w-4" />
-              Email
-            </Button>
-          </div>
-          {!hasPhone && !hasEmail && (
-            <p className="text-xs text-orika-smoke/60">
-              No contact method on file — link a customer to send digital
-              receipts.
-            </p>
-          )}
-        </div>
-
-        {/* Invoice option */}
-        {onInvoice && (
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-orika-smoke"
-            onClick={handleInvoice}
-            loading={invoicing}
+// Small helper for bank detail rows
+function BankDetailRow({
+  label,
+  value,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  onCopy?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5 gap-3">
+      <span className="text-xs text-orika-smoke shrink-0">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-sm text-orika-cream font-medium truncate">
+          {value}
+        </span>
+        {onCopy && (
+          <button
+            onClick={onCopy}
+            className="shrink-0 text-orika-smoke/50 hover:text-orika-gold transition-colors"
+            title="Copy"
           >
-            <FileText className="h-4 w-4" />
-            Generate Invoice
-          </Button>
+            <Copy className="h-3.5 w-3.5" />
+          </button>
         )}
       </div>
-    </Modal>
+    </div>
   );
 }
 

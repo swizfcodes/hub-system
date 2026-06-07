@@ -50,7 +50,7 @@ const FALLBACK_HTML_TEMPLATE = buildInlineTemplate();
 async function sendReceipt(
   business,
   transactionId,
-  { channel = "auto", overrideTo } = {},
+  { channel = "auto", overrideTo, invoiceNumber } = {},
   user,
 ) {
   if (channel !== "auto" && !VALID_CHANNELS.includes(channel)) {
@@ -88,7 +88,7 @@ async function sendReceipt(
     results.whatsapp = await sendViaWhatsApp(tx, overrideTo);
   }
   if (channel === "email" || channel === "both") {
-    results.email = await sendViaEmail(business, tx, overrideTo);
+    results.email = await sendViaEmail(business, tx, overrideTo, invoiceNumber);
   }
 
   await auditAttempt(business, transactionId, user, channel, results);
@@ -152,23 +152,44 @@ function formatWhatsAppMessage(tx) {
 // HTML message — the PDF is the actual record.
 // ─────────────────────────────────────────────────────────────
 
-async function sendViaEmail(business, tx, overrideTo) {
+async function sendViaEmail(business, tx, overrideTo, invoiceNumber) {
   const to = overrideTo || tx.email;
   if (!to) {
     return { success: false, reason: "no_email_address" };
   }
   try {
     const pdf = await generateReceiptPDF(business, tx);
+
+    // Build the full data shape the receipt template expects.
+    const paymentMethods = (tx.payments || [])
+      .map((p) => `${labelForMethod(p.payment_method)}: ${formatCurrency(p.amount)}`)
+      .join(", ");
+
     const { subject: subj, html: body } = renderEmail("receipt", business, {
-      contact_name: tx.contact_name,
+      contact_name: tx.contact_name || "Valued Customer",
       transaction_number: tx.transaction_number,
+      transaction_date: formatDate(tx.created_at),
+      lines: (tx.lines || []).map((l) => ({
+        description: l.description,
+        qty: l.quantity,
+        unit_price: formatCurrency(l.unit_price),
+        line_total: formatCurrency(l.line_total),
+      })),
+      subtotal: tx.subtotal,
+      discount_total: tx.discount_total,
+      vat_amount: tx.vat_amount,
       total_amount: tx.total_amount,
+      amount_paid: tx.amount_paid,
+      change_given: tx.change_given,
+      payment_methods: paymentMethods,
+      invoice_number: invoiceNumber || null,
     });
+
     await sendWithAttachment({
       to,
       subject: subj,
       html: body,
-      filename: `${tx.transaction_number}.pdf`,
+      filename: `receipt-${tx.transaction_number}.pdf`,
       pdfBuffer: pdf,
       business,
     });

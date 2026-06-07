@@ -74,17 +74,48 @@ export function receiptPdfUrl(transactionId: string): string {
 
 // ── Invoice from POS ──────────────────────────────────────────────────────────
 
+export interface PosInvoiceResult {
+  invoice_id: string;
+  invoice_number: string;
+  total_amount: number;
+  status: string;
+  already_existed?: boolean;
+  bank_account: {
+    account_id: string;
+    bank_name: string;
+    account_name: string;
+    account_number: string;
+    sort_code?: string;
+    currency: string;
+  } | null;
+}
+
 export async function generateInvoiceFromTransaction(
   transactionId: string,
   dueDate?: string,
-): Promise<{
-  invoice_id: string;
-  invoice_number: string;
-  paystack_payment_url?: string;
-}> {
-  const { data } = await api.post(
+): Promise<PosInvoiceResult> {
+  const { data } = await api.post<PosInvoiceResult>(
     `/pos/transactions/${transactionId}/invoice`,
     { due_date: dueDate },
+  );
+  return data;
+}
+
+// ── Confirm bank-transfer payment ─────────────────────────────────────────────
+
+export async function confirmTransactionPayment(
+  transactionId: string,
+  options?: { reference?: string; notes?: string },
+): Promise<{
+  confirmed: boolean;
+  invoice_id: string;
+  invoice_number: string;
+  receipt_sent: boolean;
+  receipt_error: string | null;
+}> {
+  const { data } = await api.post(
+    `/pos/transactions/${transactionId}/confirm-payment`,
+    options ?? {},
   );
   return data;
 }
