@@ -263,7 +263,7 @@ async function bootstrap(opts) {
     logger.info(`[bootstrap:${opts.key}] Seeding default stock location`);
     await client.query(
       `INSERT INTO ${opts.key}.stock_locations (name, location_type, is_active)
-       VALUES ('Main Floor', 'retail', true)
+       VALUES ('Main Floor', 'showroom', true)
        ON CONFLICT DO NOTHING`,
     );
 

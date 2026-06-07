@@ -519,7 +519,7 @@ async function receiveGoods(
         rows: [loc],
       } = await client.query(
         `SELECT location_id FROM stock_locations
-         WHERE location_type IN ('warehouse', 'showroom') AND is_active = true
+         WHERE is_active = true
          ORDER BY created_at LIMIT 1`,
       );
       receivingLocationId = loc?.location_id || null;

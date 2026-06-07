@@ -30,7 +30,11 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
     queryFn: () => listLocations(false),
   });
   const warehouses = locations.filter(
-    (l) => l.location_type === "warehouse" || l.location_type === "showroom",
+    (l) =>
+      l.location_type === "warehouse" ||
+      l.location_type === "showroom" ||
+      l.location_type === "retail" ||
+      l.location_type === "pos_terminal",
   );
 
   const openLines = (po.lines ?? []).filter(
