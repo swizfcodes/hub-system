@@ -20,6 +20,7 @@ import {
   Download,
 } from "lucide-react";
 import CampaignLeads from "@components/campaigns/CampaignLeads";
+import CampaignOrders from "@components/campaigns/CampaignOrders";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -71,6 +72,7 @@ const STEPS = [
   { id: 3, label: "Payment",  desc: "Bank accounts",           slug: "payment"  },
   { id: 4, label: "Settings", desc: "Sharing & sections",      slug: "settings" },
   { id: 5, label: "Leads",    desc: "Captured contacts",       slug: "leads"    },
+  { id: 6, label: "Orders",   desc: "Customer orders",         slug: "orders"   },
 ];
 
 // Map a ?tab= query-param value to a step id.
@@ -341,7 +343,7 @@ export default function CampaignBuilder() {
 
       {/* Step indicator — step 5 (Leads) only shown for existing campaigns */}
       <div className="flex items-center gap-1">
-        {STEPS.filter((s) => s.id < 5 || campaignId).map((s, i, arr) => (
+        {STEPS.filter((s) => s.id <= 4 || campaignId).map((s, i, arr) => (
           <div key={s.id} className="flex items-center gap-1 flex-1">
             <button
               onClick={() => (campaignId ? setStep(s.id) : undefined)}
@@ -366,6 +368,8 @@ export default function CampaignBuilder() {
               >
                 {s.id === 5 ? (
                   <Users className="h-3 w-3" />
+                ) : s.id === 6 ? (
+                  <ShoppingBag className="h-3 w-3" />
                 ) : s.id < step ? (
                   "✓"
                 ) : (
@@ -1183,6 +1187,40 @@ export default function CampaignBuilder() {
               onClick={() => setStep(4)}
             >
               Back to Settings
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate("/sales-campaigns")}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
+      {/* ── STEP 6: ORDERS ───────────────────────────────────────────────────── */}
+      {step === 6 && campaignId && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-orika-cream">
+                Campaign orders
+              </p>
+              <p className="text-xs text-orika-smoke mt-0.5">
+                View, confirm, or cancel orders. Proof-submitted orders need your
+                verification before fulfilment.
+              </p>
+            </div>
+          </div>
+
+          <CampaignOrders campaignId={campaignId} business={business ?? ""} />
+
+          <div className="flex justify-between pt-2">
+            <Button
+              variant="ghost"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => setStep(5)}
+            >
+              Back to Leads
             </Button>
             <Button
               variant="secondary"

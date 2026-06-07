@@ -32,6 +32,11 @@ import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { cn } from "@lib/cn";
 
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+
 // Full-form schema combines basic + visibility + multi-type.
 const fullSchema = contactPatchSchema.extend({
   contact_type: z.array(z.enum(CONTACT_TYPES)).min(1, "Pick at least one type"),
@@ -69,6 +74,8 @@ export default function ContactNew() {
       priority_level: "regular",
       source: "",
       notes: "",
+      birthday_month: "",
+      birthday_day: "",
       contact_type: ["customer"],
       visible_to: active ? [active] : [],
     },
@@ -87,6 +94,8 @@ export default function ContactNew() {
         email: v.email || undefined,
         source: (v.source as never) || undefined,
         notes: v.notes || undefined,
+        birthday_month: v.birthday_month || undefined,
+        birthday_day: v.birthday_day || undefined,
       }),
     onSuccess: (c) => {
       qc.invalidateQueries({ queryKey: ["contacts"] });
@@ -259,6 +268,25 @@ export default function ContactNew() {
                   ...CONTACT_SOURCES.map((s) => ({
                     value: s,
                     label: s.replace("_", " "),
+                  })),
+                ]}
+              />
+              <Select
+                {...register("birthday_month")}
+                label="Birthday month"
+                options={[
+                  { value: "", label: "— Month —" },
+                  ...MONTHS.map((m, i) => ({ value: String(i + 1), label: m })),
+                ]}
+              />
+              <Select
+                {...register("birthday_day")}
+                label="Birthday day"
+                options={[
+                  { value: "", label: "— Day —" },
+                  ...Array.from({ length: 31 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: String(i + 1),
                   })),
                 ]}
               />

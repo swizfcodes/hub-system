@@ -80,6 +80,7 @@ const DOCUMENT_TYPES = [
   { type: "expense", suffix: "EXP" },
   { type: "supplier", suffix: "SUP" },
   { type: "payroll_run", suffix: "PR" },
+  { type: "campaign_order", suffix: "CO" },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -263,7 +264,7 @@ async function bootstrap(opts) {
     logger.info(`[bootstrap:${opts.key}] Seeding default stock location`);
     await client.query(
       `INSERT INTO ${opts.key}.stock_locations (name, location_type, is_active)
-       VALUES ('Main Floor', 'retail', true)
+       VALUES ('Main Floor', 'showroom', true)
        ON CONFLICT DO NOTHING`,
     );
 

@@ -23,6 +23,11 @@ import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { cn } from "@lib/cn";
 
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -63,6 +68,8 @@ export function QuickAddModal({
       visible_to: active ? [active] : [],
       priority_level: "regular",
       source: undefined,
+      birthday_month: "",
+      birthday_day: "",
     },
   });
 
@@ -76,6 +83,8 @@ export function QuickAddModal({
         email: v.email || undefined,
         whatsapp_number: v.whatsapp_number || undefined,
         source: v.source || undefined,
+        birthday_month: v.birthday_month || undefined,
+        birthday_day: v.birthday_day || undefined,
       }),
     onSuccess: (c) => {
       qc.invalidateQueries({ queryKey: ["contacts"] });
@@ -270,6 +279,28 @@ export function QuickAddModal({
               }))}
             />
           )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Select
+            {...register("birthday_month")}
+            label="Birthday month"
+            options={[
+              { value: "", label: "— Month —" },
+              ...MONTHS.map((m, i) => ({ value: String(i + 1), label: m })),
+            ]}
+          />
+          <Select
+            {...register("birthday_day")}
+            label="Birthday day"
+            options={[
+              { value: "", label: "— Day —" },
+              ...Array.from({ length: 31 }, (_, i) => ({
+                value: String(i + 1),
+                label: String(i + 1),
+              })),
+            ]}
+          />
         </div>
 
         <div>

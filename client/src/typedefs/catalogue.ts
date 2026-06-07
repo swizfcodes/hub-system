@@ -5,6 +5,7 @@ export type LocationType =
   | "showroom"
   | "pos_terminal"
   | "retail_partner"
+  | "retail"
   | "transit";
 export type BarcodeType =
   | "CODE128"

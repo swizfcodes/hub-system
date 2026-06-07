@@ -17,6 +17,11 @@ import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import type { Contact } from "@typedefs/contacts";
 
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+
 export function EditContactPanel({
   open,
   onClose,
@@ -45,6 +50,8 @@ export function EditContactPanel({
       priority_level: contact.priority_level,
       source: contact.source ?? "",
       notes: contact.notes ?? "",
+      birthday_month: contact.birthday_month ?? "",
+      birthday_day: contact.birthday_day ?? "",
     },
   });
 
@@ -59,6 +66,8 @@ export function EditContactPanel({
         email: v.email || undefined,
         source: (v.source as Contact["source"]) || undefined,
         notes: v.notes || undefined,
+        birthday_month: v.birthday_month || undefined,
+        birthday_day: v.birthday_day || undefined,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["contacts", contact.contact_id] });
@@ -140,6 +149,25 @@ export function EditContactPanel({
               ...CONTACT_SOURCES.map((s) => ({
                 value: s,
                 label: s.replace("_", " "),
+              })),
+            ]}
+          />
+          <Select
+            {...register("birthday_month")}
+            label="Birthday month"
+            options={[
+              { value: "", label: "— Month —" },
+              ...MONTHS.map((m, i) => ({ value: String(i + 1), label: m })),
+            ]}
+          />
+          <Select
+            {...register("birthday_day")}
+            label="Birthday day"
+            options={[
+              { value: "", label: "— Day —" },
+              ...Array.from({ length: 31 }, (_, i) => ({
+                value: String(i + 1),
+                label: String(i + 1),
               })),
             ]}
           />

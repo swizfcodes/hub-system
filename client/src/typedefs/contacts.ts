@@ -54,6 +54,8 @@ export interface Contact {
   company_name?: string | null;
   gender?: "M" | "F" | "other" | "prefer_not" | null;
   date_of_birth?: string | null;
+  birthday_month?: number | null;
+  birthday_day?: number | null;
   tin?: string | null;
   cac_number?: string | null;
   primary_phone: string;
