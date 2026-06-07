@@ -5,7 +5,7 @@
  * proper searchable typeaheads. Previous code loaded everything into memory
  * and rendered unsearchable dropdowns — broken past 200 records.
  */
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,13 +79,9 @@ export default function PONew() {
       setValue("currency", selectedSupplier.preferred_currency);
   }, [selectedSupplier, setValue]);
 
-  const subtotal = useMemo(
-    () =>
-      (linesWatch ?? []).reduce(
-        (s, l) => s + (l.quantity_ordered ?? 0) * (l.unit_price ?? 0),
-        0,
-      ),
-    [linesWatch],
+  const subtotal = (linesWatch ?? []).reduce(
+    (s, l) => s + (l.quantity_ordered ?? 0) * (l.unit_price ?? 0),
+    0,
   );
   const total = subtotal + (shipping || 0) + (duty || 0) + (other || 0);
   const ngnEquivalent = fxRate ? total * fxRate : null;

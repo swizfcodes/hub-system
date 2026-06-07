@@ -30,6 +30,8 @@ export const quickAddSchema = z.object({
   // untouched optional field submits "" — which a bare .optional() enum
   // rejects and silently blocks save. Accept "" and strip it in the payload.
   source: z.enum(CONTACT_SOURCES).optional().or(z.literal("")),
+  birthday_month: z.coerce.number().int().min(1).max(12).optional().or(z.literal("")),
+  birthday_day: z.coerce.number().int().min(1).max(31).optional().or(z.literal("")),
 });
 export type QuickAddValues = z.infer<typeof quickAddSchema>;
 
@@ -45,6 +47,8 @@ export const contactPatchSchema = z.object({
   priority_level: z.enum(PRIORITY_LEVELS),
   source: z.enum(CONTACT_SOURCES).optional().or(z.literal("")),
   notes: z.string().max(2000).optional().or(z.literal("")),
+  birthday_month: z.coerce.number().int().min(1).max(12).optional().or(z.literal("")),
+  birthday_day: z.coerce.number().int().min(1).max(31).optional().or(z.literal("")),
 });
 export type ContactPatchValues = z.infer<typeof contactPatchSchema>;
 

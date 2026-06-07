@@ -55,6 +55,8 @@ async function create(data, user) {
       source: data.source,
       visible_to: data.visible_to,
       notes: data.notes,
+      birthday_month: data.birthday_month,
+      birthday_day: data.birthday_day,
       userId: user.user_id,
     });
 
@@ -94,6 +96,8 @@ async function update(contactId, data, user) {
       // could be created with a type but never reclassified after creation.
       "contact_type",
       "visible_to",
+      "birthday_month",
+      "birthday_day",
     ];
     const sets = [],
       values = [];

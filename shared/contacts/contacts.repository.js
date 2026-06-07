@@ -77,6 +77,8 @@ async function insert(
     source,
     visible_to,
     notes,
+    birthday_month,
+    birthday_day,
     userId,
   },
 ) {
@@ -86,8 +88,8 @@ async function insert(
     `INSERT INTO shared.contacts
        (contact_type, display_name, first_name, last_name, company_name,
         primary_phone, whatsapp_number, email, priority_level, source,
-        visible_to, notes, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        visible_to, notes, birthday_month, birthday_day, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
       contact_type,
@@ -102,6 +104,8 @@ async function insert(
       source || null,
       visible_to || getActiveBusinesses(),
       notes || null,
+      birthday_month || null,
+      birthday_day || null,
       userId,
     ],
   );
