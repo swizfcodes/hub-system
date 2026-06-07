@@ -65,7 +65,14 @@ async function getAppliedMigrations(client) {
 
 async function runMigration(client, filename) {
   const filepath = path.join(MIGRATIONS_DIR, filename);
-  const content = fs.readFileSync(filepath, "utf8");
+  const raw = fs.readFileSync(filepath, "utf8");
+
+  // Strip any bare transaction control — the runner owns the transaction
+  const content = raw
+    .split("\n")
+    .filter((line) => !/^\s*(BEGIN|COMMIT|ROLLBACK)\s*;?\s*$/i.test(line))
+    .join("\n");
+
   const checksum = sha256(content);
   const start = Date.now();
 

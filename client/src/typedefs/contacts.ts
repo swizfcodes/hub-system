@@ -1,7 +1,12 @@
 // Types mirror shared.contacts / shared.contact_addresses / shared.contact_tags.
 // Source of truth: hub-system/shared/contacts/contacts.repository.js + migration 000003.
 
-export type ContactType = "customer" | "supplier" | "staff" | "retail_partner";
+export type ContactType =
+  | "customer"
+  | "supplier"
+  | "staff"
+  | "retail_partner"
+  | "subscriber";
 export type PriorityLevel = "vip" | "regular" | "new";
 export type ContactSource =
   | "walk_in"
