@@ -163,12 +163,36 @@ async function postInvoiceJournal(client, business, invoice) {
   // insert path did. If the numbers don't balance (e.g. a future bug
   // changes how subtotal/vat are computed), the post throws and the
   // surrounding withBusinessContext rolls back the invoice creation.
+  // Build the journal so it ALWAYS balances:
+  //   DR Accounts Receivable  total_amount
+  //     CR VAT Payable        vat_amount      (when VAT applies)
+  //     CR Sales Revenue      total − vat     (net revenue; this also
+  //                                            absorbs any discount_total
+  //                                            so DR === CR by construction)
+  const totalAmount = parseFloat(invoice.total_amount || 0);
+  const vatAmount = parseFloat(invoice.vat_amount || 0);
+
+  // VAT was charged but the VAT account isn't configured — do NOT post an
+  // unbalanced entry (which previously surfaced as a cryptic "Journal out of
+  // balance"). Fail with a clear, actionable message and roll back.
+  if (vatAmount > 0 && !vat) {
+    throw Object.assign(
+      new Error(
+        `Chart of Accounts misconfigured for ${business}: invoice has VAT ` +
+          `(${vatAmount}) but account 2210 (Output VAT) is missing or inactive. ` +
+          `Seed/activate 2210 before issuing VAT invoices.`,
+      ),
+      { status: 500 },
+    );
+  }
+
+  const vatLine = vat ? vatAmount : 0;
   const lines = [
-    { account_id: ar, debit: invoice.total_amount, credit: 0 },
-    { account_id: rev, debit: 0, credit: invoice.subtotal },
+    { account_id: ar, debit: totalAmount, credit: 0 },
+    { account_id: rev, debit: 0, credit: totalAmount - vatLine },
   ];
-  if (vat && parseFloat(invoice.vat_amount || 0) > 0) {
-    lines.push({ account_id: vat, debit: 0, credit: invoice.vat_amount });
+  if (vatLine > 0) {
+    lines.push({ account_id: vat, debit: 0, credit: vatLine });
   }
 
   await journalService.postEntry(client, {

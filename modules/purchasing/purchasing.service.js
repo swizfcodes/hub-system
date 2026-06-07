@@ -618,6 +618,13 @@ async function receiveGoods(
 
 // ── GENERATE PO FROM QUOTE ───────────────────────────────────
 
+async function listQuotesForRFQ(business, rfqId) {
+  return withBusinessContext(business, async (client) => {
+    const rows = await repo.listQuotesByRFQ(client, rfqId);
+    return { data: rows };
+  });
+}
+
 async function generatePOFromQuote(business, quoteId, user) {
   return withBusinessContext(business, async (client) => {
     const quote = await repo.findSupplierQuoteById(client, quoteId);
@@ -908,6 +915,7 @@ module.exports = {
   cancelRFQ,
   getRFQByToken,
   submitSupplierQuote,
+  listQuotesForRFQ,
   // purchase orders
   listPOs,
   createPO,

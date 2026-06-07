@@ -350,6 +350,7 @@ async function createTransaction(business, data, user) {
       totalPaid,
       change,
       fulfilment_type: data.fulfilment_type,
+      offline_id: data.offline_id, // set only by offline-sync replay
     });
 
     for (let i = 0; i < data.lines.length; i++) {
@@ -458,6 +459,78 @@ async function createTransaction(business, data, user) {
   }
 
   return result;
+}
+
+// Replay a batch of queued offline POS sales. Idempotent: each sale carries
+// a stable offline_id; an already-synced one is reported as a duplicate (and
+// the UNIQUE index on offline_id is the hard guard against double-posting if
+// two syncs race). Each sale is replayed through the normal createTransaction
+// path, so it gets the same validation, journals, stock movements and loyalty.
+// One bad sale doesn't abort the batch — failures are reported per-item.
+async function syncOfflineTransactions(business, { session_id, transactions }, user) {
+  if (!Array.isArray(transactions)) {
+    throw Object.assign(new Error("transactions array is required"), {
+      status: 400,
+    });
+  }
+
+  const results = [];
+  for (const t of transactions) {
+    try {
+      const existing = await withBusinessContext(business, (client) =>
+        repo.findTransactionByOfflineId(client, t.offline_id),
+      );
+      if (existing) {
+        results.push({
+          offline_id: t.offline_id,
+          success: true,
+          transaction_id: existing.transaction_id,
+          transaction_number: existing.transaction_number,
+          conflict_type: "duplicate",
+        });
+        continue;
+      }
+
+      const tx = await createTransaction(
+        business,
+        {
+          session_id: session_id || t.session_id,
+          lines: t.lines,
+          payments: t.payments,
+          contact_id: t.contact_id,
+          offline_id: t.offline_id,
+        },
+        user,
+      );
+      results.push({
+        offline_id: t.offline_id,
+        success: true,
+        transaction_id: tx.transaction_id,
+        transaction_number: tx.transaction_number,
+      });
+    } catch (err) {
+      const msg = err.message || "Sync failed";
+      let conflict_type;
+      if (/no open session/i.test(msg)) conflict_type = "session_closed";
+      else if (/duplicate|unique|already/i.test(msg)) conflict_type = "duplicate";
+      else if (/stock|insufficient|out of stock/i.test(msg))
+        conflict_type = "out_of_stock";
+      results.push({
+        offline_id: t.offline_id,
+        success: false,
+        error: msg,
+        ...(conflict_type ? { conflict_type } : {}),
+      });
+    }
+  }
+
+  const succeeded = results.filter((r) => r.success).length;
+  return {
+    results,
+    total: results.length,
+    succeeded,
+    failed: results.length - succeeded,
+  };
 }
 
 async function getTransaction(business, transactionId) {
@@ -744,6 +817,7 @@ module.exports = {
   listSessionsWithVariance,
   markReconciled,
   createTransaction,
+  syncOfflineTransactions,
   getTransaction,
   voidTransaction,
   sendReceipt,

@@ -1,4 +1,4 @@
-import { User, Truck, Briefcase, Building2 } from "lucide-react";
+import { User, Truck, Briefcase, Building2, Bell } from "lucide-react";
 import type { ContactType, PriorityLevel } from "@typedefs/contacts";
 
 export interface ContactTypeMeta {
@@ -53,6 +53,16 @@ export const CONTACT_TYPE_META: Record<ContactType, ContactTypeMeta> = {
     textClass: "text-[#A855F7]",
     tone: "plum",
   },
+  subscriber: {
+    key: "subscriber",
+    label: "Subscriber",
+    shortLabel: "Subscribers",
+    icon: Bell,
+    ringColor: "#60A5FA",
+    bgColor: "rgba(96,165,250,0.10)",
+    textClass: "text-blue-400",
+    tone: "neutral", // or add a new tone if you want
+  },
 };
 
 export const CONTACT_TYPE_ORDER: ContactType[] = [
@@ -60,6 +70,7 @@ export const CONTACT_TYPE_ORDER: ContactType[] = [
   "supplier",
   "staff",
   "retail_partner",
+  "subscriber",
 ];
 
 export interface PriorityMeta {
