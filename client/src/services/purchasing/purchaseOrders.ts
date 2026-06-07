@@ -46,7 +46,7 @@ export interface CreatePOPayload {
   exchange_rate?: number;
   notes?: string;
   lines: Array<{
-    product_id: string;
+    product_id?: string;
     quantity_ordered: number;
     unit_price: number;
   }>;
