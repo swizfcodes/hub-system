@@ -260,6 +260,12 @@ async function confirmOrder(business, orderId, user) {
 
     const items = order.items || [];
 
+    // Look up the default stock location (needed for stock movements)
+    const { rows: [defaultLoc] } = await client.query(
+      `SELECT location_id FROM stock_locations WHERE is_active = true ORDER BY created_at LIMIT 1`,
+    );
+    const defaultLocationId = defaultLoc?.location_id || null;
+
     // Confirm campaign stock counters: move from reserved → sold
     for (const item of items) {
       await repo.confirmCampaignStock(
@@ -279,9 +285,10 @@ async function confirmOrder(business, orderId, user) {
           movementType: "sold",
           quantity: item.quantity,
           direction: -1,
+          fromLocationId: defaultLocationId,
           referenceType: "campaign_order",
           referenceId: orderId,
-          postedBy: user.user_id,
+          performedBy: user.user_id,
         });
       } catch (err) {
         logger.error(
@@ -538,6 +545,11 @@ async function cancelOrder(business, orderId, { reason }, user) {
         );
       }
 
+      // Look up default location for stock reversal
+      const { rows: [cancelLoc] } = await client.query(
+        `SELECT location_id FROM stock_locations WHERE is_active = true ORDER BY created_at LIMIT 1`,
+      );
+
       // Reverse stock movements — add stock back
       for (const item of items) {
         if (!item.product_id) continue;
@@ -548,9 +560,10 @@ async function cancelOrder(business, orderId, { reason }, user) {
             movementType: "return_from_customer",
             quantity: item.quantity,
             direction: 1,
+            toLocationId: cancelLoc?.location_id || null,
             referenceType: "campaign_order_cancel",
             referenceId: orderId,
-            postedBy: user.user_id,
+            performedBy: user.user_id,
             notes: `Cancelled: ${reason}`,
           });
         } catch (err) {

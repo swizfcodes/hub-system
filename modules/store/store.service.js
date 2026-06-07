@@ -392,6 +392,11 @@ async function verifyAndFulfil(reference) {
 
     const lines = order.items || [];
 
+    // Look up default stock location for outbound movements
+    const { rows: [storeLoc] } = await client.query(
+      `SELECT location_id FROM stock_locations WHERE is_active = true ORDER BY created_at LIMIT 1`,
+    );
+
     // 4. Record stock movement for each line — outbound 'sold'.
     //    recordMovement uses unqualified table names; the diffusers
     //    search_path makes them resolve to diffusers.stock_movements.
@@ -403,9 +408,10 @@ async function verifyAndFulfil(reference) {
           movementType: "sold",
           quantity: item.quantity,
           direction: -1,
+          fromLocationId: storeLoc?.location_id || null,
           referenceType: "store_order",
           referenceId: order.id,
-          postedBy: order.customer_id,
+          performedBy: order.customer_id,
         });
       } catch (err) {
         // A failed movement here aborts the whole transaction — we do
@@ -621,6 +627,11 @@ async function fulfillOptimusOrder(transactionRef) {
 
     const lines = order.items || [];
 
+    // Look up default stock location for outbound movements
+    const { rows: [optLoc] } = await client.query(
+      `SELECT location_id FROM stock_locations WHERE is_active = true ORDER BY created_at LIMIT 1`,
+    );
+
     // 1. Stock movements
     for (const item of lines) {
       try {
@@ -630,9 +641,10 @@ async function fulfillOptimusOrder(transactionRef) {
           movementType: "sold",
           quantity: item.quantity,
           direction: -1,
+          fromLocationId: optLoc?.location_id || null,
           referenceType: "store_order",
           referenceId: order.id,
-          postedBy: order.customer_id,
+          performedBy: order.customer_id,
         });
       } catch (err) {
         logger.error(
