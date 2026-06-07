@@ -4,8 +4,16 @@ import { Topbar } from "@components/shell/Topbar";
 import { AppGrid } from "@components/hub/AppGrid";
 import { SETTINGS_SUBMODULES } from "@lib/constants/modules";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
+import { useBusinessStore } from "@stores/useBusinessStore";
 
 export default function SettingsHome() {
+  const active = useBusinessStore((s) => s.active);
+  // Hide business-restricted tiles (e.g. Storefront is Orika-only) when the
+  // active business isn't in the tile's allow-list.
+  const modules = SETTINGS_SUBMODULES.filter(
+    (m) => !m.businesses || (active != null && m.businesses.includes(active)),
+  );
+
   return (
     <>
       <Topbar title="Settings" subtitle="Configuration, branding, RBAC" />
@@ -44,7 +52,7 @@ export default function SettingsHome() {
             </div>
             <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/30 to-transparent" />
           </div>
-          <AppGrid modules={SETTINGS_SUBMODULES} />
+          <AppGrid modules={modules} />
         </section>
       </div>
     </>

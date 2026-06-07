@@ -41,6 +41,72 @@ router.post(
   },
 );
 
+// KPI summary for the expenses dashboard.
+// MUST be declared before "/:id" so the literal "kpis" isn't captured
+// as an :id param (which fails UUID validation).
+router.get("/kpis", can("expenses", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.getKpis(req.business));
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Advances — literal "/advances" MUST be declared before "/:id" so it isn't
+// captured as an :id param (which fails UUID validation → 422).
+router.get("/advances", can("expenses", "view"), async (req, res, next) => {
+  try {
+    res.json(
+      await service.listAdvances(
+        req.business,
+        req.query,
+        req.user,
+        req.permissionScope,
+      ),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+router.post(
+  "/advances",
+  body("purpose").notEmpty(),
+  body("amount_requested").isNumeric(),
+  body("reason").notEmpty(),
+  validate,
+  can("expenses", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.createAdvance(req.business, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.post(
+  "/advances/:id/approve",
+  param("id").isUUID(),
+  body("amount_approved").isNumeric(),
+  validate,
+  can("expenses", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.approveAdvance(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.get(
   "/:id",
   param("id").isUUID(),
@@ -96,59 +162,4 @@ router.post(
     }
   },
 );
-
-// Advances
-router.get("/advances", can("expenses", "view"), async (req, res, next) => {
-  try {
-    res.json(
-      await service.listAdvances(
-        req.business,
-        req.query,
-        req.user,
-        req.permissionScope,
-      ),
-    );
-  } catch (e) {
-    next(e);
-  }
-});
-router.post(
-  "/advances",
-  body("purpose").notEmpty(),
-  body("amount_requested").isNumeric(),
-  body("reason").notEmpty(),
-  validate,
-  can("expenses", "create"),
-  async (req, res, next) => {
-    try {
-      res
-        .status(201)
-        .json(await service.createAdvance(req.business, req.body, req.user));
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-router.post(
-  "/advances/:id/approve",
-  param("id").isUUID(),
-  body("amount_approved").isNumeric(),
-  validate,
-  can("expenses", "approve"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await service.approveAdvance(
-          req.business,
-          req.params.id,
-          req.body,
-          req.user,
-        ),
-      );
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
 module.exports = router;

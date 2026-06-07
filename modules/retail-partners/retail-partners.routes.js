@@ -32,20 +32,6 @@ router.get(
 );
 
 router.get(
-  "/:id",
-  param("id").isUUID(),
-  validate,
-  can("retail_partners", "view"),
-  async (req, res, next) => {
-    try {
-      res.json(await service.getPartner(req.business, req.params.id));
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-router.get(
   "/:id/dashboard",
   param("id").isUUID(),
   validate,
@@ -325,6 +311,22 @@ router.post(
             req.user,
           ),
         );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Parametric single-partner fetch — declared LAST so literal paths like
+// /overview, /sales, /settlements, /consignments aren't captured as an :id.
+router.get(
+  "/:id",
+  param("id").isUUID(),
+  validate,
+  can("retail_partners", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getPartner(req.business, req.params.id));
     } catch (e) {
       next(e);
     }

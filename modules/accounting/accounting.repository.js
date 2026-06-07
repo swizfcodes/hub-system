@@ -120,7 +120,8 @@ async function findJournalById(client, entryId) {
   } = await client.query(
     `SELECT je.*,
             json_agg(json_build_object(
-              'line_id',jl.line_id,'account_code',coa.account_code,
+              'line_id',jl.line_id,'account_id',jl.account_id,
+              'account_code',coa.account_code,
               'account_name',coa.account_name,'account_type',coa.account_type,
               'debit',jl.debit,'credit',jl.credit,'description',jl.description
             ) ORDER BY jl.line_id) AS lines
@@ -261,7 +262,7 @@ async function getPLData(client, { startDate, endDate }) {
      FROM chart_of_accounts coa
      LEFT JOIN journal_lines jl ON jl.account_id=coa.account_id
      LEFT JOIN journal_entries je ON je.entry_id=jl.entry_id
-       AND je.entry_date BETWEEN $1 AND $2 AND je.is_reversed=false
+       AND je.entry_date BETWEEN $1 AND $2
      WHERE coa.account_type IN ('income','expense') AND coa.is_active=true
      GROUP BY coa.account_id,coa.account_type,coa.account_subtype,coa.account_code,coa.account_name
      ORDER BY coa.account_type DESC, coa.account_code`,
@@ -280,7 +281,7 @@ async function getBalanceSheetData(client, { asOfDate }) {
      FROM chart_of_accounts coa
      LEFT JOIN journal_lines jl ON jl.account_id=coa.account_id
      LEFT JOIN journal_entries je ON je.entry_id=jl.entry_id
-       AND je.entry_date<=$1 AND je.is_reversed=false
+       AND je.entry_date<=$1
      WHERE coa.account_type IN ('asset','liability','equity') AND coa.is_active=true
      GROUP BY coa.account_id,coa.account_type,coa.account_subtype,coa.account_code,coa.account_name
      ORDER BY coa.account_type, coa.account_code`,
@@ -307,10 +308,124 @@ async function getTrialBalanceData(client, { startDate, endDate }) {
   return rows;
 }
 
+// Accounting dashboard: month-to-date P&L, cash position (12xx bank/cash
+// accounts), unreconciled bank items, and the current open fiscal period.
+async function getDashboardData(client) {
+  const {
+    rows: [pl],
+  } = await client.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN coa.account_type='income'  THEN jl.credit-jl.debit ELSE 0 END),0) AS revenue_mtd,
+       COALESCE(SUM(CASE WHEN coa.account_type='expense' THEN jl.debit-jl.credit ELSE 0 END),0) AS expenses_mtd
+     FROM journal_lines jl
+     JOIN journal_entries je    ON je.entry_id=jl.entry_id
+     JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
+     WHERE coa.account_type IN ('income','expense')
+       AND date_trunc('month', je.entry_date) = date_trunc('month', CURRENT_DATE)`,
+  );
+  const {
+    rows: [cash],
+  } = await client.query(
+    `SELECT COALESCE(SUM(jl.debit-jl.credit),0) AS cash_position
+     FROM journal_lines jl
+     JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
+     WHERE coa.account_type='asset' AND coa.account_code LIKE '12%'`,
+  );
+  const {
+    rows: [recon],
+  } = await client.query(
+    `SELECT COUNT(*)::int AS unreconciled_count
+     FROM bank_statements WHERE is_reconciled = false`,
+  );
+  const {
+    rows: [period],
+  } = await client.query(
+    `SELECT period_id, name, start_date, end_date
+     FROM fiscal_periods
+     WHERE is_closed = false AND CURRENT_DATE BETWEEN start_date AND end_date
+     ORDER BY start_date DESC LIMIT 1`,
+  );
+  return { pl, cash, recon, period: period || null };
+}
+
+// Cash-flow source data. opening_cash is the cash/bank balance before the
+// period; `items` are the period's cash movements grouped by the contra
+// account and bucketed into operating / investing / financing. For every
+// cash-touching entry, a contra line's effect on cash is (credit − debit),
+// because a balanced entry's cash delta equals the negative of its contras.
+async function getCashFlowData(client, { startDate, endDate }) {
+  const {
+    rows: [opening],
+  } = await client.query(
+    `SELECT COALESCE(SUM(jl.debit-jl.credit),0) AS opening_cash
+     FROM journal_lines jl
+     JOIN journal_entries je    ON je.entry_id=jl.entry_id
+     JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
+     WHERE coa.account_type='asset' AND coa.account_code LIKE '12%'
+       AND je.entry_date < $1`,
+    [startDate],
+  );
+  const { rows: items } = await client.query(
+    `WITH cash_entries AS (
+       SELECT DISTINCT je.entry_id
+       FROM journal_lines jl
+       JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
+       JOIN journal_entries je    ON je.entry_id=jl.entry_id
+       WHERE coa.account_type='asset' AND coa.account_code LIKE '12%'
+         AND je.entry_date BETWEEN $1 AND $2
+     )
+     SELECT
+       CASE
+         WHEN coa.account_subtype='fixed_asset' THEN 'investing'
+         WHEN coa.account_type='equity'
+              OR coa.account_subtype='long_term_liability' THEN 'financing'
+         ELSE 'operating'
+       END                                       AS category,
+       coa.account_name                          AS label,
+       COALESCE(SUM(jl.credit - jl.debit),0)::numeric AS amount
+     FROM journal_lines jl
+     JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
+     JOIN cash_entries ce       ON ce.entry_id=jl.entry_id
+     WHERE NOT (coa.account_type='asset' AND coa.account_code LIKE '12%')
+     GROUP BY category, coa.account_name
+     HAVING COALESCE(SUM(jl.credit - jl.debit),0) <> 0
+     ORDER BY category, amount DESC`,
+    [startDate, endDate],
+  );
+  return { opening_cash: opening.opening_cash, items };
+}
+
+// Per-account general ledger: every journal line that touched the
+// account, oldest-first, with a running balance (debit − credit).
+async function getAccountLedger(client, { accountId, startDate, endDate }) {
+  const { rows } = await client.query(
+    `SELECT je.entry_id, je.entry_number, je.entry_date,
+            coa.account_code, coa.account_name,
+            jl.description,
+            jl.debit, jl.credit,
+            SUM(jl.debit - jl.credit) OVER (
+              ORDER BY je.entry_date, je.posted_at, jl.line_id
+              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) AS running_balance
+     FROM journal_lines jl
+     JOIN journal_entries je    ON je.entry_id = jl.entry_id
+     JOIN chart_of_accounts coa ON coa.account_id = jl.account_id
+     WHERE jl.account_id = $1
+       AND ($2::DATE IS NULL OR je.entry_date >= $2)
+       AND ($3::DATE IS NULL OR je.entry_date <= $3)
+     ORDER BY je.entry_date, je.posted_at, jl.line_id`,
+    [accountId, startDate || null, endDate || null],
+  );
+  return rows;
+}
+
 module.exports = {
   findAccounts,
   findAccountById,
   findAccountByCode,
+  getAccountLedger,
+  getDashboardData,
+  getCashFlowData,
   insertAccount,
   updateAccount,
   findJournals,

@@ -295,6 +295,24 @@ async function notifyManagers(
   }
 }
 
+async function getKpis(business) {
+  return withBusinessContext(business, async (client) => {
+    const { totals, byCategory } = await repo.getKpis(client);
+    return {
+      paid_this_month: parseFloat(totals.paid_this_month) || 0,
+      pending_amount: parseFloat(totals.pending_amount) || 0,
+      pending_count: totals.pending_count || 0,
+      reimbursements_outstanding:
+        parseFloat(totals.reimbursements_outstanding) || 0,
+      top_category_this_month: byCategory[0]?.category ?? null,
+      spend_by_category: byCategory.map((r) => ({
+        category: r.category,
+        total: parseFloat(r.total) || 0,
+      })),
+    };
+  });
+}
+
 module.exports = {
   list,
   getById,
@@ -305,4 +323,5 @@ module.exports = {
   listAdvances,
   createAdvance,
   approveAdvance,
+  getKpis,
 };

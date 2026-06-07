@@ -134,6 +134,21 @@ router.delete(
   },
 );
 
+// POST alias — the admin UI cancels a scheduled post via POST .../cancel.
+router.post(
+  "/posts/:id/cancel",
+  param("id").isUUID(),
+  validate,
+  can("social", "delete"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.cancel(req.business, req.params.id, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── PUBLISH NOW ──────────────────────────────────────────────
 
 router.post(
