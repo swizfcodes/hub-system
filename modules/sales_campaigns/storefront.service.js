@@ -128,35 +128,77 @@ async function submitLead(business, slug, data, req) {
     const leadType   = data.lead_type || "form";
 
     // ── Auto-create or find CRM contact ──────────────────────
+    // Every lead — regardless of whether phone or email was provided —
+    // must produce a contact. We match by phone first, then email.
+    // This guarantees no lead is ever orphaned from the CRM.
     let contactId = null;
-    if (data.phone) {
-      const { rows: [existing] } = await client.query(
-        `SELECT contact_id FROM shared.contacts WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
-        [data.phone],
-      );
+    if (data.phone || data.email) {
+      // 1. Try to find an existing contact by phone
+      let existing = null;
+      if (data.phone) {
+        const { rows } = await client.query(
+          `SELECT contact_id FROM shared.contacts
+           WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
+          [data.phone],
+        );
+        existing = rows[0] || null;
+      }
+      // 2. Fall back to email match if no phone match
+      if (!existing && data.email) {
+        const { rows } = await client.query(
+          `SELECT contact_id FROM shared.contacts
+           WHERE email = $1 AND is_deleted = false LIMIT 1`,
+          [data.email],
+        );
+        existing = rows[0] || null;
+      }
+
       if (existing) {
         contactId = existing.contact_id;
-        // Update email if we now have it and it was missing
-        if (data.email) {
-          await client.query(
-            `UPDATE shared.contacts SET email = COALESCE(email, $2) WHERE contact_id = $1`,
-            [contactId, data.email],
-          );
-        }
+        // Enrich the existing contact with any new data we just learned
+        await client.query(
+          `UPDATE shared.contacts
+           SET email         = COALESCE(email, $2),
+               primary_phone = COALESCE(primary_phone, $3),
+               first_name    = COALESCE(first_name, $4),
+               last_name     = COALESCE(last_name, $5),
+               birthday_month = CASE WHEN $6::smallint IS NOT NULL AND birthday_month IS NULL
+                                     THEN $6::smallint ELSE birthday_month END,
+               birthday_day   = CASE WHEN $7::smallint IS NOT NULL AND birthday_day IS NULL
+                                     THEN $7::smallint ELSE birthday_day END
+           WHERE contact_id = $1`,
+          [
+            contactId,
+            data.email    || null,
+            data.phone    || null,
+            firstName     || null,
+            lastName      || null,
+            (data.wants_birthday && data.birthday_month) ? data.birthday_month : null,
+            (data.wants_birthday && data.birthday_day)   ? data.birthday_day   : null,
+          ],
+        );
       } else {
+        // Create a new contact — even email-only leads get a record
         const { rows: [newContact] } = await client.query(
           `INSERT INTO shared.contacts
              (display_name, first_name, last_name, primary_phone, email,
-              contact_type, visible_to)
-           VALUES ($1,$2,$3,$4,$5,ARRAY['customer']::text[],ARRAY[$6])
+              contact_type, source, visible_to,
+              birthday_month, birthday_day)
+           VALUES ($1,$2,$3,$4,$5,
+                   ARRAY['customer']::text[],
+                   'campaign_lead',
+                   ARRAY[$6],
+                   $7, $8)
            RETURNING contact_id`,
           [
             fullName,
             firstName || null,
             lastName  || null,
-            data.phone,
+            data.phone || null,
             data.email || null,
             business,
+            (data.wants_birthday && data.birthday_month) ? data.birthday_month : null,
+            (data.wants_birthday && data.birthday_day)   ? data.birthday_day   : null,
           ],
         );
         contactId = newContact.contact_id;
@@ -189,10 +231,12 @@ async function submitLead(business, slug, data, req) {
     if (leadType === "qr_scan" && data.email) {
       const shopUrl = campaign.redirect_url || "https://orikaliving.com/products";
       try {
-        const { subject, html } = renderEmail("campaign_lead_welcome", business, {
-          first_name:    firstName || fullName,
-          campaign_name: campaign.campaign_name,
-          shop_url:      shopUrl,
+        const { subject, html } = renderEmail("walkin_welcome", business, {
+          first_name:     firstName || fullName,
+          shop_url:       shopUrl,
+          wants_birthday: !!(data.wants_birthday && data.birthday_month && data.birthday_day),
+          birthday_month: data.birthday_month || null,
+          birthday_day:   data.birthday_day   || null,
         });
         await sendEmail({ to: data.email, subject, html, business });
       } catch (emailErr) {
@@ -367,6 +411,79 @@ async function placeOrder(business, slug, data, req) {
           new Error("Could not provision payment account. Please try again or choose another method."),
           { status: 502 },
         );
+      }
+    }
+
+    // ── Auto-create or find CRM contact for order customer ───────────────────────
+    // Every order must have a contact record — match by phone first, then email.
+    const orderPhone = data.customer_phone || null;
+    const orderEmail = data.customer_email || null;
+    if (orderPhone || orderEmail) {
+      try {
+        const nameParts = (data.customer_name || "").trim().split(/\s+/);
+        const orderFirstName = nameParts[0] || null;
+        const orderLastName  = nameParts.slice(1).join(" ") || null;
+
+        let orderContact = null;
+        if (orderPhone) {
+          const { rows } = await client.query(
+            `SELECT contact_id FROM shared.contacts
+             WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
+            [orderPhone],
+          );
+          orderContact = rows[0] || null;
+        }
+        if (!orderContact && orderEmail) {
+          const { rows } = await client.query(
+            `SELECT contact_id FROM shared.contacts
+             WHERE email = $1 AND is_deleted = false LIMIT 1`,
+            [orderEmail],
+          );
+          orderContact = rows[0] || null;
+        }
+
+        if (orderContact) {
+          // Enrich with any new information from this order
+          await client.query(
+            `UPDATE shared.contacts
+             SET email         = COALESCE(email, $2),
+                 primary_phone = COALESCE(primary_phone, $3),
+                 first_name    = COALESCE(first_name, $4),
+                 last_name     = COALESCE(last_name, $5)
+             WHERE contact_id = $1`,
+            [orderContact.contact_id, orderEmail, orderPhone, orderFirstName, orderLastName],
+          );
+          await client.query(
+            `UPDATE campaign_orders SET contact_id = $2 WHERE order_id = $1`,
+            [order.order_id, orderContact.contact_id],
+          );
+        } else {
+          const { rows: [newOrderContact] } = await client.query(
+            `INSERT INTO shared.contacts
+               (display_name, first_name, last_name, primary_phone, email,
+                contact_type, source, visible_to)
+             VALUES ($1,$2,$3,$4,$5,
+                     ARRAY['customer']::text[],
+                     'campaign_order',
+                     ARRAY[$6])
+             RETURNING contact_id`,
+            [
+              data.customer_name || orderPhone || orderEmail,
+              orderFirstName,
+              orderLastName,
+              orderPhone,
+              orderEmail,
+              business,
+            ],
+          );
+          await client.query(
+            `UPDATE campaign_orders SET contact_id = $2 WHERE order_id = $1`,
+            [order.order_id, newOrderContact.contact_id],
+          );
+        }
+      } catch (contactErr) {
+        // Non-fatal — never fail an order over a CRM write
+        logger.warn(`[placeOrder] contact upsert failed for order ${order.order_id}: ${contactErr.message}`);
       }
     }
 
@@ -578,7 +695,7 @@ async function notifyStaffOfLead(client, business, campaign, lead, contactId) {
       body,
       referenceType: "campaign_lead",
       referenceId: lead.lead_id,
-      actionUrl: `/sales-campaigns/${campaign.campaign_id}/leads`,
+      actionUrl: `/sales-campaigns/${campaign.campaign_id}?tab=leads`,
     });
   }
 }
@@ -609,7 +726,7 @@ async function notifyStaffOfPendingOrder(
       body: `${order.customer_name} ordered: ${summary}. Awaiting proof of payment.`,
       referenceType: "campaign_order",
       referenceId: order.order_id,
-      actionUrl: `/sales-campaigns/${order.campaign_id}/orders`,
+      actionUrl: `/sales-campaigns/${order.campaign_id}?tab=orders`,
     });
   }
 }
@@ -637,7 +754,7 @@ async function notifyStaffProofSubmitted(
       body: `${order.customer_name} (${order.customer_phone}) uploaded payment proof. Verify and confirm.`,
       referenceType: "campaign_order",
       referenceId: order.order_id,
-      actionUrl: `/sales-campaigns/${order.campaign_id}/orders`,
+      actionUrl: `/sales-campaigns/${order.campaign_id}?tab=orders`,
     });
   }
 }

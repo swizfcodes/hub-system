@@ -247,41 +247,61 @@ export function AudienceBuilder({
     loading: false,
   });
 
-  // Live preview — debounced
+  // Live preview — debounced. try/catch is critical: an unhandled rejection
+  // inside a setTimeout async callback causes React to unmount the component,
+  // which is why the audience step was going blank on any API error.
   useEffect(() => {
     setPreview((p) => ({ ...p, loading: true }));
     const t = setTimeout(async () => {
-      const result = await previewAudience(value, campaignType);
-      setPreview({ count: result.count, loading: false });
-      onPreviewCount?.(result.count);
+      try {
+        const result = await previewAudience(value, campaignType);
+        // Backend returns { total, sample, filter_summary } — not { count }
+        const count = result.total ?? result.count ?? 0;
+        setPreview({ count, loading: false });
+        onPreviewCount?.(count);
+      } catch {
+        // On error just stop the spinner — don't crash the component
+        setPreview((p) => ({ ...p, loading: false }));
+      }
     }, 600);
     return () => clearTimeout(t);
   }, [JSON.stringify(value), campaignType]);
 
-  function update(patch: Partial<AudienceFilter>) {
+  // All filter mutations go through updateInclude / updateExclude so the shape
+  // always matches what compileFilter() in builder.service.js expects:
+  //   { include: { contact_type, priority_level, tag_names, purchased_within_days },
+  //     exclude: { unsubscribed, received_campaign_in_days },
+  //     channel_requirements }
+  function updateInclude(patch: Record<string, unknown>) {
+    onChange({ ...value, include: { ...(value.include ?? {}), ...patch } });
+  }
+  function updateExclude(patch: Record<string, unknown>) {
+    onChange({ ...value, exclude: { ...(value.exclude ?? {}), ...patch } });
+  }
+  function updateRoot(patch: Partial<AudienceFilter>) {
     onChange({ ...value, ...patch });
   }
 
   function toggleContactType(type: string) {
-    // Write to include.contact_type — the shape the backend audience
-    // compiler actually reads (the flat value.contact_type was ignored).
     const current = value.include?.contact_type ?? [];
     const next = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];
-    update({ include: { ...(value.include ?? {}), contact_type: next } });
+    updateInclude({ contact_type: next });
   }
 
   function addTag(tag: string) {
     const t = tag.trim();
     if (!t) return;
-    const current = value.tags ?? [];
-    if (!current.includes(t)) update({ tags: [...current, t] });
+    // Backend reads include.tag_names — NOT the flat filter.tags key
+    const current = value.include?.tag_names ?? [];
+    if (!current.includes(t)) updateInclude({ tag_names: [...current, t] });
     setTagInput("");
   }
 
   function removeTag(tag: string) {
-    update({ tags: (value.tags ?? []).filter((t) => t !== tag) });
+    const current = value.include?.tag_names ?? [];
+    updateInclude({ tag_names: current.filter((t) => t !== tag) });
   }
 
   return (
@@ -304,14 +324,9 @@ export function AudienceBuilder({
             onClick={() =>
               onChange({
                 ...value,
-                // The backend audience compiler reads include.contact_type;
-                // unsubscribed contacts are excluded automatically, and our
-                // unsubscribe flow strips the 'subscriber' tag, so opt-outs
-                // are doubly excluded.
-                include: {
-                  ...(value.include ?? {}),
-                  contact_type: ["subscriber"],
-                },
+                include: { ...(value.include ?? {}), contact_type: ["subscriber"] },
+                exclude: { ...(value.exclude ?? {}), unsubscribed: true },
+                channel_requirements: "email",
               })
             }
             className={cn(
@@ -361,21 +376,25 @@ export function AudienceBuilder({
         <Select
           label="Priority Level"
           options={PRIORITY_OPTIONS}
-          value={value.priority_level ?? ""}
+          // Backend reads include.priority_level as an array
+          value={value.include?.priority_level?.[0] ?? ""}
           surface="dark"
           onChange={(e) =>
-            update({ priority_level: e.target.value || undefined })
+            updateInclude({
+              priority_level: e.target.value ? [e.target.value] : undefined,
+            })
           }
         />
 
         <Select
           label="Last Purchase"
           options={LAST_PURCHASE_OPTIONS}
-          value={String(value.last_purchase_days ?? "")}
+          // Backend reads include.purchased_within_days (not flat last_purchase_days)
+          value={String(value.include?.purchased_within_days ?? "")}
           surface="dark"
           onChange={(e) =>
-            update({
-              last_purchase_days: e.target.value
+            updateInclude({
+              purchased_within_days: e.target.value
                 ? parseInt(e.target.value)
                 : undefined,
             })
@@ -392,7 +411,7 @@ export function AudienceBuilder({
           </span>
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {(value.tags ?? []).map((tag) => (
+          {(value.include?.tag_names ?? []).map((tag) => (
             <span
               key={tag}
               className="flex items-center gap-1 rounded-full bg-orika-gold/15 border border-orika-gold/30 px-2 py-0.5 text-xs text-orika-gold"
@@ -433,7 +452,7 @@ export function AudienceBuilder({
         </div>
       </div>
 
-      {/* Channel toggles */}
+      {/* Channel requirements — maps to channel_requirements field read by compileFilter */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
           Must Have
@@ -442,9 +461,11 @@ export function AudienceBuilder({
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
-              checked={value.has_whatsapp ?? false}
+              checked={value.channel_requirements === "whatsapp"}
               onChange={(e) =>
-                update({ has_whatsapp: e.target.checked || undefined })
+                updateRoot({
+                  channel_requirements: e.target.checked ? "whatsapp" : "auto",
+                })
               }
               className="rounded"
             />
@@ -454,9 +475,11 @@ export function AudienceBuilder({
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
-              checked={value.has_email ?? false}
+              checked={value.channel_requirements === "email"}
               onChange={(e) =>
-                update({ has_email: e.target.checked || undefined })
+                updateRoot({
+                  channel_requirements: e.target.checked ? "email" : "auto",
+                })
               }
               className="rounded"
             />
@@ -466,12 +489,14 @@ export function AudienceBuilder({
         </div>
       </div>
 
-      {/* Opt-out exclusion */}
+      {/* Opt-out exclusion — backend reads exclude.unsubscribed (nested), not flat exclude_unsubscribed */}
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input
           type="checkbox"
-          checked={value.exclude_unsubscribed !== false}
-          onChange={(e) => update({ exclude_unsubscribed: e.target.checked })}
+          checked={value.exclude?.unsubscribed !== false}
+          onChange={(e) =>
+            updateExclude({ unsubscribed: e.target.checked })
+          }
           className="rounded"
         />
         <span className="text-orika-cloud">

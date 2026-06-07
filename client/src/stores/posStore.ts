@@ -19,26 +19,33 @@ import {
 
 // ── Computed totals helper ────────────────────────────────────────────────────
 
+// C2 fix: round all money calculations to 2 decimal places
+function r2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 export function computeTotals(
   lines: CartLine[],
   orderDiscount: OrderDiscount | null,
   loyaltyDiscAmt: number,
   vatRate: number,
 ): CartTotals {
-  const lineSubtotal = lines.reduce((s, l) => s + l.line_total, 0);
+  const lineSubtotal = r2(lines.reduce((s, l) => s + l.line_total, 0));
 
-  const orderDiscAmt = orderDiscount
-    ? orderDiscount.type === "percentage"
-      ? lineSubtotal * (orderDiscount.value / 100)
-      : orderDiscount.value
-    : 0;
+  const orderDiscAmt = r2(
+    orderDiscount
+      ? orderDiscount.type === "percentage"
+        ? lineSubtotal * (orderDiscount.value / 100)
+        : orderDiscount.value
+      : 0,
+  );
 
-  const netAfterDisc = Math.max(
+  const netAfterDisc = r2(Math.max(
     0,
     lineSubtotal - orderDiscAmt - loyaltyDiscAmt,
-  );
-  const vat = netAfterDisc * vatRate;
-  const total = netAfterDisc + vat;
+  ));
+  const vat = r2(netAfterDisc * vatRate);
+  const total = r2(netAfterDisc + vat);
 
   return {
     line_subtotal: lineSubtotal,
@@ -53,7 +60,7 @@ export function computeTotals(
 function computeLineTotal(
   line: Omit<CartLine, "line_total" | "needs_approval" | "low_stock">,
 ): number {
-  return Math.max(0, line.unit_price * line.quantity - line.discount_amount);
+  return r2(Math.max(0, line.unit_price * line.quantity - line.discount_amount));
 }
 
 // ── Store definition ──────────────────────────────────────────────────────────
@@ -219,7 +226,8 @@ export const usePOSStore = create<PosState>((set, get) => ({
   setOrderDiscount: (d) => set({ orderDiscount: d }),
 
   parkCart: async (label) => {
-    const { customer, lines, orderDiscount } = get();
+    // M6 fix: preserve loyalty state when parking
+    const { customer, lines, orderDiscount, loyaltyInfo, loyaltyDisc } = get();
     if (!lines.length) return;
     const parkedTx: ParkedTransaction = {
       park_id: uuid(),
@@ -227,6 +235,8 @@ export const usePOSStore = create<PosState>((set, get) => ({
       customer,
       lines,
       order_discount: orderDiscount,
+      loyalty_info: loyaltyInfo,
+      loyalty_disc: loyaltyDisc,
       label: label || `Parked at ${new Date().toLocaleTimeString()}`,
     };
     await saveParkedTransaction(parkedTx);
@@ -244,11 +254,13 @@ export const usePOSStore = create<PosState>((set, get) => ({
     const { parked } = get();
     const tx = parked.find((p) => p.park_id === parkId);
     if (!tx) return;
+    // M6 fix: restore loyalty state when resuming
     set({
       lines: tx.lines,
       customer: tx.customer,
       orderDiscount: tx.order_discount,
-      loyaltyDisc: 0,
+      loyaltyInfo: tx.loyalty_info ?? null,
+      loyaltyDisc: tx.loyalty_disc ?? 0,
       parked: parked.filter((p) => p.park_id !== parkId),
     });
     removeParkedTransaction(parkId).catch(() => {});

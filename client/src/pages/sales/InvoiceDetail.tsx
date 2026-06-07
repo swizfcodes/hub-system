@@ -63,9 +63,12 @@ export default function InvoiceDetail() {
     onError: (err) => showToast.error(errMsg(err)),
   });
 
+  // M9 fix: handle clipboard API failure gracefully
   function copyLink(url: string) {
-    navigator.clipboard.writeText(url);
-    showToast.success("Link copied to clipboard");
+    navigator.clipboard.writeText(url).then(
+      () => showToast.success("Link copied to clipboard"),
+      () => showToast.error("Failed to copy — please copy manually"),
+    );
   }
 
   if (invLoading) {
@@ -131,7 +134,7 @@ export default function InvoiceDetail() {
                       label="Paystack — Nigeria (NGN)"
                       icon={CreditCard}
                       url={invoice.paystack_payment_url}
-                      accent="#00C2A3"
+                      variant="paystack"
                       onCopy={() => copyLink(invoice.paystack_payment_url!)}
                     />
                   )}
@@ -140,7 +143,7 @@ export default function InvoiceDetail() {
                       label="Stripe — International"
                       icon={Globe}
                       url={invoice.stripe_payment_url}
-                      accent="#6772E5"
+                      variant="stripe"
                       onCopy={() => copyLink(invoice.stripe_payment_url!)}
                     />
                   )}
@@ -274,6 +277,19 @@ export default function InvoiceDetail() {
               </Button>
             )}
 
+            {/* L5 fix: WhatsApp send button — preferred channel for Nigerian market */}
+            {(invoice.whatsapp_number || invoice.primary_phone) && !isPaid && (
+              <Button
+                variant="secondary"
+                className="w-full justify-start"
+                onClick={() => sendMutation.mutate("whatsapp")}
+                loading={sendMutation.isPending}
+              >
+                <Send className="h-4 w-4" />
+                Send via WhatsApp
+              </Button>
+            )}
+
             <button
               onClick={() => openInvoicePdf(invoice.invoice_id)}
               className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
@@ -314,26 +330,31 @@ export default function InvoiceDetail() {
   );
 }
 
+// L6 fix: use theme-aware classes instead of hardcoded hex accent colors
 function PaymentLinkRow({
   label,
   icon: Icon,
   url,
-  accent,
+  variant,
   onCopy,
 }: {
   label: string;
   icon: typeof CreditCard;
   url: string;
-  accent: string;
+  variant: "paystack" | "stripe";
   onCopy: () => void;
 }) {
+  const styles =
+    variant === "paystack"
+      ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+      : "border-indigo-400/20 bg-indigo-400/5 text-indigo-400";
+
   return (
     <div
-      className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3"
-      style={{ borderColor: `${accent}30`, backgroundColor: `${accent}08` }}
+      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 ${styles}`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <Icon className="h-4 w-4 shrink-0" style={{ color: accent }} />
+        <Icon className="h-4 w-4 shrink-0" />
         <span className="text-sm font-medium text-orika-cream truncate">
           {label}
         </span>
@@ -350,8 +371,7 @@ function PaymentLinkRow({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs font-medium transition-colors"
-          style={{ color: accent }}
+          className="text-xs font-medium hover:opacity-80 transition-colors"
         >
           Open
         </a>

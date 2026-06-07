@@ -127,7 +127,7 @@ async function reconcileSession(
         body: `Cashier counted ₦${actualCash.toLocaleString()}, system expected ₦${expectedCash.toLocaleString()}. Review session ${sessionId}.`,
         referenceType: "pos_session",
         referenceId: sessionId,
-        actionUrl: `/pos/sessions/${sessionId}`,
+        actionUrl: `/pos/sessions`,
       });
     }
     emitToBusiness(business, "pos:session_variance", {
@@ -214,6 +214,10 @@ async function getZReport(client, sessionId) {
   const actualCash = parseFloat(session.actual_cash || 0);
   const variance = classifyVariance(expectedCash, actualCash);
 
+  // H7 fix: query actual cash total from payment splits (additive) instead
+  // of subtracting card+transfer from revenue (fragile — breaks with new methods)
+  const totals = await repo.getSessionTotals(client, sessionId);
+
   return {
     report_type: "Z",
     session_id: sessionId,
@@ -225,13 +229,10 @@ async function getZReport(client, sessionId) {
       total: parseInt(session.transaction_count || 0, 10),
     },
     revenue: {
-      cash_total:
-        parseFloat(session.session_revenue || 0) -
-        parseFloat(session.total_transfers || 0) -
-        parseFloat(session.total_card || 0),
-      transfer_total: parseFloat(session.total_transfers || 0),
-      card_total: parseFloat(session.total_card || 0),
-      total_revenue: parseFloat(session.total_revenue || 0),
+      cash_total: parseFloat(totals.cash_total || 0),
+      transfer_total: parseFloat(totals.transfer_total || 0),
+      card_total: parseFloat(totals.card_total || 0),
+      total_revenue: parseFloat(totals.total_revenue || 0),
     },
     cash_drawer: {
       opening_float: parseFloat(session.opening_float || 0),

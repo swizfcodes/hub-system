@@ -145,6 +145,8 @@ export interface ParkedTransaction {
   customer: import("@typedefs/contacts").Contact | null;
   lines: CartLine[];
   order_discount: OrderDiscount | null;
+  loyalty_info: import("@typedefs/loyalty").LoyaltyInfo | null;
+  loyalty_disc: number;
   label?: string; // e.g. "Customer 1"
 }
 
@@ -164,7 +166,8 @@ export interface PendingTransaction {
     | "out_of_stock"
     | "session_closed"
     | "duplicate"
-    | "validation";
+    | "validation"
+    | "network_error";
   conflict_message?: string;
 }
 

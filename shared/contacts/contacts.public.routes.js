@@ -165,10 +165,13 @@ router.post(
         // ── Welcome email ────────────────────────────────────────
         if (email) {
           try {
-            const { subject, html } = renderEmail("campaign_lead_welcome", biz, {
+            const bizConfig = businesses.getBusinessConfig(biz);
+            const { subject, html } = renderEmail("walkin_welcome", biz, {
               first_name,
-              campaign_name: businesses.getBusinessConfig(biz)?.display_name || "us",
-              shop_url: "https://orikaliving.com/products",
+              shop_url: bizConfig?.website || "https://orikaliving.com/products",
+              wants_birthday: !!(wants_birthday && birthday_month && birthday_day),
+              birthday_month: birthday_month || null,
+              birthday_day:   birthday_day   || null,
             });
             await sendEmail({ to: email, subject, html, business: biz });
           } catch (emailErr) {

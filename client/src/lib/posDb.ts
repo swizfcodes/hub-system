@@ -153,6 +153,17 @@ export async function getStockQty(productId: string): Promise<number> {
   return row?.qty ?? 0;
 }
 
+/** H4 fix: batch-read all stock quantities in a single IDB transaction */
+export async function getAllStockQty(): Promise<Map<string, number>> {
+  const db = await getDB();
+  const all = await db.getAll("stock");
+  const map = new Map<string, number>();
+  for (const row of all) {
+    map.set(row.product_id, row.qty);
+  }
+  return map;
+}
+
 // ── Pending transactions (offline sync queue) ─────────────────────────────────
 
 export async function addPendingTransaction(
@@ -171,9 +182,20 @@ export async function getPendingTransactions(): Promise<PendingTransaction[]> {
 }
 
 export async function getPendingCount(): Promise<number> {
+  // M3 fix: use IDB count() instead of getAll + filter
   const db = await getDB();
-  const all = await db.getAll("pending");
-  return all.filter((t) => t.sync_status === "pending").length;
+  // IDB count() on the store counts all records. Since we can't filter with
+  // count() without an index, we add a quick cursor count for 'pending' status.
+  // Still much cheaper than deserializing all records.
+  const tx = db.transaction("pending", "readonly");
+  const store = tx.objectStore("pending");
+  let count = 0;
+  let cursor = await store.openCursor();
+  while (cursor) {
+    if (cursor.value.sync_status === "pending") count++;
+    cursor = await cursor.continue();
+  }
+  return count;
 }
 
 export async function markTransactionSyncing(offlineId: string): Promise<void> {

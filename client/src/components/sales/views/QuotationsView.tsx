@@ -21,13 +21,17 @@ export function QuotationsView() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
+  // M5 fix: add pagination
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["quotations", { status }],
-    queryFn: () => listQuotations({ status: status || undefined, limit: 50 }),
+    queryKey: ["quotations", { status, page }],
+    queryFn: () => listQuotations({ status: status || undefined, limit: PAGE_SIZE, page }),
   });
 
   const rows = data?.data ?? [];
+  const hasMore = rows.length === PAGE_SIZE;
 
   const filtered = search
     ? rows.filter(
@@ -158,6 +162,31 @@ export function QuotationsView() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* M5: Pagination controls */}
+      {(page > 1 || hasMore) && (
+        <div className="flex justify-center gap-3 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span className="flex items-center text-xs text-orika-smoke">
+            Page {page}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!hasMore}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
         </div>
       )}
 

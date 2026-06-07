@@ -337,7 +337,7 @@ async function updateSessionTotals(
   { totalAmount, transferAmt, cardAmt, session_id },
 ) {
   await client.query(
-    `UPDATE pos_sessions SET total_revenue=$1, total_transfers=total_transfers+$2, total_card=total_card+$3 WHERE session_id=$4`,
+    `UPDATE pos_sessions SET total_revenue=total_revenue+$1, total_transactions=total_transactions+1, total_transfers=total_transfers+$2, total_card=total_card+$3 WHERE session_id=$4`,
     [totalAmount, transferAmt, cardAmt, session_id],
   );
 }

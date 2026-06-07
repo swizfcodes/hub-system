@@ -32,10 +32,13 @@ export default function TasksPage() {
   const filterRefType = searchParams.get("reference_type") ?? undefined;
   const filterRefId = searchParams.get("reference_id") ?? undefined;
 
+  // Support notification deep-link: /tasks?task=:id — open that task's detail panel
+  const taskFromUrl = searchParams.get("task") ?? null;
+
   const [showCreate, setShowCreate] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("inbox");
   const [editTask, setEditTask] = useState<Task | null>(null);
-  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(taskFromUrl);
   const [search, setSearch] = useState("");
   const [dragOver, setDragOver] = useState<TaskStatus | null>(null);
 

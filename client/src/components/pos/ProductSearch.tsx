@@ -1,11 +1,11 @@
 // ── ProductSearch.tsx ──────────────────────────────────────────────────────────
-import { useState, useEffect as useEffectPS } from "react";
+import { useState, useDeferredValue, useEffect as useEffectPS } from "react";
 import { Search, Plus, AlertTriangle } from "lucide-react";
 import { usePOSStore } from "@stores/posStore";
 import {
   getCachedProducts,
   getCachedCategories,
-  getStockQty,
+  getAllStockQty,
 } from "@lib/posDb";
 import { api } from "@services/api";
 import { LOW_STOCK_THRESHOLD } from "@lib/constants/posConstants";
@@ -29,6 +29,8 @@ export function ProductSearch({
   }));
 
   const [query, setQuery] = useState("");
+  // M2 fix: debounce search via useDeferredValue
+  const deferredQuery = useDeferredValue(query);
   const [products, setProducts] = useState<POSProduct[]>([]);
   const [categories, setCategories] = useState<POSCategory[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -45,21 +47,17 @@ export function ProductSearch({
       const cachedCats = await getCachedCategories();
       if (cachedCats.length) setCategories(cachedCats);
 
-      // Populate stock map from cache
-      const map = new Map<string, number>();
-      for (const p of cached) {
-        const qty = await getStockQty(p.product_id);
-        map.set(p.product_id, qty);
-      }
+      // H4 fix: batch-read all stock quantities in a single IDB transaction
+      const map = await getAllStockQty();
       setStockMap(map);
     }
     load();
   }, [cacheVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Barcode scan: if query looks like a barcode (all digits / starts with SKU prefix), lookup
+  // L4 fix: barcode scan — use stricter regex (8+ digits or standard EAN/UPC patterns)
   useEffectPS(() => {
-    if (!isOnline || !query || query.length < 4) return;
-    if (!/^[A-Z0-9\-]{4,}$/.test(query.toUpperCase())) return;
+    if (!isOnline || !query || query.length < 8) return;
+    if (!/^\d{8,14}$/.test(query)) return;
 
     const t = setTimeout(async () => {
       try {
@@ -86,10 +84,11 @@ export function ProductSearch({
   const filtered = products.filter((p) => {
     if (!p.is_active) return false;
     if (categoryId && p.category_id !== categoryId) return false;
-    if (!query) return true;
+    if (!deferredQuery) return true;
+    const q = deferredQuery.toLowerCase();
     return (
-      p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.sku.toLowerCase().includes(query.toLowerCase())
+      p.name.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q)
     );
   });
 

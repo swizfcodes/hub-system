@@ -27,9 +27,12 @@ export function usePOSSync(sessionId: string | null) {
   }));
 
   const isSyncingRef = useRef(false);
+  // H3 fix: use a ref for isOnline so the interval callback always reads current value
+  const isOnlineRef = useRef(isOnline);
+  isOnlineRef.current = isOnline;
 
   async function runSync() {
-    if (!sessionId || !isOnline || isSyncingRef.current) return;
+    if (!sessionId || !isOnlineRef.current || isSyncingRef.current) return;
 
     const pending = await getPendingTransactions();
     if (!pending.length) return;
@@ -68,6 +71,7 @@ export function usePOSSync(sessionId: string | null) {
       // Network error during sync — transactions stay in 'syncing' state.
       // Next tick will re-attempt them (getPendingTransactions includes 'conflict').
       // Reset syncing → pending so next pass retries
+      // L2 fix: label as "network_error" not "validation" — this is a connectivity failure
       const stillPending = await getPendingTransactions();
       await Promise.all(
         stillPending
@@ -75,7 +79,7 @@ export function usePOSSync(sessionId: string | null) {
           .map((t) =>
             markTransactionConflict(
               t.offline_id,
-              "validation",
+              "network_error",
               "Sync failed — will retry",
             ),
           ),

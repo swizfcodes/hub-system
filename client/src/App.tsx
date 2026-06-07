@@ -204,6 +204,9 @@ const CampaignSettings = lazy(
 const SubscribersHome = lazy(() => import("@pages/campaigns/SubscribersHome"));
 const EnquiriesHome = lazy(() => import("@pages/campaigns/EnquiriesHome"));
 
+// Tax Center
+const TaxCenter = lazy(() => import("@pages/tax/TaxCenter"));
+
 // Help Center
 const HelpCenter = lazy(() => import("@pages/help/HelpCenter"));
 const HelpEditor = lazy(() => import("@pages/settings/HelpEditor"));
@@ -403,6 +406,9 @@ export default function App() {
             element={<ReconciliationPage />}
           />
           <Route path="/accounting/periods" element={<FiscalPeriodsPage />} />
+
+          {/* Tax Center */}
+          <Route path="/tax" element={<TaxCenter />} />
 
           {/* Expenses */}
           <Route path="/expenses" element={<ExpensesHome />} />

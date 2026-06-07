@@ -127,17 +127,15 @@ async function sendViaWhatsApp(tx, overrideTo) {
 function formatWhatsAppMessage(tx) {
   const total = formatCurrency(tx.total_amount);
   const change = formatCurrency(tx.change_given);
+  // M7 fix: show all items with per-line price and total
   const itemLine = (tx.lines || [])
-    .slice(0, 5)
-    .map((l) => `  • ${l.description} ×${l.quantity}`)
+    .map((l) => `  • ${l.description} ×${l.quantity} @ ${formatCurrency(l.unit_price)} = ${formatCurrency(l.line_total)}`)
     .join("\n");
-  const extra =
-    (tx.lines || []).length > 5 ? `\n  …and ${tx.lines.length - 5} more` : "";
 
   return [
     `Receipt ${tx.transaction_number}`,
     "",
-    itemLine + extra,
+    itemLine,
     "",
     `Total: ${total}`,
     parseFloat(tx.change_given || 0) > 0 ? `Change: ${change}` : null,
@@ -257,12 +255,12 @@ function buildTemplateData(business, tx) {
  * Used when the customisable template isn't on disk. Keeps the build
  * usable from day one — the design team can replace it later.
  */
-async function renderInlineFallbackPDF(business, tx) {
-  const html = FALLBACK_HTML_TEMPLATE(business, tx);
-  // Reuse puppeteer through renderToPDF by writing a temp template
-  // would be overkill — instead, we do a direct puppeteer call here.
+// H1 fix: reuse a shared browser instance instead of launching per receipt
+let _sharedBrowser = null;
+async function getSharedBrowser() {
+  if (_sharedBrowser && _sharedBrowser.isConnected()) return _sharedBrowser;
   const puppeteer = require("puppeteer");
-  const b = await puppeteer.launch({
+  _sharedBrowser = await puppeteer.launch({
     headless: "new",
     args: [
       "--no-sandbox",
@@ -270,8 +268,15 @@ async function renderInlineFallbackPDF(business, tx) {
       "--disable-dev-shm-usage",
     ],
   });
+  _sharedBrowser.on("disconnected", () => { _sharedBrowser = null; });
+  return _sharedBrowser;
+}
+
+async function renderInlineFallbackPDF(business, tx) {
+  const html = FALLBACK_HTML_TEMPLATE(business, tx);
+  const browser = await getSharedBrowser();
+  const page = await browser.newPage();
   try {
-    const page = await b.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdf = await page.pdf({
       format: "A5",
@@ -280,7 +285,7 @@ async function renderInlineFallbackPDF(business, tx) {
     });
     return pdf;
   } finally {
-    await b.close();
+    await page.close();
   }
 }
 
@@ -340,7 +345,7 @@ function buildInlineTemplate() {
         ? `<div><span>Discount</span><span>− ${formatCurrency(tx.discount_total)}</span></div>`
         : ""
     }
-    <div><span>VAT (7.5%)</span><span>${formatCurrency(tx.vat_amount)}</span></div>
+    <div><span>VAT${tx.vat_rate ? ` (${(tx.vat_rate * 100).toFixed(1)}%)` : ""}</span><span>${formatCurrency(tx.vat_amount)}</span></div>
     <div class="grand"><span>Total</span><span>${formatCurrency(tx.total_amount)}</span></div>
     <div><span>Paid</span><span>${formatCurrency(tx.amount_paid)}</span></div>
     ${
@@ -412,7 +417,11 @@ function labelForMethod(m) {
       cash: "Cash",
       bank_transfer: "Bank Transfer",
       pos_card: "POS Card",
-    }[m] || m
+      mobile_money: "Mobile Money",
+      paystack: "Paystack",
+      loyalty_redemption: "Loyalty",
+      credit: "Credit",
+    }[m] || String(m || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   );
 }
 

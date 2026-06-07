@@ -86,19 +86,9 @@ export function quotationPdfUrl(id: string): string {
   return `${api.defaults.baseURL}/sales/quotations/${id}/pdf`;
 }
 
+// L3 fix: propagate errors so callers (React Query) can show error states
+// instead of silently displaying zeros that look like real data
 export async function getSalesKpis(): Promise<SalesKpis> {
-  try {
-    const { data } = await api.get<SalesKpis>("/sales/kpis");
-    return data;
-  } catch {
-    // Failsoft — return zeros so the KPI strip renders rather than breaking
-    return {
-      pipeline_value: 0,
-      open_quotes: 0,
-      confirmed_this_month: 0,
-      overdue_invoices: 0,
-      revenue_this_month: 0,
-      avg_order_value: 0,
-    };
-  }
+  const { data } = await api.get<SalesKpis>("/sales/kpis");
+  return data;
 }

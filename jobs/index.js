@@ -46,11 +46,11 @@ function start() {
   //   "*/15 * * * *",
   //   require("./syncWooCommerceStock"),
   // );
-  register(
-    "sendScheduledCampaigns",
-    "*/5 * * * *",
-    require("./sendScheduledCampaigns"),
-  );
+  // REMOVED: sendScheduledCampaigns (old job — no batching, no SKIP LOCKED,
+  // no retry, double-send risk when run alongside runScheduledCampaigns).
+  // runScheduledCampaigns (below) is the correct replacement — it delegates
+  // entirely to scheduler.service.runScheduledSweep() which is properly built.
+  // register("sendScheduledCampaigns", "*/5 * * * *", require("./sendScheduledCampaigns"));
   register(
     "publishScheduledPosts",
     "*/5 * * * *",
@@ -113,6 +113,9 @@ function start() {
   );
   // Task reminders — notify the assignee when remind_at has passed.
   register("sendTaskReminders", "*/5 * * * *", require("./sendTaskReminders"));
+  // Birthday greetings — fires daily at 10am, sends personalised emails to
+  // every contact in shared.contacts whose birthday_month + birthday_day = today.
+  register("sendBirthdayEmails", "0 10 * * *", require("./sendBirthdayEmails"));
 
   jobs.forEach(({ name, task }) => {
     task.start();

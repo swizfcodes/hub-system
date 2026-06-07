@@ -251,6 +251,39 @@ async function createTransaction(business, data, user) {
     if (!session)
       throw Object.assign(new Error("No open session found"), { status: 400 });
 
+    // ── C6: Validate line items before processing ──
+    for (const line of data.lines) {
+      if (typeof line.quantity !== "number" || line.quantity <= 0) {
+        throw Object.assign(
+          new Error(`Invalid quantity for line: ${line.description || line.product_id}. Must be a positive number.`),
+          { status: 400 },
+        );
+      }
+      if (typeof line.unit_price !== "number" || line.unit_price < 0) {
+        throw Object.assign(
+          new Error(`Invalid unit_price for line: ${line.description || line.product_id}. Must be non-negative.`),
+          { status: 400 },
+        );
+      }
+      if (line.product_id) {
+        const prod = await repo.getProductMinPrice(client, line.product_id);
+        if (!prod) {
+          throw Object.assign(
+            new Error(`Product not found: ${line.product_id}`),
+            { status: 400 },
+          );
+        }
+      }
+    }
+    // Validate payment splits sum
+    const paymentSum = data.payments.reduce((s, p) => s + parseFloat(p.amount), 0);
+    if (data.payments.some((p) => parseFloat(p.amount) <= 0)) {
+      throw Object.assign(
+        new Error("All payment amounts must be positive"),
+        { status: 400 },
+      );
+    }
+
     // Check minimum price per line
     for (const line of data.lines) {
       if (!line.product_id) continue;
@@ -293,17 +326,16 @@ async function createTransaction(business, data, user) {
     // VAT rate from business_config (cached) — see config/businesses.
     const vatRate = getVatRate(business);
     for (const l of data.lines) {
-      const net = l.unit_price * l.quantity - (l.discount_amount || 0);
-      discountTotal += l.discount_amount || 0;
-      subtotal += net;
-      vatTotal += net * vatRate;
+      const net = Math.round((l.unit_price * l.quantity - (l.discount_amount || 0)) * 100) / 100;
+      discountTotal = Math.round((discountTotal + (l.discount_amount || 0)) * 100) / 100;
+      subtotal = Math.round((subtotal + net) * 100) / 100;
+      vatTotal = Math.round((vatTotal + Math.round(net * vatRate * 100) / 100) * 100) / 100;
     }
-    const totalAmount = subtotal + vatTotal;
-    const totalPaid = data.payments.reduce(
-      (s, p) => s + parseFloat(p.amount),
-      0,
-    );
-    const change = Math.max(0, totalPaid - totalAmount);
+    const totalAmount = Math.round((subtotal + vatTotal) * 100) / 100;
+    const totalPaid = Math.round(
+      data.payments.reduce((s, p) => s + parseFloat(p.amount), 0) * 100
+    ) / 100;
+    const change = Math.round(Math.max(0, totalPaid - totalAmount) * 100) / 100;
 
     const txNumber = await nextDocumentNumber(client, business, "receipt");
     const tx = await repo.insertTransaction(client, {
@@ -407,18 +439,22 @@ async function createTransaction(business, data, user) {
   });
 
   if (data.contact_id) {
-    loyaltyService
-      .awardPoints(
+    try {
+      await loyaltyService.awardPoints(
         business,
         data.contact_id,
         result.total_amount,
         "pos_transaction",
         result.transaction_id,
         user,
-      )
-      .catch((err) =>
-        logger.error("[loyalty] award failed after POS transaction", err),
       );
+    } catch (err) {
+      // Log with enough context to manually credit later
+      logger.error(
+        `[loyalty] award failed for tx ${result.transaction_id}, contact ${data.contact_id}, amount ${result.total_amount}: ${err.message}`,
+        err,
+      );
+    }
   }
 
   return result;
@@ -646,6 +682,56 @@ async function downloadReceiptPDF(business, transactionId) {
   return receiptSvc.generatePDF(business, transactionId);
 }
 
+// ─────────────────────────────────────────────────────────────
+// OFFLINE SYNC (C3)
+// Accepts a batch of offline-captured transactions from the POS
+// frontend. Each has an offline_id used for idempotency — if a
+// transaction with the same offline_id already exists, we skip it
+// rather than double-posting.
+// ─────────────────────────────────────────────────────────────
+
+async function syncOfflineTransactions(business, transactions, user) {
+  const results = [];
+
+  for (const txData of transactions) {
+    try {
+      // Check idempotency — skip if offline_id already synced
+      if (txData.offline_id) {
+        const exists = await withBusinessContext(business, async (client) => {
+          const { rows } = await client.query(
+            `SELECT transaction_id FROM pos_transactions WHERE offline_id = $1`,
+            [txData.offline_id],
+          );
+          return rows.length > 0;
+        });
+        if (exists) {
+          results.push({
+            offline_id: txData.offline_id,
+            status: "duplicate",
+            message: "Already synced",
+          });
+          continue;
+        }
+      }
+
+      const tx = await createTransaction(business, txData, user);
+      results.push({
+        offline_id: txData.offline_id,
+        status: "synced",
+        transaction_id: tx.transaction_id,
+      });
+    } catch (err) {
+      results.push({
+        offline_id: txData.offline_id,
+        status: "failed",
+        error: err.message,
+      });
+    }
+  }
+
+  return { results, synced: results.filter((r) => r.status === "synced").length };
+}
+
 module.exports = {
   getTerminals,
   createTerminal,
@@ -662,4 +748,5 @@ module.exports = {
   voidTransaction,
   sendReceipt,
   downloadReceiptPDF,
+  syncOfflineTransactions,
 };

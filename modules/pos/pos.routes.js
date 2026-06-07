@@ -174,6 +174,28 @@ router.post(
   },
 );
 
+// ─── OFFLINE SYNC ─────────────────────────────────────────
+
+router.post(
+  "/sync",
+  body("transactions").isArray({ min: 1 }),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.syncOfflineTransactions(
+          req.business,
+          req.body.transactions,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─── TRANSACTIONS ──────────────────────────────────────────
 
 router.post(

@@ -1,22 +1,45 @@
 import { z } from "zod";
 
+// ── Audience filter — nested shape consumed by the backend compiler ───────────
+// include.*  → positive criteria (who to include)
+// exclude.*  → negative criteria (who to exclude)
+// channel_requirements → require email / whatsapp / either ("auto")
 export const audienceFilterSchema = z.object({
-  contact_type: z.array(z.string()).optional(),
-  priority_level: z.string().optional().or(z.literal("")),
-  tags: z.array(z.string()).optional(),
-  has_whatsapp: z.boolean().optional(),
-  has_email: z.boolean().optional(),
-  exclude_unsubscribed: z.boolean().optional().default(true),
-  last_purchase_days: z.number().int().min(0).optional(),
+  include: z
+    .object({
+      contact_type:          z.array(z.string()).optional(),
+      priority_level:        z.array(z.string()).optional(),
+      tag_names:             z.array(z.string()).optional(),
+      purchased_within_days: z.number().int().min(0).optional(),
+      min_lifetime_spend:    z.number().min(0).optional(),
+      birthday_within_days:  z.number().int().min(0).optional(),
+      category_ids:          z.array(z.string()).optional(),
+    })
+    .optional()
+    .default({}),
+  exclude: z
+    .object({
+      unsubscribed: z.boolean().optional(),
+    })
+    .optional()
+    .default({}),
+  channel_requirements: z
+    .enum(["email", "whatsapp", "auto"])
+    .optional()
+    .default("auto"),
+}).default({
+  include: {},
+  exclude: { unsubscribed: true },
+  channel_requirements: "auto",
 });
 
 export const createCampaignSchema = z.object({
   campaign_name: z.string().min(1, "Campaign name required").max(200),
   campaign_type: z.enum(["email", "whatsapp"]),
-  subject_line: z.string().max(200).optional().or(z.literal("")),
-  from_name: z.string().max(100).optional().or(z.literal("")),
-  html_content: z.string().min(1, "Content required"),
-  audience_filter: audienceFilterSchema.optional().default({}),
+  subject_line:  z.string().max(200).optional().or(z.literal("")),
+  from_name:     z.string().max(100).optional().or(z.literal("")),
+  html_content:  z.string().min(1, "Content required"),
+  audience_filter: audienceFilterSchema,
 });
 export type CreateCampaignValues = z.infer<typeof createCampaignSchema>;
 

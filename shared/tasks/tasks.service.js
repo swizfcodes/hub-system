@@ -107,7 +107,7 @@ async function createTask(data, user) {
           : "No due date",
         referenceType: "task",
         referenceId: task.task_id,
-        actionUrl: `/tasks/${task.task_id}`,
+        actionUrl: `/tasks?task=${task.task_id}`,
       });
     }
 
@@ -186,7 +186,7 @@ async function updateTask(taskId, fields, user) {
         title: `Task reassigned to you: ${after.title}`,
         referenceType: "task",
         referenceId: taskId,
-        actionUrl: `/tasks/${taskId}`,
+        actionUrl: `/tasks?task=${taskId}`,
       });
     }
 

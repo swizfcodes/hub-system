@@ -90,11 +90,13 @@ async function getARAgeing(client) {
     rows: [row],
   } = await client.query(
     `SELECT
-       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 0  AND 30),0)  AS bucket_0_30,
-       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 31 AND 60),0)  AS bucket_31_60,
-       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 61 AND 90),0)  AS bucket_61_90,
-       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date > 90),0)               AS bucket_90_plus,
-       COALESCE(SUM(amount_outstanding),0)                                                          AS total_outstanding
+       COALESCE(SUM(amount_outstanding) FILTER (WHERE due_date >= CURRENT_DATE),0)                        AS current,
+       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 1  AND 30),0)         AS "1_30",
+       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 31 AND 60),0)         AS "31_60",
+       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date BETWEEN 61 AND 90),0)         AS "61_90",
+       COALESCE(SUM(amount_outstanding) FILTER (WHERE CURRENT_DATE-due_date > 90),0)                      AS "90plus",
+       COALESCE(SUM(amount_outstanding),0)                                                                 AS total,
+       COUNT(*)::int                                                                                        AS invoice_count
      FROM invoices WHERE status IN ('overdue','partially_paid','sent') AND is_deleted=false`,
   );
   return row;

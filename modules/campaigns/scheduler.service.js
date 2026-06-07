@@ -29,8 +29,12 @@ const builder = require("./builder.service");
 // so the behaviour is identical.
 // ─────────────────────────────────────────────────────────────
 
-const DEFAULT_BATCH_SIZE = 50;
-const DEFAULT_BATCH_DELAY_MS = 1000; // 1 second between batches
+// ─── Batch configuration ──────────────────────────────────────────────────────
+// 100 per batch × 3-minute delay = ~25 minutes for 500 recipients.
+// Small audiences (< 100) complete in a single batch with no delay.
+// Adjust BATCH_DELAY_MS in env to tune for your SMTP provider's rate limit.
+const DEFAULT_BATCH_SIZE     = parseInt(process.env.CAMPAIGN_BATCH_SIZE     || "100", 10);
+const DEFAULT_BATCH_DELAY_MS = parseInt(process.env.CAMPAIGN_BATCH_DELAY_MS || "180000", 10); // 3 minutes
 const MAX_RETRIES_PER_RECIPIENT = 2;
 
 /**
@@ -116,7 +120,9 @@ async function sendNow(business, campaignId, user) {
     );
   }
 
-  // Kick off the actual send in the background. The API returns now.
+  // Kick off the actual send in the background. The API returns immediately
+  // so the UI stays responsive. The frontend should poll GET /campaigns/:id/stats
+  // to track delivered_count progress rather than waiting on this response.
   setImmediate(() =>
     processSend(business, campaignId).catch((err) => {
       logger.error(`Campaign send failed: ${campaignId}`, err);
@@ -124,8 +130,9 @@ async function sendNow(business, campaignId, user) {
   );
 
   return {
-    message: "Campaign is sending",
+    sending: true,
     campaign_id: campaignId,
+    message: "Campaign is sending in batches. Poll /stats for progress.",
   };
 }
 
@@ -386,21 +393,24 @@ async function runScheduledSweep() {
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
-function personaliseContent(html, recipient) {
-  const name = recipient.display_name || "Valued Customer";
+function personalise(text, recipient) {
+  if (!text) return text || "";
+  const name      = recipient.display_name || "Valued Customer";
   const firstName = name.split(" ")[0];
-  return html
-    .replace(/\{\{name\}\}/g, name)
-    .replace(/\{\{first_name\}\}/g, firstName);
+  return text
+    .replace(/\{\{name\}\}/g,           name)
+    .replace(/\{\{full_name\}\}/g,       name)
+    .replace(/\{\{first_name\}\}/g,      firstName)
+    .replace(/\{\{customer_name\}\}/g,   firstName)   // advertised in UI — must work
+    .replace(/\{\{display_name\}\}/g,    name);
+}
+
+function personaliseContent(html, recipient) {
+  return personalise(html, recipient);
 }
 
 function personaliseSubject(subject, recipient) {
-  if (!subject) return "";
-  const name = recipient.display_name || "Valued Customer";
-  const firstName = name.split(" ")[0];
-  return subject
-    .replace(/\{\{name\}\}/g, name)
-    .replace(/\{\{first_name\}\}/g, firstName);
+  return personalise(subject, recipient);
 }
 
 function buildTrackingPixel(token) {

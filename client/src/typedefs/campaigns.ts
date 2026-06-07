@@ -36,17 +36,14 @@ export interface AudienceInclude {
   birthday_within_days?: number;
 }
 
+export interface AudienceExclude {
+  unsubscribed?: boolean;
+}
+
 export interface AudienceFilter {
-  // Nested shape consumed by the backend audience compiler.
-  include?: AudienceInclude;
-  // Flat convenience fields used by parts of the builder UI.
-  contact_type?: string[];
-  priority_level?: string;
-  tags?: string[];
-  has_whatsapp?: boolean;
-  has_email?: boolean;
-  exclude_unsubscribed: boolean;
-  last_purchase_days?: number;
+  include: AudienceInclude;
+  exclude: AudienceExclude;
+  channel_requirements: "email" | "whatsapp" | "auto";
 }
 
 // ── Core campaign record ─────────────────────────────────────────────────────
@@ -153,6 +150,8 @@ export interface AudiencePreviewRow {
 }
 
 export interface AudiencePreview {
-  count: number;
+  total: number;          // backend returns 'total'
+  count?: number;         // kept for backward compat
   sample: AudiencePreviewRow[];
+  filter_summary?: string;
 }

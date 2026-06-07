@@ -67,7 +67,12 @@ export default function CampaignBuilder() {
       subject_line: "",
       from_name: "Orika Hub",
       html_content: "",
-      audience_filter: { exclude_unsubscribed: true },
+      // Shape must match what compileFilter() in builder.service.js expects
+      audience_filter: {
+        include: {},
+        exclude: { unsubscribed: true },
+        channel_requirements: "auto",
+      },
     },
   });
 
@@ -151,10 +156,10 @@ export default function CampaignBuilder() {
     try {
       if (scheduleMode === "later" && scheduledAt) {
         await scheduleCampaign(campaignId, scheduledAt);
-        showToast.success("Campaign scheduled");
+        showToast.success("Campaign scheduled successfully");
       } else {
-        const result = await sendNow(campaignId);
-        showToast.success(`Sent to ${result.sent} contacts`);
+        await sendNow(campaignId);
+        showToast.success("Campaign is sending — check the campaign detail for live progress");
       }
       qc.invalidateQueries({ queryKey: ["campaigns"] });
       navigate(`/campaigns/${campaignId}`);
@@ -429,6 +434,7 @@ export default function CampaignBuilder() {
                   type="datetime-local"
                   surface="dark"
                   value={scheduledAt}
+                  min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
                   onChange={(e) => setScheduledAt(e.target.value)}
                 />
               )}

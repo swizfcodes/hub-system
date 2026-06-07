@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,20 +66,32 @@ function slugify(s: string): string {
 }
 
 const STEPS = [
-  { id: 1, label: "Details", desc: "Name, template & copy" },
-  { id: 2, label: "Products", desc: "What you're selling" },
-  { id: 3, label: "Payment", desc: "Bank accounts" },
-  { id: 4, label: "Settings", desc: "Sharing & sections" },
-  { id: 5, label: "Leads", desc: "Captured contacts" },
+  { id: 1, label: "Details",  desc: "Name, template & copy",  slug: "details"  },
+  { id: 2, label: "Products", desc: "What you're selling",     slug: "products" },
+  { id: 3, label: "Payment",  desc: "Bank accounts",           slug: "payment"  },
+  { id: 4, label: "Settings", desc: "Sharing & sections",      slug: "settings" },
+  { id: 5, label: "Leads",    desc: "Captured contacts",       slug: "leads"    },
 ];
+
+// Map a ?tab= query-param value to a step id.
+// Accepts the slug ("leads"), the numeric id ("5"), or undefined → 1.
+function tabToStep(tab: string | null): number {
+  if (!tab) return 1;
+  const bySlug = STEPS.find((s) => s.slug === tab.toLowerCase());
+  if (bySlug) return bySlug.id;
+  const n = parseInt(tab, 10);
+  if (!isNaN(n) && n >= 1 && n <= STEPS.length) return n;
+  return 1;
+}
 
 export default function CampaignBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { active: business } = useActiveBusiness();
   const isNew = !id || id === "new";
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => tabToStep(searchParams.get("tab")));
   const [campaignId, setCampaignId] = useState<string | null>(id ?? null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);

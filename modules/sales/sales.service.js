@@ -80,6 +80,17 @@ async function createQuotation(business, data, user) {
         order: i,
       });
     }
+    // M10 fix: audit log on quotation creation
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "sales",
+      action: "create",
+      table: "quotations",
+      recordId: q.quotation_id,
+      after: q,
+    });
     if (data.deal_id) {
       await crmService.logActivity(
         business,
@@ -140,49 +151,58 @@ async function sendQuotation(
   { channel = "email" },
   user,
 ) {
-  const q = await getQuotation(business, quotationId);
-  const pdf = await generateQuotationPDF(business, quotationId);
-  if (channel === "email" && !q.email)
-    throw Object.assign(new Error("Contact has no email address on file"), {
-      status: 400,
-    });
-  if (channel === "whatsapp" && !q.whatsapp_number)
-    throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
-      status: 400,
-    });
-  if (channel !== "email" && channel !== "whatsapp")
-    throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
-      status: 400,
-    });
-  if (channel === "email") {
-    const { subject: subj, html: body } = renderEmail("quotation", business, {
-      quotation_number: q.quotation_number,
-      contact_name: q.contact_name,
-      valid_until: q.valid_until,
-    });
-    await sendEmail({
-      to: q.email,
-      subject: subj,
-      html: body,
-      business,
-      attachments: [
-        {
-          filename: `${q.quotation_number}.pdf`,
-          content: pdf,
-          contentType: "application/pdf",
-        },
-      ],
-    });
-  } else {
-    await whatsapp.sendMessage({
-      to: q.whatsapp_number,
-      text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
-    });
-  }
-  await withBusinessContext(business, async (client) =>
-    repo.setQuotationSent(client, quotationId),
-  );
-  return { message: "Quotation sent" };
+  // H5 fix: single atomic transaction — fetch, validate, send, and update status together
+  return withBusinessContext(business, async (client) => {
+    const q = await repo.findQuotationById(client, quotationId);
+    if (!q)
+      throw Object.assign(new Error("Quotation not found"), { status: 404 });
+
+    if (channel === "email" && !q.email)
+      throw Object.assign(new Error("Contact has no email address on file"), {
+        status: 400,
+      });
+    if (channel === "whatsapp" && !q.whatsapp_number)
+      throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
+        status: 400,
+      });
+    if (channel !== "email" && channel !== "whatsapp")
+      throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
+        status: 400,
+      });
+
+    // Mark as sent BEFORE delivering so a send failure rolls back the status change
+    await repo.setQuotationSent(client, quotationId);
+
+    const pdf = await generateQuotationPDF(business, quotationId);
+
+    if (channel === "email") {
+      const { subject: subj, html: body } = renderEmail("quotation", business, {
+        quotation_number: q.quotation_number,
+        contact_name: q.contact_name,
+        valid_until: q.valid_until,
+      });
+      await sendEmail({
+        to: q.email,
+        subject: subj,
+        html: body,
+        business,
+        attachments: [
+          {
+            filename: `${q.quotation_number}.pdf`,
+            content: pdf,
+            contentType: "application/pdf",
+          },
+        ],
+      });
+    } else {
+      await whatsapp.sendMessage({
+        to: q.whatsapp_number,
+        text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
+      });
+    }
+
+    return { message: "Quotation sent" };
+  });
 }
 
 async function confirmQuotation(business, quotationId, user) {
@@ -380,6 +400,12 @@ async function generateInvoiceFromOrder(
       });
 
     const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
+    // C4 fix: carry VAT and discount from the order instead of hardcoding 0
+    const orderSubtotal = parseFloat(order.subtotal || order.total_amount);
+    const orderDiscount = parseFloat(order.discount_total || 0);
+    const orderVat = parseFloat(order.vat_amount || 0);
+    const invoiceTotal = Math.round((orderSubtotal - orderDiscount + orderVat) * 100) / 100;
+
     const invoice = await repo.insertInvoice(client, {
       invoiceNumber,
       order_id: orderId,
@@ -387,11 +413,11 @@ async function generateInvoiceFromOrder(
       deal_id: order.deal_id,
       issue_date: new Date().toISOString().split("T")[0],
       due_date,
-      subtotal: order.total_amount,
-      discount_total: 0,
-      vat_amount: 0,
-      total_amount: order.total_amount,
-      currency: "NGN",
+      subtotal: orderSubtotal,
+      discount_total: orderDiscount,
+      vat_amount: orderVat,
+      total_amount: invoiceTotal,
+      currency: order.currency || "NGN",
       payment_instructions,
       userId: user.user_id,
     });

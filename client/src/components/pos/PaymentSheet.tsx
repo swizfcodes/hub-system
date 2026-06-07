@@ -144,7 +144,7 @@ export function PaymentSheet({
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
-                      ₦
+                      {currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency}
                     </span>
                     <input
                       type="number"
