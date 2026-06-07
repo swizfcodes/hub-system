@@ -268,7 +268,7 @@ export default function ContactsHome() {
       <QuickAddModal
         open={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
-        defaultType={activeTab !== "all" ? activeTab : undefined}
+        defaultType={activeTab !== "all" && activeTab !== "subscriber" ? activeTab : undefined}
         onCreated={(id) => navigate(`/contacts/${id}`)}
       />
       <WalkinQRModal
