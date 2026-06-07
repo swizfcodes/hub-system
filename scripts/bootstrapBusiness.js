@@ -80,6 +80,7 @@ const DOCUMENT_TYPES = [
   { type: "expense", suffix: "EXP" },
   { type: "supplier", suffix: "SUP" },
   { type: "payroll_run", suffix: "PR" },
+  { type: "campaign_order", suffix: "CO" },
 ];
 
 // ─────────────────────────────────────────────────────────────
