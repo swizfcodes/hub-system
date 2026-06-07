@@ -454,7 +454,7 @@ async function placeOrder(business, slug, data, req) {
             [orderContact.contact_id, orderEmail, orderPhone, orderFirstName, orderLastName],
           );
           await client.query(
-            `UPDATE campaign_orders SET contact_id = $2 WHERE order_id = $1`,
+            `UPDATE campaign_orders SET hub_contact_id = $2 WHERE order_id = $1`,
             [order.order_id, orderContact.contact_id],
           );
         } else {
@@ -477,7 +477,7 @@ async function placeOrder(business, slug, data, req) {
             ],
           );
           await client.query(
-            `UPDATE campaign_orders SET contact_id = $2 WHERE order_id = $1`,
+            `UPDATE campaign_orders SET hub_contact_id = $2 WHERE order_id = $1`,
             [order.order_id, newOrderContact.contact_id],
           );
         }
