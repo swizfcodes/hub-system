@@ -87,6 +87,9 @@ export default function WalkinRegisterForm() {
     }
     if (!form.phone.trim()) { setError("Phone number is required."); return; }
     if (!form.email.trim())  { setError("Email address is required."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError("Please enter a valid email address."); return;
+    }
     if (form.wants_birthday && (!form.birthday_month || !form.birthday_day)) {
       setError("Please select your birth month and day."); return;
     }
@@ -108,8 +111,12 @@ export default function WalkinRegisterForm() {
       await submitWalkinRegistration(business!, payload);
       setDone(true);
     } catch (err: any) {
+      const data = err?.response?.data;
       setError(
-        err?.response?.data?.error || "Something went wrong. Please try again.",
+        data?.message ||
+        data?.errors?.[0]?.msg ||
+        data?.error ||
+        "Something went wrong. Please try again.",
       );
     } finally {
       setSubmitting(false);

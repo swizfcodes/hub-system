@@ -285,7 +285,7 @@ export default function CampaignBuilder() {
               />
               <AudienceBuilder
                 value={audienceFilter}
-                onChange={(f) => form.setValue("audience_filter", f)}
+                onChange={(f) => form.setValue("audience_filter", f as any)}
                 campaignType={campaignType}
                 onPreviewCount={setAudienceCount}
               />

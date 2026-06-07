@@ -96,4 +96,16 @@ const loginRateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { verifyToken, loginRateLimiter };
+// ── registrationRateLimiter ────────────────────────────────
+// Used on POST /contacts/register/:business (public walk-in QR form).
+// Much more lenient than login — customers scan from their own phones
+// and we don't want to block legitimate registrations.
+const registrationRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30, // 30 registrations per IP per hour
+  message: { message: "Too many registrations. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { verifyToken, loginRateLimiter, registrationRateLimiter };

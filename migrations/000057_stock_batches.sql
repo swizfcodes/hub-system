@@ -13,8 +13,6 @@
 -- Idempotent: CREATE TABLE IF NOT EXISTS.
 -- ============================================================
 
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS jewelry.stock_batches (
   batch_id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id          UUID        NOT NULL REFERENCES jewelry.products (product_id) ON DELETE CASCADE,
@@ -50,5 +48,3 @@ CREATE TABLE IF NOT EXISTS diffusers.stock_batches (
 CREATE INDEX IF NOT EXISTS idx_diffusers_stock_batches_product ON diffusers.stock_batches (product_id);
 CREATE INDEX IF NOT EXISTS idx_diffusers_stock_batches_expiry  ON diffusers.stock_batches (expiry_date)
   WHERE expiry_date IS NOT NULL;
-
-COMMIT;

@@ -20,8 +20,6 @@
 -- Apply to BOTH business schemas: jewelry and diffusers.
 -- ============================================================
 
-BEGIN;
-
 -- ── JEWELRY ──────────────────────────────────────────────────
 DROP TRIGGER IF EXISTS trg_jewelry_journal_balance ON jewelry.journal_lines;
 
@@ -37,5 +35,3 @@ CREATE CONSTRAINT TRIGGER trg_diffusers_journal_balance
   AFTER INSERT OR UPDATE ON diffusers.journal_lines
   DEFERRABLE INITIALLY DEFERRED
   FOR EACH ROW EXECUTE FUNCTION diffusers.fn_check_journal_balance();
-
-COMMIT;

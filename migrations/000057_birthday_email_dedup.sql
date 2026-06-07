@@ -8,24 +8,54 @@
 --   2. The daily sendBirthdayEmails cron can query by month/day and
 --      avoid re-sending within the same calendar year.
 --
--- birthday_month / birthday_day follow the same convention used on
--- shared.campaign_leads (1-indexed, no year stored).
--- birthday_email_sent_year is TEXT (e.g. '2026') — a simple equality
--- check suffices at runtime, no date arithmetic needed.
+-- Uses DO $$ blocks with EXCEPTION WHEN duplicate_column so the
+-- migration is safely re-runnable if it was partially applied.
 -- ============================================================
 
-ALTER TABLE shared.contacts
-  ADD COLUMN IF NOT EXISTS birthday_month SMALLINT
-    CHECK (birthday_month BETWEEN 1 AND 12),
-  ADD COLUMN IF NOT EXISTS birthday_day SMALLINT
-    CHECK (birthday_day BETWEEN 1 AND 31),
-  ADD COLUMN IF NOT EXISTS birthday_email_sent_year TEXT
-    CHECK (birthday_email_sent_year ~ '^\d{4}$' OR birthday_email_sent_year IS NULL);
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts ADD COLUMN birthday_month SMALLINT;
+  EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
 
--- Fast lookup for the cron's daily birthday query:
---   WHERE birthday_month = $1 AND birthday_day = $2
---     AND email IS NOT NULL AND is_deleted = false
---     AND (birthday_email_sent_year IS NULL OR birthday_email_sent_year != $3)
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts ADD COLUMN birthday_day SMALLINT;
+  EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts ADD COLUMN birthday_email_sent_year TEXT;
+  EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- CHECK constraints (add only if not already present)
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts
+    ADD CONSTRAINT contacts_birthday_month_check
+      CHECK (birthday_month IS NULL OR birthday_month BETWEEN 1 AND 12);
+  EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts
+    ADD CONSTRAINT contacts_birthday_day_check
+      CHECK (birthday_day IS NULL OR birthday_day BETWEEN 1 AND 31);
+  EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE shared.contacts
+    ADD CONSTRAINT contacts_birthday_year_check
+      CHECK (birthday_email_sent_year ~ '^\d{4}$' OR birthday_email_sent_year IS NULL);
+  EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Index for the cron's daily birthday query
 CREATE INDEX IF NOT EXISTS idx_contacts_birthday_lookup
   ON shared.contacts (birthday_month, birthday_day)
   WHERE email IS NOT NULL AND is_deleted = false;

@@ -13,7 +13,7 @@
 const express = require("express");
 const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
-const { verifyToken, loginRateLimiter } = require("../../middleware/auth");
+const { verifyToken, registrationRateLimiter } = require("../../middleware/auth");
 const { setBusinessContext } = require("../../middleware/businessContext");
 const { withSharedContext } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
@@ -66,7 +66,7 @@ router.get(
 // Public — walk-in self-registration. No auth required.
 router.post(
   "/register/:business",
-  loginRateLimiter,
+  registrationRateLimiter,
   param("business").isString().trim(),
   body("first_name").notEmpty().trim(),
   body("last_name").notEmpty().trim(),
