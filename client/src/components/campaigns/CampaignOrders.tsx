@@ -75,7 +75,7 @@ interface Props {
   business: string;
 }
 
-export default function CampaignOrders({ campaignId, business }: Props) {
+export default function CampaignOrders({ campaignId, business: _business }: Props) {
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [cancelModal, setCancelModal] = useState<string | null>(null);
@@ -93,7 +93,20 @@ export default function CampaignOrders({ campaignId, business }: Props) {
     staleTime: 8_000,
   });
 
-  const orders = (data?.data ?? []) as Record<string, unknown>[];
+  interface CampaignOrder {
+    order_id: string;
+    order_number: string;
+    status: string;
+    customer_name: string;
+    customer_phone: string | null;
+    customer_email: string | null;
+    fulfilment_type: string;
+    payment_method: string;
+    total_amount: number;
+    proof_image_url: string | null;
+    created_at: string;
+  }
+  const orders = (data?.data ?? []) as CampaignOrder[];
 
   const confirmMutation = useMutation({
     mutationFn: (orderId: string) => confirmOrder(orderId),
@@ -232,12 +245,12 @@ export default function CampaignOrders({ campaignId, business }: Props) {
 
             {/* Fulfilment + payment */}
             <div className="flex flex-wrap gap-2 text-[10px]">
-              <Badge variant="muted">
+              <Badge tone="neutral">
                 {(order.fulfilment_type as string) === "pickup"
                   ? "Pickup"
                   : "Delivery"}
               </Badge>
-              <Badge variant="muted">
+              <Badge tone="neutral">
                 {(order.payment_method as string) === "bank_transfer"
                   ? "Bank transfer"
                   : "Paystack"}
