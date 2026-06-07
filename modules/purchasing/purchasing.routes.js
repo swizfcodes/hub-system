@@ -106,6 +106,21 @@ router.get(
   },
 );
 
+// GET /rfqs/:id/quotes — supplier quotes submitted against this RFQ
+router.get(
+  "/rfqs/:id/quotes",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.listQuotesForRFQ(req.business, req.params.id));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // POST /rfqs/:id/send — draft → sent, dispatches invite tokens to suppliers
 router.post(
   "/rfqs/:id/send",

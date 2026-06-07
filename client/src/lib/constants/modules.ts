@@ -37,6 +37,8 @@ export interface AppModule {
   badgeKey?: string; // server-driven counter; resolved in HubHome
   accent: "gold" | "rose" | "sage" | "mixed";
   group: "main" | "finance" | "people" | "ops" | "system";
+  // Restrict this module/tile to specific businesses. Omit = all businesses.
+  businesses?: string[];
 }
 
 export const HUB_MODULES: AppModule[] = [
@@ -392,6 +394,8 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
     route: "/settings/storefront",
     accent: "rose",
     group: "system",
+    // Orika Living (diffusers) is the only business with a storefront.
+    businesses: ["diffusers"],
   },
   {
     key: "help-editor",

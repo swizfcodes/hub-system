@@ -131,6 +131,21 @@ async function updateAccount(business, accountId, data, user) {
   });
 }
 
+async function getAccountLedger(business, accountId, query = {}) {
+  return withBusinessContext(business, async (client) => {
+    const acc = await repo.findAccountById(client, accountId);
+    if (!acc) {
+      throw Object.assign(new Error("Account not found"), { status: 404 });
+    }
+    const rows = await repo.getAccountLedger(client, {
+      accountId,
+      startDate: query.start_date,
+      endDate: query.end_date,
+    });
+    return { data: rows };
+  });
+}
+
 // ─── Journal entries ─────────────────────────────────────────────────────────
 
 async function listJournals(
@@ -247,6 +262,37 @@ async function getTrialBalance(business, query = {}) {
   });
 }
 
+async function getCashFlow(business, query = {}) {
+  return withBusinessContext(business, async (client) => {
+    return reportsService.cashFlow(client, query);
+  });
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
+async function getDashboard(business) {
+  return withBusinessContext(business, async (client) => {
+    const { pl, cash, recon, period } = await repo.getDashboardData(client);
+    const revenue = parseFloat(pl.revenue_mtd) || 0;
+    const expenses = parseFloat(pl.expenses_mtd) || 0;
+    return {
+      revenue_mtd: revenue,
+      expenses_mtd: expenses,
+      net_profit_mtd: revenue - expenses,
+      cash_position: parseFloat(cash.cash_position) || 0,
+      unreconciled_count: recon.unreconciled_count || 0,
+      open_period: period
+        ? {
+            period_id: period.period_id,
+            name: period.name,
+            start_date: period.start_date,
+            end_date: period.end_date,
+          }
+        : null,
+    };
+  });
+}
+
 // ─── Bank reconciliation ──────────────────────────────────────────────────────
 
 async function listBankStatements(
@@ -314,6 +360,7 @@ module.exports = {
   listAccounts,
   createAccount,
   updateAccount,
+  getAccountLedger,
   listJournals,
   getJournal,
   createManualJournal,
@@ -321,6 +368,8 @@ module.exports = {
   getProfitAndLoss,
   getBalanceSheet,
   getTrialBalance,
+  getCashFlow,
+  getDashboard,
   listBankStatements,
   reconcile,
   getReconciliationSummary,

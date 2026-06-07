@@ -52,4 +52,38 @@ async function trialBalance(client, query) {
   return { period: { startDate, endDate }, data: rows };
 }
 
-module.exports = { profitAndLoss, balanceSheet, trialBalance };
+async function cashFlow(client, query) {
+  const { startDate, endDate } = getPeriodDates(query);
+  const { opening_cash, items } = await repo.getCashFlowData(client, {
+    startDate,
+    endDate,
+  });
+  const bucket = (cat) =>
+    items
+      .filter((i) => i.category === cat)
+      .map((i) => ({ label: i.label, amount: parseFloat(i.amount) || 0 }));
+  const operating = bucket("operating");
+  const investing = bucket("investing");
+  const financing = bucket("financing");
+  const sum = (arr) => arr.reduce((s, i) => s + i.amount, 0);
+  const net_operating = sum(operating);
+  const net_investing = sum(investing);
+  const net_financing = sum(financing);
+  const net_cash_movement = net_operating + net_investing + net_financing;
+  const opening = parseFloat(opening_cash) || 0;
+  return {
+    period_start: startDate,
+    period_end: endDate,
+    operating_activities: operating,
+    investing_activities: investing,
+    financing_activities: financing,
+    net_operating,
+    net_investing,
+    net_financing,
+    net_cash_movement,
+    opening_cash: opening,
+    closing_cash: opening + net_cash_movement,
+  };
+}
+
+module.exports = { profitAndLoss, balanceSheet, trialBalance, cashFlow };

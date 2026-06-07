@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const svc = require("./loyalty.service");
@@ -143,7 +143,121 @@ router.put(
   },
 );
 
-// ── CONTACT LOYALTY (public endpoints) ─────────────────────
+// POST /loyalty/tiers/reorder — same as PUT, but matches the client which
+// sends { order: [{ tier_id, position }] }. Mapped to the service's
+// { tier_id, display_order } shape.
+router.post(
+  "/tiers/reorder",
+  body("order").isArray(),
+  body("order.*.tier_id").isUUID(),
+  body("order.*.position").isInt({ min: 0 }),
+  validate,
+  can("settings", "approve"),
+  async (req, res, next) => {
+    try {
+      const tiers = req.body.order.map((o) => ({
+        tier_id: o.tier_id,
+        display_order: o.position,
+      }));
+      const result = await svc.reorderTiers(req.business, tiers, req.user);
+      res.json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── PROGRAMME STATS & LEADERBOARD ──────────────────────────
+// These literal paths MUST be declared before the "/:contactId" catch-all
+// below, otherwise "stats"/"leaderboard" get parsed as a contactId (UUID).
+
+// GET /loyalty/stats — programme-wide totals + tier distribution
+router.get("/stats", can("loyalty", "view"), async (req, res, next) => {
+  try {
+    res.json(await svc.getStats(req.business));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /loyalty/leaderboard — top members by balance
+router.get(
+  "/leaderboard",
+  query("limit").optional().isInt({ min: 1, max: 200 }),
+  validate,
+  can("loyalty", "view"),
+  async (req, res, next) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit, 10) : 20;
+      const data = await svc.getLeaderboard(req.business, limit);
+      res.json({ data });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── CONTACT LOYALTY (admin /contact/* paths used by the ERP UI) ──────
+// The loyalty dashboard calls /loyalty/contact/:id; POS uses the bare
+// /loyalty/:contactId form further below. Both resolve to the same service.
+
+router.get(
+  "/contact/:contactId",
+  can("loyalty", "view"),
+  async (req, res, next) => {
+    try {
+      const result = await svc.getHistory(req.business, req.params.contactId, {
+        page: req.query.page,
+        limit: req.query.limit,
+      });
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/contact/:contactId/redeem",
+  can("loyalty", "create"),
+  async (req, res, next) => {
+    try {
+      const { points, reference_type, reference_id } = req.body;
+      const row = await svc.redeemPoints(
+        req.business,
+        req.params.contactId,
+        points,
+        reference_type || "pos_transaction",
+        reference_id || null,
+        req.user,
+      );
+      res.status(201).json(row);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/contact/:contactId/award",
+  can("loyalty", "approve"),
+  async (req, res, next) => {
+    try {
+      const { points, transaction_type, notes } = req.body;
+      const row = await svc.manualAward(
+        req.business,
+        req.params.contactId,
+        { points, transaction_type, notes },
+        req.user,
+      );
+      res.status(201).json(row);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── CONTACT LOYALTY (bare paths — used by POS) ─────────────
 
 // GET /loyalty/:contactId — balance + current tier + recent history
 router.get("/:contactId", can("loyalty", "view"), async (req, res, next) => {

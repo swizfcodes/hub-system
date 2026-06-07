@@ -259,6 +259,29 @@ router.delete(
   },
 );
 
+// DELETE by (contactId, key) — the concierge UI deletes a preference by its
+// key rather than by preference_id.
+router.delete(
+  "/contacts/:contactId/preferences/:key",
+  param("contactId").isUUID(),
+  validate,
+  can("crm", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.deletePreferenceByKey(
+          req.business,
+          req.params.contactId,
+          req.params.key,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─── CUSTOMER MILESTONES ─────────────────────────────────────
 //   GET    /crm/contacts/:contactId/milestones
 //   POST   /crm/contacts/:contactId/milestones

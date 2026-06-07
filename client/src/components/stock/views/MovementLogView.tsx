@@ -47,7 +47,15 @@ export function MovementLogView({ filters }: Props) {
   return (
     <ol className="relative pl-6 border-l border-orika-graphite space-y-3">
       {movements.map((m) => {
-        const meta = MOVEMENT_TYPE_META[m.movement_type];
+        // Fall back gracefully for any movement_type not in the meta map
+        // (e.g. older/extended types like received_from_supplier) — use the
+        // row's own direction so the +/- and colour still render correctly.
+        const meta = MOVEMENT_TYPE_META[m.movement_type] ?? {
+          key: m.movement_type,
+          label: (m.movement_type ?? "movement").replace(/_/g, " "),
+          direction: m.direction === 1 ? 1 : -1,
+          color: "#9E9891",
+        };
         const totalValue = (m.unit_cost ?? 0) * m.quantity;
         return (
           <li key={m.movement_id} className="relative">

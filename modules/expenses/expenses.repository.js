@@ -133,6 +133,36 @@ async function updateAdvanceStatus(
   return adv || null;
 }
 
+// Dashboard KPIs for the expenses landing page.
+async function getKpis(client) {
+  const {
+    rows: [totals],
+  } = await client.query(
+    `SELECT
+       COALESCE(SUM(amount) FILTER (
+         WHERE status = 'paid'
+           AND date_trunc('month', COALESCE(paid_at::date, expense_date))
+               = date_trunc('month', CURRENT_DATE)), 0)          AS paid_this_month,
+       COALESCE(SUM(amount) FILTER (WHERE status = 'pending'), 0) AS pending_amount,
+       COUNT(*) FILTER (WHERE status = 'pending')::int           AS pending_count,
+       COALESCE(SUM(amount) FILTER (
+         WHERE expense_type = 'reimbursement' AND status = 'approved'), 0)
+                                                                 AS reimbursements_outstanding
+     FROM expenses`,
+  );
+
+  const { rows: byCategory } = await client.query(
+    `SELECT category, COALESCE(SUM(amount), 0) AS total
+     FROM expenses
+     WHERE status IN ('approved', 'paid')
+       AND date_trunc('month', expense_date) = date_trunc('month', CURRENT_DATE)
+     GROUP BY category
+     ORDER BY total DESC`,
+  );
+
+  return { totals, byCategory };
+}
+
 module.exports = {
   findAll,
   findById,
@@ -141,4 +171,5 @@ module.exports = {
   findAdvances,
   insertAdvance,
   updateAdvanceStatus,
+  getKpis,
 };

@@ -42,3 +42,5 @@ scripts/seedStorefrontProducts.js
 BACKEND_ENDPOINTS_DOCUMENTATION.md
 scripts/stockUpStoreProduct.js
 scripts/resetdb.js
+documents/ACCOUNTING_ANALYSIS.md
+documents/API_CONTRACT_AUDIT.md

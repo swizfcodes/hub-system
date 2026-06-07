@@ -5,6 +5,7 @@ export const CONTACT_TYPES = [
   "supplier",
   "staff",
   "retail_partner",
+  "subscriber",
 ] as const;
 export const PRIORITY_LEVELS = ["vip", "regular", "new"] as const;
 export const CONTACT_SOURCES = [

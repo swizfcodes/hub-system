@@ -292,6 +292,26 @@ async function deletePreference(business, preferenceId, user) {
   });
 }
 
+async function deletePreferenceByKey(business, contactId, key, user) {
+  return withBusinessContext(business, async (client) => {
+    const removed = await repo.deletePreferenceByKey(client, contactId, key);
+    if (!removed) {
+      throw Object.assign(new Error("Preference not found"), { status: 404 });
+    }
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "crm",
+      action: "delete",
+      table: "customer_preferences",
+      recordId: removed.preference_id,
+      before: removed,
+    });
+    return { deleted: true };
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // CUSTOMER MILESTONES
 //
@@ -492,6 +512,7 @@ module.exports = {
   setPreference,
   updatePreference,
   deletePreference,
+  deletePreferenceByKey,
   // milestones
   listMilestones,
   addMilestone,

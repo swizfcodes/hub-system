@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { AppShell } from "@components/shell/AppShell";
 import { Skeleton } from "@components/ui/Skeleton";
+import { StorefrontGuard } from "@pages/settings/storefront/StorefrontGuard";
 
 // Pages (lazy-loaded for code-splitting)
 const Login = lazy(() => import("@pages/Login"));
@@ -90,6 +91,7 @@ const POSSession = lazy(() => import("@pages/pos/POSSession"));
 // Invoicing
 const InvoicesHome = lazy(() => import("@pages/invoicing/InvoicesHome"));
 const InvoiceDetail = lazy(() => import("@pages/invoicing/InvoiceDetail"));
+const TaxCenter = lazy(() => import("@pages/tax/TaxCenter"));
 
 // Logistics
 const LogisticsHome = lazy(() => import("@pages/logistics/LogisticsHome"));
@@ -302,18 +304,37 @@ export default function App() {
             path="/settings/document-numbering"
             element={<DocumentNumbering />}
           />
-          <Route path="/settings/storefront" element={<StorefrontHome />} />
+          <Route
+            path="/settings/storefront"
+            element={
+              <StorefrontGuard>
+                <StorefrontHome />
+              </StorefrontGuard>
+            }
+          />
           <Route
             path="/settings/storefront/scents"
-            element={<StorefrontScents />}
+            element={
+              <StorefrontGuard>
+                <StorefrontScents />
+              </StorefrontGuard>
+            }
           />
           <Route
             path="/settings/storefront/signatures"
-            element={<StorefrontSignatures />}
+            element={
+              <StorefrontGuard>
+                <StorefrontSignatures />
+              </StorefrontGuard>
+            }
           />
           <Route
             path="/settings/storefront/content"
-            element={<StorefrontContent />}
+            element={
+              <StorefrontGuard>
+                <StorefrontContent />
+              </StorefrontGuard>
+            }
           />
           <Route path="/settings/permissions" element={<PermissionsPage />} />
           <Route path="/settings/help-editor" element={<HelpEditor />} />
@@ -362,6 +383,9 @@ export default function App() {
           {/* Stock & Inventory */}
           <Route path="/stock" element={<StockHome />} />
           <Route path="/stock/alerts" element={<AlertsPage />} />
+          {/* CountSession is a self-contained wizard (no id needed); the
+              "New count" button navigates to /stock/count */}
+          <Route path="/stock/count" element={<CountSession />} />
           <Route path="/stock/count/:id" element={<CountSession />} />
           <Route path="/stock/reservations" element={<ReservationsPage />} />
           <Route path="/stock/transfers" element={<TransfersPage />} />
@@ -380,6 +404,12 @@ export default function App() {
           {/* Invoicing */}
           <Route path="/invoicing" element={<InvoicesHome />} />
           <Route path="/invoicing/:id" element={<InvoiceDetail />} />
+          {/* Aliases: the invoices list + breadcrumbs link to /invoices */}
+          <Route path="/invoices" element={<InvoicesHome />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+
+          {/* Tax Center */}
+          <Route path="/tax" element={<TaxCenter />} />
 
           {/* Logistics */}
           <Route path="/logistics" element={<LogisticsHome />} />
