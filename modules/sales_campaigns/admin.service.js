@@ -6,6 +6,9 @@ const auditService = require("../../shared/audit/audit.service");
 const notifService = require("../../shared/notifications/notifications.service");
 const loyaltyService = require("../loyalty/loyalty.service");
 const documentsService = require("../../shared/documents/documents.service");
+const stockService = require("../stock/stock.service");
+const journalService = require("../accounting/journal.service");
+const { getVatRate } = require("../../config/businesses");
 const repo = require("./campaigns.repository");
 const logger = require("../../config/logger");
 
@@ -255,8 +258,10 @@ async function confirmOrder(business, orderId, user) {
       );
     }
 
-    // Confirm stock: move from reserved → sold
-    for (const item of order.items || []) {
+    const items = order.items || [];
+
+    // Confirm campaign stock counters: move from reserved → sold
+    for (const item of items) {
       await repo.confirmCampaignStock(
         client,
         item.campaign_product_id,
@@ -264,7 +269,30 @@ async function confirmOrder(business, orderId, user) {
       );
     }
 
-    // Auto-create contact in CRM if needed
+    // ── 1. ERP Stock: deduct from main stock_movements ──────────────────
+    for (const item of items) {
+      if (!item.product_id) continue;
+      try {
+        await stockService.recordMovement(client, {
+          business,
+          productId: item.product_id,
+          movementType: "sold",
+          quantity: item.quantity,
+          direction: -1,
+          referenceType: "campaign_order",
+          referenceId: orderId,
+          postedBy: user.user_id,
+        });
+      } catch (err) {
+        logger.error(
+          `[sales_campaigns] stock movement failed for order ${orderId}, ` +
+            `product ${item.product_id}: ${err.message}`,
+        );
+        throw err;
+      }
+    }
+
+    // ── 2. Auto-create contact in CRM if needed ─────────────────────────
     let contactId = order.hub_contact_id;
     if (!contactId) {
       const {
@@ -293,7 +321,134 @@ async function confirmOrder(business, orderId, user) {
       }
     }
 
-    // Award loyalty points
+    // ── 3. Revenue journal (DR Bank / CR Sales / CR VAT) ────────────────
+    const grossNaira = parseFloat(order.total_amount);
+    const vatRate = getVatRate(business);
+    const netNaira = parseFloat((grossNaira / (1 + vatRate)).toFixed(2));
+    const vatNaira = parseFloat((grossNaira - netNaira).toFixed(2));
+
+    const bankAcc = await journalService.getAccountId(client, "1210");
+    const salesAcc = await journalService.getAccountId(client, "4100");
+    const vatAcc = await journalService.getAccountId(client, "2210");
+
+    let revenueEntry = null;
+    if (bankAcc && salesAcc) {
+      const revLines = [
+        { account_id: bankAcc, debit: grossNaira, credit: 0 },
+        { account_id: salesAcc, debit: 0, credit: netNaira },
+      ];
+      if (vatAcc && vatNaira > 0) {
+        revLines.push({ account_id: vatAcc, debit: 0, credit: vatNaira });
+      } else {
+        revLines[1].credit = grossNaira;
+      }
+      revenueEntry = await journalService.postEntry(client, {
+        description: `Campaign Sale ${order.order_number}`,
+        referenceType: "campaign_order",
+        referenceId: orderId,
+        postedBy: user.user_id,
+        lines: revLines,
+      });
+    } else {
+      logger.error(
+        `[sales_campaigns] revenue journal skipped for order ${orderId}: ` +
+          `missing COA bank=${bankAcc ? "ok" : "1210"} sales=${salesAcc ? "ok" : "4100"}`,
+      );
+    }
+
+    // ── 4. COGS journal (DR COGS / CR Inventory) ────────────────────────
+    const costable = items
+      .filter((l) => l.product_id)
+      .map((l) => ({ product_id: l.product_id, quantity: l.quantity }));
+    let cogsEntry = null;
+    if (costable.length > 0) {
+      try {
+        const { total_cost } = await stockService.calculateSaleCOGS(
+          client,
+          costable,
+        );
+        if (total_cost && total_cost > 0) {
+          const cogsAcc = await journalService.getAccountId(client, "5000");
+          const invAcc = await journalService.getAccountId(client, "1410");
+          if (cogsAcc && invAcc) {
+            cogsEntry = await journalService.postEntry(client, {
+              description: `COGS for Campaign Sale ${order.order_number}`,
+              referenceType: "campaign_order_cogs",
+              referenceId: orderId,
+              postedBy: user.user_id,
+              lines: [
+                { account_id: cogsAcc, debit: total_cost, credit: 0 },
+                { account_id: invAcc, debit: 0, credit: total_cost },
+              ],
+            });
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          `[sales_campaigns] COGS journal skipped for order ${orderId}: ${err.message}`,
+        );
+      }
+    }
+
+    // ── 5. Create ERP sales_order + order_lines ─────────────────────────
+    let salesOrderId = null;
+    try {
+      const orderNumber = await nextDocumentNumber(
+        client,
+        business,
+        "sales_order",
+      );
+
+      const {
+        rows: [salesOrder],
+      } = await client.query(
+        `INSERT INTO sales_orders
+           (order_number, contact_id, status, fulfilment_type,
+            total_amount, amount_paid, source, created_by)
+         VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
+         RETURNING order_id, order_number`,
+        [
+          orderNumber,
+          contactId,
+          order.fulfilment_type || "delivery",
+          grossNaira,
+          user.user_id,
+        ],
+      );
+      salesOrderId = salesOrder.order_id;
+
+      for (const item of items) {
+        if (!item.product_id) continue;
+        const lineTotal = parseFloat(item.unit_price) * item.quantity;
+        await client.query(
+          `INSERT INTO order_lines
+             (order_id, product_id, description, quantity, unit_price,
+              line_total, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'fulfilled')`,
+          [
+            salesOrderId,
+            item.product_id,
+            item.product_name,
+            item.quantity,
+            parseFloat(item.unit_price),
+            lineTotal,
+          ],
+        );
+      }
+
+      // Link campaign order → ERP sales order
+      await client.query(
+        `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+        [orderId, salesOrderId],
+      );
+    } catch (err) {
+      logger.error(
+        `[sales_campaigns] ERP sales order failed for ${orderId}: ${err.message}`,
+      );
+      throw err;
+    }
+
+    // ── 6. Award loyalty points ─────────────────────────────────────────
     const pointsResult = await loyaltyService
       .awardPoints(
         business,
@@ -305,13 +460,14 @@ async function confirmOrder(business, orderId, user) {
       )
       .catch(() => null);
 
+    // ── 7. Mark confirmed ───────────────────────────────────────────────
     const updated = await repo.updateOrderStatus(client, orderId, {
       status: "confirmed",
       hubContactId: contactId,
       loyaltyPointsAwarded: pointsResult?.balance_after ? null : undefined,
     });
 
-    // Notify staff
+    // Audit trail
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name,
@@ -320,11 +476,18 @@ async function confirmOrder(business, orderId, user) {
       action: "approve",
       table: "campaign_orders",
       recordId: orderId,
-      after: updated,
+      after: {
+        ...updated,
+        hub_order_id: salesOrderId,
+        journal_entry_id:
+          revenueEntry?.entry_id || revenueEntry?.entryId || null,
+        cogs_entry_id: cogsEntry?.entry_id || cogsEntry?.entryId || null,
+      },
     });
 
     logger.info(
-      `[sales_campaigns] order ${order.order_number} confirmed by ${user.email}`,
+      `[sales_campaigns] order ${order.order_number} confirmed by ${user.email} → ` +
+        `ERP sales_order ${salesOrderId}, stock deducted, journals posted`,
     );
     return updated;
   });
@@ -350,13 +513,64 @@ async function cancelOrder(business, orderId, { reason }, user) {
       );
     }
 
-    // Restore reserved stock
-    for (const item of order.items || []) {
-      if (order.status === "proof_submitted") {
+    const items = order.items || [];
+
+    // Restore campaign stock counters (reserved → available)
+    if (order.status === "proof_submitted") {
+      for (const item of items) {
         await repo.restoreCampaignStock(
           client,
           item.campaign_product_id,
           item.quantity,
+        );
+      }
+    }
+
+    // If confirmed, reverse ERP stock + cancel ERP sales order
+    if (order.status === "confirmed") {
+      // Restore campaign sold counters
+      for (const item of items) {
+        await client.query(
+          `UPDATE campaign_products
+           SET quantity_sold = GREATEST(0, quantity_sold - $2)
+           WHERE id = $1`,
+          [item.campaign_product_id, item.quantity],
+        );
+      }
+
+      // Reverse stock movements — add stock back
+      for (const item of items) {
+        if (!item.product_id) continue;
+        try {
+          await stockService.recordMovement(client, {
+            business,
+            productId: item.product_id,
+            movementType: "return_from_customer",
+            quantity: item.quantity,
+            direction: 1,
+            referenceType: "campaign_order_cancel",
+            referenceId: orderId,
+            postedBy: user.user_id,
+            notes: `Cancelled: ${reason}`,
+          });
+        } catch (err) {
+          logger.warn(
+            `[sales_campaigns] stock reversal failed for cancel ${orderId}: ${err.message}`,
+          );
+        }
+      }
+
+      // Cancel the linked ERP sales order
+      if (order.hub_order_id) {
+        await client.query(
+          `UPDATE sales_orders SET status = 'cancelled', updated_at = now()
+           WHERE order_id = $1`,
+          [order.hub_order_id],
+        );
+        await client.query(
+          `UPDATE order_lines SET status = 'cancelled'
+           WHERE order_id = $1`,
+          [order.hub_order_id],
         );
       }
     }
