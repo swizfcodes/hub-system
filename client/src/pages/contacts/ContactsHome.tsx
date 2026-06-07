@@ -27,6 +27,7 @@ import { ContactRailRow } from "@components/contacts/shell/ContactRailRow";
 import { ContactCard } from "@components/contacts/shell/ContactCard";
 import { QuickAddModal } from "@components/contacts/modals/QuickAddModal";
 import WalkinQRModal from "@components/contacts/modals/WalkinQRModal";
+import { InviteSupplierModal } from "@components/procurement/suppliers/InviteSupplierModal";
 import { listContacts } from "@services/contacts/contacts";
 import { CONTACT_TYPE_META } from "@lib/constants/contactTypes";
 import { useIsDesktop } from "@hooks/useMediaQuery";
@@ -50,6 +51,7 @@ export default function ContactsHome() {
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
   const [walkinQROpen, setWalkinQROpen] = useState(false);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<DirectoryFilterValues>({
@@ -129,7 +131,11 @@ export default function ContactsHome() {
                 variant="gold"
                 size="md"
                 leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() => setQuickAddOpen(true)}
+                onClick={() =>
+                  activeTab === "supplier"
+                    ? setSupplierModalOpen(true)
+                    : setQuickAddOpen(true)
+                }
               >
                 Quick add
               </Button>
@@ -175,7 +181,11 @@ export default function ContactsHome() {
                 <Button
                   variant="gold"
                   leftIcon={<Plus className="w-4 h-4" />}
-                  onClick={() => setQuickAddOpen(true)}
+                  onClick={() =>
+                    activeTab === "supplier"
+                      ? setSupplierModalOpen(true)
+                      : setQuickAddOpen(true)
+                  }
                 >
                   Quick add
                 </Button>
@@ -264,6 +274,10 @@ export default function ContactsHome() {
       <WalkinQRModal
         open={walkinQROpen}
         onClose={() => setWalkinQROpen(false)}
+      />
+      <InviteSupplierModal
+        open={supplierModalOpen}
+        onClose={() => setSupplierModalOpen(false)}
       />
     </>
   );

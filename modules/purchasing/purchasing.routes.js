@@ -47,6 +47,37 @@ router.get(
   },
 );
 
+// POST /suppliers/from-contact/:contactId — convert existing contact to supplier
+router.post(
+  "/suppliers/from-contact/:contactId",
+  param("contactId").isUUID(),
+  validate,
+  can("purchasing", "create"),
+  async (req, res, next) => {
+    try {
+      // Check if supplier record already exists for this contact
+      const existing = await svc.findSupplierByContactId(
+        req.business,
+        req.params.contactId,
+      );
+      if (existing) return res.json(existing); // idempotent — return existing
+      const supplier = await svc.createSupplier(
+        req.business,
+        {
+          contact_id: req.params.contactId,
+          payment_terms_days: req.body.payment_terms_days ?? 30,
+          preferred_currency: req.body.preferred_currency ?? "NGN",
+          notes: req.body.notes ?? "",
+        },
+        req.user,
+      );
+      res.status(201).json(supplier);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // POST /suppliers/:id/invite — generate portal access token
 router.post(
   "/suppliers/:id/invite",

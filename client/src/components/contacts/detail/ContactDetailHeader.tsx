@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, Pencil, Archive, ArrowLeft, MessageSquare } from "lucide-react";
+import { Star, Pencil, Archive, ArrowLeft, MessageSquare, ShoppingCart } from "lucide-react";
 import { ContactAvatar } from "../shared/ContactAvatar";
 import { ContactTypeBadges } from "../shared/ContactTypeBadges";
 import { QuickActions } from "../shared/QuickActions";
@@ -10,6 +10,7 @@ import { DropdownMenu } from "@components/ui/DropdownMenu";
 import { ConfirmationModal } from "@components/ui/ConfirmationModal";
 import { deleteContact } from "@services/contacts/contacts";
 import { createChannel } from "@services/messaging";
+import { api } from "@services/api";
 import { useStaffByContact } from "../employment/useStaffByContact";
 import { useNavigate } from "react-router-dom";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
@@ -34,6 +35,18 @@ export function ContactDetailHeader({
   const navigate = useNavigate();
   const { active: biz } = useActiveBusiness();
   const [archiveOpen, setArchiveOpen] = useState(false);
+
+  const isSupplierContact = contact.contact_type?.includes("supplier");
+
+  const activateSupplierMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/purchasing/suppliers/from-contact/${contact.contact_id}`).then(r => r.data),
+    onSuccess: () => {
+      showToast.success("Supplier activated — they now appear in PO & RFQ dropdowns.");
+      qc.invalidateQueries({ queryKey: ["purchasing", "suppliers"] });
+    },
+    onError: (e) => showToast.error("Failed", errMsg(e)),
+  });
 
   // Resolve the staff profile for this contact so we can message them directly
   const { staff } = useStaffByContact(contact.contact_id);
@@ -119,6 +132,18 @@ export function ContactDetailHeader({
           <div className="flex flex-col gap-2 self-stretch sm:self-start">
             <QuickActions contact={contact} size="md" />
             <div className="flex items-center gap-2">
+              {isSupplierContact && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}
+                  loading={activateSupplierMutation.isPending}
+                  onClick={() => activateSupplierMutation.mutate()}
+                  title="Activate in Procurement"
+                >
+                  Activate supplier
+                </Button>
+              )}
               {canMessage && (
                 <Button
                   variant="secondary"

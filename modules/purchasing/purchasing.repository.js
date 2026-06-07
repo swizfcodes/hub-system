@@ -58,6 +58,19 @@ async function findSupplierById(client, supplierId) {
   return s || null;
 }
 
+async function findSupplierByContactId(client, contactId) {
+  const {
+    rows: [s],
+  } = await client.query(
+    `SELECT s.*, c.display_name, c.email, c.primary_phone
+     FROM suppliers s
+     JOIN shared.contacts c ON c.contact_id = s.contact_id
+     WHERE s.contact_id = $1`,
+    [contactId],
+  );
+  return s || null;
+}
+
 async function upsertSupplierPortalToken(
   client,
   { supplierId, token, expiresAt },
@@ -537,6 +550,7 @@ module.exports = {
   getSupplierCount,
   insertSupplier,
   findSupplierById,
+  findSupplierByContactId,
   upsertSupplierPortalToken,
   // rfqs
   listRFQs,

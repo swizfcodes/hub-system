@@ -61,6 +61,12 @@ async function getSupplier(business, supplierId) {
   });
 }
 
+async function findSupplierByContactId(business, contactId) {
+  return withBusinessContext(business, async (client) => {
+    return repo.findSupplierByContactId(client, contactId);
+  });
+}
+
 async function generateSupplierInvite(business, supplierId, user) {
   return withBusinessContext(business, async (client) => {
     const s = await repo.findSupplierById(client, supplierId);
@@ -891,6 +897,7 @@ module.exports = {
   listSuppliers,
   createSupplier,
   getSupplier,
+  findSupplierByContactId,
   generateSupplierInvite,
   // rfqs
   listRFQs,
