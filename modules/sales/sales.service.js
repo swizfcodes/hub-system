@@ -9,6 +9,13 @@ const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const crmService = require("../crm/crm.service");
 const movementsService = require("../stock/movements.service");
+const stockService = require("../stock/stock.service");
+const journalService = require("../accounting/journal.service");
+const loyaltyService = require("../loyalty/loyalty.service");
+const invoicingSvc = require("../invoicing/invoicing.service");
+const { getRate } = require("../../lib/currency/converter");
+const { emitToBusiness } = require("../../config/sockets");
+const logger = require("../../config/logger");
 const repo = require("./sales.repository");
 
 // ─── Quotations ──────────────────────────────────────────────────────────────
@@ -355,13 +362,441 @@ async function getSalesKpis(business) {
   });
 }
 
+// ─── Direct Order (Quick Sale) ────────────────────────────────────────────────
+
+/**
+ * Creates a sales order directly — no quotation required.
+ * Handles: split payments, multi-currency, optional VAT toggle,
+ * pickup/delivery, discount with min-price hard floor, stock deduction,
+ * accounting journals, auto-invoice, loyalty points.
+ *
+ * Modelled after POS createTransaction but for the Sales module.
+ */
+async function createDirectOrder(business, data, user) {
+  // ── Validate up front ──────────────────────────────────────────────
+  if (!data.contact_id) {
+    throw Object.assign(new Error("contact_id is required"), { status: 400 });
+  }
+  if (!Array.isArray(data.lines) || data.lines.length === 0) {
+    throw Object.assign(new Error("At least one line item is required"), { status: 400 });
+  }
+  if (!Array.isArray(data.payments) || data.payments.length === 0) {
+    throw Object.assign(new Error("At least one payment is required"), { status: 400 });
+  }
+
+  // ── Currency handling ──────────────────────────────────────────────
+  const currency = data.currency || "NGN";
+  let exchangeRate = 1;
+  if (currency !== "NGN") {
+    if (data.exchange_rate && data.exchange_rate > 0) {
+      // Manual override (e.g. negotiated rate)
+      exchangeRate = parseFloat(data.exchange_rate);
+    } else {
+      // Auto-fetch from stored rates
+      const stored = await getRate(currency, "NGN");
+      if (!stored) {
+        throw Object.assign(
+          new Error(`No exchange rate found for ${currency}. Sync rates first.`),
+          { status: 400 },
+        );
+      }
+      exchangeRate = parseFloat(stored.rate);
+    }
+  }
+
+  const result = await withBusinessContext(business, async (client) => {
+    // ── Validate lines & min-price floor ─────────────────────────────
+    for (const line of data.lines) {
+      if (typeof line.quantity !== "number" || line.quantity <= 0) {
+        throw Object.assign(
+          new Error(`Invalid quantity for ${line.description || line.product_id}`),
+          { status: 400 },
+        );
+      }
+      if (typeof line.unit_price !== "number" || line.unit_price < 0) {
+        throw Object.assign(
+          new Error(`Invalid price for ${line.description || line.product_id}`),
+          { status: 400 },
+        );
+      }
+      if (line.product_id) {
+        const { rows: [prod] } = await client.query(
+          `SELECT min_selling_price, product_name FROM products WHERE product_id = $1`,
+          [line.product_id],
+        );
+        if (!prod) {
+          throw Object.assign(new Error(`Product not found: ${line.product_id}`), { status: 400 });
+        }
+        // Hard floor — never below minimum price. No approval, just blocked.
+        if (
+          prod.min_selling_price &&
+          parseFloat(line.unit_price) < parseFloat(prod.min_selling_price)
+        ) {
+          throw Object.assign(
+            new Error(
+              `Price ₦${line.unit_price} is below minimum ₦${prod.min_selling_price} for "${prod.product_name}". Cannot proceed.`,
+            ),
+            { status: 400 },
+          );
+        }
+      }
+    }
+
+    // ── Calculate totals ─────────────────────────────────────────────
+    // VAT: applied only if toggled on by the user
+    const vatRate = data.apply_vat ? getVatRate(business) : 0;
+
+    let subtotal = 0;
+    let discountTotal = 0;
+    let vatTotal = 0;
+
+    for (const l of data.lines) {
+      const lineGross = l.unit_price * l.quantity;
+      const disc = l.discount_amount || 0;
+      const net = Math.round((lineGross - disc) * 100) / 100;
+      discountTotal = Math.round((discountTotal + disc) * 100) / 100;
+      subtotal = Math.round((subtotal + net) * 100) / 100;
+      vatTotal = Math.round((vatTotal + Math.round(net * vatRate * 100) / 100) * 100) / 100;
+    }
+
+    const totalAmount = Math.round((subtotal + vatTotal) * 100) / 100;
+
+    // Convert foreign currency payments to NGN for validation
+    const totalPaid = Math.round(
+      data.payments.reduce((s, p) => s + parseFloat(p.amount), 0) * 100,
+    ) / 100;
+    // Payments are entered in the sale currency; total is also in sale currency
+    if (totalPaid < totalAmount) {
+      throw Object.assign(
+        new Error(
+          `Payments (${totalPaid}) do not cover total (${totalAmount}). Short by ${(totalAmount - totalPaid).toFixed(2)}.`,
+        ),
+        { status: 400 },
+      );
+    }
+
+    // NGN equivalent for journals and storage
+    const totalAmountNGN = currency === "NGN"
+      ? totalAmount
+      : Math.round(totalAmount * exchangeRate * 100) / 100;
+    const subtotalNGN = currency === "NGN"
+      ? subtotal
+      : Math.round(subtotal * exchangeRate * 100) / 100;
+    const vatTotalNGN = currency === "NGN"
+      ? vatTotal
+      : Math.round(vatTotal * exchangeRate * 100) / 100;
+
+    // ── Create order ─────────────────────────────────────────────────
+    const orderNumber = await nextDocumentNumber(client, business, "sales_order");
+    const fulfilmentType = data.fulfilment_type || "walk_in";
+
+    const { rows: [order] } = await client.query(
+      `INSERT INTO sales_orders
+         (order_number, contact_id, status, fulfilment_type,
+          source, currency, exchange_rate, amount_foreign,
+          subtotal, discount_total, vat_amount,
+          total_amount, amount_paid, created_by)
+       VALUES ($1, $2, 'confirmed', $3,
+               'direct', $4, $5, $6,
+               $7, $8, $9,
+               $10, $11, $12)
+       RETURNING *`,
+      [
+        orderNumber,
+        data.contact_id,
+        fulfilmentType,
+        currency,
+        exchangeRate,
+        currency !== "NGN" ? totalAmount : null,
+        subtotalNGN,
+        Math.round(discountTotal * (currency === "NGN" ? 1 : exchangeRate) * 100) / 100,
+        vatTotalNGN,
+        totalAmountNGN,
+        totalAmountNGN, // fully paid at creation
+        user.user_id,
+      ],
+    );
+
+    // ── Insert order lines ───────────────────────────────────────────
+    for (let i = 0; i < data.lines.length; i++) {
+      const l = data.lines[i];
+      const lineGross = l.unit_price * l.quantity;
+      const disc = l.discount_amount || 0;
+      const net = lineGross - disc;
+      const netNGN = currency === "NGN" ? net : Math.round(net * exchangeRate * 100) / 100;
+
+      await client.query(
+        `INSERT INTO order_lines
+           (order_id, product_id, description, quantity, unit_price, line_total, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'fulfilled')`,
+        [
+          order.order_id,
+          l.product_id || null,
+          l.description,
+          l.quantity,
+          currency === "NGN" ? l.unit_price : Math.round(l.unit_price * exchangeRate * 100) / 100,
+          netNGN,
+          i,
+        ],
+      );
+
+      // ── Stock deduction ────────────────────────────────────────────
+      if (l.product_id) {
+        await stockService.recordMovement(client, {
+          business,
+          productId: l.product_id,
+          movementType: "sold",
+          quantity: l.quantity,
+          direction: -1,
+          referenceType: "sales_order",
+          referenceId: order.order_id,
+          performedBy: user.user_id,
+        });
+      }
+    }
+
+    // ── Revenue journal (DR Cash/Bank, CR Sales Revenue + VAT) ───────
+    const paymentMethodToCOA = (method) => {
+      switch (method) {
+        case "cash": return "1100";
+        case "bank_transfer": return "1210";
+        case "pos_card": return "1210";
+        case "paystack": return "1210";
+        default: return "1310";
+      }
+    };
+
+    const debitsByAccount = new Map();
+    for (const p of data.payments) {
+      const code = paymentMethodToCOA(p.payment_method);
+      const accId = await journalService.getAccountId(client, code);
+      if (!accId) continue;
+      const amtNGN = currency === "NGN"
+        ? parseFloat(p.amount)
+        : Math.round(parseFloat(p.amount) * exchangeRate * 100) / 100;
+      debitsByAccount.set(accId, (debitsByAccount.get(accId) || 0) + amtNGN);
+    }
+
+    const revAcc = await journalService.getAccountId(client, "4100");
+    const vatAcc = await journalService.getAccountId(client, "2210");
+
+    if (!revAcc) {
+      throw Object.assign(
+        new Error("COA account 4100 (Sales Revenue) not found. Contact administrator."),
+        { status: 500 },
+      );
+    }
+
+    const journalLines = [];
+    for (const [accId, amount] of debitsByAccount.entries()) {
+      if (amount > 0) journalLines.push({ account_id: accId, debit: parseFloat(amount.toFixed(2)), credit: 0 });
+    }
+    journalLines.push({ account_id: revAcc, debit: 0, credit: subtotalNGN });
+    if (vatAcc && vatTotalNGN > 0) {
+      journalLines.push({ account_id: vatAcc, debit: 0, credit: vatTotalNGN });
+    }
+
+    await journalService.postEntry(client, {
+      description: `Direct Sale ${orderNumber}`,
+      referenceType: "sales_order",
+      referenceId: order.order_id,
+      postedBy: user.user_id,
+      lines: journalLines,
+    });
+
+    // ── COGS journal (DR COGS, CR Inventory) ─────────────────────────
+    const costableLines = data.lines.filter((l) => l.product_id);
+    if (costableLines.length > 0) {
+      const { total_cost } = await stockService.calculateSaleCOGS(
+        client,
+        costableLines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+      );
+
+      if (total_cost && total_cost > 0) {
+        const cogsAcc = await journalService.getAccountId(client, "5000");
+        const inventoryAcc = await journalService.getAccountId(client, "1410");
+        if (cogsAcc && inventoryAcc) {
+          await journalService.postEntry(client, {
+            description: `COGS for Direct Sale ${orderNumber}`,
+            referenceType: "sales_order_cogs",
+            referenceId: order.order_id,
+            postedBy: user.user_id,
+            lines: [
+              { account_id: cogsAcc, debit: total_cost, credit: 0 },
+              { account_id: inventoryAcc, debit: 0, credit: total_cost },
+            ],
+          });
+        }
+      }
+    }
+
+    // ── Auto-create invoice ──────────────────────────────────────────
+    const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
+    const { rows: [invoice] } = await client.query(
+      `INSERT INTO invoices
+         (invoice_number, contact_id, order_id, status,
+          issue_date, due_date,
+          subtotal, discount_total, vat_amount, total_amount, amount_paid,
+          currency, created_by)
+       VALUES ($1, $2, $3, 'paid',
+               CURRENT_DATE, CURRENT_DATE,
+               $4, $5, $6, $7, $8,
+               'NGN', $9)
+       RETURNING *`,
+      [
+        invoiceNumber,
+        data.contact_id,
+        order.order_id,
+        subtotalNGN,
+        Math.round(discountTotal * (currency === "NGN" ? 1 : exchangeRate) * 100) / 100,
+        vatTotalNGN,
+        totalAmountNGN,
+        totalAmountNGN,
+        user.user_id,
+      ],
+    );
+
+    // Copy lines to invoice_lines
+    await client.query(
+      `INSERT INTO invoice_lines
+         (invoice_id, product_id, description, quantity, unit_price,
+          discount_amount, vat_rate, vat_amount, line_total, display_order)
+       SELECT $1, product_id, description, quantity, unit_price,
+              0, $2, 0, line_total, ROW_NUMBER() OVER (ORDER BY line_id)
+       FROM order_lines WHERE order_id = $3`,
+      [invoice.invoice_id, vatRate, order.order_id],
+    );
+
+    // ── Record payment splits on the invoice ─────────────────────────
+    for (const p of data.payments) {
+      const amtNGN = currency === "NGN"
+        ? parseFloat(p.amount)
+        : Math.round(parseFloat(p.amount) * exchangeRate * 100) / 100;
+
+      await client.query(
+        `INSERT INTO invoice_payments
+           (invoice_id, payment_date, amount, payment_method, reference,
+            is_confirmed, recorded_by, notes)
+         VALUES ($1, CURRENT_DATE, $2, $3, $4, true, $5, $6)`,
+        [
+          invoice.invoice_id,
+          amtNGN,
+          p.payment_method,
+          p.reference || null,
+          user.user_id,
+          currency !== "NGN" ? `${currency} ${p.amount} @ ${exchangeRate}` : null,
+        ],
+      );
+    }
+
+    // ── Audit log ────────────────────────────────────────────────────
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "staff",
+      business,
+      module: "sales",
+      action: "create",
+      table: "sales_orders",
+      recordId: order.order_id,
+      after: { ...order, source: "direct", invoice_id: invoice.invoice_id },
+    });
+
+    emitToBusiness(business, "sales:order_created", {
+      orderId: order.order_id,
+      orderNumber,
+      source: "direct",
+    });
+
+    return {
+      ...order,
+      invoice_id: invoice.invoice_id,
+      invoice_number: invoiceNumber,
+      currency,
+      exchange_rate: exchangeRate,
+    };
+  });
+
+  // ── Loyalty points (outside transaction — non-fatal) ───────────────
+  try {
+    const totalForLoyalty = currency === "NGN"
+      ? result.total_amount
+      : Math.round(parseFloat(result.total_amount) * 100) / 100;
+    await loyaltyService.awardPoints(
+      business,
+      data.contact_id,
+      totalForLoyalty,
+      "sales_order",
+      result.order_id,
+      user,
+    );
+  } catch (err) {
+    logger.error(
+      `[loyalty] award failed for direct order ${result.order_id}: ${err.message}`,
+    );
+  }
+
+  // ── Auto-push delivery to logistics ────────────────────────────────
+  if (data.fulfilment_type === "delivery" && data.delivery_address) {
+    try {
+      const logisticsService = require("../logistics/logistics.service");
+      await logisticsService.createDelivery(
+        business,
+        {
+          reference_type: "sales_order",
+          reference_id: result.order_id,
+          contact_id: data.contact_id,
+          delivery_address: data.delivery_address,
+          courier: data.courier_preference || "manual",
+          delivery_fee: data.delivery_fee || 0,
+        },
+        user,
+      );
+    } catch (err) {
+      logger.error(`[logistics] auto-create delivery failed for order ${result.order_id}: ${err.message}`);
+    }
+  }
+
+  // ── Auto-send receipt by email ─────────────────────────────────────
+  let receiptSent = false;
+  try {
+    const { rows: [contact] } = await require("../../config/db").pool.query(
+      `SELECT email, display_name FROM shared.contacts WHERE contact_id = $1`,
+      [data.contact_id],
+    );
+    if (contact?.email) {
+      const { subject, html } = renderEmail("receipt", business, {
+        contact_name: contact.display_name,
+        order_number: result.order_number,
+        total_amount: result.total_amount,
+        invoice_number: result.invoice_number,
+      });
+      await sendEmail({
+        to: contact.email,
+        subject,
+        html,
+        business,
+      });
+      receiptSent = true;
+    }
+  } catch (err) {
+    logger.error(`[sales] receipt email failed for order ${result.order_id}: ${err.message}`);
+  }
+
+  return { ...result, receipt_sent: receiptSent };
+}
+
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
-async function listOrders(business, { page = 1, limit = 50, status } = {}) {
+async function listOrders(
+  business,
+  { page = 1, limit = 50, status, source, fulfilment_type } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     const rows = await repo.listOrders(client, {
       status,
+      source: source || null,
+      fulfilment_type: fulfilment_type || null,
       limit: parseInt(limit),
       offset,
     });
@@ -685,6 +1120,37 @@ async function rejectDiscount(business, approvalId, { notes }, user) {
   });
 }
 
+// ─── Campaign Proof Approval (from unified Orders view) ──────────────────────
+
+/**
+ * Approve a campaign order's payment proof from the Sales → Orders list.
+ * Finds the campaign_order linked to this sales_order (via hub_order_id)
+ * and delegates to the campaign admin's confirmOrder function.
+ */
+async function approveCampaignProof(business, salesOrderId, user) {
+  // Find the campaign_order linked to this sales_order
+  const { pool } = require("../../config/db");
+  const { rows } = await pool.query(
+    `SELECT co.order_id AS campaign_order_id
+     FROM ${business}.campaign_orders co
+     WHERE co.hub_order_id = $1
+       AND co.status = 'proof_submitted'
+     LIMIT 1`,
+    [salesOrderId],
+  );
+
+  if (!rows.length) {
+    throw Object.assign(
+      new Error("No pending campaign proof found for this order"),
+      { status: 404 },
+    );
+  }
+
+  // Delegate to the campaign admin service
+  const campaignAdmin = require("../sales_campaigns/admin.service");
+  return campaignAdmin.confirmOrder(business, rows[0].campaign_order_id, user);
+}
+
 module.exports = {
   listQuotations,
   createQuotation,
@@ -695,11 +1161,13 @@ module.exports = {
   cancelQuotation,
   generateQuotationPDF,
   getSalesKpis,
+  createDirectOrder,
   listOrders,
   getOrder,
   generateInvoiceFromOrder,
   handToLogistics,
   cancelOrder,
+  approveCampaignProof,
   listReceipts,
   getReceipt,
   generateReceiptPDF,

@@ -230,19 +230,31 @@ async function getOrderProductLines(client, orderId) {
   return rows;
 }
 
-async function listOrders(client, { status, limit, offset }) {
+async function listOrders(
+  client,
+  { status, source, fulfilment_type, limit, offset },
+) {
   const { rows } = await client.query(
     `SELECT o.order_id, o.order_number, o.status, o.total_amount,
             o.amount_paid, o.amount_outstanding, o.created_at,
-            o.fulfilment_type, o.deal_id,
+            o.fulfilment_type, o.deal_id, o.source,
+            o.currency, o.pos_transaction_id,
             c.display_name AS contact_name,
             i.invoice_id, i.invoice_number, i.status AS invoice_status
      FROM sales_orders o
-     JOIN shared.contacts c ON c.contact_id = o.contact_id
+     LEFT JOIN shared.contacts c ON c.contact_id = o.contact_id
      LEFT JOIN invoices i ON i.order_id = o.order_id AND i.is_deleted = false
      WHERE ($1::TEXT IS NULL OR o.status = $1)
+       AND ($4::TEXT IS NULL OR o.source = $4)
+       AND ($5::TEXT IS NULL OR o.fulfilment_type = $5)
      ORDER BY o.created_at DESC LIMIT $2 OFFSET $3`,
-    [status || null, limit, offset],
+    [
+      status || null,
+      limit,
+      offset,
+      source || null,
+      fulfilment_type || null,
+    ],
   );
   return rows;
 }

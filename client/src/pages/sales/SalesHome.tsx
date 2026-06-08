@@ -10,14 +10,14 @@ import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { Topbar } from "@/components/shell/Topbar";
 
 const TABS = [
-  { key: "quotations", label: "Quotations" },
   { key: "orders", label: "Orders" },
+  { key: "quotations", label: "B2B Quotations" },
 ];
 
 type TabKey = "quotations" | "orders";
 
 export default function SalesHome() {
-  const [activeTab, setActiveTab] = useState<TabKey>("quotations");
+  const [activeTab, setActiveTab] = useState<TabKey>("orders");
   const { currency } = useActiveBusiness();
 
   const { data: kpis, isLoading: kpisLoading } = useQuery({
@@ -28,11 +28,11 @@ export default function SalesHome() {
 
   return (
     <>
-      <Topbar title="Sales" subtitle="Quotations · Orders" />
+      <Topbar title="Sales" subtitle="Orders · B2B Quotations" />
       <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
         <PageHeader
           title="Sales"
-          subtitle=" All quotations and orders."
+          subtitle="All orders and B2B quotations."
           crumbs={[{ label: "Hub", to: "/" }, { label: "Sales" }]}
         />
 
@@ -49,7 +49,7 @@ export default function SalesHome() {
         />
 
         <div className="min-h-[300px]">
-          {activeTab === "quotations" ? <QuotationsView /> : <OrdersView />}
+          {activeTab === "orders" ? <OrdersView /> : <QuotationsView />}
         </div>
       </div>
     </>

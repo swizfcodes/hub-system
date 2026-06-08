@@ -397,33 +397,67 @@ async function confirmOrder(business, orderId, user) {
       }
     }
 
-    // ── 5. Create ERP sales_order + order_lines ─────────────────────────
-    let salesOrderId = null;
+    // ── 5. Create or update ERP sales_order + order_lines ─────────────
+    // The bridge row may already exist (created at proof submission with
+    // status='pending_proof'). If so, UPDATE it. Otherwise INSERT new.
+    let salesOrderId = order.hub_order_id || null;
     try {
-      const orderNumber = await nextDocumentNumber(
-        client,
-        business,
-        "sales_order",
-      );
+      if (salesOrderId) {
+        // Bridge row exists — update to confirmed
+        await client.query(
+          `UPDATE sales_orders
+           SET status = 'confirmed', contact_id = $2,
+               total_amount = $3, amount_paid = $4,
+               fulfilment_type = $5, created_by = $6, updated_at = now()
+           WHERE order_id = $1`,
+          [
+            salesOrderId,
+            contactId,
+            grossNaira,
+            grossNaira,
+            order.fulfilment_type || "delivery",
+            user.user_id,
+          ],
+        );
+        // Clean existing lines (if any from a previous partial attempt)
+        await client.query(
+          `DELETE FROM order_lines WHERE order_id = $1`,
+          [salesOrderId],
+        );
+      } else {
+        // No bridge row — create fresh (backward compatible)
+        const orderNumber = await nextDocumentNumber(
+          client,
+          business,
+          "sales_order",
+        );
 
-      const {
-        rows: [salesOrder],
-      } = await client.query(
-        `INSERT INTO sales_orders
-           (order_number, contact_id, status, fulfilment_type,
-            total_amount, amount_paid, source, created_by)
-         VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
-         RETURNING order_id, order_number`,
-        [
-          orderNumber,
-          contactId,
-          order.fulfilment_type || "delivery",
-          grossNaira,
-          user.user_id,
-        ],
-      );
-      salesOrderId = salesOrder.order_id;
+        const {
+          rows: [salesOrder],
+        } = await client.query(
+          `INSERT INTO sales_orders
+             (order_number, contact_id, status, fulfilment_type,
+              total_amount, amount_paid, source, created_by)
+           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
+           RETURNING order_id, order_number`,
+          [
+            orderNumber,
+            contactId,
+            order.fulfilment_type || "delivery",
+            grossNaira,
+            user.user_id,
+          ],
+        );
+        salesOrderId = salesOrder.order_id;
 
+        // Link campaign order → ERP sales order
+        await client.query(
+          `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+          [orderId, salesOrderId],
+        );
+      }
+
+      // Insert order lines for the confirmed order
       for (const item of items) {
         if (!item.product_id) continue;
         const lineTotal = parseFloat(item.unit_price) * item.quantity;
@@ -442,12 +476,6 @@ async function confirmOrder(business, orderId, user) {
           ],
         );
       }
-
-      // Link campaign order → ERP sales order
-      await client.query(
-        `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
-        [orderId, salesOrderId],
-      );
     } catch (err) {
       logger.error(
         `[sales_campaigns] ERP sales order failed for ${orderId}: ${err.message}`,

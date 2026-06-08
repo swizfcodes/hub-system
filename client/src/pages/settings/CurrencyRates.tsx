@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { Plus, TrendingUp, Database } from "lucide-react";
+import { Plus, TrendingUp, Database, RefreshCw } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
@@ -15,6 +15,7 @@ import {
   listCurrencyRates,
   createCurrencyRate,
 } from "@services/settings/currencyRates";
+import { syncCurrencyRates } from "@services/sales/orders";
 import { CURRENCIES } from "@lib/constants/currencies";
 import { fmtDateTime } from "@lib/format";
 import { showToast } from "@hooks/useToast";
@@ -30,6 +31,15 @@ export default function CurrencyRates() {
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [filterFrom, setFilterFrom] = useState<string>("");
+
+  const syncMutation = useMutation({
+    mutationFn: syncCurrencyRates,
+    onSuccess: () => {
+      showToast.success("Currency rates synced from live feed");
+      qc.invalidateQueries({ queryKey: ["settings", "currency-rates"] });
+    },
+    onError: (e) => showToast.error("Sync failed", errMsg(e)),
+  });
 
   const { data: rates = [], isLoading } = useQuery({
     queryKey: ["settings", "currency-rates", { from: filterFrom }],
@@ -56,13 +66,23 @@ export default function CurrencyRates() {
             { label: "Currency Rates" },
           ]}
           actions={
-            <Button
-              variant="gold"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={() => setCreating(true)}
-            >
-              Manual Override
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                leftIcon={<RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />}
+                onClick={() => syncMutation.mutate()}
+                loading={syncMutation.isPending}
+              >
+                Sync Now
+              </Button>
+              <Button
+                variant="gold"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={() => setCreating(true)}
+              >
+                Manual Override
+              </Button>
+            </div>
           }
         />
 

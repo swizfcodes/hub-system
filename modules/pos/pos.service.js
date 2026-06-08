@@ -423,6 +423,55 @@ async function createTransaction(business, data, user) {
     );
     await postPosCOGSJournal(client, business, tx, data.lines);
 
+    // ── POS → sales_orders bridge ──────────────────────────────
+    // Insert a sales_orders row so POS transactions appear in
+    // the unified Sales → Orders view. This runs inside the same
+    // transaction so it either commits with the POS sale or not.
+    const soNumber = await nextDocumentNumber(client, business, "sales_order");
+    const { rows: [bridgeOrder] } = await client.query(
+      `INSERT INTO sales_orders
+         (order_number, contact_id, status, fulfilment_type,
+          source, pos_transaction_id,
+          subtotal, discount_total, vat_amount,
+          total_amount, amount_paid, created_by)
+       VALUES ($1, $2, 'confirmed', $3,
+               'pos', $4,
+               $5, $6, $7,
+               $8, $9, $10)
+       RETURNING order_id`,
+      [
+        soNumber,
+        data.contact_id || null,
+        data.fulfilment_type || "walk_in",
+        tx.transaction_id,
+        subtotal,
+        discountTotal,
+        vatTotal,
+        totalAmount,
+        totalAmount, // fully paid at POS
+        user.user_id,
+      ],
+    );
+
+    // Copy POS transaction lines to order_lines for the bridge row
+    for (let i = 0; i < data.lines.length; i++) {
+      const l = data.lines[i];
+      const net = l.unit_price * l.quantity - (l.discount_amount || 0);
+      await client.query(
+        `INSERT INTO order_lines
+           (order_id, product_id, description, quantity, unit_price, line_total, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'fulfilled')`,
+        [
+          bridgeOrder.order_id,
+          l.product_id || null,
+          l.description,
+          l.quantity,
+          l.unit_price,
+          net,
+        ],
+      );
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name || "staff",
@@ -437,7 +486,7 @@ async function createTransaction(business, data, user) {
       transactionId: tx.transaction_id,
       amount: totalAmount,
     });
-    return { ...tx, change_given: change };
+    return { ...tx, change_given: change, bridge_order_id: bridgeOrder.order_id };
   });
 
   if (data.contact_id) {
@@ -569,6 +618,13 @@ async function voidTransaction(business, transactionId, { void_reason }, user) {
         notes: `Void: ${void_reason}`,
       });
     }
+
+    // Cancel the bridge sales_order if one exists
+    await client.query(
+      `UPDATE sales_orders SET status = 'cancelled', updated_at = now()
+       WHERE pos_transaction_id = $1`,
+      [transactionId],
+    );
 
     await auditService.log(client, {
       userId: user.user_id,

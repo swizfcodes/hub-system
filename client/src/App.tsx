@@ -78,6 +78,7 @@ const TransfersPage = lazy(() => import("@pages/stock/TransfersPage"));
 
 // Sales module
 const SalesHome = lazy(() => import("@pages/sales/SalesHome"));
+const QuickSaleForm = lazy(() => import("@pages/sales/QuickSaleForm"));
 const QuoteDetail = lazy(() => import("@pages/sales/QuoteDetail"));
 const OrderDetail = lazy(() => import("@pages/sales/OrderDetail"));
 
@@ -394,6 +395,7 @@ export default function App() {
           <Route path="/sales" element={<SalesHome />} />
           <Route path="/sales/quotations/new" element={<QuoteDetail />} />
           <Route path="/sales/quotations/:id" element={<QuoteDetail />} />
+          <Route path="/sales/orders/new" element={<QuickSaleForm />} />
           <Route path="/sales/orders/:id" element={<OrderDetail />} />
           <Route path="/sales/invoices/:id" element={<InvoiceDetail />} />
 
