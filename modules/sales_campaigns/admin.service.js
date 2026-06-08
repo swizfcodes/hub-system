@@ -11,6 +11,8 @@ const journalService = require("../accounting/journal.service");
 const { getVatRate } = require("../../config/businesses");
 const repo = require("./campaigns.repository");
 const logger = require("../../config/logger");
+const { sendEmail } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 
 // ── CAMPAIGNS ─────────────────────────────────────────────────────────────────
 
@@ -524,6 +526,35 @@ async function confirmOrder(business, orderId, user) {
       `[sales_campaigns] order ${order.order_number} confirmed by ${user.email} → ` +
         `ERP sales_order ${salesOrderId}, stock deducted, journals posted`,
     );
+
+    // ── Email confirmation to customer (non-fatal) ────────────────
+    if (order.customer_email) {
+      try {
+        const emailItems = items.map((i) => ({
+          name: i.product_name,
+          quantity: i.quantity,
+          // order_confirmation template expects price_kobo
+          price_kobo: Math.round(parseFloat(i.unit_price) * 100),
+        }));
+        const { subject, html } = renderEmail("order_confirmation", business, {
+          customer_name: order.customer_name,
+          order_id: order.order_number,
+          items: emailItems,
+          total: grossNaira,
+        });
+        await sendEmail({
+          to: order.customer_email,
+          subject,
+          html,
+        });
+        logger.info(`[sales_campaigns] confirmation email sent to ${order.customer_email}`);
+      } catch (err) {
+        logger.error(
+          `[sales_campaigns] confirmation email failed for order ${order.order_number}: ${err.message}`,
+        );
+      }
+    }
+
     return updated;
   });
 }
@@ -635,6 +666,32 @@ async function cancelOrder(business, orderId, { reason }, user) {
     logger.info(
       `[sales_campaigns] order ${order.order_number} cancelled: ${reason}`,
     );
+
+    // ── Email cancellation notice to customer (non-fatal) ─────────
+    if (order.customer_email) {
+      try {
+        const emailItems = (order.items || [])
+          .filter((i) => i && i.product_name)
+          .map((i) => ({ name: i.product_name, quantity: i.quantity }));
+        const { subject, html } = renderEmail("order_cancellation", business, {
+          customer_name: order.customer_name,
+          order_id: order.order_number,
+          reason,
+          items: emailItems,
+        });
+        await sendEmail({
+          to: order.customer_email,
+          subject,
+          html,
+        });
+        logger.info(`[sales_campaigns] cancellation email sent to ${order.customer_email}`);
+      } catch (err) {
+        logger.error(
+          `[sales_campaigns] cancellation email failed for order ${order.order_number}: ${err.message}`,
+        );
+      }
+    }
+
     return updated;
   });
 }

@@ -508,6 +508,22 @@ async function createTransaction(business, data, user) {
     }
   }
 
+  // Auto-send receipt by email (non-fatal — never block the sale)
+  if (data.contact_id) {
+    try {
+      await receiptSvc.sendReceipt(
+        business,
+        result.transaction_id,
+        { channel: "email" },
+        user,
+      );
+    } catch (err) {
+      logger.error(
+        `[pos] auto-receipt email failed for tx ${result.transaction_id}: ${err.message}`,
+      );
+    }
+  }
+
   return result;
 }
 
