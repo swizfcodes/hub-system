@@ -299,6 +299,21 @@ router.post(
   },
 );
 
+// Sync Now — trigger a live fetch from exchangerate-api.com
+router.post(
+  "/currency-rates/sync",
+  can("settings", "create"),
+  async (req, res, next) => {
+    try {
+      const { fetchAndStoreRates } = require("../../lib/currency/rates");
+      const result = await fetchAndStoreRates();
+      res.json({ message: "Rates synced", ...result });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─────────────────────────────────────────────────────────────
 // CUSTOM FIELDS
 // ─────────────────────────────────────────────────────────────

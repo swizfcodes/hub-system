@@ -11,6 +11,8 @@ const journalService = require("../accounting/journal.service");
 const { getVatRate } = require("../../config/businesses");
 const repo = require("./campaigns.repository");
 const logger = require("../../config/logger");
+const { sendEmail } = require("../../lib/email/sender");
+const { renderEmail } = require("../../lib/email/render");
 
 // ── CAMPAIGNS ─────────────────────────────────────────────────────────────────
 
@@ -397,33 +399,67 @@ async function confirmOrder(business, orderId, user) {
       }
     }
 
-    // ── 5. Create ERP sales_order + order_lines ─────────────────────────
-    let salesOrderId = null;
+    // ── 5. Create or update ERP sales_order + order_lines ─────────────
+    // The bridge row may already exist (created at proof submission with
+    // status='pending_proof'). If so, UPDATE it. Otherwise INSERT new.
+    let salesOrderId = order.hub_order_id || null;
     try {
-      const orderNumber = await nextDocumentNumber(
-        client,
-        business,
-        "sales_order",
-      );
+      if (salesOrderId) {
+        // Bridge row exists — update to confirmed
+        await client.query(
+          `UPDATE sales_orders
+           SET status = 'confirmed', contact_id = $2,
+               total_amount = $3, amount_paid = $4,
+               fulfilment_type = $5, created_by = $6, updated_at = now()
+           WHERE order_id = $1`,
+          [
+            salesOrderId,
+            contactId,
+            grossNaira,
+            grossNaira,
+            order.fulfilment_type || "delivery",
+            user.user_id,
+          ],
+        );
+        // Clean existing lines (if any from a previous partial attempt)
+        await client.query(
+          `DELETE FROM order_lines WHERE order_id = $1`,
+          [salesOrderId],
+        );
+      } else {
+        // No bridge row — create fresh (backward compatible)
+        const orderNumber = await nextDocumentNumber(
+          client,
+          business,
+          "sales_order",
+        );
 
-      const {
-        rows: [salesOrder],
-      } = await client.query(
-        `INSERT INTO sales_orders
-           (order_number, contact_id, status, fulfilment_type,
-            total_amount, amount_paid, source, created_by)
-         VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
-         RETURNING order_id, order_number`,
-        [
-          orderNumber,
-          contactId,
-          order.fulfilment_type || "delivery",
-          grossNaira,
-          user.user_id,
-        ],
-      );
-      salesOrderId = salesOrder.order_id;
+        const {
+          rows: [salesOrder],
+        } = await client.query(
+          `INSERT INTO sales_orders
+             (order_number, contact_id, status, fulfilment_type,
+              total_amount, amount_paid, source, created_by)
+           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
+           RETURNING order_id, order_number`,
+          [
+            orderNumber,
+            contactId,
+            order.fulfilment_type || "delivery",
+            grossNaira,
+            user.user_id,
+          ],
+        );
+        salesOrderId = salesOrder.order_id;
 
+        // Link campaign order → ERP sales order
+        await client.query(
+          `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+          [orderId, salesOrderId],
+        );
+      }
+
+      // Insert order lines for the confirmed order
       for (const item of items) {
         if (!item.product_id) continue;
         const lineTotal = parseFloat(item.unit_price) * item.quantity;
@@ -442,12 +478,6 @@ async function confirmOrder(business, orderId, user) {
           ],
         );
       }
-
-      // Link campaign order → ERP sales order
-      await client.query(
-        `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
-        [orderId, salesOrderId],
-      );
     } catch (err) {
       logger.error(
         `[sales_campaigns] ERP sales order failed for ${orderId}: ${err.message}`,
@@ -496,6 +526,35 @@ async function confirmOrder(business, orderId, user) {
       `[sales_campaigns] order ${order.order_number} confirmed by ${user.email} → ` +
         `ERP sales_order ${salesOrderId}, stock deducted, journals posted`,
     );
+
+    // ── Email confirmation to customer (non-fatal) ────────────────
+    if (order.customer_email) {
+      try {
+        const emailItems = items.map((i) => ({
+          name: i.product_name,
+          quantity: i.quantity,
+          // order_confirmation template expects price_kobo
+          price_kobo: Math.round(parseFloat(i.unit_price) * 100),
+        }));
+        const { subject, html } = renderEmail("order_confirmation", business, {
+          customer_name: order.customer_name,
+          order_id: order.order_number,
+          items: emailItems,
+          total: grossNaira,
+        });
+        await sendEmail({
+          to: order.customer_email,
+          subject,
+          html,
+        });
+        logger.info(`[sales_campaigns] confirmation email sent to ${order.customer_email}`);
+      } catch (err) {
+        logger.error(
+          `[sales_campaigns] confirmation email failed for order ${order.order_number}: ${err.message}`,
+        );
+      }
+    }
+
     return updated;
   });
 }
@@ -607,6 +666,32 @@ async function cancelOrder(business, orderId, { reason }, user) {
     logger.info(
       `[sales_campaigns] order ${order.order_number} cancelled: ${reason}`,
     );
+
+    // ── Email cancellation notice to customer (non-fatal) ─────────
+    if (order.customer_email) {
+      try {
+        const emailItems = (order.items || [])
+          .filter((i) => i && i.product_name)
+          .map((i) => ({ name: i.product_name, quantity: i.quantity }));
+        const { subject, html } = renderEmail("order_cancellation", business, {
+          customer_name: order.customer_name,
+          order_id: order.order_number,
+          reason,
+          items: emailItems,
+        });
+        await sendEmail({
+          to: order.customer_email,
+          subject,
+          html,
+        });
+        logger.info(`[sales_campaigns] cancellation email sent to ${order.customer_email}`);
+      } catch (err) {
+        logger.error(
+          `[sales_campaigns] cancellation email failed for order ${order.order_number}: ${err.message}`,
+        );
+      }
+    }
+
     return updated;
   });
 }

@@ -14,10 +14,12 @@ import {
   Smartphone,
   Globe,
   Wallet,
+  ImageIcon,
 } from "lucide-react";
 import type {
   QuoteStatus,
   OrderStatus,
+  OrderSource,
   InvoiceStatus,
   ReceiptStatus,
   PaymentMethod,
@@ -76,6 +78,12 @@ export const ORDER_STATUS_META: Record<
     color: "#8B9D77",
     icon: Truck,
     tone: "sage",
+  },
+  pending_proof: {
+    label: "Pending Proof",
+    color: "#D4A017",
+    icon: ImageIcon,
+    tone: "gold",
   },
   cancelled: {
     label: "Cancelled",
@@ -172,6 +180,7 @@ export const ORDER_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "partially_fulfilled", label: "Part. Fulfilled" },
   { value: "awaiting_dispatch", label: "Awaiting Dispatch" },
   { value: "fulfilled", label: "Fulfilled" },
+  { value: "pending_proof", label: "Pending Proof" },
 ];
 
 export const INVOICE_FILTER_OPTIONS: { value: string; label: string }[] = [
@@ -181,6 +190,30 @@ export const INVOICE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "partially_paid", label: "Part. Paid" },
   { value: "paid", label: "Paid" },
   { value: "overdue", label: "Overdue" },
+];
+
+// ── Order source meta ────────────────────────────────────────────────────────
+
+export const SOURCE_LABELS: Record<OrderSource, string> = {
+  manual: "Quotation",
+  web: "Website",
+  pos: "POS",
+  campaign: "Campaign",
+  direct: "Direct",
+};
+
+export const SOURCE_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All Sources" },
+  { value: "pos", label: "POS" },
+  { value: "web", label: "Website" },
+  { value: "campaign", label: "Campaign" },
+  { value: "direct", label: "Direct" },
+];
+
+export const FULFILMENT_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All Types" },
+  { value: "walk_in", label: "Pickup" },
+  { value: "delivery", label: "Delivery" },
 ];
 
 // ── Courier options for logistics hand-off ────────────────────────────────────

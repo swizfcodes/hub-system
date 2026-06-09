@@ -16,7 +16,10 @@ export type OrderStatus =
   | "partially_fulfilled"
   | "fulfilled"
   | "awaiting_dispatch"
+  | "pending_proof"
   | "cancelled";
+
+export type OrderSource = "manual" | "web" | "pos" | "campaign" | "direct";
 
 export type InvoiceStatus =
   | "draft"
@@ -127,6 +130,9 @@ export interface SalesOrder {
   deal_id?: string | null;
   status: OrderStatus;
   fulfilment_type: FulfilmentType;
+  source?: OrderSource;
+  currency?: string;
+  pos_transaction_id?: string | null;
   total_amount: number;
   amount_paid: number;
   amount_outstanding: number; // GENERATED ALWAYS AS STORED — never write

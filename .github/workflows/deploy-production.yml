@@ -83,6 +83,9 @@ jobs:
 
             cd /var/www/hub-system
 
+            echo "--- Resetting any local VPS edits so pull is clean"
+            git checkout -- .
+
             echo "--- Pulling latest code"
             git pull origin master
 

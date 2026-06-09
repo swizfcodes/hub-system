@@ -179,7 +179,7 @@ router.get(
   query("include_inactive").optional().isBoolean(),
   query("include_deleted").optional().isBoolean(),
   query("page").optional().isInt({ min: 1 }),
-  query("limit").optional().isInt({ min: 1, max: 200 }),
+  query("limit").optional().isInt({ min: 1, max: 500 }),
   validate,
   can("catalogue", "view"),
   async (req, res, next) => {

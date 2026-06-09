@@ -164,6 +164,32 @@ router.get("/kpis", can("sales", "view"), async (req, res, next) => {
   }
 });
 
+// ─── Direct Order (Quick Sale) ────────────────────────────────────────────────
+
+router.post(
+  "/orders",
+  body("contact_id").isUUID(),
+  body("lines").isArray({ min: 1 }),
+  body("payments").isArray({ min: 1 }),
+  body("fulfilment_type").optional().isIn(["walk_in", "delivery"]),
+  body("currency").optional().isString().isLength({ min: 3, max: 3 }),
+  body("exchange_rate").optional().isFloat({ gt: 0 }),
+  body("apply_vat").optional().isBoolean(),
+  body("delivery_address").optional().isString(),
+  body("courier_preference").optional().isIn(["chowdeck", "gigl", "manual"]),
+  validate,
+  can("sales", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.createDirectOrder(req.business, req.body, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
 router.get("/orders", can("sales", "view"), async (req, res, next) => {
@@ -247,6 +273,25 @@ router.post(
     try {
       res.json(
         await service.cancelOrder(req.business, req.params.id, req.user),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Approve campaign proof from the unified Orders list.
+// Finds the linked campaign_order via hub_order_id and triggers
+// the same confirmation flow as the Sales Campaigns module.
+router.post(
+  "/orders/:id/approve-proof",
+  param("id").isUUID(),
+  validate,
+  can("sales", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.approveCampaignProof(req.business, req.params.id, req.user),
       );
     } catch (err) {
       next(err);

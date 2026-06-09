@@ -44,3 +44,6 @@ scripts/stockUpStoreProduct.js
 scripts/resetdb.js
 documents/ACCOUNTING_ANALYSIS.md
 documents/API_CONTRACT_AUDIT.md
+REVAMP_PHASES.md
+SIMPLIFICATION_AUDIT.md
+PHASE1_QA_CHECKLIST.md

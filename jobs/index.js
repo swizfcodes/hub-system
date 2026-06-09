@@ -39,7 +39,7 @@ function start() {
     "*/10 * * * *",
     require("./expireReservations"),
   );
-  register("syncCurrencyRates", "0 9 * * 1-5", require("./syncCurrencyRates"));
+  register("syncCurrencyRates", "0 0 * * *", require("./syncCurrencyRates"));
   register("syncShopifyStock", "*/15 * * * *", require("./syncShopifyStock"));
   // register(
   //   "syncWooCommerceStock",

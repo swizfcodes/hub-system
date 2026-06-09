@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Truck, ExternalLink } from "lucide-react";
+import { FileText, Truck, ExternalLink, ArrowLeft } from "lucide-react";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Skeleton } from "@components/ui/Skeleton";
@@ -13,7 +13,8 @@ import { fmtDate, fmtMoney } from "@lib/format";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
-import { FULFILMENT_LABELS } from "@lib/constants/salesConstants";
+import { FULFILMENT_LABELS, SOURCE_LABELS } from "@lib/constants/salesConstants";
+import type { OrderSource } from "@typedefs/sales";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function OrderDetail() {
@@ -71,14 +72,26 @@ export default function OrderDetail() {
     <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title={order.order_number}
-        subtitle={`${order.contact_name ?? ""} · ${FULFILMENT_LABELS[order.fulfilment_type]} · ${fmtDate(order.created_at)}`}
+        subtitle={`${order.contact_name ?? ""} · ${FULFILMENT_LABELS[order.fulfilment_type]}${order.source ? ` · ${SOURCE_LABELS[order.source as OrderSource] ?? order.source}` : ""} · ${fmtDate(order.created_at)}`}
         crumbs={[
           { label: "Hub", to: "/" },
           { label: "Sales", to: "/sales" },
           { label: "Orders", to: "/sales" },
           { label: order.order_number },
         ]}
-        actions={<SalesStatusBadge entity="order" status={order.status} />}
+        actions={
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              onClick={() => navigate("/sales")}
+            >
+              Back to Orders
+            </Button>
+            <SalesStatusBadge entity="order" status={order.status} />
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">

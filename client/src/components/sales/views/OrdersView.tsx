@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Package, Search } from "lucide-react";
+import { Package, Search, Plus, CheckCircle } from "lucide-react";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
-import { listOrders } from "@services/sales/orders";
+import { listOrders, approveCampaignProof } from "@services/sales/orders";
 import { SalesStatusBadge } from "@components/sales/shared/SalesStatusBadge";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -13,22 +13,46 @@ import { fmtMoney, fmtDate } from "@lib/format";
 import {
   ORDER_FILTER_OPTIONS,
   FULFILMENT_LABELS,
+  SOURCE_FILTER_OPTIONS,
+  FULFILMENT_FILTER_OPTIONS,
+  SOURCE_LABELS,
 } from "@lib/constants/salesConstants";
+import type { OrderSource } from "@typedefs/sales";
 import { cn } from "@lib/cn";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
 
 export function OrdersView() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { currency } = useActiveBusiness();
 
   const [status, setStatus] = useState("");
+  const [source, setSource] = useState("");
+  const [fulfilmentType, setFulfilmentType] = useState("");
   const [search, setSearch] = useState("");
-  // M5 fix: add pagination
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["sales-orders", { status, page }],
-    queryFn: () => listOrders({ status: status || undefined, limit: PAGE_SIZE, page }),
+    queryKey: ["sales-orders", { status, source, fulfilment_type: fulfilmentType, page }],
+    queryFn: () =>
+      listOrders({
+        status: status || undefined,
+        source: source || undefined,
+        fulfilment_type: fulfilmentType || undefined,
+        limit: PAGE_SIZE,
+        page,
+      }),
+  });
+
+  const approveProof = useMutation({
+    mutationFn: (orderId: string) => approveCampaignProof(orderId),
+    onSuccess: () => {
+      showToast.success("Campaign proof approved");
+      qc.invalidateQueries({ queryKey: ["sales-orders"] });
+    },
+    onError: (e) => showToast.error(errMsg(e)),
   });
 
   const rows = data?.data ?? [];
@@ -50,7 +74,7 @@ export function OrdersView() {
           {ORDER_FILTER_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => setStatus(opt.value)}
+              onClick={() => { setStatus(opt.value); setPage(1); }}
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 status === opt.value
@@ -63,15 +87,58 @@ export function OrdersView() {
           ))}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
-          <Input
-            placeholder="Search orders..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 text-sm w-44 sm:w-56"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+            <Input
+              placeholder="Search orders..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 text-sm w-44 sm:w-56"
+            />
+          </div>
+          <Button
+            variant="gold"
+            size="sm"
+            leftIcon={<Plus className="h-3.5 w-3.5" />}
+            onClick={() => navigate("/sales/orders/new")}
+          >
+            New Sale
+          </Button>
         </div>
+      </div>
+
+      {/* Source & Fulfilment filter chips */}
+      <div className="flex flex-wrap gap-2">
+        {SOURCE_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={`src-${opt.value}`}
+            onClick={() => { setSource(opt.value); setPage(1); }}
+            className={cn(
+              "rounded-full px-3 py-1 text-[10px] font-medium transition-colors border",
+              source === opt.value
+                ? "border-orika-gold/50 bg-orika-gold/10 text-orika-gold"
+                : "border-white/5 bg-orika-charcoal text-orika-smoke hover:border-white/10",
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <span className="w-px h-5 bg-white/10 self-center" />
+        {FULFILMENT_FILTER_OPTIONS.map((opt) => (
+          <button
+            key={`ful-${opt.value}`}
+            onClick={() => { setFulfilmentType(opt.value); setPage(1); }}
+            className={cn(
+              "rounded-full px-3 py-1 text-[10px] font-medium transition-colors border",
+              fulfilmentType === opt.value
+                ? "border-orika-gold/50 bg-orika-gold/10 text-orika-gold"
+                : "border-white/5 bg-orika-charcoal text-orika-smoke hover:border-white/10",
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Table */}
@@ -86,19 +153,20 @@ export function OrdersView() {
           icon={<Package className="h-8 w-8" />}
           title="No orders found"
           description={
-            search || status
+            search || status || source || fulfilmentType
               ? "Try adjusting your filters."
-              : "Confirmed quotations will appear here as orders."
+              : "Orders from POS, website, campaigns, and direct sales will appear here."
           }
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-white/5">
-          <table className="w-full min-w-[700px] text-sm">
+          <table className="w-full min-w-[800px] text-sm">
             <thead>
               <tr className="border-b border-white/5 bg-orika-graphite/40">
                 {[
                   "Order",
                   "Customer",
+                  "Source",
                   "Total",
                   "Paid",
                   "Outstanding",
@@ -119,6 +187,10 @@ export function OrdersView() {
               {filtered.map((o) => {
                 const isOverdue =
                   o.amount_outstanding > 0 && o.status === "fulfilled";
+                const sourceLabel =
+                  o.source && SOURCE_LABELS[o.source as OrderSource]
+                    ? SOURCE_LABELS[o.source as OrderSource]
+                    : "—";
                 return (
                   <tr
                     key={o.order_id}
@@ -130,6 +202,11 @@ export function OrdersView() {
                     </td>
                     <td className="px-4 py-3 font-medium text-orika-cream">
                       {o.contact_name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-full bg-orika-graphite/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-orika-smoke">
+                        {sourceLabel}
+                      </span>
                     </td>
                     <td className="px-4 py-3 tabular-nums text-orika-cream">
                       {fmtMoney(o.total_amount, currency)}
@@ -155,8 +232,25 @@ export function OrdersView() {
                         size="sm"
                       />
                     </td>
-                    <td className="px-4 py-3 text-right text-xs text-orika-smoke">
-                      {fmtDate(o.created_at)}
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {o.status === "pending_proof" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              approveProof.mutate(o.order_id);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-green-900/20 px-2 py-0.5 text-[10px] font-medium text-green-400 hover:bg-green-900/30 transition-colors"
+                            title="Approve campaign proof"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            Approve
+                          </button>
+                        )}
+                        <span className="text-xs text-orika-smoke">
+                          {fmtDate(o.created_at)}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -166,7 +260,7 @@ export function OrdersView() {
         </div>
       )}
 
-      {/* M5: Pagination controls */}
+      {/* Pagination */}
       {(page > 1 || hasMore) && (
         <div className="flex justify-center gap-3 pt-2">
           <Button

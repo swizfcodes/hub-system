@@ -550,6 +550,63 @@ async function submitProof(business, orderId, { proof_image_url, source }) {
     });
 
     // Stock was reserved at order placement, now stays reserved until staff confirm/cancel.
+
+    // ── Create bridge sales_order with pending_proof status ──────────
+    // This makes the order visible in the unified Sales → Orders view
+    // so staff can approve from either the Campaigns UI or the Orders list.
+    let bridgeOrderId = null;
+    try {
+      // Find or create a contact for this customer
+      let contactId = order.hub_contact_id;
+      if (!contactId) {
+        const { rows: [existing] } = await client.query(
+          `SELECT contact_id FROM shared.contacts
+           WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
+          [order.customer_phone],
+        );
+        if (existing) {
+          contactId = existing.contact_id;
+        } else if (order.customer_email) {
+          const { rows: [byEmail] } = await client.query(
+            `SELECT contact_id FROM shared.contacts
+             WHERE email = $1 AND is_deleted = false LIMIT 1`,
+            [order.customer_email],
+          );
+          contactId = byEmail?.contact_id || null;
+        }
+      }
+
+      if (contactId) {
+        const soNumber = await nextDocumentNumber(client, business, "sales_order");
+        const { rows: [bridgeOrder] } = await client.query(
+          `INSERT INTO sales_orders
+             (order_number, contact_id, status, fulfilment_type,
+              source, total_amount, amount_paid, created_by)
+           VALUES ($1, $2, 'pending_proof', $3,
+                   'campaign', $4, 0, NULL)
+           RETURNING order_id`,
+          [
+            soNumber,
+            contactId,
+            order.fulfilment_type || "delivery",
+            parseFloat(order.total_amount),
+          ],
+        );
+        bridgeOrderId = bridgeOrder.order_id;
+
+        // Link campaign_order → bridge sales_order
+        await client.query(
+          `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+          [orderId, bridgeOrderId],
+        );
+      }
+    } catch (err) {
+      // Non-fatal — the campaign flow still works without the bridge row.
+      logger.warn(
+        `[storefront] bridge sales_order failed for campaign order ${orderId}: ${err.message}`,
+      );
+    }
+
     // Notify staff to verify the payment.
     const {
       rows: [campaign],
@@ -570,6 +627,7 @@ async function submitProof(business, orderId, { proof_image_url, source }) {
       submitted: true,
       status: "proof_submitted",
       tracking_token: order.tracking_token,
+      bridge_order_id: bridgeOrderId,
     };
   });
 }
