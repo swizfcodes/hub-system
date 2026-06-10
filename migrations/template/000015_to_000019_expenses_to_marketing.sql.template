@@ -272,8 +272,8 @@ CREATE INDEX idx_{{BUSINESS}}_partner_settlements ON {{BUSINESS}}.partner_settle
 CREATE TABLE {{BUSINESS}}.deliveries (
   delivery_id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   delivery_number       TEXT        NOT NULL UNIQUE,
-  reference_type        TEXT        NOT NULL CHECK (reference_type IN ('pos_transaction','sales_order')),
-  reference_id          UUID        NOT NULL,
+  reference_type        TEXT        NOT NULL CHECK (reference_type IN ('pos_transaction','sales_order','manual')),
+  reference_id          UUID,
   contact_id            UUID        NOT NULL REFERENCES shared.contacts (contact_id),
   delivery_address      JSONB       NOT NULL,  -- {line1, area, city, state, landmark, recipient_name, phone}
   courier               TEXT        NOT NULL CHECK (courier IN ('chowdeck','gigl','manual')),
@@ -285,6 +285,11 @@ CREATE TABLE {{BUSINESS}}.deliveries (
   delivery_fee          NUMERIC(10,2) NOT NULL DEFAULT 0,
   fee_borne_by          TEXT        NOT NULL DEFAULT 'customer'
                         CHECK (fee_borne_by IN ('customer','business','split')),
+  courier_company       TEXT,                  -- manual mode: "Uber", "Bolt", "inDrive", "GIG", ...
+  driver_name           TEXT,
+  driver_phone          TEXT,
+  customer_signed_name  TEXT,
+  driver_signed_name    TEXT,
   dispatched_at         TIMESTAMPTZ,
   delivered_at          TIMESTAMPTZ,
   failure_reason        TEXT,
