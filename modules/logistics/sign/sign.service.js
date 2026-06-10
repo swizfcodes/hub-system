@@ -105,22 +105,32 @@ async function submitSignatures(
 
   await pool.query(
     `UPDATE ${business}.deliveries
-     SET customer_signature  = $1,
-         driver_signature    = $2,
-         customer_signed_at  = $3,
-         driver_signed_at    = $3,
-         signed_at           = $3,
-         status              = 'delivered',
-         delivered_at        = $3,
-         signature_token     = NULL,
-         updated_at          = $3
-     WHERE delivery_id = $4
+     SET customer_signature   = $1,
+         driver_signature     = $2,
+         customer_signed_at   = $3,
+         driver_signed_at     = $3,
+         signed_at            = $3,
+         customer_signed_name = $4,
+         driver_signed_name   = $5,
+         status               = 'delivered',
+         delivered_at         = $3,
+         signature_token      = NULL,
+         updated_at           = $3
+     WHERE delivery_id = $6
        AND signed_at IS NULL
        AND token_expires_at > now()`,
-    [customer_signature, driver_signature, now, delivery.delivery_id],
+    [
+      customer_signature,
+      driver_signature,
+      now,
+      customer_name || null,
+      driver_name || null,
+      delivery.delivery_id,
+    ],
   );
 
-  // Generate delivery note PDF asynchronously — don't block the response
+  // Generate, archive and email the signed delivery note asynchronously
+  // — don't block the customer-facing response on PDF/SMTP work.
   generateDeliveryNotePDF({
     business,
     deliveryId: delivery.delivery_id,
@@ -143,7 +153,7 @@ async function generateDeliveryNotePDF({
 }) {
   try {
     const { rows } = await pool.query(
-      `SELECT d.*, c.display_name AS contact_name,
+      `SELECT d.*, c.display_name AS contact_name, c.email AS contact_email,
               json_agg(
                 json_build_object(
                   'description', di.description,
@@ -154,7 +164,7 @@ async function generateDeliveryNotePDF({
        JOIN shared.contacts c ON c.contact_id = d.contact_id
        LEFT JOIN ${business}.delivery_items di ON di.delivery_id = d.delivery_id
        WHERE d.delivery_id = $1
-       GROUP BY d.delivery_id, c.display_name`,
+       GROUP BY d.delivery_id, c.display_name, c.email`,
       [deliveryId],
     );
     if (!rows.length) return;
@@ -216,7 +226,62 @@ async function generateDeliveryNotePDF({
       driver_signature: driver_signature || "",
     };
 
-    await renderToPDF("delivery-note", noteTemplateData);
+    const pdfBuffer = await renderToPDF("delivery-note", noteTemplateData);
+
+    // Archive the signed note in the document vault and link it to the
+    // delivery. Previously the PDF was rendered and thrown away.
+    try {
+      const docService = require("../../../shared/documents/documents.service");
+      const doc = await docService.uploadDocument(
+        {
+          buffer: pdfBuffer,
+          originalFilename: `delivery-note-${delivery.delivery_number}.pdf`,
+          mimeType: "application/pdf",
+          business,
+          documentType: "delivery_note",
+          title: `Signed delivery note — ${delivery.delivery_number}`,
+          referenceType: "delivery",
+          referenceId: deliveryId,
+        },
+        null,
+      );
+      await pool.query(
+        `UPDATE ${business}.deliveries SET document_id = $1 WHERE delivery_id = $2`,
+        [doc.document_id, deliveryId],
+      );
+    } catch (err) {
+      logger.error(`[sign] delivery-note archive failed: ${err.message}`);
+    }
+
+    // Email the signed note to the customer ("sent by mail for now" —
+    // WhatsApp delivery returns when the Meta API is available).
+    if (delivery.contact_email) {
+      try {
+        const { sendEmail } = require("../../../lib/email/sender");
+        const { renderEmail } = require("../../../lib/email/render");
+        const { subject, html } = renderEmail("delivery_completed", business, {
+          delivery_number: delivery.delivery_number,
+          contact_name: delivery.contact_name,
+          signed_at: fmtDate(new Date()),
+          has_note: true,
+        });
+        await sendEmail({
+          to: delivery.contact_email,
+          subject,
+          html,
+          business,
+          attachments: [
+            {
+              filename: `delivery-note-${delivery.delivery_number}.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf",
+            },
+          ],
+        });
+      } catch (err) {
+        logger.error(`[sign] delivery-note email failed: ${err.message}`);
+      }
+    }
   } catch (err) {
     logger.error(`[sign] delivery-note PDF failed for ${deliveryId}`, err);
   }

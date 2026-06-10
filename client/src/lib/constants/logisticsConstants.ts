@@ -27,7 +27,7 @@ export const COURIER_META: Record<Courier, { label: string; color: string }> = {
   relay: { label: "Relay", color: "#FF6B35" },
   chowdeck: { label: "Chowdeck", color: "#E8A020" },
   gigl: { label: "GIG Logistics", color: "#1A4B8C" },
-  manual: { label: "Manual", color: "#6B7280" },
+  manual: { label: "Manual / Ride-hail", color: "#C9A86C" },
 };
 
 // ── Zone labels ───────────────────────────────────────────────────────────────
@@ -41,10 +41,10 @@ export const ZONE_LABEL: Record<DeliveryZone, string> = {
 // ── Courier select options (for Select component) ─────────────────────────────
 
 export const COURIER_OPTIONS: SelectOption[] = [
-  { value: "relay", label: "Relay (Same-day, Lagos)" },
-  { value: "chowdeck", label: "Chowdeck (Lagos)" },
-  { value: "gigl", label: "GIG Logistics (Interstate)" },
-  { value: "manual", label: "Manual / Custom" },
+  { value: "manual", label: "Manual — Uber / Bolt / inDrive / any courier" },
+  { value: "gigl", label: "GIG Logistics (API not connected)" },
+  { value: "chowdeck", label: "Chowdeck (API not connected)" },
+  { value: "relay", label: "Relay (API not connected)" },
 ];
 
 // ── Status filter tabs ────────────────────────────────────────────────────────

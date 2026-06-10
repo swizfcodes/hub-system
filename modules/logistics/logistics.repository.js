@@ -1,35 +1,54 @@
 "use strict";
 
-async function listDeliveries(client, { status, courier, limit, offset }) {
+async function listDeliveries(
+  client,
+  { status, courier, search, limit, offset },
+) {
   const { rows } = await client.query(
     `SELECT d.delivery_id, d.delivery_number, d.status, d.courier,
+            d.courier_company, d.driver_name, d.driver_phone,
             d.delivery_fee, d.dispatched_at, d.delivered_at, d.created_at,
-            c.display_name AS contact_name, c.primary_phone
+            c.display_name AS contact_name, c.primary_phone,
+            c.email AS contact_email
      FROM deliveries d
      JOIN shared.contacts c ON c.contact_id = d.contact_id
      WHERE ($1::TEXT IS NULL OR d.status  = $1)
        AND ($2::TEXT IS NULL OR d.courier = $2)
+       AND ($3::TEXT IS NULL
+            OR d.delivery_number ILIKE $3
+            OR c.display_name ILIKE $3
+            OR d.driver_name ILIKE $3
+            OR d.waybill_number ILIKE $3)
      ORDER BY d.created_at DESC
-     LIMIT $3 OFFSET $4`,
-    [status || null, courier || null, limit, offset],
+     LIMIT $4 OFFSET $5`,
+    [status || null, courier || null, search ? `%${search}%` : null, limit, offset],
   );
   return rows;
 }
 
 async function findDeliveryById(client, deliveryId) {
+  // NOTE: items and tracking are aggregated in subqueries — joining both
+  // tables produced a row-multiplication cross product (every item ×
+  // every tracking row) that json_agg dutifully duplicated.
   const {
     rows: [delivery],
   } = await client.query(
     `SELECT d.*,
-            c.display_name AS contact_name, c.primary_phone, c.whatsapp_number,
-            json_agg(di.* ORDER BY di.item_id) FILTER (WHERE di.item_id IS NOT NULL) AS items,
-            json_agg(dt.* ORDER BY dt.occurred_at DESC) FILTER (WHERE dt.track_id IS NOT NULL) AS tracking_history
+            c.display_name AS contact_name, c.primary_phone,
+            c.whatsapp_number, c.email AS contact_email,
+            COALESCE(
+              (SELECT json_agg(di.* ORDER BY di.item_id)
+               FROM delivery_items di WHERE di.delivery_id = d.delivery_id),
+              '[]'::json
+            ) AS items,
+            COALESCE(
+              (SELECT json_agg(dt.* ORDER BY dt.occurred_at DESC)
+               FROM delivery_tracking dt WHERE dt.delivery_id = d.delivery_id),
+              '[]'::json
+            ) AS tracking_history
      FROM deliveries d
      JOIN shared.contacts c ON c.contact_id = d.contact_id
-     LEFT JOIN delivery_items    di ON di.delivery_id = d.delivery_id
-     LEFT JOIN delivery_tracking dt ON dt.delivery_id = d.delivery_id
-     WHERE d.delivery_id = $1
-     GROUP BY d.delivery_id, c.display_name, c.primary_phone, c.whatsapp_number`,
+     WHERE d.delivery_id = $1`,
     [deliveryId],
   );
   return delivery || null;
@@ -124,12 +143,42 @@ async function getDeliveryItems(client, deliveryId) {
   return rows;
 }
 
-async function setDispatched(client, { deliveryId, courierId, waybill }) {
+async function setDispatched(
+  client,
+  {
+    deliveryId,
+    courierId,
+    waybill,
+    courierCompany,
+    driverName,
+    driverPhone,
+    deliveryFee,
+  },
+) {
   const {
     rows: [updated],
   } = await client.query(
-    `UPDATE deliveries SET status='dispatched', courier_order_id=$1, waybill_number=$2, dispatched_at=now(), updated_at=now() WHERE delivery_id=$3 RETURNING *`,
-    [courierId || null, waybill || null, deliveryId],
+    `UPDATE deliveries SET
+       status          = 'dispatched',
+       courier_order_id = COALESCE($1, courier_order_id),
+       waybill_number   = COALESCE($2, waybill_number),
+       courier_company  = COALESCE($3, courier_company),
+       driver_name      = COALESCE($4, driver_name),
+       driver_phone     = COALESCE($5, driver_phone),
+       delivery_fee     = COALESCE($6, delivery_fee),
+       dispatched_at    = now(),
+       updated_at       = now()
+     WHERE delivery_id = $7
+     RETURNING *`,
+    [
+      courierId || null,
+      waybill || null,
+      courierCompany || null,
+      driverName || null,
+      driverPhone || null,
+      deliveryFee ?? null,
+      deliveryId,
+    ],
   );
   return updated;
 }

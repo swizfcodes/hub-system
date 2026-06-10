@@ -71,7 +71,10 @@ app.use("/api", rateLimiter.general);
 
 // ── Public signing routes (proof-of-delivery) — NO auth middleware ────────────
 // Must be registered before /api so verifyToken is never applied.
+// Mounted at BOTH /sign and /api/sign: the frontend axios client has a
+// baseURL of /api, so the signing page 404-ed before the second mount.
 app.use("/sign", require("./modules/logistics/sign/sign.routes"));
+app.use("/api/sign", require("./modules/logistics/sign/sign.routes"));
 
 // ── Public campaign tracking routes — NO auth middleware ─────────────────────
 // Hit by email clients (open pixel, click redirect, unsubscribe links)

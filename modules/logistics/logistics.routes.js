@@ -47,14 +47,18 @@ router.get(
   },
 );
 
-// POST /api/logistics — create delivery from order/pos transaction
+// POST /api/logistics — create delivery from an order / POS transaction,
+// or a standalone ('manual') delivery with its own item list.
 router.post(
   "/",
-  body("reference_type").isIn(["pos_transaction", "sales_order"]),
-  body("reference_id").isUUID(),
+  body("reference_type").isIn(["pos_transaction", "sales_order", "manual"]),
+  body("reference_id")
+    .if(body("reference_type").not().equals("manual"))
+    .isUUID(),
   body("contact_id").isUUID(),
   body("delivery_address").notEmpty(),
   body("courier").isIn(["relay", "chowdeck", "gigl", "manual"]),
+  body("items").optional().isArray(),
   validate,
   can("logistics", "create"),
   async (req, res, next) => {
@@ -90,16 +94,45 @@ router.patch(
   },
 );
 
-// POST /api/logistics/:id/dispatch — book courier and dispatch
+// POST /api/logistics/:id/dispatch — dispatch with manually entered
+// courier/driver details (Uber / Bolt / inDrive / any), then email the
+// customer the signing link.
 router.post(
   "/:id/dispatch",
+  param("id").isUUID(),
+  body("courier_company").optional().isString().isLength({ max: 80 }),
+  body("driver_name").optional().isString().isLength({ max: 120 }),
+  body("driver_phone").optional().isString().isLength({ max: 40 }),
+  body("waybill_number").optional().isString().isLength({ max: 80 }),
+  body("delivery_fee").optional().isFloat({ min: 0 }),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.dispatchDelivery(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/logistics/:id/resend-signing-link — fresh token + email
+router.post(
+  "/:id/resend-signing-link",
   param("id").isUUID(),
   validate,
   can("logistics", "edit"),
   async (req, res, next) => {
     try {
       res.json(
-        await service.dispatchDelivery(req.business, req.params.id, req.user),
+        await service.resendSigningLink(req.business, req.params.id, req.user),
       );
     } catch (err) {
       next(err);
