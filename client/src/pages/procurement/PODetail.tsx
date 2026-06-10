@@ -10,6 +10,7 @@ import {
   Building2,
   Zap,
   Send,
+  Mail,
 } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
@@ -17,13 +18,19 @@ import { Skeleton } from "@components/ui/Skeleton";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
-import { getPO, listReceiptsForPO, sendPO } from "@services/purchasing/purchaseOrders";
+import {
+  getPO,
+  listReceiptsForPO,
+  sendPO,
+  emailPO,
+} from "@services/purchasing/purchaseOrders";
+import { listBills } from "@services/purchasing/bills";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { fmtDate, fmtDateTime, fmtMoney } from "@lib/format";
 import { ReceiveGoodsModal } from "@components/procurement/grn/ReceiveGoodsModal";
 import { QuickReceiveModal } from "@components/procurement/grn/QuickReceiveModal";
-import type { POStatus } from "@typedefs/purchasing";
+import type { POStatus, BillStatus } from "@typedefs/purchasing";
 
 const STATUS_TONE: Record<
   POStatus,
@@ -37,6 +44,14 @@ const STATUS_TONE: Record<
   invoiced: "gold",
   paid: "sage",
   cancelled: "danger",
+};
+
+const BILL_TONE: Record<BillStatus, "gold" | "sage" | "rose" | "neutral" | "danger"> = {
+  pending: "neutral",
+  matched: "gold",
+  approved: "gold",
+  paid: "sage",
+  disputed: "danger",
 };
 
 export default function PODetail() {
@@ -56,6 +71,15 @@ export default function PODetail() {
     onError: (e) => showToast.error("Could not send PO", errMsg(e)),
   });
 
+  const emailMutation = useMutation({
+    mutationFn: () => emailPO(id!),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["purchasing", "po", id] });
+      showToast.success("PO emailed", `Sent to ${r.emailed_to}.`);
+    },
+    onError: (e) => showToast.error("Could not email PO", errMsg(e)),
+  });
+
   const { data: po, isLoading } = useQuery({
     queryKey: ["purchasing", "po", id],
     queryFn: () => getPO(id!),
@@ -64,6 +88,12 @@ export default function PODetail() {
   const { data: receipts = [] } = useQuery({
     queryKey: ["purchasing", "po", id, "receipts"],
     queryFn: () => listReceiptsForPO(id!),
+    enabled: !!id,
+  });
+  // Bills already raised against this PO — drives the payables summary.
+  const { data: bills = [] } = useQuery({
+    queryKey: ["purchasing", "po", id, "bills"],
+    queryFn: () => listBills({ po_id: id! }),
     enabled: !!id,
   });
 
@@ -159,13 +189,19 @@ export default function PODetail() {
                           >
                             <td className="px-4 py-2.5">
                               <div className="text-orika-cream">
-                                {l.product_name ?? "—"}
+                                {l.product_name ?? l.description ?? "—"}
                               </div>
                               {l.product_sku && (
                                 <div className="text-[0.6rem] font-mono text-orika-smoke">
                                   {l.product_sku}
                                 </div>
                               )}
+                              {l.description &&
+                                l.description !== l.product_name && (
+                                  <div className="text-[0.6rem] text-orika-smoke/80 italic">
+                                    {l.description}
+                                  </div>
+                                )}
                             </td>
                             <td className="px-4 py-2.5 text-right text-orika-cream">
                               {l.quantity_ordered}
@@ -335,6 +371,46 @@ export default function PODetail() {
                 )}
               </Card>
 
+              {/* Payables summary — bills raised against this PO */}
+              {bills.length > 0 && (
+                <Card className="p-4 space-y-2">
+                  <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                    Supplier bills
+                  </div>
+                  {bills.map((b) => (
+                    <Link
+                      key={b.sup_invoice_id}
+                      to={`/procurement/bills/${b.sup_invoice_id}`}
+                      className="block rounded-lg border border-orika-graphite/60 px-3 py-2 hover:border-orika-gold/40"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-orika-cream truncate">
+                          {b.supplier_invoice_number}
+                        </span>
+                        <Badge tone={BILL_TONE[b.status]} size="xs">
+                          {b.status}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[0.65rem] text-orika-smoke">
+                        <span>{fmtMoney(b.amount, b.currency)}</span>
+                        {(b.amount_outstanding ?? 0) > 0 ? (
+                          <span className="text-state-warn">
+                            {fmtMoney(b.amount_outstanding ?? 0, b.currency)} owed
+                          </span>
+                        ) : (
+                          <span className="text-living-sage">Settled</span>
+                        )}
+                      </div>
+                      {b.has_variance && (
+                        <div className="mt-0.5 text-[0.6rem] text-state-warn">
+                          ⚠ price variance accepted
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </Card>
+              )}
+
               {/* Send PO — only shown on draft so the full cycle can progress */}
               {po.status === "draft" && (
                 <Button
@@ -345,6 +421,19 @@ export default function PODetail() {
                   onClick={() => sendMutation.mutate()}
                 >
                   Confirm &amp; send to supplier
+                </Button>
+              )}
+
+              {/* Email to supplier — available until the goods are in */}
+              {["draft", "sent", "acknowledged"].includes(po.status) && (
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  leftIcon={<Mail className="w-4 h-4" />}
+                  loading={emailMutation.isPending}
+                  onClick={() => emailMutation.mutate()}
+                >
+                  Email PO to supplier
                 </Button>
               )}
 
@@ -370,26 +459,37 @@ export default function PODetail() {
                   </Button>
                 </div>
               )}
-              <Link to={`/procurement/bills/new?po_id=${po.po_id}`}>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  leftIcon={<Receipt className="w-4 h-4" />}
-                >
-                  Match supplier bill
-                </Button>
-              </Link>
+              {/* Bill matching — primary once anything has been received */}
+              {totalReceived > 0 && (
+                <Link to={`/procurement/bills/new?po_id=${po.po_id}`}>
+                  <Button
+                    variant={bills.length === 0 ? "gold" : "secondary"}
+                    fullWidth
+                    leftIcon={<Receipt className="w-4 h-4" />}
+                  >
+                    {bills.length === 0
+                      ? "Enter supplier bill"
+                      : "Add another bill"}
+                  </Button>
+                </Link>
+              )}
             </aside>
 
             <ReceiveGoodsModal
               open={receiving}
               onClose={() => setReceiving(false)}
               po={po}
+              onReceived={() =>
+                navigate(`/procurement/bills/new?po_id=${po.po_id}&from=receive`)
+              }
             />
             <QuickReceiveModal
               open={quickReceiving}
               onClose={() => setQuickReceiving(false)}
               po={po}
+              onReceived={() =>
+                navigate(`/procurement/bills/new?po_id=${po.po_id}&from=receive`)
+              }
             />
           </div>
         )}

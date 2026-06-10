@@ -46,9 +46,10 @@ export interface CreatePOPayload {
   exchange_rate?: number;
   notes?: string;
   lines: Array<{
-    product_id?: string;
+    product_id: string;
     quantity_ordered: number;
     unit_price: number;
+    description?: string;
   }>;
 }
 
@@ -88,6 +89,15 @@ export async function receiveGoods(
 export async function sendPO(poId: string): Promise<PurchaseOrder> {
   const { data } = await api.post<PurchaseOrder>(
     `/purchasing/purchase-orders/${poId}/send`,
+  );
+  return data;
+}
+
+export async function emailPO(
+  poId: string,
+): Promise<{ emailed_to: string; status: string }> {
+  const { data } = await api.post<{ emailed_to: string; status: string }>(
+    `/purchasing/purchase-orders/${poId}/email`,
   );
   return data;
 }
