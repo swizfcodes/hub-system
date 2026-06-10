@@ -11,7 +11,6 @@ import {
   ZONE_LABEL,
   detectZone,
 } from "@lib/constants/logisticsConstants";
-import { fmtMoney } from "@lib/format";
 import { cn } from "@lib/cn";
 import type {
   DeliveryAddress,
@@ -23,6 +22,7 @@ interface CourierSuggestPanelProps {
   address: DeliveryAddress | null;
   selected: Courier | null;
   onSelect: (courier: Courier, fee: number) => void;
+  /** Kept for call-site compatibility; fees are entered manually now. */
   currency?: string;
 }
 
@@ -36,7 +36,6 @@ export function CourierSuggestPanel({
   address,
   selected,
   onSelect,
-  currency = "NGN",
 }: CourierSuggestPanelProps) {
   const [suggestions, setSuggestions] = useState<CourierSuggestion[]>([]);
   const [zone, setZone] = useState<string | null>(null);
@@ -123,22 +122,8 @@ export function CourierSuggestPanel({
                   </div>
                   <p className="text-xs text-orika-smoke">
                     Est. {opt.estimated_hours} hours
+                    {opt.note ? ` · ${opt.note}` : ""}
                   </p>
-                </div>
-
-                {/* Fee */}
-                <div className="text-right shrink-0">
-                  {opt.fee != null ? (
-                    <p className="text-sm font-semibold text-orika-cream tabular-nums">
-                      {fmtMoney(opt.fee, currency)}
-                    </p>
-                  ) : opt.fee_error ? (
-                    <p className="text-xs text-orika-smoke">
-                      Quote unavailable
-                    </p>
-                  ) : (
-                    <p className="text-xs text-orika-smoke">Enter manually</p>
-                  )}
                 </div>
               </button>
             );
@@ -148,8 +133,8 @@ export function CourierSuggestPanel({
 
       <p className="flex items-start gap-1.5 text-[0.65rem] text-orika-smoke/60">
         <Info className="h-3 w-3 shrink-0 mt-px" />
-        Fees are estimates from the courier API. Final fee is confirmed at
-        booking.
+        Book the ride or carrier yourself, then enter the fee here and the
+        driver's details at dispatch.
       </p>
     </div>
   );
