@@ -3,6 +3,7 @@ import { Trash2, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
 import { usePOSStore } from "@stores/posStore";
 import { fmtMoney } from "@lib/format";
 import { cn } from "@lib/cn";
+import { NumberField } from "@components/ui/NumberField";
 
 interface POSCartProps {
   currency?: string;
@@ -86,18 +87,16 @@ export function POSCart({ currency = "NGN" }: POSCartProps) {
             {/* Price (editable) */}
             <div className="flex-1">
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs text-orika-smoke">
                   {currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency}
                 </span>
-                <input
-                  type="number"
-                  step="0.01"
+                <NumberField
+                  decimal
+                  surface="dark"
                   value={line.unit_price}
-                  onChange={(e) =>
-                    updateLinePrice(line.id, parseFloat(e.target.value) || 0)
-                  }
+                  onValueChange={(v) => updateLinePrice(line.id, v ?? 0)}
                   className={cn(
-                    "w-full rounded border py-1 pl-5 pr-2 text-right text-sm tabular-nums text-orika-cream focus:outline-none",
+                    "py-1 pl-5 pr-2 text-right tabular-nums",
                     line.needs_approval
                       ? "border-red-500/40 bg-red-900/10"
                       : "border-white/10 bg-orika-graphite focus:border-orika-gold/40",

@@ -22,6 +22,7 @@ import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Card } from "@components/ui/Card";
 import { Switch } from "@components/ui/Switch";
+import { NumberField } from "@components/ui/NumberField";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
 import {
   CatalogueSearchInput,
@@ -272,28 +273,25 @@ export default function QuickSaleForm() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="1"
+                    <NumberField
+                      surface="dark"
                       value={line.quantity}
-                      onChange={(e) =>
-                        updateLine(line.id, {
-                          quantity: Math.max(1, parseInt(e.target.value) || 1),
-                        })
+                      onValueChange={(v) =>
+                        updateLine(line.id, { quantity: v ?? 1 })
                       }
-                      className="w-14 rounded border border-white/10 bg-orika-graphite py-1 px-2 text-center text-sm text-orika-cream tabular-nums focus:border-orika-gold/50 focus:outline-none"
+                      placeholder="1"
+                      className="w-14 text-center"
                     />
                     <span className="text-xs text-orika-smoke">×</span>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <NumberField
+                      surface="dark"
+                      decimal
                       value={line.unit_price}
-                      onChange={(e) =>
-                        updateLine(line.id, {
-                          unit_price: parseFloat(e.target.value) || 0,
-                        })
+                      onValueChange={(v) =>
+                        updateLine(line.id, { unit_price: v ?? 0 })
                       }
-                      className="w-24 rounded border border-white/10 bg-orika-graphite py-1 px-2 text-right text-sm text-orika-cream tabular-nums focus:border-orika-gold/50 focus:outline-none"
+                      placeholder="0.00"
+                      className="w-24 text-right"
                     />
                     <span className="text-xs font-semibold text-orika-gold tabular-nums w-24 text-right">
                       {fmtMoney(line.unit_price * line.quantity, baseCurrency)}
@@ -463,21 +461,16 @@ export default function QuickSaleForm() {
 
                 {/* Amount + ref */}
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
-                      ₦
-                    </span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={split.amount || ""}
-                      onChange={(e) =>
-                        updatePayment(split.id, {
-                          amount: parseFloat(e.target.value) || 0,
-                        })
+                  <div className="flex-1">
+                    <NumberField
+                      surface="dark"
+                      decimal
+                      value={split.amount || undefined}
+                      onValueChange={(v) =>
+                        updatePayment(split.id, { amount: v ?? 0 })
                       }
                       placeholder="0.00"
-                      className="w-full rounded border border-white/10 bg-orika-graphite py-2 pl-5 pr-2 text-right text-sm text-orika-cream tabular-nums focus:border-orika-gold/40 focus:outline-none"
+                      className="text-right"
                     />
                   </div>
                   {PAYMENT_METHODS.find((m) => m.key === split.method)?.requiresRef && (

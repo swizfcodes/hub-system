@@ -5,6 +5,7 @@ import { Info } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
 import { createExpense } from "@services/expenses";
@@ -174,16 +175,14 @@ export function ExpenseFormModal({
             name="amount"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Input
-                {...field}
+              <NumberField
+                decimal
                 label="Amount (₦) *"
-                type="number"
-                step="0.01"
-                min={0}
+                placeholder="0.00"
                 surface="light"
-                onChange={(e) =>
-                  field.onChange(parseFloat(e.target.value) || 0)
-                }
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
                 error={fieldState.error?.message}
               />
             )}

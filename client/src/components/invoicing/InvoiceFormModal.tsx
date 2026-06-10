@@ -24,6 +24,7 @@ import { Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
 import { createInvoice } from "@services/invoicing/invoices";
@@ -45,10 +46,10 @@ import { cn } from "@lib/cn";
 const DEFAULT_LINE = {
   product_id: "",
   description: "",
-  quantity: 1,
-  unit_price: 0,
-  discount_amount: 0,
-};
+  quantity: undefined,
+  unit_price: undefined,
+  discount_amount: undefined,
+} as unknown as CreateInvoiceValues["lines"][number];
 
 const STEPS = [
   { key: "customer", label: "Customer" },
@@ -229,13 +230,13 @@ function StepLines({
                 name={`lines.${i}.quantity`}
                 control={form.control}
                 render={({ field: f, fieldState }) => (
-                  <Input
-                    {...f}
-                    label="Qty"
-                    type="number"
-                    min={1}
+                  <NumberField
                     surface="light"
-                    onChange={(e) => f.onChange(parseInt(e.target.value) || 1)}
+                    label="Qty"
+                    placeholder="1"
+                    value={f.value}
+                    onValueChange={f.onChange}
+                    onBlur={f.onBlur}
                     error={fieldState.error?.message}
                   />
                 )}
@@ -244,16 +245,14 @@ function StepLines({
                 name={`lines.${i}.unit_price`}
                 control={form.control}
                 render={({ field: f, fieldState }) => (
-                  <Input
-                    {...f}
-                    label="Unit Price"
-                    type="number"
-                    step="0.01"
-                    min={0}
+                  <NumberField
                     surface="light"
-                    onChange={(e) =>
-                      f.onChange(parseFloat(e.target.value) || 0)
-                    }
+                    decimal
+                    label="Unit Price"
+                    placeholder="0.00"
+                    value={f.value}
+                    onValueChange={f.onChange}
+                    onBlur={f.onBlur}
                     error={fieldState.error?.message}
                   />
                 )}
@@ -262,16 +261,14 @@ function StepLines({
                 name={`lines.${i}.discount_amount`}
                 control={form.control}
                 render={({ field: f }) => (
-                  <Input
-                    {...f}
-                    label="Discount"
-                    type="number"
-                    step="0.01"
-                    min={0}
+                  <NumberField
                     surface="light"
-                    onChange={(e) =>
-                      f.onChange(parseFloat(e.target.value) || 0)
-                    }
+                    decimal
+                    label="Discount"
+                    placeholder="0.00"
+                    value={f.value}
+                    onValueChange={f.onChange}
+                    onBlur={f.onBlur}
                   />
                 )}
               />
@@ -354,11 +351,12 @@ function StepReview({
         {watchedLines.map((l, i) => (
           <div key={i} className="flex justify-between text-sm py-1">
             <span className="text-text-on-light-muted truncate max-w-[60%]">
-              {l.description || `Line ${i + 1}`} x {l.quantity}
+              {l.description || `Line ${i + 1}`} x {l.quantity ?? 0}
             </span>
             <span className="tabular-nums text-orika-black">
               {fmtMoney(
-                l.unit_price * l.quantity - (l.discount_amount ?? 0),
+                (l.unit_price ?? 0) * (l.quantity ?? 0) -
+                  (l.discount_amount ?? 0),
                 currency,
               )}
             </span>
@@ -396,14 +394,14 @@ function StepReview({
         name="discount_total"
         control={form.control}
         render={({ field }) => (
-          <Input
-            {...field}
-            label="Order Discount (optional)"
-            type="number"
-            step="0.01"
-            min={0}
+          <NumberField
             surface="light"
-            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+            decimal
+            label="Order Discount (optional)"
+            placeholder="0.00"
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
           />
         )}
       />
@@ -462,7 +460,7 @@ export function InvoiceFormModal({ open, onClose, onCreated, prefill }: Props) {
       contact_id: prefill?.contact_id ?? "",
       invoice_type: "standard",
       due_date: "",
-      discount_total: 0,
+      discount_total: undefined,
       currency: currency,
       notes: "",
       payment_instructions: "",
@@ -478,7 +476,8 @@ export function InvoiceFormModal({ open, onClose, onCreated, prefill }: Props) {
   const watchedLines = form.watch("lines");
   const vatRateNum = vatRate ?? 0.075;
   const lineSubtotal = watchedLines.reduce(
-    (sum, l) => sum + l.unit_price * l.quantity - (l.discount_amount ?? 0),
+    (sum, l) =>
+      sum + (l.unit_price ?? 0) * (l.quantity ?? 0) - (l.discount_amount ?? 0),
     0,
   );
   const vatTotal = lineSubtotal * vatRateNum;

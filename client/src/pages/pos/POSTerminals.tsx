@@ -8,6 +8,7 @@ import { Button } from "@components/ui/Button";
 import { Skeleton } from "@components/ui/Skeleton";
 import { Modal } from "@components/ui/Modal";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { api } from "@services/api";
 import { listTerminals, createTerminal } from "@services/pos/terminals";
 import { openSession } from "@services/pos/sessions";
@@ -32,7 +33,9 @@ export default function POSTerminals() {
 
   // Open-session state
   const [selected, setSelected] = useState<PosTerminal | null>(null);
-  const [openingFloat, setOpeningFloat] = useState("");
+  const [openingFloat, setOpeningFloat] = useState<number | undefined>(
+    undefined,
+  );
   const [showOpen, setShowOpen] = useState(false);
 
   // Create-terminal state
@@ -63,7 +66,7 @@ export default function POSTerminals() {
     mutationFn: () =>
       openSession({
         terminal_id: selected!.terminal_id,
-        opening_float: parseFloat(openingFloat) || 0,
+        opening_float: openingFloat ?? 0,
       }),
     onSuccess: (session) => {
       setTerminal(selected!);
@@ -238,19 +241,14 @@ export default function POSTerminals() {
             <p className="text-sm text-orika-smoke/80">
               Count the opening float before starting your shift.
             </p>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
-                Opening Float (optional)
-              </label>
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                value={openingFloat}
-                onChange={(e) => setOpeningFloat(e.target.value)}
-                placeholder="₦0.00"
-              />
-            </div>
+            <NumberField
+              label="Opening Float (optional)"
+              decimal
+              surface="light"
+              value={openingFloat}
+              onValueChange={setOpeningFloat}
+              placeholder="₦0.00"
+            />
           </div>
         </Modal>
 

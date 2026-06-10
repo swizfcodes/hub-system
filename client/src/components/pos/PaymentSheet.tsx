@@ -4,6 +4,7 @@ import { Plus, Trash2 as Trash } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
+import { NumberField } from "@components/ui/NumberField";
 import { usePOSStore } from "@stores/posStore";
 import { POS_PAYMENT_META } from "@lib/constants/posConstants";
 import { fmtMoney as fmtMoneyPS } from "@lib/format";
@@ -143,19 +144,17 @@ export function PaymentSheet({
                 {/* Amount + optional ref */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs text-orika-smoke">
                       {currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency}
                     </span>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <NumberField
+                      decimal
+                      surface="light"
                       value={split.amount}
-                      onChange={(e) =>
-                        updateSplit(split.id, {
-                          amount: parseFloat(e.target.value) || 0,
-                        })
+                      onValueChange={(v) =>
+                        updateSplit(split.id, { amount: v ?? 0 })
                       }
-                      className="w-full rounded border border-black/10 py-2 pl-5 pr-2 text-right text-sm text-orika-black tabular-nums focus:border-orika-gold/40 focus:outline-none"
+                      className="py-2 pl-5 pr-2 text-right text-orika-black tabular-nums"
                     />
                   </div>
                   {POS_PAYMENT_META[split.method].requiresRef && (

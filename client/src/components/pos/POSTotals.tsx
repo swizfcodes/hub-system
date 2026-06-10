@@ -3,6 +3,7 @@ import { usePOSStore, computeTotals } from "@stores/posStore";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { fmtMoney as fmtMoneyTotals } from "@lib/format";
 import { Select } from "@components/ui/Select";
+import { NumberField } from "@components/ui/NumberField";
 import type { OrderDiscount } from "@typedefs/pos";
 
 interface POSTotalsProps {
@@ -45,20 +46,21 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
             { value: "fixed", label: "Fixed Disc" },
           ]}
         />
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={orderDiscount?.value ?? ""}
-          placeholder="0"
-          onChange={(e) =>
-            setOrderDiscount({
-              type: orderDiscount?.type ?? "percentage",
-              value: parseFloat(e.target.value) || 0,
-            })
-          }
-          className="w-20 rounded border border-white/10 bg-orika-graphite px-2 py-1.5 text-right text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none tabular-nums"
-        />
+        <div className="w-20 shrink-0">
+          <NumberField
+            decimal
+            surface="dark"
+            value={orderDiscount?.value}
+            placeholder="0"
+            onValueChange={(v) =>
+              setOrderDiscount({
+                type: orderDiscount?.type ?? "percentage",
+                value: v ?? 0,
+              })
+            }
+            className="bg-orika-graphite px-2 py-1.5 text-right tabular-nums"
+          />
+        </div>
       </div>
 
       {/* Totals */}

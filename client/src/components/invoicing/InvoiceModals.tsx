@@ -5,6 +5,7 @@ import { DollarSign, Send, FileX, AlertTriangle } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import {
   recordPayment,
@@ -116,20 +117,20 @@ export function RecordPaymentModal({
           name="amount"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              {...field}
-              label="Amount Received *"
-              type="number"
-              step="0.01"
-              min={0.01}
+            <NumberField
               surface="light"
-              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+              decimal
+              label="Amount Received *"
+              placeholder="0.00"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               error={fieldState.error?.message}
             />
           )}
         />
 
-        {amount > 0 && amount > invoice.amount_outstanding && (
+        {(amount ?? 0) > 0 && (amount ?? 0) > invoice.amount_outstanding && (
           <p className="text-xs text-amber-600">
             Amount exceeds outstanding balance — this will fully settle the
             invoice.

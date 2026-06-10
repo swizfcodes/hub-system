@@ -321,6 +321,7 @@ import { PAYMENT_METHOD_META } from "@lib/constants/salesConstants";
 import { fmtMoney } from "@lib/format";
 import type { PaymentMethod } from "@typedefs/sales";
 import { Select } from "@components/ui/Select";
+import { NumberField } from "@components/ui/NumberField";
 
 interface RecordPaymentModalProps {
   open: boolean;
@@ -410,21 +411,16 @@ export function RecordPaymentModal({
           name="amount"
           control={form.control}
           render={({ field, fieldState }) => (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
-                Amount *
-              </label>
-              <Input
-                {...field}
-                type="number"
-                step="0.01"
-                min={0.01}
-                onChange={(e) =>
-                  field.onChange(parseFloat(e.target.value) || 0)
-                }
-                error={fieldState.error?.message}
-              />
-            </div>
+            <NumberField
+              surface="light"
+              decimal
+              label="Amount *"
+              placeholder="0.00"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
