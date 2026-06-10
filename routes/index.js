@@ -59,14 +59,17 @@ router.use(
   "/webhooks/gigl",
   require("../integrations/logistics/logistics.webhook"),
 );
-router.use(
-  "/webhooks/meta",
-  require("../integrations/messaging/messaging.webhook"),
-);
-router.use(
-  "/webhooks/whatsapp",
-  require("../integrations/messaging/messaging.webhook"),
-);
+// EXTERNAL-COMMS-DISABLED: Meta (WhatsApp/Instagram/Messenger) webhooks are
+// switched off until we have Meta API access. Uncomment to re-enable the
+// inbound customer-message bridge.
+// router.use(
+//   "/webhooks/meta",
+//   require("../integrations/messaging/messaging.webhook"),
+// );
+// router.use(
+//   "/webhooks/whatsapp",
+//   require("../integrations/messaging/messaging.webhook"),
+// );
 
 // ── Public document image serving ────────────────────────────
 // Serves product_image documents without authentication so campaign

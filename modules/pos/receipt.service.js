@@ -3,7 +3,8 @@
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail, sendWithAttachment } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const logger = require("../../config/logger");
 const repo = require("./pos.repository");
@@ -108,20 +109,22 @@ async function sendReceipt(
 // ─────────────────────────────────────────────────────────────
 
 async function sendViaWhatsApp(tx, overrideTo) {
-  const to = overrideTo || tx.whatsapp_number || tx.primary_phone;
-  if (!to) {
-    return { success: false, reason: "no_phone_number" };
-  }
-  try {
-    const body = formatWhatsAppMessage(tx);
-    await whatsapp.sendMessage({ to, text: body });
-    return { success: true, channel: "whatsapp", recipient: to };
-  } catch (err) {
-    logger.error(
-      `Receipt WhatsApp send failed for tx ${tx.transaction_id}: ${err.message}`,
-    );
-    return { success: false, reason: err.message };
-  }
+  // EXTERNAL-COMMS-DISABLED: WhatsApp receipts require Meta API access.
+  return { success: false, reason: "whatsapp_disabled" };
+  // const to = overrideTo || tx.whatsapp_number || tx.primary_phone;
+  // if (!to) {
+  //   return { success: false, reason: "no_phone_number" };
+  // }
+  // try {
+  //   const body = formatWhatsAppMessage(tx);
+  //   await whatsapp.sendMessage({ to, text: body });
+  //   return { success: true, channel: "whatsapp", recipient: to };
+  // } catch (err) {
+  //   logger.error(
+  //     `Receipt WhatsApp send failed for tx ${tx.transaction_id}: ${err.message}`,
+  //   );
+  //   return { success: false, reason: err.message };
+  // }
 }
 
 function formatWhatsAppMessage(tx) {

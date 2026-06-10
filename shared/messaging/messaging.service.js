@@ -1,31 +1,28 @@
 "use strict";
 
 const { withSharedContext } = require("../../config/db");
-const { emitToBusiness } = require("../../config/sockets");
-const integrationsService = require("../../integrations/messaging/messaging.service");
+const { emitToUser, emitToBusiness } = require("../../config/sockets");
+// EXTERNAL-COMMS-DISABLED: the integrations layer dispatched replies to
+// WhatsApp / Instagram / Facebook via the Meta Graph API. Re-enable the
+// require (and the dispatch block in sendMessage) once API access exists.
+// const integrationsService = require("../../integrations/messaging/messaging.service");
 const auditService = require("../audit/audit.service");
 const repo = require("./messaging.repository");
 
 // ─────────────────────────────────────────────────────────────
 // MESSAGING SERVICE — Module 14: Messaging (Smartcomm)
 //
-// Promises from the product description:
-//   - "unified inbox" combining customer WhatsApp/IG/FB messages and
-//     internal team chats
-//   - "see the customer's full history (orders, deals, preferences)
-//      alongside the conversation"
-//   - "reply directly from the Hub" and route to the same channel
-//   - "group chats by team or business line"
-//   - "thread-based with read receipts"
+// In-house team chat, WhatsApp-style:
+//   - direct & group channels with admin roles
+//   - replies (quotes), edits, delete-for-everyone, forwarding
+//   - read receipts (✓ / ✓✓ ticks), emoji reactions, stars
+//   - pinned & muted conversations, full-text search
+//   - real-time delivery over socket.io (message/typing/presence)
 //
-// Architecture split:
-//   - integrations/messaging  — inbound webhook handlers, channel
-//     creation, sending via Meta Graph API
-//   - shared/messaging (this) — user-facing API for the inbox UI
-//
-// When the user sends a reply through THIS module to a customer_thread
-// channel, we both (a) write the message row, and (b) dispatch via
-// the integrations layer's adapters so it actually leaves the building.
+// EXTERNAL-COMMS-DISABLED: the customer_thread bridge (inbound Meta
+// webhooks + outbound Graph API dispatch) is parked until Meta API
+// access is available. The schema and integrations/ code remain in
+// place so the unified customer inbox can be switched back on.
 // ─────────────────────────────────────────────────────────────
 
 const VALID_MESSAGE_TYPES = [
@@ -36,6 +33,14 @@ const VALID_MESSAGE_TYPES = [
   "system",
 ];
 const VALID_CHANNEL_TYPES = ["group", "direct", "customer_thread"];
+
+// Emit a messaging event to every user member of a channel — their
+// personal socket rooms — so events reach people on any business.
+function emitToChannelMembers(channel, event, data) {
+  for (const m of channel.members || []) {
+    if (m.user_id) emitToUser(m.user_id, event, data);
+  }
+}
 
 // ─────────────────────────────────────────────────────────────
 // CHANNELS
@@ -65,7 +70,6 @@ async function getChannel(channelId, user) {
     if (!channel) {
       throw Object.assign(new Error("Channel not found"), { status: 404 });
     }
-    // Access check — must be a member, OR a customer_thread in their business.
     const allowed = await canUserAccessChannel(client, channel, user);
     if (!allowed) {
       throw Object.assign(new Error("Forbidden"), { status: 403 });
@@ -79,7 +83,8 @@ async function canUserAccessChannel(client, channel, user) {
   const member = await repo.isMember(client, channel.channel_id, user.user_id);
   if (member) return true;
   if (channel.channel_type === "customer_thread" && channel.business) {
-    // Allow if user has access to that business.
+    // Allow if user has access to that business — kept so old customer
+    // threads stay readable even while the external bridge is off.
     const {
       rows: [u],
     } = await client.query(
@@ -92,9 +97,9 @@ async function canUserAccessChannel(client, channel, user) {
 }
 
 /**
- * Create a group or direct channel. Customer threads are NEVER created
- * via this path — they're created automatically when an inbound message
- * arrives (in integrations/messaging/messaging.service.handleInbound).
+ * Create a group or direct channel. Direct channels are idempotent —
+ * messaging the same person again returns the existing conversation,
+ * exactly like opening a chat in WhatsApp.
  */
 async function createChannel(data, user) {
   return withSharedContext(async (client) => {
@@ -119,9 +124,22 @@ async function createChannel(data, user) {
       );
     }
 
+    // Reuse an existing direct conversation with this person.
+    if (data.channel_type === "direct") {
+      const existing = await repo.findDirectChannel(
+        client,
+        user.user_id,
+        data.member_user_ids[0],
+      );
+      if (existing) {
+        return repo.findChannelById(client, existing.channel_id);
+      }
+    }
+
     const channel = await repo.insertChannel(client, {
       channel_type: data.channel_type,
       name: data.name,
+      description: data.description,
       business: data.business,
       metadata: data.metadata,
       created_by: user.user_id,
@@ -144,12 +162,43 @@ async function createChannel(data, user) {
       });
     }
 
-    emitToBusiness(data.business || "shared", "channel:created", {
+    const full = await repo.findChannelById(client, channel.channel_id);
+    emitToChannelMembers(full, "channel:created", {
       channelId: channel.channel_id,
       channelType: channel.channel_type,
     });
 
-    return channel;
+    return full;
+  });
+}
+
+/**
+ * Update a group channel's name / description (admin only).
+ */
+async function updateChannel(channelId, { name, description }, user) {
+  return withSharedContext(async (client) => {
+    const channel = await repo.findChannelById(client, channelId);
+    if (!channel) {
+      throw Object.assign(new Error("Channel not found"), { status: 404 });
+    }
+    if (channel.channel_type !== "group") {
+      throw Object.assign(
+        new Error("Only group channels can be renamed"),
+        { status: 400 },
+      );
+    }
+    const member = await repo.isMember(client, channelId, user.user_id);
+    if (!member || member.role !== "admin") {
+      throw Object.assign(new Error("Only channel admins can edit the group"), {
+        status: 403,
+      });
+    }
+    const updated = await repo.updateChannelInfo(client, channelId, {
+      name,
+      description,
+    });
+    emitToChannelMembers(channel, "channel:updated", { channelId });
+    return updated;
   });
 }
 
@@ -175,7 +224,28 @@ async function archiveChannel(channelId, user) {
       table: "shared.message_channels",
       recordId: channelId,
     });
+    emitToChannelMembers(channel, "channel:updated", { channelId });
     return result;
+  });
+}
+
+/**
+ * Pin or mute a conversation for the current user only.
+ */
+async function setChannelFlag(channelId, flag, value, user) {
+  return withSharedContext(async (client) => {
+    const ok = await repo.setMemberFlag(client, {
+      channelId,
+      userId: user.user_id,
+      flag,
+      value: !!value,
+    });
+    if (!ok) {
+      throw Object.assign(new Error("You are not a member of this channel"), {
+        status: 403,
+      });
+    }
+    return { channel_id: channelId, [flag]: !!value };
   });
 }
 
@@ -211,6 +281,15 @@ async function addMember(channelId, { user_id, contact_id, role }, actingUser) {
       contactId: contact_id,
       role: role || "member",
     });
+    if (user_id) {
+      await repo.insertMessage(client, {
+        channel_id: channelId,
+        message_type: "system",
+        content: `${actingUser.display_name} added a member to the group`,
+      });
+      emitToUser(user_id, "channel:created", { channelId });
+    }
+    emitToChannelMembers(channel, "channel:updated", { channelId });
     return { added: true };
   });
 }
@@ -226,7 +305,9 @@ async function removeMember(channelId, { user_id, contact_id }, actingUser) {
       channelId,
       actingUser.user_id,
     );
-    if (!actingMember || actingMember.role !== "admin") {
+    // Members may remove themselves (leave group); otherwise admin only.
+    const isSelf = user_id && user_id === actingUser.user_id;
+    if (!isSelf && (!actingMember || actingMember.role !== "admin")) {
       throw Object.assign(new Error("Only channel admins can remove members"), {
         status: 403,
       });
@@ -236,7 +317,49 @@ async function removeMember(channelId, { user_id, contact_id }, actingUser) {
       userId: user_id,
       contactId: contact_id,
     });
+    if (removed && user_id) {
+      await repo.insertMessage(client, {
+        channel_id: channelId,
+        message_type: "system",
+        content: isSelf
+          ? `${actingUser.display_name} left the group`
+          : `${actingUser.display_name} removed a member from the group`,
+      });
+    }
+    emitToChannelMembers(channel, "channel:updated", { channelId });
     return { removed };
+  });
+}
+
+/**
+ * Promote / demote a member (admin only) — e.g. hand over group admin.
+ */
+async function changeMemberRole(channelId, { user_id, role }, actingUser) {
+  return withSharedContext(async (client) => {
+    const channel = await repo.findChannelById(client, channelId);
+    if (!channel) {
+      throw Object.assign(new Error("Channel not found"), { status: 404 });
+    }
+    const actingMember = await repo.isMember(
+      client,
+      channelId,
+      actingUser.user_id,
+    );
+    if (!actingMember || actingMember.role !== "admin") {
+      throw Object.assign(new Error("Only channel admins can change roles"), {
+        status: 403,
+      });
+    }
+    const ok = await repo.updateMemberRole(client, {
+      channelId,
+      userId: user_id,
+      role,
+    });
+    if (!ok) {
+      throw Object.assign(new Error("Member not found"), { status: 404 });
+    }
+    emitToChannelMembers(channel, "channel:updated", { channelId });
+    return { updated: true };
   });
 }
 
@@ -256,6 +379,7 @@ async function listMessages(channelId, query, user) {
     }
     return repo.listMessages(client, {
       channelId,
+      userId: user.user_id,
       before: query.before,
       limit: Math.min(parseInt(query.limit) || 50, 200),
     });
@@ -264,15 +388,6 @@ async function listMessages(channelId, query, user) {
 
 /**
  * Send a message to a channel.
- *
- * If the channel is a customer_thread, we also dispatch the message
- * to the external platform (WhatsApp / Instagram / Facebook) via the
- * integrations layer so the customer actually receives it.
- *
- * Failures to dispatch don't roll back the message insert — the staff
- * member's reply is preserved in the inbox; the failure is logged with
- * a system message in the same thread so the next person sees what
- * happened.
  */
 async function sendMessage(channelId, data, user) {
   return withSharedContext(async (client) => {
@@ -334,43 +449,84 @@ async function sendMessage(channelId, data, user) {
       });
     }
 
-    // External dispatch for customer threads. Look up the channel's
-    // metadata to figure out the platform (whatsapp / instagram / page).
-    if (channel.channel_type === "customer_thread") {
-      try {
-        const source = channel.metadata?.source;
-        const externalId = channel.metadata?.external_id;
-        if (source && externalId) {
-          await integrationsService.sendReply({
-            contactId: externalId,
-            channelId,
-            text: data.content,
-            source,
-            business: channel.business,
-          });
-        }
-      } catch (err) {
-        // Don't roll back — insert a system message in the same thread
-        // so the team knows the outbound failed.
-        await repo.insertMessage(client, {
-          channel_id: channelId,
-          message_type: "system",
-          content: `Outbound delivery failed: ${err.message}. The customer did not receive this reply.`,
-        });
-      }
-    }
+    // EXTERNAL-COMMS-DISABLED: outbound dispatch for customer threads
+    // (WhatsApp / Instagram / Messenger via Meta Graph API). Restore this
+    // block together with the integrationsService require at the top.
+    // if (channel.channel_type === "customer_thread") {
+    //   try {
+    //     const source = channel.metadata?.source;
+    //     const externalId = channel.metadata?.external_id;
+    //     if (source && externalId) {
+    //       await integrationsService.sendReply({
+    //         contactId: externalId,
+    //         channelId,
+    //         text: data.content,
+    //         source,
+    //         business: channel.business,
+    //       });
+    //     }
+    //   } catch (err) {
+    //     // Don't roll back — insert a system message in the same thread
+    //     // so the team knows the outbound failed.
+    //     await repo.insertMessage(client, {
+    //       channel_id: channelId,
+    //       message_type: "system",
+    //       content: `Outbound delivery failed: ${err.message}. The customer did not receive this reply.`,
+    //     });
+    //   }
+    // }
 
     // Real-time push for connected clients viewing the channel.
-    emitToBusiness(channel.business || "shared", "message:new", {
+    const payload = {
       channelId,
       messageId: message.message_id,
       senderUserId: user.user_id,
-    });
+      senderName: user.display_name,
+      preview: (data.content || "").substring(0, 120),
+    };
+    emitToChannelMembers(channel, "message:new", payload);
+    // Legacy business-room emit kept for any non-member listeners.
+    emitToBusiness(channel.business || "shared", "message:new", payload);
 
     return message;
   });
 }
 
+/**
+ * Edit your own message (WhatsApp-style, shows an "edited" label).
+ */
+async function editMessage(messageId, { content }, user) {
+  return withSharedContext(async (client) => {
+    const message = await repo.findMessageById(client, messageId);
+    if (!message) {
+      throw Object.assign(new Error("Message not found"), { status: 404 });
+    }
+    if (message.sender_user_id !== user.user_id) {
+      throw Object.assign(new Error("You can only edit your own messages"), {
+        status: 403,
+      });
+    }
+    if (!content || !content.trim()) {
+      throw Object.assign(new Error("content required"), { status: 400 });
+    }
+    const updated = await repo.editMessage(client, messageId, content.trim());
+    if (!updated) {
+      throw Object.assign(new Error("Message cannot be edited"), {
+        status: 400,
+      });
+    }
+    const channel = await repo.findChannelById(client, message.channel_id);
+    emitToChannelMembers(channel, "message:updated", {
+      channelId: message.channel_id,
+      messageId,
+    });
+    return updated;
+  });
+}
+
+/**
+ * Delete for everyone — the bubble becomes "This message was deleted".
+ */
 async function deleteMessage(messageId, user) {
   return withSharedContext(async (client) => {
     const message = await repo.findMessageById(client, messageId);
@@ -392,7 +548,69 @@ async function deleteMessage(messageId, user) {
       }
     }
     const result = await repo.softDeleteMessage(client, messageId);
+    const channel = await repo.findChannelById(client, message.channel_id);
+    emitToChannelMembers(channel, "message:deleted", {
+      channelId: message.channel_id,
+      messageId,
+    });
     return result;
+  });
+}
+
+/**
+ * Forward a message to one or more other channels the user belongs to.
+ */
+async function forwardMessage(messageId, { channel_ids }, user) {
+  return withSharedContext(async (client) => {
+    const original = await repo.findMessageById(client, messageId);
+    if (!original || original.is_deleted) {
+      throw Object.assign(new Error("Message not found"), { status: 404 });
+    }
+    const sourceChannel = await repo.findChannelById(
+      client,
+      original.channel_id,
+    );
+    const canRead = await canUserAccessChannel(client, sourceChannel, user);
+    if (!canRead) {
+      throw Object.assign(new Error("Forbidden"), { status: 403 });
+    }
+    const attachments = await repo.getAttachments(client, messageId);
+
+    const forwarded = [];
+    for (const targetId of channel_ids || []) {
+      const target = await repo.findChannelById(client, targetId);
+      if (!target) continue;
+      const isTargetMember = await repo.isMember(
+        client,
+        targetId,
+        user.user_id,
+      );
+      if (!isTargetMember) continue;
+
+      const copy = await repo.insertMessage(client, {
+        channel_id: targetId,
+        sender_user_id: user.user_id,
+        message_type: original.message_type,
+        content: original.content,
+        is_forwarded: true,
+      });
+      for (const att of attachments) {
+        await repo.attachDocument(client, {
+          messageId: copy.message_id,
+          documentId: att.document_id,
+          displayName: att.display_name,
+        });
+      }
+      emitToChannelMembers(target, "message:new", {
+        channelId: targetId,
+        messageId: copy.message_id,
+        senderUserId: user.user_id,
+        senderName: user.display_name,
+        preview: (original.content || "").substring(0, 120),
+      });
+      forwarded.push(copy.message_id);
+    }
+    return { forwarded_count: forwarded.length, message_ids: forwarded };
   });
 }
 
@@ -416,6 +634,13 @@ async function markRead(channelId, { up_to_message_id }, user) {
       upToMessageId: up_to_message_id,
     });
     await repo.updateLastReadAt(client, channelId, user.user_id);
+    if (marked > 0) {
+      // Lets senders flip their ticks to "read" in real time.
+      emitToChannelMembers(channel, "message:read", {
+        channelId,
+        readerUserId: user.user_id,
+      });
+    }
     return { marked_read: marked };
   });
 }
@@ -428,7 +653,9 @@ async function getUnreadCount(user) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Thread assignment & resolution
+// Thread assignment & resolution — used by customer threads.
+// EXTERNAL-COMMS-DISABLED: dormant while the Meta bridge is off, but
+// kept callable so old threads can still be tidied up.
 // ─────────────────────────────────────────────────────────────
 
 async function assignThread(channelId, { assigned_to, handoff_note }, user) {
@@ -526,6 +753,10 @@ async function resolveThread(channelId, user) {
 
 async function toggleReaction(messageId, emoji, user) {
   return withSharedContext(async (client) => {
+    const message = await repo.findMessageById(client, messageId);
+    if (!message) {
+      throw Object.assign(new Error("Message not found"), { status: 404 });
+    }
     const {
       rows: [existing],
     } = await client.query(
@@ -533,29 +764,93 @@ async function toggleReaction(messageId, emoji, user) {
        WHERE message_id = $1 AND user_id = $2 AND emoji = $3`,
       [messageId, user.user_id, emoji],
     );
+    let added;
     if (existing) {
       await client.query(
         `DELETE FROM shared.message_reactions WHERE reaction_id = $1`,
         [existing.reaction_id],
       );
-      return { added: false, emoji };
+      added = false;
+    } else {
+      await client.query(
+        `INSERT INTO shared.message_reactions (message_id, user_id, emoji)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (message_id, user_id, emoji) DO NOTHING`,
+        [messageId, user.user_id, emoji],
+      );
+      added = true;
     }
-    await client.query(
-      `INSERT INTO shared.message_reactions (message_id, user_id, emoji)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (message_id, user_id, emoji) DO NOTHING`,
-      [messageId, user.user_id, emoji],
-    );
-    return { added: true, emoji };
+    const channel = await repo.findChannelById(client, message.channel_id);
+    emitToChannelMembers(channel, "message:updated", {
+      channelId: message.channel_id,
+      messageId,
+    });
+    return { added, emoji };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Stars & search
+// ─────────────────────────────────────────────────────────────
+
+async function toggleStar(messageId, user) {
+  return withSharedContext(async (client) => {
+    const message = await repo.findMessageById(client, messageId);
+    if (!message) {
+      throw Object.assign(new Error("Message not found"), { status: 404 });
+    }
+    return repo.toggleStar(client, messageId, user.user_id);
+  });
+}
+
+async function listStarred(query, user) {
+  return withSharedContext(async (client) => {
+    const rows = await repo.listStarred(client, user.user_id, {
+      limit: Math.min(parseInt(query.limit) || 50, 200),
+    });
+    return { data: rows };
+  });
+}
+
+async function searchMessages(query, user) {
+  return withSharedContext(async (client) => {
+    if (!query.q || !query.q.trim()) {
+      return { data: [] };
+    }
+    const rows = await repo.searchMessages(client, {
+      userId: user.user_id,
+      q: query.q.trim(),
+      channelId: query.channel_id,
+      limit: Math.min(parseInt(query.limit) || 50, 100),
+    });
+    return { data: rows };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Email log — outbound emails (invoices, payslips, quotations,
+// campaigns) surfaced in the Messaging UI for search & audit.
+// ─────────────────────────────────────────────────────────────
+
+async function listEmailLog(query, user) {
+  return withSharedContext(async (client) => {
+    const page = parseInt(query.page) || 1;
+    const limit = Math.min(parseInt(query.limit) || 50, 200);
+    const offset = (page - 1) * limit;
+    const rows = await repo.listEmailLog(client, {
+      q: query.q,
+      business: query.business,
+      status: query.status,
+      limit,
+      offset,
+    });
+    return { data: rows, pagination: { page, limit } };
   });
 }
 
 // ─────────────────────────────────────────────────────────────
 // Customer 360 — contact + recent orders / open invoices / deliveries.
-// The contact lives in shared schema; orders/invoices/deliveries live
-// in each business schema, so we query both jewelry & diffusers and
-// merge. Quiet on per-schema failures (a brand may have no business
-// relationship with this contact).
+// EXTERNAL-COMMS-DISABLED: only reachable from old customer threads.
 // ─────────────────────────────────────────────────────────────
 
 async function getCustomer360(contactId, user) {
@@ -632,22 +927,32 @@ module.exports = {
   listChannels,
   getChannel,
   createChannel,
+  updateChannel,
   archiveChannel,
+  setChannelFlag,
   // members
   addMember,
   removeMember,
+  changeMemberRole,
   // messages
   listMessages,
   sendMessage,
+  editMessage,
   deleteMessage,
+  forwardMessage,
   // reads
   markRead,
   getUnreadCount,
   // thread management
   assignThread,
   resolveThread,
-  // reactions
+  // reactions, stars & search
   toggleReaction,
+  toggleStar,
+  listStarred,
+  searchMessages,
+  // email log
+  listEmailLog,
   // customer 360
   getCustomer360,
   // constants

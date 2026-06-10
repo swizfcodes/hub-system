@@ -2,7 +2,8 @@
 
 const { withBusinessContext } = require("../../config/db");
 const { sendEmail } = require("../../lib/email/sender");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const config = require("../../config/config");
 const repo = require("./campaigns.repository");
@@ -279,14 +280,17 @@ async function sendToRecipient(campaign, recipient) {
         });
         return { success: true };
       }
+      // EXTERNAL-COMMS-DISABLED: WhatsApp campaigns require Meta API access.
+      // Recipients are marked failed (not retried) so campaigns drain cleanly.
       if (campaign.campaign_type === "whatsapp") {
-        if (!recipient.whatsapp_number) {
-          return { success: false, reason: "no_whatsapp_number" };
-        }
-        // Strip HTML — WhatsApp is plain text.
-        const text = personalised.replace(/<[^>]*>/g, "").trim();
-        await whatsapp.sendMessage({ to: recipient.whatsapp_number, text });
-        return { success: true };
+        return { success: false, reason: "whatsapp_disabled" };
+        // if (!recipient.whatsapp_number) {
+        //   return { success: false, reason: "no_whatsapp_number" };
+        // }
+        // // Strip HTML — WhatsApp is plain text.
+        // const text = personalised.replace(/<[^>]*>/g, "").trim();
+        // await whatsapp.sendMessage({ to: recipient.whatsapp_number, text });
+        // return { success: true };
       }
       return { success: false, reason: "unknown_campaign_type" };
     } catch (err) {

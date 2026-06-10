@@ -7,7 +7,8 @@ const auditService = require("../../shared/audit/audit.service");
 const journalService = require("../accounting/journal.service");
 const emailSender = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./payroll.repository");
 
@@ -482,13 +483,14 @@ async function sendPayslip(business, payslipId, { channel = "email" }, user) {
     });
     results.email = "sent";
   }
-  if (["whatsapp", "both"].includes(channel) && payslip.whatsapp_number) {
-    await whatsapp.sendMessage({
-      to: payslip.whatsapp_number,
-      text: `Your payslip for ${monthName(payslip.period_month)} ${payslip.period_year} is ready. Net pay: ₦${Number(payslip.net_salary).toLocaleString()}. Please check your email for the full payslip PDF.`,
-    });
-    results.whatsapp = "sent";
-  }
+  // EXTERNAL-COMMS-DISABLED: WhatsApp payslip notification.
+  // if (["whatsapp", "both"].includes(channel) && payslip.whatsapp_number) {
+  //   await whatsapp.sendMessage({
+  //     to: payslip.whatsapp_number,
+  //     text: `Your payslip for ${monthName(payslip.period_month)} ${payslip.period_year} is ready. Net pay: ₦${Number(payslip.net_salary).toLocaleString()}. Please check your email for the full payslip PDF.`,
+  //   });
+  //   results.whatsapp = "sent";
+  // }
   if (!Object.keys(results).length) {
     throw Object.assign(
       new Error("No delivery channel available for this payslip"),

@@ -5,7 +5,8 @@ const { getVatRate } = require("../../config/businesses");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const crmService = require("../crm/crm.service");
 const movementsService = require("../stock/movements.service");
@@ -168,11 +169,15 @@ async function sendQuotation(
       throw Object.assign(new Error("Contact has no email address on file"), {
         status: 400,
       });
-    if (channel === "whatsapp" && !q.whatsapp_number)
-      throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
-        status: 400,
-      });
-    if (channel !== "email" && channel !== "whatsapp")
+    // EXTERNAL-COMMS-DISABLED: WhatsApp sending requires Meta API access.
+    // Re-enable the whatsapp branch below (and the adapter require at the
+    // top of this file) once credentials are available.
+    if (channel === "whatsapp")
+      throw Object.assign(
+        new Error("WhatsApp sending is temporarily disabled — use email"),
+        { status: 400 },
+      );
+    if (channel !== "email")
       throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
         status: 400,
       });
@@ -201,12 +206,14 @@ async function sendQuotation(
           },
         ],
       });
-    } else {
-      await whatsapp.sendMessage({
-        to: q.whatsapp_number,
-        text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
-      });
     }
+    // EXTERNAL-COMMS-DISABLED: WhatsApp delivery path.
+    // else {
+    //   await whatsapp.sendMessage({
+    //     to: q.whatsapp_number,
+    //     text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
+    //   });
+    // }
 
     return { message: "Quotation sent" };
   });

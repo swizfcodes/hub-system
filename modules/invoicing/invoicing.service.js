@@ -9,7 +9,8 @@ const stockService = require("../stock/stock.service");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendWithAttachment } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const logger = require("../../config/logger");
 const repo = require("./invoicing.repository");
 const loyaltyService = require("../loyalty/loyalty.service");
@@ -423,12 +424,16 @@ async function send(business, invoiceId, { channel = "email" }, user) {
       status: 400,
     });
   }
-  if (channel === "whatsapp" && !inv.whatsapp_number) {
-    throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
-      status: 400,
-    });
+  // EXTERNAL-COMMS-DISABLED: WhatsApp sending requires Meta API access.
+  // Re-enable the whatsapp branch below (and the adapter require at the
+  // top of this file) once credentials are available.
+  if (channel === "whatsapp") {
+    throw Object.assign(
+      new Error("WhatsApp sending is temporarily disabled — use email"),
+      { status: 400 },
+    );
   }
-  if (channel !== "email" && channel !== "whatsapp") {
+  if (channel !== "email") {
     throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
       status: 400,
     });
@@ -449,12 +454,14 @@ async function send(business, invoiceId, { channel = "email" }, user) {
       pdfBuffer: pdf,
       business,
     });
-  } else if (channel === "whatsapp") {
-    await whatsapp.sendMessage({
-      to: inv.whatsapp_number,
-      text: `Dear ${inv.contact_name}, your invoice ${inv.invoice_number} of ₦${Number(inv.total_amount).toLocaleString()} is due on ${inv.due_date}. Please make payment to our bank account.`,
-    });
   }
+  // EXTERNAL-COMMS-DISABLED: WhatsApp delivery path.
+  // else if (channel === "whatsapp") {
+  //   await whatsapp.sendMessage({
+  //     to: inv.whatsapp_number,
+  //     text: `Dear ${inv.contact_name}, your invoice ${inv.invoice_number} of ₦${Number(inv.total_amount).toLocaleString()} is due on ${inv.due_date}. Please make payment to our bank account.`,
+  //   });
+  // }
 
   // Mark sent only after a successful send.
   await withBusinessContext(business, async (client) =>
