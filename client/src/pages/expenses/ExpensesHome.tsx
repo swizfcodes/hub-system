@@ -198,10 +198,11 @@ export default function ExpensesHome() {
                   <tr className="border-b border-white/5 bg-orika-charcoal">
                     {[
                       "#",
-                      "Staff",
+                      "Payee",
                       "Category",
                       "Type",
                       "Amount",
+                      "Balance",
                       "Date",
                       "Status",
                       "",
@@ -232,7 +233,7 @@ export default function ExpensesHome() {
                         </button>
                       </td>
                       <td className="px-4 py-3 text-orika-cream font-medium">
-                        {expense.staff_name}
+                        {expense.staff_name ?? expense.vendor_name ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-orika-cloud">
                         {CATEGORY_OPTIONS.find(
@@ -244,6 +245,23 @@ export default function ExpensesHome() {
                       </td>
                       <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
                         {fmtMoney(expense.amount, currency)}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-3 tabular-nums",
+                          Number(expense.balance ?? 0) > 0 &&
+                            expense.status !== "pending" &&
+                            expense.status !== "rejected"
+                            ? "text-amber-400 font-medium"
+                            : "text-orika-smoke",
+                        )}
+                      >
+                        {expense.status === "rejected"
+                          ? "—"
+                          : fmtMoney(
+                              Number(expense.balance ?? expense.amount),
+                              currency,
+                            )}
                       </td>
                       <td className="px-4 py-3 text-orika-smoke">
                         {fmtDate(expense.expense_date)}
@@ -282,12 +300,13 @@ export default function ExpensesHome() {
                               </button>
                             </>
                           )}
-                          {expense.status === "approved" && (
+                          {(expense.status === "approved" ||
+                            expense.status === "partially_paid") && (
                             <button
                               onClick={() =>
                                 paidMutation.mutate(expense.expense_id)
                               }
-                              title="Mark Paid"
+                              title="Pay Remaining Balance"
                               className="text-orika-smoke hover:text-orika-gold transition-colors"
                             >
                               <DollarSign className="h-4 w-4" />

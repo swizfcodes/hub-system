@@ -2,174 +2,74 @@
 
 /**
  * Expenses Unit Tests
- * Tests expense tracking and reimbursement
+ * Tests the real expenses service: validation guards, category→COA
+ * mapping completeness, auto-approve threshold, and type whitelists.
+ * (Full lifecycle — approve/pay/receipts/RBAC — is covered by the
+ * end-to-end suite against a live server + database.)
  */
 
-const {
-  generateExpense,
-  TEST_BUSINESS,
-  TEST_USER,
-} = require("../fixtures/seed");
+const service = require("../../modules/expenses/expenses.service");
 
 describe("Expenses Service", () => {
-  describe("Expense Creation", () => {
-    it("should create valid expense", () => {
-      const expense = generateExpense();
-      expect(expense.expense_id).toBeTruthy();
-      expect(expense.business_id).toBe(TEST_BUSINESS.business_id);
-      expect(expense.description).toBeTruthy();
+  const user = { user_id: "00000000-0000-0000-0000-000000000001", email: "t@t" };
+  const base = {
+    amount: 100000,
+    description: "test",
+    expense_date: "2026-06-01",
+    vendor_name: "Vendor X",
+  };
+
+  describe("Validation guards (fail before any DB access)", () => {
+    it("rejects an unknown category with HTTP 400", async () => {
+      await expect(
+        service.create("diffusers", { ...base, category: "bribes" }, user),
+      ).rejects.toMatchObject({ status: 400 });
     });
 
-    it("should have draft status by default", () => {
-      const expense = generateExpense();
-      expect(expense.status).toBe("draft");
-    });
-
-    it("should track amount", () => {
-      const expense = generateExpense();
-      expect(expense.amount).toBeGreaterThan(0);
-    });
-
-    it("should set expense date", () => {
-      const expense = generateExpense();
-      expect(expense.expense_date).toBeTruthy();
-    });
-
-    it("should track submitter", () => {
-      const expense = generateExpense();
-      expect(expense.submitted_by).toBe(TEST_USER.user_id);
+    it("rejects an unknown expense_type with HTTP 400", async () => {
+      await expect(
+        service.create(
+          "diffusers",
+          { ...base, category: "other", expense_type: "wire_fraud" },
+          user,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 
-  describe("Expense Categories", () => {
-    it("should support expense categories", () => {
-      const categories = [
-        "office_supplies",
-        "travel",
-        "meals",
-        "utilities",
-        "maintenance",
-        "other",
+  describe("Category → chart-of-accounts mapping", () => {
+    it("maps every valid category to a COA code", () => {
+      for (const cat of service.VALID_CATEGORIES) {
+        expect(service.CATEGORY_ACCOUNT_MAP[cat]).toMatch(/^6\d{3}$/);
+      }
+    });
+
+    it("covers all categories offered by the UI", () => {
+      const uiCategories = [
+        "rent", "transport", "office_supplies", "meals",
+        "client_entertainment", "utilities", "maintenance", "marketing",
+        "insurance", "professional_fees", "software_subscriptions", "other",
       ];
-
-      categories.forEach((category) => {
-        const expense = generateExpense(TEST_BUSINESS, {
-          expense_category: category,
-        });
-        expect(expense.expense_category).toBe(category);
-      });
+      for (const cat of uiCategories) {
+        expect(service.VALID_CATEGORIES).toContain(cat);
+      }
     });
   });
 
-  describe("Expense Amounts", () => {
-    it("should handle various amounts", () => {
-      const amounts = [100, 1000, 10000, 100000];
-
-      amounts.forEach((amount) => {
-        const expense = generateExpense(TEST_BUSINESS, { amount });
-        expect(expense.amount).toBe(amount);
-      });
-    });
-
-    it("should support multiple currencies", () => {
-      const expense = generateExpense();
-      expect(expense.currency).toBeTruthy();
+  describe("Expense types", () => {
+    it("accepts the three UI types plus advance retirement", () => {
+      expect(service.VALID_EXPENSE_TYPES).toEqual(
+        expect.arrayContaining([
+          "reimbursement", "petty_cash", "direct_payment",
+          "cash_advance_retirement",
+        ]),
+      );
     });
   });
 
-  describe("Expense Status", () => {
-    it("should track submission", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "submitted",
-      });
-      expect(expense.status).toBe("submitted");
-    });
-
-    it("should track approval", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "approved",
-        approved_by: TEST_USER.user_id,
-      });
-      expect(expense.status).toBe("approved");
-      expect(expense.approved_by).toBe(TEST_USER.user_id);
-    });
-
-    it("should track rejection", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "rejected",
-      });
-      expect(expense.status).toBe("rejected");
-    });
-
-    it("should track reimbursement", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "reimbursed",
-      });
-      expect(expense.status).toBe("reimbursed");
-    });
-  });
-
-  describe("Receipt Tracking", () => {
-    it("should track receipt number", () => {
-      const expense = generateExpense();
-      expect(expense.receipt_number).toBeTruthy();
-    });
-
-    it("should link to vendor", () => {
-      const expense = generateExpense();
-      expect(expense.vendor).toBeTruthy();
-    });
-  });
-
-  describe("Reimbursement", () => {
-    it("should flag reimbursable expenses", () => {
-      const expense = generateExpense(TEST_BUSINESS, { reimbursable: true });
-      expect(expense.reimbursable).toBe(true);
-    });
-
-    it("should track non-reimbursable expenses", () => {
-      const expense = generateExpense();
-      expect(expense.reimbursable).toBe(false);
-    });
-  });
-
-  describe("Approval Workflow", () => {
-    it("should require approval before reimbursement", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "submitted",
-        approved_by: null,
-      });
-
-      expect(expense.approved_by).toBeNull();
-      expect(expense.status).toBe("submitted");
-    });
-
-    it("should not reimburse rejected expenses", () => {
-      const expense = generateExpense(TEST_BUSINESS, {
-        status: "rejected",
-      });
-
-      expect(expense.status).toBe("rejected");
-      expect(expense.status).not.toBe("reimbursed");
-    });
-  });
-
-  describe("Timestamps", () => {
-    it("should track creation", () => {
-      const expense = generateExpense();
-      expect(new Date(expense.created_at)).toBeInstanceOf(Date);
-    });
-
-    it("should track updates", () => {
-      const expense = generateExpense();
-      expect(new Date(expense.updated_at)).toBeInstanceOf(Date);
-    });
-  });
-
-  describe("Business Context", () => {
-    it("should belong to specific business", () => {
-      const expense = generateExpense();
-      expect(expense.business_id).toBe(TEST_BUSINESS.business_id);
+  describe("Auto-approve threshold", () => {
+    it("defaults to ₦5,000 (matches client constant)", () => {
+      expect(service.AUTO_APPROVE_THRESHOLD).toBe(5000);
     });
   });
 });
