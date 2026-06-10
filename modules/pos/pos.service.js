@@ -13,6 +13,7 @@ const receiptSvc = require("./receipt.service");
 const repo = require("./pos.repository");
 const loyaltyService = require("../loyalty/loyalty.service");
 const invoicingSvc = require("../invoicing/invoicing.service");
+const { getRate } = require("../../lib/currency/converter");
 
 // ─────────────────────────────────────────────────────────────
 // POS service — coordination layer for the point of sale.
@@ -254,13 +255,18 @@ async function createTransaction(business, data, user) {
 
     // ── C6: Validate line items before processing ──
     for (const line of data.lines) {
-      if (typeof line.quantity !== "number" || line.quantity <= 0) {
+      // Coerce string numerics from pg driver / frontend cache
+      line.quantity = Number(line.quantity);
+      line.unit_price = Number(line.unit_price);
+      line.discount_amount = Number(line.discount_amount || 0);
+
+      if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
         throw Object.assign(
-          new Error(`Invalid quantity for line: ${line.description || line.product_id}. Must be a positive number.`),
+          new Error(`Invalid quantity for line: ${line.description || line.product_id}. Must be a positive whole number.`),
           { status: 400 },
         );
       }
-      if (typeof line.unit_price !== "number" || line.unit_price < 0) {
+      if (!Number.isFinite(line.unit_price) || line.unit_price < 0) {
         throw Object.assign(
           new Error(`Invalid unit_price for line: ${line.description || line.product_id}. Must be non-negative.`),
           { status: 400 },
@@ -276,6 +282,25 @@ async function createTransaction(business, data, user) {
         }
       }
     }
+
+    // ── Currency resolution ────────────────────────────────────
+    const currency = (data.currency || "NGN").toUpperCase();
+    let exchangeRate = 1;
+    if (currency !== "NGN") {
+      if (data.exchange_rate && parseFloat(data.exchange_rate) > 0) {
+        exchangeRate = parseFloat(data.exchange_rate);
+      } else {
+        const stored = await getRate(currency, "NGN");
+        if (!stored) {
+          throw Object.assign(
+            new Error(`No exchange rate found for ${currency}. Sync rates first.`),
+            { status: 400 },
+          );
+        }
+        exchangeRate = parseFloat(stored.rate);
+      }
+    }
+
     // Validate payment splits sum
     const paymentSum = data.payments.reduce((s, p) => s + parseFloat(p.amount), 0);
     if (data.payments.some((p) => parseFloat(p.amount) <= 0)) {
@@ -352,6 +377,8 @@ async function createTransaction(business, data, user) {
       change,
       fulfilment_type: data.fulfilment_type,
       offline_id: data.offline_id, // set only by offline-sync replay
+      currency,
+      exchange_rate: currency !== "NGN" ? exchangeRate : null,
     });
 
     for (let i = 0; i < data.lines.length; i++) {
@@ -376,6 +403,7 @@ async function createTransaction(business, data, user) {
           movementType: "sold",
           quantity: l.quantity,
           direction: -1,
+          fromLocationId: session.location_id,
           referenceType: "pos_transaction",
           referenceId: tx.transaction_id,
           performedBy: user.user_id,
@@ -420,6 +448,7 @@ async function createTransaction(business, data, user) {
       tx,
       data.payments,
       data.lines,
+      exchangeRate,
     );
     await postPosCOGSJournal(client, business, tx, data.lines);
 
@@ -433,11 +462,13 @@ async function createTransaction(business, data, user) {
          (order_number, contact_id, status, fulfilment_type,
           source, pos_transaction_id,
           subtotal, discount_total, vat_amount,
-          total_amount, amount_paid, created_by)
+          total_amount, amount_paid, created_by,
+          currency, exchange_rate)
        VALUES ($1, $2, 'confirmed', $3,
                'pos', $4,
                $5, $6, $7,
-               $8, $9, $10)
+               $8, $9, $10,
+               $11, $12)
        RETURNING order_id`,
       [
         soNumber,
@@ -450,6 +481,8 @@ async function createTransaction(business, data, user) {
         totalAmount,
         totalAmount, // fully paid at POS
         user.user_id,
+        currency,
+        currency !== "NGN" ? exchangeRate : null,
       ],
     );
 
@@ -527,78 +560,6 @@ async function createTransaction(business, data, user) {
   return result;
 }
 
-// Replay a batch of queued offline POS sales. Idempotent: each sale carries
-// a stable offline_id; an already-synced one is reported as a duplicate (and
-// the UNIQUE index on offline_id is the hard guard against double-posting if
-// two syncs race). Each sale is replayed through the normal createTransaction
-// path, so it gets the same validation, journals, stock movements and loyalty.
-// One bad sale doesn't abort the batch — failures are reported per-item.
-async function syncOfflineTransactions(business, { session_id, transactions }, user) {
-  if (!Array.isArray(transactions)) {
-    throw Object.assign(new Error("transactions array is required"), {
-      status: 400,
-    });
-  }
-
-  const results = [];
-  for (const t of transactions) {
-    try {
-      const existing = await withBusinessContext(business, (client) =>
-        repo.findTransactionByOfflineId(client, t.offline_id),
-      );
-      if (existing) {
-        results.push({
-          offline_id: t.offline_id,
-          success: true,
-          transaction_id: existing.transaction_id,
-          transaction_number: existing.transaction_number,
-          conflict_type: "duplicate",
-        });
-        continue;
-      }
-
-      const tx = await createTransaction(
-        business,
-        {
-          session_id: session_id || t.session_id,
-          lines: t.lines,
-          payments: t.payments,
-          contact_id: t.contact_id,
-          offline_id: t.offline_id,
-        },
-        user,
-      );
-      results.push({
-        offline_id: t.offline_id,
-        success: true,
-        transaction_id: tx.transaction_id,
-        transaction_number: tx.transaction_number,
-      });
-    } catch (err) {
-      const msg = err.message || "Sync failed";
-      let conflict_type;
-      if (/no open session/i.test(msg)) conflict_type = "session_closed";
-      else if (/duplicate|unique|already/i.test(msg)) conflict_type = "duplicate";
-      else if (/stock|insufficient|out of stock/i.test(msg))
-        conflict_type = "out_of_stock";
-      results.push({
-        offline_id: t.offline_id,
-        success: false,
-        error: msg,
-        ...(conflict_type ? { conflict_type } : {}),
-      });
-    }
-  }
-
-  const succeeded = results.filter((r) => r.success).length;
-  return {
-    results,
-    total: results.length,
-    succeeded,
-    failed: results.length - succeeded,
-  };
-}
-
 async function getTransaction(business, transactionId) {
   return withBusinessContext(business, async (client) => {
     const tx = await repo.findTransactionById(client, transactionId);
@@ -620,6 +581,18 @@ async function voidTransaction(business, transactionId, { void_reason }, user) {
         status: 400,
       });
 
+    // Resolve the terminal's location so returned stock goes back to the
+    // correct location. The session may already be closed, so we don't
+    // filter by status — we just need the location_id.
+    const { rows: [sessionLoc] } = await client.query(
+      `SELECT t.location_id
+       FROM pos_sessions s
+       JOIN pos_terminals t ON t.terminal_id = s.terminal_id
+       WHERE s.session_id = $1`,
+      [tx.session_id],
+    );
+    const returnLocationId = sessionLoc?.location_id || null;
+
     const lines = await repo.getTransactionProductLines(client, transactionId);
     for (const l of lines) {
       await stockService.recordMovement(client, {
@@ -628,6 +601,7 @@ async function voidTransaction(business, transactionId, { void_reason }, user) {
         movementType: "return_from_customer",
         quantity: l.quantity,
         direction: 1,
+        toLocationId: returnLocationId,
         referenceType: "pos_transaction",
         referenceId: transactionId,
         performedBy: user.user_id,
@@ -692,7 +666,10 @@ function paymentMethodToCOA(method) {
   }
 }
 
-async function postPosRevenueJournal(client, business, tx, payments, lines) {
+async function postPosRevenueJournal(client, business, tx, payments, lines, exchangeRate = 1) {
+  // Helper: convert sale-currency amount to NGN for journal posting.
+  const toNGN = (amt) => parseFloat((amt * exchangeRate).toFixed(2));
+
   // Sum subtotal and VAT across the sale lines. We recompute here rather
   // than relying on the transaction header so the journal numbers match
   // exactly what was posted to transaction_lines.
@@ -710,6 +687,10 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
   subtotal = parseFloat(subtotal.toFixed(2));
   vatTotal = parseFloat(vatTotal.toFixed(2));
 
+  // Convert to NGN for journal entries (all accounting is in NGN)
+  const subtotalNGN = toNGN(subtotal);
+  const vatTotalNGN = toNGN(vatTotal);
+
   // Group payments by COA code so multiple split-payments to the same
   // destination (e.g. two cash payments) book as a single line.
   const debitsByAccount = new Map();
@@ -724,7 +705,7 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
     }
     debitsByAccount.set(
       accId,
-      (debitsByAccount.get(accId) || 0) + parseFloat(p.amount),
+      (debitsByAccount.get(accId) || 0) + toNGN(parseFloat(p.amount)),
     );
   }
 
@@ -744,9 +725,9 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
   }
 
   // Build the lines:
-  //   DR Cash/Bank   per-account totals
-  //     CR Sales Revenue   subtotal
-  //     CR VAT Payable     vatTotal  (only if VAT present)
+  //   DR Cash/Bank   per-account totals (in NGN)
+  //     CR Sales Revenue   subtotal (in NGN)
+  //     CR VAT Payable     vatTotal (in NGN, only if present)
   const journalLines = [];
   for (const [accId, amount] of debitsByAccount.entries()) {
     if (amount > 0)
@@ -756,9 +737,9 @@ async function postPosRevenueJournal(client, business, tx, payments, lines) {
         credit: 0,
       });
   }
-  journalLines.push({ account_id: revAcc, debit: 0, credit: subtotal });
-  if (vatAcc && vatTotal > 0) {
-    journalLines.push({ account_id: vatAcc, debit: 0, credit: vatTotal });
+  journalLines.push({ account_id: revAcc, debit: 0, credit: subtotalNGN });
+  if (vatAcc && vatTotalNGN > 0) {
+    journalLines.push({ account_id: vatAcc, debit: 0, credit: vatTotalNGN });
   }
 
   await journalService.postEntry(client, {

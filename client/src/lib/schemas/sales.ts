@@ -88,6 +88,7 @@ export const handToLogisticsSchema = z.object({
   delivery_notes: z.string().max(500).optional().or(z.literal("")),
   courier_preference: z.enum(["chowdeck", "gigl", "manual"]),
   contact_phone: z.string().min(7, "Phone number required"),
+  delivery_fee: z.coerce.number().min(0).optional().default(0),
 });
 export type HandToLogisticsValues = z.infer<typeof handToLogisticsSchema>;
 

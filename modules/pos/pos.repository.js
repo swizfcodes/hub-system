@@ -242,7 +242,10 @@ async function validateOpenSession(client, sessionId) {
   const {
     rows: [session],
   } = await client.query(
-    `SELECT session_id FROM pos_sessions WHERE session_id=$1 AND status='open'`,
+    `SELECT s.session_id, t.location_id
+     FROM pos_sessions s
+     JOIN pos_terminals t ON t.terminal_id = s.terminal_id
+     WHERE s.session_id = $1 AND s.status = 'open'`,
     [sessionId],
   );
   return session || null;
@@ -262,12 +265,21 @@ async function insertTransaction(
     totalPaid,
     change,
     fulfilment_type,
+    offline_id,
+    currency,
+    exchange_rate,
   },
 ) {
   const {
     rows: [tx],
   } = await client.query(
-    `INSERT INTO pos_transactions (transaction_number, session_id, contact_id, served_by, subtotal, discount_total, vat_amount, total_amount, amount_paid, change_given, fulfilment_type, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed') RETURNING *`,
+    `INSERT INTO pos_transactions
+       (transaction_number, session_id, contact_id, served_by,
+        subtotal, discount_total, vat_amount, total_amount, amount_paid,
+        change_given, fulfilment_type, status, currency, exchange_rate,
+        offline_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed',$12,$13,$14)
+     RETURNING *`,
     [
       txNumber,
       session_id,
@@ -280,6 +292,9 @@ async function insertTransaction(
       totalPaid,
       change,
       fulfilment_type || "walk_in",
+      currency || "NGN",
+      exchange_rate || null,
+      offline_id || null,
     ],
   );
   return tx;

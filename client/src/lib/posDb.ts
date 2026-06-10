@@ -57,6 +57,13 @@ export async function cacheProducts(products: POSProduct[]): Promise<void> {
   const db = await getDB();
   const tx = db.transaction("products", "readwrite");
   const store = tx.objectStore("products");
+  // Replace, don't merge. The seed (POSSession.seedProductCache) pulls the
+  // server's current active set (/catalogue/products?include_inactive=false),
+  // so the cache must mirror it exactly. A plain put() per row only ADDS/UPDATES
+  // and never drops products the server has retired or deleted — which left
+  // soft-deleted SKUs lingering on the terminal. Clearing first guarantees a
+  // retired product disappears from POS on the next seed.
+  await store.clear();
   await Promise.all(products.map((p) => store.put(p)));
   await tx.done;
 }
@@ -153,13 +160,18 @@ export async function getStockQty(productId: string): Promise<number> {
   return row?.qty ?? 0;
 }
 
-/** H4 fix: batch-read all stock quantities in a single IDB transaction */
+/**
+ * Read every cached stock row in one pass and return a
+ * Map<product_id, qty>. ProductSearch uses this to build its stockMap in
+ * a single call instead of awaiting getStockQty() once per product (which
+ * is O(n) round-trips and races as the grid renders).
+ */
 export async function getAllStockQty(): Promise<Map<string, number>> {
   const db = await getDB();
-  const all = await db.getAll("stock");
+  const rows = await db.getAll("stock");
   const map = new Map<string, number>();
-  for (const row of all) {
-    map.set(row.product_id, row.qty);
+  for (const row of rows) {
+    if (row?.product_id != null) map.set(row.product_id, row.qty ?? 0);
   }
   return map;
 }
@@ -182,20 +194,9 @@ export async function getPendingTransactions(): Promise<PendingTransaction[]> {
 }
 
 export async function getPendingCount(): Promise<number> {
-  // M3 fix: use IDB count() instead of getAll + filter
   const db = await getDB();
-  // IDB count() on the store counts all records. Since we can't filter with
-  // count() without an index, we add a quick cursor count for 'pending' status.
-  // Still much cheaper than deserializing all records.
-  const tx = db.transaction("pending", "readonly");
-  const store = tx.objectStore("pending");
-  let count = 0;
-  let cursor = await store.openCursor();
-  while (cursor) {
-    if (cursor.value.sync_status === "pending") count++;
-    cursor = await cursor.continue();
-  }
-  return count;
+  const all = await db.getAll("pending");
+  return all.filter((t) => t.sync_status === "pending").length;
 }
 
 export async function markTransactionSyncing(offlineId: string): Promise<void> {

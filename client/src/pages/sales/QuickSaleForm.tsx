@@ -232,7 +232,7 @@ export default function QuickSaleForm() {
         />
 
         {/* ── Customer ───────────────────────────────────────────── */}
-        <Card className="p-5">
+        <Card className="p-5 overflow-visible">
           <h3 className="text-xs font-medium uppercase tracking-widest text-orika-smoke mb-3">
             Customer
           </h3>
@@ -371,7 +371,7 @@ export default function QuickSaleForm() {
             checked={isDelivery}
             onChange={setIsDelivery}
             label="Delivery"
-            description="Push to logistics module on confirmation"
+            description="Delivery cost is borne by the client and charged upon delivery"
           />
 
           {isDelivery && (

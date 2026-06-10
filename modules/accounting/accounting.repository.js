@@ -142,7 +142,7 @@ async function insertJournalEntry(
   } = await client.query(
     `INSERT INTO journal_entries
        (entry_number, entry_date, description, reference_type, reference_id, fiscal_period_id, posted_by)
-     VALUES ('JE-M-'||to_char(now(),'YYYYMMDD-HH24MISS'), $1,$2,$3,$4,$5,$6)
+     VALUES ('JE-'||to_char(clock_timestamp(),'YYYYMMDD-HH24MISS')||'-'||substr(gen_random_uuid()::text,1,8), $1,$2,$3,$4,$5,$6)
      RETURNING *`,
     [
       entryDate,

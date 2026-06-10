@@ -25,7 +25,8 @@ function setBusinessContext(req, res, next) {
   }
   // ---------------------------
 
-  const business = req.headers["x-business-line"] || req.user?.current_business;
+  // Fallback chain: header → query param (for PDF links opened in new tabs) → JWT
+  const business = req.headers["x-business-line"] || req.query.business || req.user?.current_business;
   const activeList = businesses.getActiveBusinesses();
 
   if (!business || !businesses.isValidBusiness(business)) {
