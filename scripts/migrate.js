@@ -63,6 +63,79 @@ async function getAppliedMigrations(client) {
   }
 }
 
+// ── SQL Splitter ──────────────────────────────────────────
+// Splits a SQL file into individual statements, correctly
+// handling dollar-quoted blocks (DO $$ ... $$, $body$ etc.)
+// so that multi-statement files with PL/pgSQL work correctly.
+function splitStatements(sql) {
+  const statements = [];
+  let current = "";
+  let i = 0;
+
+  while (i < sql.length) {
+    // Detect start of a dollar-quote tag: $tag$ or $$
+    if (sql[i] === "$") {
+      const tagMatch = sql.slice(i).match(/^(\$[A-Za-z0-9_]*\$)/);
+      if (tagMatch) {
+        const tag = tagMatch[1];
+        const closing = sql.indexOf(tag, i + tag.length);
+        if (closing !== -1) {
+          // Consume everything up to and including the closing tag
+          current += sql.slice(i, closing + tag.length);
+          i = closing + tag.length;
+          continue;
+        }
+      }
+    }
+
+    // Detect single-line comment
+    if (sql[i] === "-" && sql[i + 1] === "-") {
+      const end = sql.indexOf("\n", i);
+      current += end === -1 ? sql.slice(i) : sql.slice(i, end + 1);
+      i = end === -1 ? sql.length : end + 1;
+      continue;
+    }
+
+    // Detect single-quoted string literal
+    if (sql[i] === "'") {
+      let j = i + 1;
+      while (j < sql.length) {
+        if (sql[j] === "'" && sql[j + 1] === "'") {
+          j += 2;
+          continue;
+        } // escaped quote
+        if (sql[j] === "'") {
+          j++;
+          break;
+        }
+        j++;
+      }
+      current += sql.slice(i, j);
+      i = j;
+      continue;
+    }
+
+    // Statement boundary
+    if (sql[i] === ";") {
+      current += ";";
+      const trimmed = current.trim();
+      if (trimmed && trimmed !== ";") statements.push(trimmed);
+      current = "";
+      i++;
+      continue;
+    }
+
+    current += sql[i];
+    i++;
+  }
+
+  // Trailing statement without a final semicolon
+  const trimmed = current.trim();
+  if (trimmed) statements.push(trimmed);
+
+  return statements;
+}
+
 async function runMigration(client, filename) {
   const filepath = path.join(MIGRATIONS_DIR, filename);
   const raw = fs.readFileSync(filepath, "utf8");
@@ -79,6 +152,13 @@ async function runMigration(client, filename) {
   console.log(`\n  → Applying: ${filename}`);
 
   try {
+    // Paste this temporarily at the top of runMigration, before the BEGIN
+    const statements = splitStatements(content);
+    //console.log(`\n  [DEBUG] ${filename}: ${statements.length} statements`);
+    statements.forEach((s, i) => {
+      //console.log(`\n  --- stmt ${i + 1} ---\n${s.slice(0, 120)}...`);
+    });
+
     await client.query("BEGIN");
     await client.query(content);
 

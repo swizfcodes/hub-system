@@ -11,28 +11,8 @@
 -- ── JEWELRY ─────────────────────────────────────────────────
 
 -- 1. Expand source CHECK
-DO $$
-BEGIN
-  -- Drop old source CHECK (may have different constraint names)
-  PERFORM 1 FROM pg_constraint
-    WHERE conrelid = 'jewelry.sales_orders'::regclass
-      AND contype = 'c'
-      AND pg_get_constraintdef(oid) LIKE '%source%';
-  IF FOUND THEN
-    EXECUTE (
-      SELECT 'ALTER TABLE jewelry.sales_orders DROP CONSTRAINT ' || conname
-      FROM pg_constraint
-      WHERE conrelid = 'jewelry.sales_orders'::regclass
-        AND contype = 'c'
-        AND pg_get_constraintdef(oid) LIKE '%source%'
-      LIMIT 1
-    );
-  END IF;
-END $$;
-
-ALTER TABLE jewelry.sales_orders
-  ALTER COLUMN source SET DEFAULT 'manual';
-
+ALTER TABLE jewelry.sales_orders DROP CONSTRAINT IF EXISTS sales_orders_source_check;
+ALTER TABLE jewelry.sales_orders ALTER COLUMN source SET DEFAULT 'manual';
 ALTER TABLE jewelry.sales_orders
   ADD CONSTRAINT sales_orders_source_check
   CHECK (source IN ('manual', 'web', 'pos', 'campaign', 'direct'));
@@ -54,17 +34,7 @@ ALTER TABLE jewelry.sales_orders
   ADD COLUMN IF NOT EXISTS pos_transaction_id UUID;
 
 -- 5. Expand status CHECK to include pending_proof
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'jewelry.sales_orders'::regclass
-      AND conname = 'sales_orders_status_check'
-  ) THEN
-    ALTER TABLE jewelry.sales_orders DROP CONSTRAINT sales_orders_status_check;
-  END IF;
-END $$;
-
+ALTER TABLE jewelry.sales_orders DROP CONSTRAINT IF EXISTS sales_orders_status_check;
 ALTER TABLE jewelry.sales_orders
   ADD CONSTRAINT sales_orders_status_check
   CHECK (status IN ('pending_proof', 'confirmed', 'partially_fulfilled',
@@ -79,55 +49,31 @@ CREATE INDEX IF NOT EXISTS idx_jewelry_sales_orders_pos_tx
 
 -- ── DIFFUSERS ───────────────────────────────────────────────
 
-DO $$
-BEGIN
-  PERFORM 1 FROM pg_constraint
-    WHERE conrelid = 'diffusers.sales_orders'::regclass
-      AND contype = 'c'
-      AND pg_get_constraintdef(oid) LIKE '%source%';
-  IF FOUND THEN
-    EXECUTE (
-      SELECT 'ALTER TABLE diffusers.sales_orders DROP CONSTRAINT ' || conname
-      FROM pg_constraint
-      WHERE conrelid = 'diffusers.sales_orders'::regclass
-        AND contype = 'c'
-        AND pg_get_constraintdef(oid) LIKE '%source%'
-      LIMIT 1
-    );
-  END IF;
-END $$;
-
-ALTER TABLE diffusers.sales_orders
-  ALTER COLUMN source SET DEFAULT 'manual';
-
+-- 1. Expand source CHECK
+ALTER TABLE diffusers.sales_orders DROP CONSTRAINT IF EXISTS sales_orders_source_check;
+ALTER TABLE diffusers.sales_orders ALTER COLUMN source SET DEFAULT 'manual';
 ALTER TABLE diffusers.sales_orders
   ADD CONSTRAINT sales_orders_source_check
   CHECK (source IN ('manual', 'web', 'pos', 'campaign', 'direct'));
 
+-- 2. Currency / exchange rate columns
 ALTER TABLE diffusers.sales_orders
   ADD COLUMN IF NOT EXISTS currency       TEXT NOT NULL DEFAULT 'NGN',
   ADD COLUMN IF NOT EXISTS exchange_rate  NUMERIC(15,6) DEFAULT 1,
   ADD COLUMN IF NOT EXISTS amount_foreign NUMERIC(14,2);
 
+-- 3. Financial breakdown columns
 ALTER TABLE diffusers.sales_orders
   ADD COLUMN IF NOT EXISTS subtotal       NUMERIC(14,2),
   ADD COLUMN IF NOT EXISTS discount_total NUMERIC(14,2) DEFAULT 0,
   ADD COLUMN IF NOT EXISTS vat_amount     NUMERIC(14,2) DEFAULT 0;
 
+-- 4. POS bridge link
 ALTER TABLE diffusers.sales_orders
   ADD COLUMN IF NOT EXISTS pos_transaction_id UUID;
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conrelid = 'diffusers.sales_orders'::regclass
-      AND conname = 'sales_orders_status_check'
-  ) THEN
-    ALTER TABLE diffusers.sales_orders DROP CONSTRAINT sales_orders_status_check;
-  END IF;
-END $$;
-
+-- 5. Expand status CHECK to include pending_proof
+ALTER TABLE diffusers.sales_orders DROP CONSTRAINT IF EXISTS sales_orders_status_check;
 ALTER TABLE diffusers.sales_orders
   ADD CONSTRAINT sales_orders_status_check
   CHECK (status IN ('pending_proof', 'confirmed', 'partially_fulfilled',

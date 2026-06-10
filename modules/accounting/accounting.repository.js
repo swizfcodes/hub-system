@@ -141,9 +141,17 @@ async function insertJournalEntry(
   const {
     rows: [entry],
   } = await client.query(
+    // entry_number must be unique. now() is the TRANSACTION timestamp —
+    // constant for the whole transaction — so two entries posted together
+    // (e.g. a sale's revenue + COGS) would collide. Use clock_timestamp()
+    // (advances per statement) and append a short random suffix so even
+    // same-microsecond or concurrent inserts stay unique.
     `INSERT INTO journal_entries
        (entry_number, entry_date, description, reference_type, reference_id, fiscal_period_id, posted_by)
-     VALUES ('JE-M-'||to_char(now(),'YYYYMMDD-HH24MISS'), $1,$2,$3,$4,$5,$6)
+     VALUES (
+       'JE-M-'||to_char(clock_timestamp(),'YYYYMMDD-HH24MISS')
+              ||'-'||substr(gen_random_uuid()::text,1,8),
+       $1,$2,$3,$4,$5,$6)
      RETURNING *`,
     [
       entryDate,

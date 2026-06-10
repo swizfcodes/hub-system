@@ -518,8 +518,18 @@ async function getSalesKpis(client) {
   const {
     rows: [revenueM],
   } = await client.query(
-    `SELECT COALESCE(SUM(amount), 0)::NUMERIC AS v FROM receipts
-      WHERE issued_at >= date_trunc('month', now()) AND is_voided = false`,
+    // Revenue MTD = posted income-account journal movement this month,
+    // sourced from the GL rather than the receipts table. This counts every
+    // channel that posts a revenue journal — web, POS and manual sales —
+    // and mirrors the accounting dashboard's revenue_mtd definition.
+    `SELECT COALESCE(SUM(CASE WHEN coa.account_type = 'income'
+                              THEN jl.credit - jl.debit ELSE 0 END), 0)::NUMERIC AS v
+       FROM journal_lines jl
+       JOIN journal_entries je    ON je.entry_id = jl.entry_id
+       JOIN chart_of_accounts coa ON coa.account_id = jl.account_id
+      WHERE coa.account_type = 'income'
+        AND je.is_posted = true
+        AND date_trunc('month', je.entry_date) = date_trunc('month', CURRENT_DATE)`,
   );
   const {
     rows: [aov],

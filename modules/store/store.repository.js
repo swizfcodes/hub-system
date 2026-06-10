@@ -505,20 +505,16 @@ async function linkStoreOrderToSalesOrder(client, storeOrderId, salesOrderId) {
   );
 }
 
-// Settle the linked sales order on payment: mark it fully paid and
-// flip its lines to fulfilled, mirroring a completed ERP sale.
+// Settle the linked sales order on payment: mark it fully paid but leave it
+// 'confirmed' (paid, awaiting dispatch). Physical fulfilment/dispatch flips
+// it to 'fulfilled' later via logistics — payment ≠ fulfilment. Order lines
+// stay 'pending' until they're actually dispatched.
 async function settleSalesOrderForWeb(client, salesOrderId) {
   await client.query(
     `UPDATE diffusers.sales_orders
        SET amount_paid = total_amount,
-           status = 'fulfilled',
+           status = 'confirmed',
            updated_at = now()
-     WHERE order_id = $1`,
-    [salesOrderId],
-  );
-  await client.query(
-    `UPDATE diffusers.order_lines
-       SET status = 'fulfilled'
      WHERE order_id = $1`,
     [salesOrderId],
   );

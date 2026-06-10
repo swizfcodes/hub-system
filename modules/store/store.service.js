@@ -354,7 +354,11 @@ async function verifyAndFulfil(reference) {
     return { ok: false, status: verification.status, reference };
   }
 
-  return withBusinessContext(STORE_BUSINESS, async (client) => {
+  // resolvedOrderId is captured inside the transaction so the
+  // concurrent-fulfilment catch below can report which order was paid.
+  let resolvedOrderId = null;
+  try {
+    return await withBusinessContext(STORE_BUSINESS, async (client) => {
     // 2. Load the order. store.orders is explicitly qualified, so it
     //    resolves even though search_path points at diffusers.
     const order = await repo.findOrderByRef(client, reference);
@@ -363,6 +367,7 @@ async function verifyAndFulfil(reference) {
         status: 404,
       });
     }
+    resolvedOrderId = order.id;
 
     // 3a. Idempotency — already-paid orders short-circuit. The real
     //     atomic guard is markOrderPaidWithJournals at step 7; this
@@ -411,7 +416,7 @@ async function verifyAndFulfil(reference) {
           fromLocationId: storeLoc?.location_id || null,
           referenceType: "store_order",
           referenceId: order.id,
-          performedBy: order.customer_id,
+          performedBy: config.systemUserId,
         });
       } catch (err) {
         // A failed movement here aborts the whole transaction — we do
@@ -508,6 +513,7 @@ async function verifyAndFulfil(reference) {
       // transaction already fulfilled it.
       throw Object.assign(new Error("Order was concurrently fulfilled"), {
         status: 409,
+        alreadyFulfilled: true,
       });
     }
 
@@ -592,7 +598,22 @@ async function verifyAndFulfil(reference) {
     }
 
     return { ok: true, order_id: order.id, status: "paid" };
-  });
+    });
+  } catch (err) {
+    // The lost-the-race branch threw with alreadyFulfilled set: the
+    // transaction has rolled back our duplicate stock/journal work, and
+    // the winning transaction already fulfilled this order — so report
+    // success rather than surfacing a 409 to the storefront poll.
+    if (err && err.alreadyFulfilled) {
+      return {
+        ok: true,
+        already: true,
+        order_id: resolvedOrderId,
+        status: "paid",
+      };
+    }
+    throw err;
+  }
 }
 
 /**
@@ -606,7 +627,11 @@ async function verifyAndFulfil(reference) {
  * there is no amount re-check (the Optimus webhook already confirmed it).
  */
 async function fulfillOptimusOrder(transactionRef) {
-  return withBusinessContext(STORE_BUSINESS, async (client) => {
+  // Captured inside the transaction so the concurrent-fulfilment catch
+  // below can report which order was already paid.
+  let resolvedOrderId = null;
+  try {
+    return await withBusinessContext(STORE_BUSINESS, async (client) => {
     const order = await repo.findOrderByOptimusRef(client, transactionRef);
     if (!order) {
       throw Object.assign(
@@ -614,6 +639,7 @@ async function fulfillOptimusOrder(transactionRef) {
         { status: 404 },
       );
     }
+    resolvedOrderId = order.id;
 
     // Idempotency — already fulfilled orders short-circuit.
     if (order.status !== "pending") {
@@ -644,7 +670,7 @@ async function fulfillOptimusOrder(transactionRef) {
           fromLocationId: optLoc?.location_id || null,
           referenceType: "store_order",
           referenceId: order.id,
-          performedBy: order.customer_id,
+          performedBy: config.systemUserId,
         });
       } catch (err) {
         logger.error(
@@ -684,37 +710,39 @@ async function fulfillOptimusOrder(transactionRef) {
       });
     }
 
-    // 3. COGS journal
+    // 3. COGS journal — weighted-average cost via stockService, mirroring
+    //    the Paystack fulfilment path exactly (same helper + COA codes).
+    //    Cost is read from the stock ledger, NOT a per-line cost field.
+    const costable = lines
+      .filter((l) => l.erp_product_id)
+      .map((l) => ({ product_id: l.erp_product_id, quantity: l.quantity }));
     let cogsEntry = null;
-    try {
-      const cogsAcc = await journalService.getAccountId(client, "5100");
-      const invAcc = await journalService.getAccountId(client, "1310");
-      if (cogsAcc && invAcc) {
-        const cogsLines = [];
-        for (const item of lines) {
-          const costNaira = ((item.cost_kobo || 0) * item.quantity) / 100;
-          if (costNaira > 0) {
-            cogsLines.push({
-              account_id: cogsAcc,
-              debit: costNaira,
-              credit: 0,
-            });
-            cogsLines.push({ account_id: invAcc, debit: 0, credit: costNaira });
-          }
-        }
-        if (cogsLines.length) {
+    if (costable.length > 0) {
+      const { total_cost } = await stockService.calculateSaleCOGS(
+        client,
+        costable,
+      );
+      if (total_cost && total_cost > 0) {
+        const cogsAcc = await journalService.getAccountId(client, "5000");
+        const invAcc = await journalService.getAccountId(client, "1410");
+        if (cogsAcc && invAcc) {
           cogsEntry = await journalService.postEntry(client, {
             business: STORE_BUSINESS,
             description: `COGS — Optimus Pay web order ${order.id}`,
-            lines: cogsLines,
+            referenceType: "store_order_cogs",
+            referenceId: order.id,
             postedBy: config.systemUserId,
+            lines: [
+              { account_id: cogsAcc, debit: total_cost, credit: 0 },
+              { account_id: invAcc, debit: 0, credit: total_cost },
+            ],
           });
+        } else {
+          logger.warn(
+            `[store/optimus] COGS journal skipped for ${order.id}: missing COA`,
+          );
         }
       }
-    } catch (err) {
-      logger.warn(
-        `[store/optimus] COGS journal skipped for ${order.id}: ${err.message}`,
-      );
     }
 
     // 4. Mark paid (atomic guard against double-fulfilment)
@@ -725,6 +753,7 @@ async function fulfillOptimusOrder(transactionRef) {
     if (!paidOrder) {
       throw Object.assign(new Error("Order was concurrently fulfilled"), {
         status: 409,
+        alreadyFulfilled: true,
       });
     }
 
@@ -798,7 +827,22 @@ async function fulfillOptimusOrder(transactionRef) {
     }
 
     return { ok: true, order_id: order.id, status: "paid" };
-  });
+    });
+  } catch (err) {
+    // The lost-the-race branch threw with alreadyFulfilled set: the
+    // transaction has rolled back our duplicate stock/journal work, and
+    // the winning transaction already fulfilled this order — so report
+    // success rather than surfacing a 409 to the storefront poll.
+    if (err && err.alreadyFulfilled) {
+      return {
+        ok: true,
+        already: true,
+        order_id: resolvedOrderId,
+        status: "paid",
+      };
+    }
+    throw err;
+  }
 }
 
 /**
