@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Rocket, Package } from "lucide-react";
+import { Plus, Eye, Rocket, Package, Search } from "lucide-react";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Tabs } from "@components/ui/Tabs";
 import { Button } from "@components/ui/Button";
@@ -11,34 +11,24 @@ import {
   CourierBadge,
 } from "@components/logistics/shared/DeliveryStatusBadge";
 import { CreateDeliveryModal } from "@/components/logistics/modals/CreateDeliveryModal";
-import {
-  listDeliveries,
-  dispatchDelivery,
-  packingSlipUrl,
-} from "@services/logistics";
+import { DispatchModal } from "@/components/logistics/modals/DispatchModal";
+import { listDeliveries, packingSlipUrl } from "@services/logistics";
 import { LOGISTICS_TABS } from "@lib/constants/logisticsConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { fmtDateTime } from "@lib/format";
-import { showToast } from "@hooks/useToast";
-import { errMsg } from "@services/api";
-import { cn } from "@lib/cn";
 import type { Delivery } from "@typedefs/logistics";
 import { Topbar } from "@/components/shell/Topbar";
-
-// Tab → status filter mapping
-const TAB_STATUS_MAP: Record<string, string | undefined> = {
-  pending: "pending_dispatch",
-  active: undefined, // filter client-side
-  delivered: "delivered",
-  failed: undefined, // filter client-side
-};
 
 const ACTIVE_STATUSES = new Set(["dispatched", "picked_up", "in_transit"]);
 const FAILED_STATUSES = new Set(["failed", "returned"]);
 
 function filterForTab(deliveries: Delivery[], tab: string): Delivery[] {
+  if (tab === "pending")
+    return deliveries.filter((d) => d.status === "pending_dispatch");
   if (tab === "active")
     return deliveries.filter((d) => ACTIVE_STATUSES.has(d.status));
+  if (tab === "delivered")
+    return deliveries.filter((d) => d.status === "delivered");
   if (tab === "failed")
     return deliveries.filter((d) => FAILED_STATUSES.has(d.status));
   return deliveries;
@@ -46,67 +36,41 @@ function filterForTab(deliveries: Delivery[], tab: string): Delivery[] {
 
 export default function LogisticsHome() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
   const { currency } = useActiveBusiness();
 
   const [activeTab, setActiveTab] = useState("pending");
+  const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [dispatching, setDispatching] = useState<string | null>(null);
+  const [dispatching, setDispatching] = useState<Delivery | null>(null);
 
-  // Fetch all deliveries — tabs filter client-side to avoid multiple queries
+  // ONE query for all statuses — tabs and badges filter client-side.
+  // (Per-tab queries made the badge counts wrong: each tab only saw its
+  // own slice, so the other tabs' counts read zero.)
   const { data, isLoading } = useQuery({
-    queryKey: ["deliveries", activeTab],
-    queryFn: () => {
-      const status = TAB_STATUS_MAP[activeTab];
-      return listDeliveries({ status, limit: 100 });
-    },
+    queryKey: ["deliveries", search],
+    queryFn: () => listDeliveries({ limit: 200, search: search || undefined }),
     refetchInterval: 30_000,
   });
 
-  const deliveries = filterForTab(data?.data ?? [], activeTab);
-
-  const dispatchMutation = useMutation({
-    mutationFn: dispatchDelivery,
-    onSuccess: (delivery) => {
-      showToast.success(
-        `${delivery.delivery_number} dispatched — WhatsApp sent`,
-      );
-      qc.invalidateQueries({ queryKey: ["deliveries"] });
-      setDispatching(null);
-    },
-    onError: (err) => {
-      showToast.error(errMsg(err));
-      setDispatching(null);
-    },
-  });
-
-  function handleDispatch(deliveryId: string) {
-    setDispatching(deliveryId);
-    dispatchMutation.mutate(deliveryId);
-  }
-
-  // Count badges for tabs
   const allData = data?.data ?? [];
-  const pendingCount = allData.filter(
-    (d) => d.status === "pending_dispatch",
-  ).length;
-  const activeCount = allData.filter((d) =>
-    ACTIVE_STATUSES.has(d.status),
-  ).length;
-  const failedCount = allData.filter((d) =>
-    FAILED_STATUSES.has(d.status),
-  ).length;
+  const deliveries = filterForTab(allData, activeTab);
+
+  const counts = {
+    pending: allData.filter((d) => d.status === "pending_dispatch").length,
+    active: allData.filter((d) => ACTIVE_STATUSES.has(d.status)).length,
+    failed: allData.filter((d) => FAILED_STATUSES.has(d.status)).length,
+  };
 
   const tabsWithBadges = LOGISTICS_TABS.map((t) => ({
     key: t.key,
     label: t.label,
     badge:
-      t.key === "pending" && pendingCount > 0
-        ? pendingCount
-        : t.key === "active" && activeCount > 0
-          ? activeCount
-          : t.key === "failed" && failedCount > 0
-            ? failedCount
+      t.key === "pending" && counts.pending > 0
+        ? counts.pending
+        : t.key === "active" && counts.active > 0
+          ? counts.active
+          : t.key === "failed" && counts.failed > 0
+            ? counts.failed
             : undefined,
   }));
 
@@ -126,14 +90,26 @@ export default function LogisticsHome() {
           }
         />
 
-        {/* Tabs */}
-        <Tabs
-          tabs={tabsWithBadges}
-          active={activeTab}
-          onChange={setActiveTab}
-          surface="dark"
-          variant="underline"
-        />
+        {/* Tabs + search */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs
+            tabs={tabsWithBadges}
+            active={activeTab}
+            onChange={setActiveTab}
+            surface="dark"
+            variant="underline"
+          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke/50" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search number, customer, driver…"
+              className="w-64 rounded-xl border border-white/5 bg-orika-charcoal py-2 pl-8 pr-3 text-xs text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/30 focus:outline-none"
+            />
+          </div>
+        </div>
 
         {/* Delivery list */}
         {isLoading ? (
@@ -146,11 +122,13 @@ export default function LogisticsHome() {
           <div className="py-16 text-center">
             <Package className="mx-auto h-10 w-10 text-orika-smoke/40 mb-3" />
             <p className="text-sm text-orika-smoke">
-              {activeTab === "pending"
-                ? "No deliveries awaiting dispatch."
-                : "Nothing here yet."}
+              {search
+                ? "No deliveries match your search."
+                : activeTab === "pending"
+                  ? "No deliveries awaiting dispatch."
+                  : "Nothing here yet."}
             </p>
-            {activeTab === "pending" && (
+            {activeTab === "pending" && !search && (
               <Button
                 variant="ghost"
                 className="mt-4"
@@ -168,7 +146,7 @@ export default function LogisticsHome() {
                   {[
                     "Delivery",
                     "Customer",
-                    "Courier",
+                    "Courier / Driver",
                     "Created",
                     "Status",
                     "",
@@ -186,18 +164,13 @@ export default function LogisticsHome() {
                 {deliveries.map((delivery) => (
                   <tr
                     key={delivery.delivery_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                    onClick={() => navigate(`/logistics/${delivery.delivery_id}`)}
+                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/logistics/${delivery.delivery_id}`)
-                        }
-                        className="font-mono text-xs font-semibold text-orika-gold hover:underline"
-                      >
+                      <span className="font-mono text-xs font-semibold text-orika-gold">
                         {delivery.delivery_number}
-                      </button>
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-orika-cream">
@@ -210,7 +183,23 @@ export default function LogisticsHome() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <CourierBadge courier={delivery.courier} />
+                      {delivery.courier_company ? (
+                        <>
+                          <p className="text-orika-cream text-xs font-medium">
+                            {delivery.courier_company}
+                          </p>
+                          {delivery.driver_name && (
+                            <p className="text-xs text-orika-smoke">
+                              {delivery.driver_name}
+                              {delivery.driver_phone
+                                ? ` · ${delivery.driver_phone}`
+                                : ""}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <CourierBadge courier={delivery.courier} />
+                      )}
                     </td>
                     <td className="px-4 py-3 text-orika-smoke">
                       {fmtDateTime(delivery.created_at)}
@@ -218,7 +207,10 @@ export default function LogisticsHome() {
                     <td className="px-4 py-3">
                       <DeliveryStatusBadge status={delivery.status} size="xs" />
                     </td>
-                    <td className="px-4 py-3">
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center gap-2">
                         <button
                           title="View"
@@ -232,13 +224,8 @@ export default function LogisticsHome() {
                         {delivery.status === "pending_dispatch" && (
                           <button
                             title="Dispatch"
-                            onClick={() => handleDispatch(delivery.delivery_id)}
-                            disabled={dispatching === delivery.delivery_id}
-                            className={cn(
-                              "text-orika-smoke hover:text-green-400 transition-colors",
-                              dispatching === delivery.delivery_id &&
-                                "opacity-40 cursor-not-allowed",
-                            )}
+                            onClick={() => setDispatching(delivery)}
+                            className="text-orika-smoke hover:text-green-400 transition-colors"
                           >
                             <Rocket className="h-4 w-4" />
                           </button>
@@ -275,6 +262,15 @@ export default function LogisticsHome() {
           }}
           currency={currency}
         />
+
+        {/* Dispatch — enter the booked ride's driver details */}
+        {dispatching && (
+          <DispatchModal
+            open={!!dispatching}
+            onClose={() => setDispatching(null)}
+            delivery={dispatching}
+          />
+        )}
       </div>
     </>
   );

@@ -13,7 +13,7 @@ export type Courier = "relay" | "chowdeck" | "gigl" | "manual";
 
 export type DeliveryZone = "lagos" | "interstate" | "international";
 
-export type ReferenceType = "pos_transaction" | "sales_order";
+export type ReferenceType = "pos_transaction" | "sales_order" | "manual";
 
 export type FeeBorneBy = "customer" | "business" | "split";
 
@@ -43,7 +43,8 @@ export interface DeliveryItem {
 }
 
 export interface TrackingEntry {
-  tracking_id: string;
+  tracking_id?: string;
+  track_id?: string;
   delivery_id: string;
   status: DeliveryStatus;
   source: string;
@@ -61,8 +62,12 @@ export interface Delivery {
   contact_name: string;
   primary_phone?: string | null;
   whatsapp_number?: string | null;
+  contact_email?: string | null;
   delivery_address: DeliveryAddress;
   courier: Courier;
+  courier_company?: string | null;
+  driver_name?: string | null;
+  driver_phone?: string | null;
   delivery_fee: number;
   fee_borne_by: FeeBorneBy;
   status: DeliveryStatus;
@@ -78,6 +83,9 @@ export interface Delivery {
   driver_signature?: string | null;
   customer_signed_at?: string | null;
   driver_signed_at?: string | null;
+  customer_signed_name?: string | null;
+  driver_signed_name?: string | null;
+  customer_emailed?: boolean;
   token_expires_at?: string | null;
   signed_at?: string | null;
   // Joined
@@ -99,6 +107,7 @@ export interface CourierSuggestion {
   fee: number | null;
   currency?: string;
   fee_error?: string;
+  note?: string;
 }
 
 export interface CourierSuggestResponse {

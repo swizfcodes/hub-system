@@ -11,6 +11,7 @@ import type {
 } from "@typedefs/logistics";
 import type {
   CreateDeliveryValues,
+  DispatchValues,
   MarkFailedValues,
   MarkReturnedValues,
   SignatureSubmitValues,
@@ -22,6 +23,7 @@ export interface DeliveryListParams {
   page?: number;
   limit?: number;
   status?: string;
+  search?: string;
 }
 
 export async function listDeliveries(
@@ -52,7 +54,14 @@ export async function getDelivery(id: string): Promise<Delivery | null> {
 
 export async function updateDeliveryDetails(
   id: string,
-  fields: { waybill_number?: string; courier_order_id?: string; delivery_fee?: number },
+  fields: {
+    waybill_number?: string | null;
+    courier_order_id?: string | null;
+    courier_company?: string | null;
+    driver_name?: string | null;
+    driver_phone?: string | null;
+    delivery_fee?: number;
+  },
 ): Promise<Delivery> {
   const { data } = await api.patch<Delivery>(`/logistics/${id}`, fields);
   return data;
@@ -69,9 +78,24 @@ export async function createDelivery(
 
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 
-export async function dispatchDelivery(deliveryId: string): Promise<Delivery> {
-  const { data } = await api.post<Delivery>(
+export async function dispatchDelivery(
+  deliveryId: string,
+  payload: DispatchValues,
+): Promise<Delivery & { customer_emailed?: boolean }> {
+  const { data } = await api.post<Delivery & { customer_emailed?: boolean }>(
     `/logistics/${deliveryId}/dispatch`,
+    payload,
+  );
+  return data;
+}
+
+// ── Resend the proof-of-delivery signing email ───────────────────────────────
+
+export async function resendSigningLink(
+  deliveryId: string,
+): Promise<{ sent: boolean }> {
+  const { data } = await api.post<{ sent: boolean }>(
+    `/logistics/${deliveryId}/resend-signing-link`,
   );
   return data;
 }
@@ -117,10 +141,11 @@ export async function getTracking(
   deliveryId: string,
 ): Promise<TrackingEntry[]> {
   try {
-    const { data } = await api.get<TrackingEntry[]>(
+    // Backend wraps the rows: { data: TrackingEntry[] }
+    const { data } = await api.get<{ data: TrackingEntry[] } | TrackingEntry[]>(
       `/logistics/${deliveryId}/tracking`,
     );
-    return data;
+    return Array.isArray(data) ? data : (data.data ?? []);
   } catch {
     return [];
   }

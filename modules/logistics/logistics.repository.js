@@ -8,7 +8,8 @@ async function listDeliveries(
     `SELECT d.delivery_id, d.delivery_number, d.status, d.courier,
             d.courier_company, d.driver_name, d.driver_phone,
             d.delivery_fee, d.dispatched_at, d.delivered_at, d.created_at,
-            c.display_name AS contact_name, c.primary_phone
+            c.display_name AS contact_name, c.primary_phone,
+            c.email AS contact_email
      FROM deliveries d
      JOIN shared.contacts c ON c.contact_id = d.contact_id
      WHERE ($1::TEXT IS NULL OR d.status  = $1)
