@@ -296,6 +296,20 @@ router.post(
 );
 
 router.post(
+  "/purchase-orders/:id/email",
+  param("id").isUUID(),
+  validate,
+  can("purchasing", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await svc.emailPO(req.business, req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
   "/purchase-orders/:id/approve",
   param("id").isUUID(),
   validate,
@@ -385,9 +399,14 @@ router.post(
   body("supplier_invoice_number").notEmpty(),
   body("invoice_date").isISO8601(),
   body("due_date").isISO8601(),
-  body("amount").isFloat({ min: 0.01 }),
+  // amount is derived from lines for PO-linked bills; required only when
+  // no line detail is supplied (manual/non-PO bills).
+  body("amount")
+    .if(body("lines").not().exists())
+    .isFloat({ min: 0.01 }),
   body("currency").notEmpty(),
   body("po_id").optional({ checkFalsy: true }).isUUID(),
+  body("lines").optional().isArray(),
   validate,
   can("purchasing", "create"),
   async (req, res, next) => {

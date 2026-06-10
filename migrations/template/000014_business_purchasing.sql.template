@@ -122,6 +122,7 @@ CREATE TABLE {{BUSINESS}}.po_lines (
   quantity_received     INTEGER     NOT NULL DEFAULT 0,
   unit_price            NUMERIC(14,2) NOT NULL,
   line_total            NUMERIC(14,2) NOT NULL,
+  description           TEXT,
   tracking_number       TEXT
 );
 CREATE INDEX idx_{{BUSINESS}}_po_lines ON {{BUSINESS}}.po_lines (po_id);
@@ -162,6 +163,7 @@ CREATE TABLE {{BUSINESS}}.supplier_invoices (
   amount_ngn            NUMERIC(14,2),
   status                TEXT        NOT NULL DEFAULT 'pending'
                         CHECK (status IN ('pending','matched','approved','paid','disputed')),
+  has_variance          BOOLEAN     NOT NULL DEFAULT false,
   amount_paid           NUMERIC(14,2) NOT NULL DEFAULT 0,
   paid_at               TIMESTAMPTZ,
   document_id           UUID        REFERENCES shared.documents (document_id) ON DELETE SET NULL,
@@ -175,6 +177,19 @@ CREATE TRIGGER trg_{{BUSINESS}}_sup_invoices_updated_at
 CREATE INDEX idx_{{BUSINESS}}_supplier_invoices_supplier ON {{BUSINESS}}.supplier_invoices (supplier_id, status);
 CREATE INDEX idx_{{BUSINESS}}_supplier_invoices_po       ON {{BUSINESS}}.supplier_invoices (po_id)
   WHERE po_id IS NOT NULL;
+
+CREATE TABLE {{BUSINESS}}.supplier_invoice_lines (
+  bill_line_id    UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  sup_invoice_id  UUID          NOT NULL REFERENCES {{BUSINESS}}.supplier_invoices (sup_invoice_id) ON DELETE CASCADE,
+  po_line_id      UUID          REFERENCES {{BUSINESS}}.po_lines (line_id) ON DELETE SET NULL,
+  product_id      UUID          REFERENCES {{BUSINESS}}.products (product_id),
+  description     TEXT,
+  quantity        NUMERIC(14,2) NOT NULL,
+  unit_price      NUMERIC(14,2) NOT NULL,
+  line_total      NUMERIC(14,2) NOT NULL,
+  variance_note   TEXT
+);
+CREATE INDEX idx_{{BUSINESS}}_bill_lines_invoice ON {{BUSINESS}}.supplier_invoice_lines (sup_invoice_id);
 
 
 -- ┌── DIFFUSERS ────────────────────────────────────────────┐
