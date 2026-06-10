@@ -14,6 +14,7 @@ import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { Card } from "@components/ui/Card";
@@ -352,19 +353,10 @@ export default function CountSession() {
                           {r.system_count}
                         </div>
                       </div>
-                      <Input
+                      <NumberField
                         surface="dark"
-                        type="number"
-                        min={0}
-                        value={r.counted ?? ""}
-                        onChange={(e) =>
-                          setCount(
-                            r.product_id,
-                            e.target.value === ""
-                              ? null
-                              : Math.max(0, parseInt(e.target.value)),
-                          )
-                        }
+                        value={r.counted ?? undefined}
+                        onValueChange={(v) => setCount(r.product_id, v ?? null)}
                         placeholder="Count"
                         className="w-24"
                       />

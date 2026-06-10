@@ -12,6 +12,8 @@ export interface NumberFieldProps {
   placeholder?: string;
   /** Allow a decimal point (prices). false = integers only (quantities). */
   decimal?: boolean;
+  /** Allow a leading minus sign (e.g. stock/points adjustments). */
+  allowNegative?: boolean;
   /** Pressed Enter while focused — handy for "add next line" flows. */
   onEnter?: () => void;
   surface?: "dark" | "light";
@@ -45,6 +47,7 @@ export function NumberField({
   error,
   placeholder,
   decimal = false,
+  allowNegative = false,
   onEnter,
   surface = "dark",
   className,
@@ -74,6 +77,7 @@ export function NumberField({
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     let raw = e.target.value;
+    const negative = allowNegative && raw.trimStart().startsWith("-");
     if (decimal) {
       // digits + a single dot
       raw = raw.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
@@ -82,8 +86,11 @@ export function NumberField({
     }
     // Drop leading zeros unless followed by "." (keeps "0.5", kills "0500").
     raw = raw.replace(/^0+(?=\d)/, "");
+    if (negative) raw = `-${raw}`;
     setText(raw);
-    onValueChange(raw === "" || raw === "." ? undefined : Number(raw));
+    onValueChange(
+      raw === "" || raw === "." || raw === "-" ? undefined : Number(raw),
+    );
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

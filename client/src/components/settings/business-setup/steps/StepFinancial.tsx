@@ -1,10 +1,17 @@
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import {
+  Controller,
+  Control,
+  UseFormRegister,
+  FieldErrors,
+} from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import type { BusinessCreateValues } from "@lib/schemas/business";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
 import { CURRENCIES } from "@lib/constants/currencies";
 
 interface Props {
+  control: Control<BusinessCreateValues>;
   register: UseFormRegister<BusinessCreateValues>;
   errors: FieldErrors<BusinessCreateValues>;
 }
@@ -24,7 +31,7 @@ const MONTHS = [
   "December",
 ];
 
-export function StepFinancial({ register, errors }: Props) {
+export function StepFinancial({ control, register, errors }: Props) {
   return (
     <div className="space-y-6">
       <header>
@@ -53,23 +60,37 @@ export function StepFinancial({ register, errors }: Props) {
           options={MONTHS.map((m, i) => ({ value: String(i + 1), label: m }))}
           error={errors.fiscal_year_start?.message as string | undefined}
         />
-        <Input
-          {...register("vat_rate", { valueAsNumber: true })}
-          type="number"
-          step="0.001"
-          label="VAT rate"
-          placeholder="0.075"
-          hint="Decimal 0–1 (0.075 = 7.5%)"
-          error={errors.vat_rate?.message as string | undefined}
+        <Controller
+          control={control}
+          name="vat_rate"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              label="VAT rate"
+              placeholder="0.075"
+              hint="Decimal 0–1 (0.075 = 7.5%)"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
-        <Input
-          {...register("wht_rate", { valueAsNumber: true })}
-          type="number"
-          step="0.001"
-          label="WHT rate"
-          placeholder="0.05"
-          hint="Decimal 0–1 (0.05 = 5%)"
-          error={errors.wht_rate?.message as string | undefined}
+        <Controller
+          control={control}
+          name="wht_rate"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              label="WHT rate"
+              placeholder="0.05"
+              hint="Decimal 0–1 (0.05 = 5%)"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input
           {...register("vat_number")}

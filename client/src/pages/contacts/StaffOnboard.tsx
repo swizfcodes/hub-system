@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -375,11 +376,20 @@ export default function StaffOnboard() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    {...register("base_salary", { valueAsNumber: true })}
-                    type="number"
-                    step="0.01"
-                    label="Base salary (NGN, gross)"
+                  <Controller
+                    control={control}
+                    name="base_salary"
+                    render={({ field, fieldState }) => (
+                      <NumberField
+                        decimal
+                        label="Base salary (NGN, gross)"
+                        placeholder="0.00"
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={fieldState.error?.message}
+                      />
+                    )}
                   />
                   <Input {...register("bank_name")} label="Bank name" />
                   <Input

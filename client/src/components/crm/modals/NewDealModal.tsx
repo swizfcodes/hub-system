@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Modal } from "@components/ui/Modal";
@@ -154,19 +155,36 @@ export function NewDealModal({
               />
             )}
           />
-          <Input
-            {...register("expected_value", { valueAsNumber: true })}
-            type="number"
-            step="0.01"
-            label="Expected value (NGN)"
-            placeholder="0"
+          <Controller
+            control={control}
+            name="expected_value"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                decimal
+                label="Expected value (NGN)"
+                placeholder="0.00"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("probability", { valueAsNumber: true })}
-            type="number"
-            min={0}
-            max={100}
-            label="Probability (%)"
+          <Controller
+            control={control}
+            name="probability"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="Probability (%)"
+                placeholder="50"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <Input
             {...register("expected_close_date")}

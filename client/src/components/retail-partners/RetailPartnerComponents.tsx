@@ -6,6 +6,7 @@
  */
 import { useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
@@ -242,18 +243,15 @@ export function PartnerFormModal({
             name="consignment_margin_pct"
             control={form.control}
             render={({ field }) => (
-              <Input
-                {...field}
-                label="Consignment Margin %"
-                type="number"
-                step="0.1"
-                min={0}
-                max={100}
-                hint="% we keep from each sale. e.g. 30 means partner gets 70%."
+              <NumberField
                 surface="light"
-                onChange={(e) =>
-                  field.onChange(parseFloat(e.target.value) || 0)
-                }
+                decimal
+                label="Consignment Margin %"
+                placeholder="30"
+                hint="% we keep from each sale. e.g. 30 means partner gets 70%."
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
               />
             )}
           />
@@ -264,18 +262,15 @@ export function PartnerFormModal({
             name="wholesale_discount_pct"
             control={form.control}
             render={({ field }) => (
-              <Input
-                {...field}
-                label="Wholesale Discount %"
-                type="number"
-                step="0.1"
-                min={0}
-                max={100}
-                hint="% off RRP for wholesale purchases."
+              <NumberField
                 surface="light"
-                onChange={(e) =>
-                  field.onChange(parseFloat(e.target.value) || 0)
-                }
+                decimal
+                label="Wholesale Discount %"
+                placeholder="0"
+                hint="% off RRP for wholesale purchases."
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
               />
             )}
           />
@@ -299,14 +294,14 @@ export function PartnerFormModal({
           name="payment_terms_days"
           control={form.control}
           render={({ field }) => (
-            <Input
-              {...field}
-              label="Payment Terms (days)"
-              type="number"
-              min={0}
-              hint="Days to settle after statement is sent."
+            <NumberField
               surface="light"
-              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+              label="Payment Terms (days)"
+              placeholder="30"
+              hint="Days to settle after statement is sent."
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
             />
           )}
         />
@@ -315,14 +310,14 @@ export function PartnerFormModal({
           name="credit_limit"
           control={form.control}
           render={({ field }) => (
-            <Input
-              {...field}
-              label="Credit Limit (₦)"
-              type="number"
-              step="1000"
-              min={0}
+            <NumberField
               surface="light"
-              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+              decimal
+              label="Credit Limit (₦)"
+              placeholder="0.00"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
             />
           )}
         />
@@ -478,13 +473,13 @@ export function SendConsignmentModal({
                 name={`items.${i}.quantity`}
                 control={form.control}
                 render={({ field: f, fieldState }) => (
-                  <Input
-                    {...f}
-                    label="Qty"
-                    type="number"
-                    min={1}
+                  <NumberField
                     surface="light"
-                    onChange={(e) => f.onChange(parseInt(e.target.value) || 1)}
+                    label="Qty"
+                    placeholder="0"
+                    value={f.value}
+                    onValueChange={f.onChange}
+                    onBlur={f.onBlur}
                     error={fieldState.error?.message}
                   />
                 )}
@@ -493,16 +488,14 @@ export function SendConsignmentModal({
                 name={`items.${i}.agreed_price`}
                 control={form.control}
                 render={({ field: f, fieldState }) => (
-                  <Input
-                    {...f}
-                    label="Agreed Price (₦)"
-                    type="number"
-                    step="0.01"
-                    min={0}
+                  <NumberField
                     surface="light"
-                    onChange={(e) =>
-                      f.onChange(parseFloat(e.target.value) || 0)
-                    }
+                    decimal
+                    label="Agreed Price (₦)"
+                    placeholder="0.00"
+                    value={f.value}
+                    onValueChange={f.onChange}
+                    onBlur={f.onBlur}
                     error={fieldState.error?.message}
                   />
                 )}
@@ -606,14 +599,13 @@ export function RecallConsignmentModal({
           name="quantity"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              {...field}
-              label="Quantity to Recall"
-              type="number"
-              min={1}
-              max={consignment.quantity_outstanding}
+            <NumberField
               surface="light"
-              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+              label="Quantity to Recall"
+              placeholder="0"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               hint={`Max ${consignment.quantity_outstanding}`}
               error={fieldState.error?.message}
             />
@@ -748,17 +740,14 @@ export function ReportSaleModal({
               name="quantity_sold"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  label="Qty Sold *"
-                  type="number"
-                  min={1}
-                  max={selected.quantity_outstanding}
+                <NumberField
                   surface="light"
+                  label="Qty Sold *"
+                  placeholder="0"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
                   hint={`Max ${selected.quantity_outstanding}`}
-                  onChange={(e) =>
-                    field.onChange(parseInt(e.target.value) || 1)
-                  }
                   error={fieldState.error?.message}
                 />
               )}
@@ -767,16 +756,14 @@ export function ReportSaleModal({
               name="sale_price"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Input
-                  {...field}
-                  label="Sale Price (₦) *"
-                  type="number"
-                  step="0.01"
-                  min={0}
+                <NumberField
                   surface="light"
-                  onChange={(e) =>
-                    field.onChange(parseFloat(e.target.value) || 0)
-                  }
+                  decimal
+                  label="Sale Price (₦) *"
+                  placeholder="0.00"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
                   error={fieldState.error?.message}
                 />
               )}

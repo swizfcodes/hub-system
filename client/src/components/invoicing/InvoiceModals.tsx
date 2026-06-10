@@ -430,15 +430,13 @@ export function CreditNoteModal({
                   name={`lines.${i}.quantity`}
                   control={form.control}
                   render={({ field: f, fieldState }) => (
-                    <Input
-                      {...f}
-                      label="Qty"
-                      type="number"
-                      min={1}
+                    <NumberField
                       surface="light"
-                      onChange={(e) =>
-                        f.onChange(parseInt(e.target.value) || 1)
-                      }
+                      label="Qty"
+                      placeholder="0"
+                      value={f.value}
+                      onValueChange={f.onChange}
+                      onBlur={f.onBlur}
                       error={fieldState.error?.message}
                     />
                   )}
@@ -447,16 +445,14 @@ export function CreditNoteModal({
                   name={`lines.${i}.unit_price`}
                   control={form.control}
                   render={({ field: f, fieldState }) => (
-                    <Input
-                      {...f}
-                      label="Unit Price"
-                      type="number"
-                      step="0.01"
-                      min={0}
+                    <NumberField
                       surface="light"
-                      onChange={(e) =>
-                        f.onChange(parseFloat(e.target.value) || 0)
-                      }
+                      decimal
+                      label="Unit Price"
+                      placeholder="0.00"
+                      value={f.value}
+                      onValueChange={f.onChange}
+                      onBlur={f.onBlur}
                       error={fieldState.error?.message}
                     />
                   )}
