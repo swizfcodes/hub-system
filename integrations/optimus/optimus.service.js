@@ -98,9 +98,13 @@ function makeRequestRef(prefix = "hub") {
  * @param {string}  opts.surname
  * @param {string}  opts.email
  * @param {string}  opts.mobileNo         - International format, e.g. 2348012345678
- * @param {string}  [opts.bvn]            - Customer BVN (required in production)
  *
- * @returns {{ accountNumber, bankName, transactionRef, requestRef }}
+ * Per the OptimusVirtual spec, opening a collection virtual account needs NO
+ * customer KYC: the call is authenticated solely by the API key
+ * (Authorization header) and the request Signature (derived from the client
+ * secret). No BVN is sent.
+ *
+ * @returns {{ accountNumber, bankName, accountName, bankCode, transactionRef, requestRef }}
  */
 async function openVirtualAccount({
   amountKobo,
@@ -111,30 +115,20 @@ async function openVirtualAccount({
   surname,
   email,
   mobileNo,
-  bvn = null,
 }) {
-  const { clientSecret, baseUrl, notificationUrl } = config.optimusPay;
+  const { baseUrl, notificationUrl } = config.optimusPay;
   const requestRef = makeRequestRef("openacct");
-
-  // BVN is required for live; mock accepts a placeholder
-  const secureBvn =
-    bvn ||
-    (process.env.NODE_ENV !== "production" ? "00000000000" : null);
-
-  if (!secureBvn) {
-    throw Object.assign(
-      new Error("Customer BVN is required for Optimus Pay virtual accounts"),
-      { status: 400 },
-    );
-  }
 
   const body = {
     request_ref: requestRef,
     request_type: "open_account",
+    // Virtual-account ops use the OptimusVirtual provider with no auth
+    // payload — there is no BVN/account to encrypt into auth.secure.
     auth: {
-      type: "bvn",
-      secure: encrypt(clientSecret, secureBvn),
-      auth_provider: "Optimus",
+      type: null,
+      secure: null,
+      auth_provider: "OptimusVirtual",
+      route_mode: null,
     },
     transaction: {
       amount: amountKobo,
@@ -158,26 +152,37 @@ async function openVirtualAccount({
     `[optimus] openVirtualAccount request_ref=${requestRef} txn_ref=${transactionRef}`,
   );
 
-  const { data } = await axios.post(`${baseUrl}/transact`, body, {
+  // OnePipe's transact endpoint is versioned: POST {base}/v2/transact
+  // (same path for the mock and production servers).
+  const { data } = await axios.post(`${baseUrl}/v2/transact`, body, {
     headers: buildHeaders(requestRef),
     timeout: 30_000,
   });
 
   if (data.status === "Failed") {
     const errMsg =
-      data.data?.errors?.[0] || data.message || "Optimus Pay request failed";
+      data.data?.error ||
+      data.data?.errors?.[0] ||
+      data.message ||
+      "Optimus Pay request failed";
     logger.error(`[optimus] openVirtualAccount failed: ${errMsg}`);
     throw Object.assign(new Error(errMsg), { status: 502 });
   }
 
+  // Live API nests the account under data.provider_response; the local mock
+  // returns a flat data object. Support both.
+  const d = data.data || {};
+  const acct = d.provider_response || d;
+
   logger.info(
-    `[optimus] virtual account provisioned: ${data.data?.account_number} txn_ref=${transactionRef}`,
+    `[optimus] virtual account provisioned: ${acct.account_number} txn_ref=${transactionRef}`,
   );
 
   return {
-    accountNumber: data.data?.account_number,
-    bankName: data.data?.bank_name || "Optimus Bank",
-    accountName: data.data?.account_name || `${firstname} ${surname}`,
+    accountNumber: acct.account_number,
+    bankName: acct.bank_name || "Optimus Bank",
+    accountName: acct.account_name || `${firstname} ${surname}`,
+    bankCode: acct.bank_code || null,
     transactionRef,
     requestRef,
     rawStatus: data.status,

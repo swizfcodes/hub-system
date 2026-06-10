@@ -300,6 +300,19 @@ async function insertTransaction(
   return tx;
 }
 
+// Idempotency lookup for offline POS sync — has this offline_id already
+// been recorded as a transaction?
+async function findTransactionByOfflineId(client, offlineId) {
+  const {
+    rows: [tx],
+  } = await client.query(
+    `SELECT transaction_id, transaction_number
+     FROM pos_transactions WHERE offline_id = $1`,
+    [offlineId],
+  );
+  return tx || null;
+}
+
 async function insertTransactionLine(
   client,
   {
@@ -352,7 +365,7 @@ async function updateSessionTotals(
   { totalAmount, transferAmt, cardAmt, session_id },
 ) {
   await client.query(
-    `UPDATE pos_sessions SET total_revenue=total_revenue+$1, total_transactions=total_transactions+1, total_transfers=total_transfers+$2, total_card=total_card+$3 WHERE session_id=$4`,
+    `UPDATE pos_sessions SET total_revenue=$1, total_transfers=total_transfers+$2, total_card=total_card+$3 WHERE session_id=$4`,
     [totalAmount, transferAmt, cardAmt, session_id],
   );
 }
@@ -385,38 +398,6 @@ async function getTransactionProductLines(client, transactionId) {
   return rows;
 }
 
-// Find the invoice that was generated from a specific POS transaction.
-// Used by confirmTransactionPayment to find the invoice to settle.
-async function findInvoiceByPosTransactionId(client, transactionId) {
-  const {
-    rows: [row],
-  } = await client.query(
-    `SELECT i.invoice_id, i.invoice_number, i.total_amount, i.status,
-            i.contact_id, c.email, c.whatsapp_number
-     FROM invoices i
-     LEFT JOIN shared.contacts c ON c.contact_id = i.contact_id
-     WHERE i.pos_transaction_id = $1
-     LIMIT 1`,
-    [transactionId],
-  );
-  return row || null;
-}
-
-// Fetch the primary bank account for a business. Used when generating
-// a transfer invoice so we can embed account details as payment_instructions.
-async function findPrimaryBankAccount(client, business) {
-  const {
-    rows: [row],
-  } = await client.query(
-    `SELECT account_id, bank_name, account_name, account_number, sort_code, currency
-     FROM shared.bank_accounts
-     WHERE business = $1 AND is_primary = true AND is_active = true
-     LIMIT 1`,
-    [business],
-  );
-  return row || null;
-}
-
 module.exports = {
   getTerminals,
   findTerminalById,
@@ -436,12 +417,11 @@ module.exports = {
   getManagers,
   validateOpenSession,
   insertTransaction,
+  findTransactionByOfflineId,
   insertTransactionLine,
   insertPaymentSplit,
   updateSessionTotals,
   findTransactionById,
   voidTransaction,
   getTransactionProductLines,
-  findInvoiceByPosTransactionId,
-  findPrimaryBankAccount,
 };

@@ -294,9 +294,68 @@ async function expireOldPoints(client) {
   return count;
 }
 
+// ── STATS & LEADERBOARD ──────────────────────────────────────
+
+// Programme-wide stats: points issued/redeemed, active members, and how
+// members distribute across tiers by their current (unexpired) balance.
+async function getStats(client) {
+  const {
+    rows: [totals],
+  } = await client.query(
+    `SELECT
+       COALESCE(SUM(points) FILTER (WHERE points > 0), 0)::int                AS total_issued,
+       COALESCE(SUM(ABS(points)) FILTER (WHERE transaction_type = 'redeemed'), 0)::int
+                                                                              AS total_redeemed,
+       (SELECT COUNT(*) FROM (
+          SELECT contact_id FROM loyalty_points
+          WHERE (expires_at IS NULL OR expires_at > now())
+          GROUP BY contact_id HAVING SUM(points) > 0
+        ) a)::int                                                            AS active_contacts
+     FROM loyalty_points`,
+  );
+
+  const { rows: tierDistribution } = await client.query(
+    `WITH balances AS (
+       SELECT contact_id, SUM(points) AS balance
+       FROM loyalty_points
+       WHERE (expires_at IS NULL OR expires_at > now())
+       GROUP BY contact_id
+       HAVING SUM(points) > 0
+     )
+     SELECT t.tier_id, t.tier_name, t.colour,
+            COUNT(b.contact_id)::int AS member_count
+     FROM loyalty_tiers t
+     LEFT JOIN balances b
+       ON b.balance >= t.min_points
+      AND (t.max_points IS NULL OR b.balance <= t.max_points)
+     GROUP BY t.tier_id, t.tier_name, t.colour, t.display_order
+     ORDER BY t.display_order ASC`,
+  );
+
+  return { totals, tierDistribution };
+}
+
+async function getLeaderboard(client, limit = 20) {
+  const { rows } = await client.query(
+    `SELECT c.contact_id, c.display_name, c.primary_phone, c.priority_level,
+            COALESCE(SUM(lp.points), 0)::int AS balance
+     FROM shared.contacts c
+     JOIN loyalty_points lp ON lp.contact_id = c.contact_id
+     WHERE (lp.expires_at IS NULL OR lp.expires_at > now())
+     GROUP BY c.contact_id, c.display_name, c.primary_phone, c.priority_level
+     HAVING COALESCE(SUM(lp.points), 0) > 0
+     ORDER BY balance DESC
+     LIMIT $1`,
+    [limit],
+  );
+  return rows;
+}
+
 module.exports = {
   getBalance,
   listTransactions,
+  getStats,
+  getLeaderboard,
   listTiers,
   getTierForBalance,
   getTierById,

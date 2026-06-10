@@ -174,28 +174,6 @@ router.post(
   },
 );
 
-// ─── OFFLINE SYNC ─────────────────────────────────────────
-
-router.post(
-  "/sync",
-  body("transactions").isArray({ min: 1 }),
-  validate,
-  can("pos", "create"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await service.syncOfflineTransactions(
-          req.business,
-          req.body.transactions,
-          req.user,
-        ),
-      );
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
 // ─── TRANSACTIONS ──────────────────────────────────────────
 
 router.post(
@@ -212,6 +190,24 @@ router.post(
         .json(
           await service.createTransaction(req.business, req.body, req.user),
         );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Offline queue flush — replay queued sales idempotently (dedupe on
+// offline_id). Returns a per-item result list.
+router.post(
+  "/sync",
+  body("transactions").isArray(),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.syncOfflineTransactions(req.business, req.body, req.user),
+      );
     } catch (e) {
       next(e);
     }
@@ -267,60 +263,6 @@ router.post(
     try {
       res.json(
         await service.sendReceipt(
-          req.business,
-          req.params.id,
-          req.body,
-          req.user,
-        ),
-      );
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// Generate a formal invoice from a completed POS transaction.
-// Embeds the company's primary bank account as payment_instructions
-// so the customer can transfer the exact amount.
-// Idempotent — re-requesting returns the existing invoice.
-router.post(
-  "/transactions/:id/invoice",
-  param("id").isUUID(),
-  body("due_date").optional().isISO8601(),
-  validate,
-  can("pos", "create"),
-  async (req, res, next) => {
-    try {
-      res
-        .status(201)
-        .json(
-          await service.createInvoiceFromTransaction(
-            req.business,
-            req.params.id,
-            req.body,
-            req.user,
-          ),
-        );
-    } catch (e) {
-      next(e);
-    }
-  },
-);
-
-// Confirm that a bank transfer has been received.
-// Staff calls this after verifying the transfer on the POS machine.
-// Marks the linked invoice paid and sends the receipt by email.
-router.post(
-  "/transactions/:id/confirm-payment",
-  param("id").isUUID(),
-  body("reference").optional().isString(),
-  body("notes").optional().isString(),
-  validate,
-  can("pos", "edit"),
-  async (req, res, next) => {
-    try {
-      res.json(
-        await service.confirmTransactionPayment(
           req.business,
           req.params.id,
           req.body,

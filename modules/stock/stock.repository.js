@@ -49,6 +49,63 @@ async function getMovements(client, productId, { limit, offset }) {
   return rows;
 }
 
+// Global movements list across all products, with optional filters and a
+// total count for pagination. Location filter matches either leg of a
+// transfer (from_location_id / to_location_id).
+async function listMovements(
+  client,
+  {
+    productId,
+    locationId,
+    movementType,
+    referenceType,
+    referenceId,
+    fromDate,
+    toDate,
+    limit = 50,
+    offset = 0,
+  } = {},
+) {
+  const filters = [
+    productId || null,
+    locationId || null,
+    movementType || null,
+    referenceType || null,
+    referenceId || null,
+    fromDate || null,
+    toDate || null,
+  ];
+  const where = `
+    WHERE ($1::UUID IS NULL OR sm.product_id = $1)
+      AND ($2::UUID IS NULL OR sm.from_location_id = $2 OR sm.to_location_id = $2)
+      AND ($3::TEXT IS NULL OR sm.movement_type = $3)
+      AND ($4::TEXT IS NULL OR sm.reference_type = $4)
+      AND ($5::UUID IS NULL OR sm.reference_id = $5)
+      AND ($6::TIMESTAMPTZ IS NULL OR sm.performed_at >= $6)
+      AND ($7::TIMESTAMPTZ IS NULL OR sm.performed_at <= $7)`;
+
+  const { rows } = await client.query(
+    `SELECT sm.*, p.sku AS product_sku, p.name AS product_name,
+            u.email AS performed_by_name
+     FROM stock_movements sm
+     JOIN products p ON p.product_id = sm.product_id
+     LEFT JOIN shared.users u ON u.user_id = sm.performed_by
+     ${where}
+     ORDER BY sm.performed_at DESC
+     LIMIT $8 OFFSET $9`,
+    [...filters, limit, offset],
+  );
+
+  const {
+    rows: [{ total }],
+  } = await client.query(
+    `SELECT COUNT(*)::int AS total FROM stock_movements sm ${where}`,
+    filters,
+  );
+
+  return { rows, total };
+}
+
 async function insertMovement(
   client,
   {
@@ -159,6 +216,157 @@ async function insertAdjustment(
     ],
   );
   return adj;
+}
+
+// Insert an adjustment WITHOUT auto-approving it (approved_by left NULL).
+// Used by the batch/count flow — the stock movement is posted only when
+// the adjustment is later approved.
+async function insertAdjustmentPending(
+  client,
+  {
+    product_id,
+    location_id,
+    adjustment_type,
+    quantity_before,
+    quantity_after,
+    reason,
+    created_by,
+  },
+) {
+  const {
+    rows: [adj],
+  } = await client.query(
+    `INSERT INTO stock_adjustments
+       (product_id, location_id, adjustment_type, quantity_before,
+        quantity_after, reason, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     RETURNING *`,
+    [
+      product_id,
+      location_id,
+      adjustment_type || "count",
+      quantity_before,
+      quantity_after,
+      reason,
+      created_by,
+    ],
+  );
+  return adj;
+}
+
+async function findAdjustmentById(client, adjustmentId) {
+  const {
+    rows: [adj],
+  } = await client.query(
+    `SELECT * FROM stock_adjustments WHERE adjustment_id = $1`,
+    [adjustmentId],
+  );
+  return adj || null;
+}
+
+async function setAdjustmentApproved(client, adjustmentId, approvedBy) {
+  const {
+    rows: [adj],
+  } = await client.query(
+    `UPDATE stock_adjustments SET approved_by = $2
+     WHERE adjustment_id = $1
+     RETURNING *`,
+    [adjustmentId, approvedBy],
+  );
+  return adj || null;
+}
+
+async function listAdjustments(
+  client,
+  { productId, locationId, fromDate, toDate, limit = 200, offset = 0 } = {},
+) {
+  const { rows } = await client.query(
+    `SELECT a.adjustment_id, a.product_id, a.location_id, a.adjustment_type,
+            a.quantity_before, a.quantity_after,
+            (a.quantity_after - a.quantity_before) AS quantity_delta,
+            a.reason, a.approved_by, a.created_by, a.created_at,
+            (a.approved_by IS NOT NULL) AS is_approved,
+            p.name AS product_name, p.sku AS product_sku,
+            l.name AS location_name,
+            cu.email AS created_by_name,
+            au.email AS approved_by_name
+     FROM stock_adjustments a
+     JOIN products p        ON p.product_id = a.product_id
+     JOIN stock_locations l ON l.location_id = a.location_id
+     LEFT JOIN shared.users cu ON cu.user_id = a.created_by
+     LEFT JOIN shared.users au ON au.user_id = a.approved_by
+     WHERE ($1::UUID IS NULL OR a.product_id = $1)
+       AND ($2::UUID IS NULL OR a.location_id = $2)
+       AND ($3::TIMESTAMPTZ IS NULL OR a.created_at >= $3)
+       AND ($4::TIMESTAMPTZ IS NULL OR a.created_at <= $4)
+     ORDER BY a.created_at DESC
+     LIMIT $5 OFFSET $6`,
+    [
+      productId || null,
+      locationId || null,
+      fromDate || null,
+      toDate || null,
+      limit,
+      offset,
+    ],
+  );
+  return rows;
+}
+
+// ── BATCHES / LOTS ──────────────────────────────────────────
+
+async function insertBatch(
+  client,
+  {
+    product_id,
+    batch_number,
+    manufactured_date,
+    expiry_date,
+    initial_quantity,
+    location_id,
+    notes,
+    created_by,
+  },
+) {
+  const {
+    rows: [batch],
+  } = await client.query(
+    `INSERT INTO stock_batches
+       (product_id, batch_number, manufactured_date, expiry_date,
+        initial_quantity, remaining_quantity, location_id, notes, created_by)
+     VALUES ($1,$2,$3,$4,$5,$5,$6,$7,$8)
+     RETURNING *`,
+    [
+      product_id,
+      batch_number,
+      manufactured_date || null,
+      expiry_date || null,
+      initial_quantity,
+      location_id || null,
+      notes || null,
+      created_by,
+    ],
+  );
+  return batch;
+}
+
+async function listBatches(client, { productId, expiringWithinDays } = {}) {
+  const { rows } = await client.query(
+    `SELECT b.batch_id, b.product_id, b.batch_number, b.manufactured_date,
+            b.expiry_date, b.initial_quantity, b.remaining_quantity,
+            b.location_id, b.notes, b.created_at,
+            p.name AS product_name, p.sku AS product_sku,
+            l.name AS location_name
+     FROM stock_batches b
+     JOIN products p        ON p.product_id = b.product_id
+     LEFT JOIN stock_locations l ON l.location_id = b.location_id
+     WHERE ($1::UUID IS NULL OR b.product_id = $1)
+       AND ($2::INT IS NULL OR (b.expiry_date IS NOT NULL
+            AND b.expiry_date <= CURRENT_DATE + ($2 * INTERVAL '1 day')))
+     ORDER BY b.expiry_date ASC NULLS LAST, b.created_at DESC`,
+    [productId || null, expiringWithinDays || null],
+  );
+  return rows;
 }
 
 async function insertTransfer(
@@ -585,3 +793,10 @@ module.exports.getTransferLines = getTransferLines;
 module.exports.updateTransferStatus = updateTransferStatus;
 module.exports.listQualityChecks = listQualityChecks;
 module.exports.insertQualityCheck = insertQualityCheck;
+module.exports.listMovements = listMovements;
+module.exports.insertAdjustmentPending = insertAdjustmentPending;
+module.exports.findAdjustmentById = findAdjustmentById;
+module.exports.setAdjustmentApproved = setAdjustmentApproved;
+module.exports.listAdjustments = listAdjustments;
+module.exports.insertBatch = insertBatch;
+module.exports.listBatches = listBatches;
