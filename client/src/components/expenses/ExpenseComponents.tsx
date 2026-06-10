@@ -18,6 +18,7 @@ import { Badge } from "@components/ui/Badge";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Skeleton } from "@components/ui/Skeleton";
 import {
   EXPENSE_STATUS_META,
@@ -372,14 +373,14 @@ export function AdvanceFormModal({
           name="amount_requested"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              {...field}
+            <NumberField
+              decimal
               label="Amount Requested (₦) *"
-              type="number"
-              step="500"
-              min={0}
+              placeholder="0.00"
               surface="light"
-              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               error={fieldState.error?.message}
             />
           )}
@@ -473,15 +474,15 @@ export function ApproveAdvanceModal({
           name="amount_approved"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              {...field}
+            <NumberField
+              decimal
               label="Amount to Approve (₦) *"
-              type="number"
-              step="500"
-              min={0}
+              placeholder="0.00"
               surface="light"
               hint={`Max ${fmtMoney(requested, currency)}. You can approve less if needed.`}
-              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               error={fieldState.error?.message}
             />
           )}

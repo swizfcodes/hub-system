@@ -34,6 +34,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Textarea } from "@components/ui/Textarea";
 import { Select } from "@components/ui/Select";
 import { usePOSStore } from "@stores/posStore";
@@ -460,7 +461,7 @@ export function SessionCloseModal({
 
   const form = useForm<CloseSessionValues>({
     resolver: zodResolver(closeSessionSchema),
-    defaultValues: { actual_cash: 0, reconciliation_notes: "" },
+    defaultValues: { actual_cash: undefined, reconciliation_notes: "" },
   });
 
   const mutation = useMutation({
@@ -527,22 +528,17 @@ export function SessionCloseModal({
           name="actual_cash"
           control={form.control}
           render={({ field, fieldState }) => (
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
-                Cash in Till *
-              </label>
-              <Input
-                {...field}
-                type="number"
-                step="0.01"
-                min={0}
-                onChange={(e) =>
-                  field.onChange(parseFloat(e.target.value) || 0)
-                }
-                error={fieldState.error?.message}
-                placeholder="Count the physical cash"
-              />
-            </div>
+            <NumberField
+              label="Cash in Till *"
+              decimal
+              surface="light"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              name={field.name}
+              error={fieldState.error?.message}
+              placeholder="Count the physical cash"
+            />
           )}
         />
 
@@ -877,22 +873,19 @@ export function ReturnModal({
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-xs text-orika-smoke">Return:</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={line.quantity}
-                    value={qtys[line.product_id!] ?? 0}
-                    onChange={(e) =>
-                      setQtys((q) => ({
-                        ...q,
-                        [line.product_id!]: Math.min(
-                          parseInt(e.target.value) || 0,
-                          line.quantity,
-                        ),
-                      }))
-                    }
-                    className="w-14 rounded border border-black/10 px-2 py-1 text-center text-sm focus:border-orika-gold/40 focus:outline-none"
-                  />
+                  <div className="w-14 shrink-0">
+                    <NumberField
+                      surface="light"
+                      value={qtys[line.product_id!] ?? 0}
+                      onValueChange={(v) =>
+                        setQtys((q) => ({
+                          ...q,
+                          [line.product_id!]: Math.min(v ?? 0, line.quantity),
+                        }))
+                      }
+                      className="px-2 py-1 text-center"
+                    />
+                  </div>
                   <span className="text-xs text-orika-smoke">
                     / {line.quantity}
                   </span>

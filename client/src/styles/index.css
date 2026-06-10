@@ -8,6 +8,20 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Kill the up/down spinner arrows on every number input, app-wide.
+   Combined with the global wheel-guard in AppShell, this stops figures
+   from changing on their own when the page is scrolled over a focused
+   amount/qty box. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 html,
 body {
   background: #0a0908;

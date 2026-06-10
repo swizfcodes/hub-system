@@ -8,6 +8,7 @@ import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Card } from "@components/ui/Card";
 import { Checkbox } from "@components/ui/Checkbox";
 import { rfqCreateSchema, type RFQCreateValues } from "@lib/schemas/purchasing";
@@ -17,6 +18,15 @@ import { ProductFormModal } from "@components/catalogue/modals/ProductFormModal"
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { ProductSelectField } from "@components/shared/CatalogueSearchInput";
+
+/** A blank line — qty starts empty (undefined), not seeded with 1. */
+function emptyLine(): RFQCreateValues["lines"][number] {
+  return {
+    product_id: "",
+    description: "",
+    quantity_needed: undefined,
+  } as unknown as RFQCreateValues["lines"][number];
+}
 
 export default function RFQNew() {
   const navigate = useNavigate();
@@ -47,12 +57,17 @@ export default function RFQNew() {
       response_deadline: "",
       notes: "",
       invited_supplier_ids: [],
-      lines: [{ product_id: "", description: "", quantity_needed: 1 }],
+      lines: [emptyLine()],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
   const invitedIds = watch("invited_supplier_ids") ?? [];
+
+  // Append a blank line.
+  function addLine() {
+    append(emptyLine());
+  }
 
   const mutation = useMutation({
     mutationFn: (v: RFQCreateValues) =>
@@ -141,13 +156,7 @@ export default function RFQNew() {
                 size="sm"
                 variant="secondary"
                 leftIcon={<Plus className="w-3.5 h-3.5" />}
-                onClick={() =>
-                  append({
-                    product_id: "",
-                    description: "",
-                    quantity_needed: 1,
-                  })
-                }
+                onClick={addLine}
               >
                 Add line
               </Button>
@@ -198,24 +207,40 @@ export default function RFQNew() {
                         label="Description"
                         placeholder="Or describe what you need"
                       />
-                      <Input
-                        surface="dark"
-                        {...register(`lines.${i}.quantity_needed` as const, {
-                          valueAsNumber: true,
-                        })}
-                        type="number"
-                        min={1}
-                        label="Qty"
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.quantity_needed` as const}
+                        render={({ field, fieldState }) => (
+                          <NumberField
+                            surface="dark"
+                            label="Qty"
+                            placeholder="0"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            error={fieldState.error?.message}
+                          />
+                        )}
                       />
-                      <Input
-                        surface="dark"
-                        {...register(`lines.${i}.target_price` as const, {
-                          valueAsNumber: true,
-                        })}
-                        type="number"
-                        step="0.01"
-                        label="Target price"
-                        hint="Optional, internal"
+                      <Controller
+                        control={control}
+                        name={`lines.${i}.target_price` as const}
+                        render={({ field, fieldState }) => (
+                          <NumberField
+                            surface="dark"
+                            decimal
+                            label="Target price"
+                            placeholder="0.00"
+                            hint="Optional, internal"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            error={fieldState.error?.message}
+                            onEnter={
+                              i === fields.length - 1 ? addLine : undefined
+                            }
+                          />
+                        )}
                       />
                     </div>
                     {fields.length > 1 && (

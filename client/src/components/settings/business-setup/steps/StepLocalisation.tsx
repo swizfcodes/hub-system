@@ -1,11 +1,10 @@
-import { Controller, Control, UseFormRegister } from "react-hook-form";
+import { Controller, Control } from "react-hook-form";
 import type { BusinessCreateValues } from "@lib/schemas/business";
 import { Switch } from "@components/ui/Switch";
-import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 
 interface Props {
   control: Control<BusinessCreateValues>;
-  register: UseFormRegister<BusinessCreateValues>;
 }
 
 const PAYMENT_METHODS = [
@@ -42,7 +41,7 @@ const PAYMENT_METHODS = [
   },
 ];
 
-export function StepLocalisation({ control, register }: Props) {
+export function StepLocalisation({ control }: Props) {
   return (
     <div className="space-y-8">
       <header>
@@ -86,24 +85,35 @@ export function StepLocalisation({ control, register }: Props) {
           Cash handling rules
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Input
-            {...register(
-              "cash_handling_rules.require_supervisor_approval_above",
-              { valueAsNumber: true },
+          <Controller
+            control={control}
+            name="cash_handling_rules.require_supervisor_approval_above"
+            render={({ field }) => (
+              <NumberField
+                decimal
+                label="Supervisor approval above"
+                placeholder="100000"
+                hint="Cash sales over this amount need supervisor sign-off"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+              />
             )}
-            type="number"
-            label="Supervisor approval above"
-            placeholder="100000"
-            hint="Cash sales over this amount need supervisor sign-off"
           />
-          <Input
-            {...register("cash_handling_rules.require_double_count_above", {
-              valueAsNumber: true,
-            })}
-            type="number"
-            label="Double-count above"
-            placeholder="50000"
-            hint="Cash drawer closes requiring two staff counts"
+          <Controller
+            control={control}
+            name="cash_handling_rules.require_double_count_above"
+            render={({ field }) => (
+              <NumberField
+                decimal
+                label="Double-count above"
+                placeholder="50000"
+                hint="Cash drawer closes requiring two staff counts"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
           />
         </div>
       </div>

@@ -13,6 +13,7 @@ import { Topbar } from "@components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { Badge } from "@components/ui/Badge";
@@ -313,11 +314,11 @@ function ArticleModal({
           placeholder="<h3>Title</h3><p>Explanation here...</p>"
         />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input
+          <NumberField
             label="Display order"
-            type="number"
-            value={String(displayOrder)}
-            onChange={(e) => setDisplayOrder(parseInt(e.target.value) || 0)}
+            placeholder="0"
+            value={displayOrder}
+            onValueChange={(v) => setDisplayOrder(v ?? 0)}
           />
           <div className="flex items-end pb-1">
             <label className="inline-flex items-center gap-2 cursor-pointer">

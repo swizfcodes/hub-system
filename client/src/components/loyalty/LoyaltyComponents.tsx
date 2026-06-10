@@ -4,6 +4,7 @@
  *          TierFormModal, RedeemModal, AwardModal
  */
 import { useForm, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trophy, Award, Minus, Plus } from "lucide-react";
@@ -309,14 +310,13 @@ export function TierFormModal({ open, onClose, existing }: TierFormModalProps) {
             name="min_points"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Input
-                {...field}
-                label="Min Points *"
-                type="number"
-                min={0}
+              <NumberField
                 surface="light"
+                label="Min Points *"
+                placeholder="0"
                 value={field.value}
-                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
                 error={fieldState.error?.message}
               />
             )}
@@ -325,17 +325,13 @@ export function TierFormModal({ open, onClose, existing }: TierFormModalProps) {
             name="max_points"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Input
-                label="Max Points"
-                type="number"
-                min={0}
+              <NumberField
                 surface="light"
-                value={field.value ?? ""}
-                onChange={(e) =>
-                  field.onChange(
-                    e.target.value ? parseInt(e.target.value) : null,
-                  )
-                }
+                label="Max Points"
+                placeholder="∞"
+                value={field.value ?? undefined}
+                onValueChange={(v) => field.onChange(v ?? null)}
+                onBlur={field.onBlur}
                 hint="Leave blank for top tier"
                 error={fieldState.error?.message}
               />
@@ -381,14 +377,14 @@ export function TierFormModal({ open, onClose, existing }: TierFormModalProps) {
           name="display_order"
           control={form.control}
           render={({ field }) => (
-            <Input
-              label="Display Order"
-              type="number"
-              min={0}
+            <NumberField
               surface="light"
+              label="Display Order"
+              placeholder="0"
               hint="Lower number = higher position in tier list"
               value={field.value}
-              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+              onValueChange={(v) => field.onChange(v ?? 0)}
+              onBlur={field.onBlur}
             />
           )}
         />
@@ -468,14 +464,13 @@ export function RedeemModal({
           name="points"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              label="Points to Redeem *"
-              type="number"
-              min={1}
-              max={balance}
+            <NumberField
               surface="light"
+              label="Points to Redeem *"
+              placeholder="0"
               value={field.value}
-              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               error={fieldState.error?.message}
               hint={`Max: ${balance.toLocaleString()} pts`}
             />
@@ -566,13 +561,15 @@ export function AwardModal({ open, onClose, contactId }: AwardModalProps) {
           name="points"
           control={form.control}
           render={({ field, fieldState }) => (
-            <Input
-              label="Points *"
-              type="number"
+            <NumberField
               surface="light"
+              allowNegative
+              label="Points *"
+              placeholder="0"
               hint="Use a negative number for a downward adjustment"
               value={field.value}
-              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
               error={fieldState.error?.message}
             />
           )}

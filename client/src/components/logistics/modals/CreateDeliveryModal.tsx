@@ -2,6 +2,7 @@
 
 import { useState as useStateCD } from "react";
 import { useForm as useFormCD, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@components/ui/Modal";
@@ -223,16 +224,14 @@ export function CreateDeliveryModal({
               name="delivery_fee"
               control={form.control}
               render={({ field }) => (
-                <Input
-                  {...field}
-                  label="Delivery Fee (₦)"
-                  type="number"
-                  step="0.01"
-                  min={0}
+                <NumberField
                   surface="light"
-                  onChange={(e) =>
-                    field.onChange(parseFloat(e.target.value) || 0)
-                  }
+                  decimal
+                  label="Delivery Fee (₦)"
+                  placeholder="0.00"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
                 />
               )}
             />

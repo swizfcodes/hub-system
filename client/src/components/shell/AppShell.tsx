@@ -44,6 +44,24 @@ export function AppShell() {
     return () => disconnectSocket();
   }, [user?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Global guard: scrolling the mouse wheel over a focused number input
+  // silently increments/decrements its value. Blur the input on wheel so
+  // the page scrolls but the figure never changes on its own.
+  useEffect(() => {
+    function onWheel(e: WheelEvent) {
+      const el = e.target as HTMLElement | null;
+      if (
+        el instanceof HTMLInputElement &&
+        el.type === "number" &&
+        el === document.activeElement
+      ) {
+        el.blur();
+      }
+    }
+    document.addEventListener("wheel", onWheel, { passive: true });
+    return () => document.removeEventListener("wheel", onWheel);
+  }, []);
+
   // Still loading from localStorage — show a blank screen, not a redirect.
   if (!isHydrated) {
     return <div className="min-h-screen bg-orika-black" />;

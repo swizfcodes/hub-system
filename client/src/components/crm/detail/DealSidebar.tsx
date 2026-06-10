@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { NumberField } from "@components/ui/NumberField";
 import {
   Star,
   Pencil,
@@ -283,22 +284,20 @@ function EditValueModal({
       }
     >
       <div className="space-y-4">
-        <Input
-          type="number"
-          step="0.01"
+        <NumberField
+          surface="light"
+          decimal
           label="Expected value (NGN)"
-          value={value}
-          onChange={(e) =>
-            setValue(e.target.value === "" ? "" : Number(e.target.value))
-          }
+          placeholder="0.00"
+          value={value === "" ? undefined : value}
+          onValueChange={(v) => setValue(v ?? "")}
         />
-        <Input
-          type="number"
-          min={0}
-          max={100}
+        <NumberField
+          surface="light"
           label="Probability (%)"
+          placeholder="50"
           value={probability}
-          onChange={(e) => setProb(Number(e.target.value))}
+          onValueChange={(v) => setProb(v ?? 0)}
         />
         <Input
           type="date"

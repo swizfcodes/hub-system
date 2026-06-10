@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, X } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
+import { NumberField } from "@components/ui/NumberField";
 import {
   productCreateSchema,
   type ProductCreateValues,
@@ -520,44 +521,107 @@ export function ProductFormModal({
               label: `${c.symbol} ${c.code}`,
             }))}
           />
-          <Input
-            {...register("cost_price", { valueAsNumber: true })}
-            type="number"
-            step="0.01"
-            label="Cost price"
+          <Controller
+            control={control}
+            name="cost_price"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                decimal
+                label="Cost price"
+                placeholder="0.00"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("selling_price", { valueAsNumber: true })}
-            type="number"
-            step="0.01"
-            label="Selling price"
+          <Controller
+            control={control}
+            name="selling_price"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                decimal
+                label="Selling price"
+                placeholder="0.00"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("min_selling_price", { valueAsNumber: true })}
-            onFocus={maybePromptPublish}
-            type="number"
-            step="0.01"
-            label="Min selling (POS floor)"
-            error={errors.min_selling_price?.message}
+          <Controller
+            control={control}
+            name="min_selling_price"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                decimal
+                label="Min selling (POS floor)"
+                placeholder="0.00"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={() => {
+                  maybePromptPublish();
+                  field.onBlur();
+                }}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("weight_grams", { valueAsNumber: true })}
-            type="number"
-            step="0.01"
-            label="Weight (g)"
+          <Controller
+            control={control}
+            name="weight_grams"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                decimal
+                label="Weight (g)"
+                placeholder="0.00"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("reorder_level", { valueAsNumber: true })}
-            type="number"
-            label="Reorder at quantity"
-            hint="Low-stock alert"
+          <Controller
+            control={control}
+            name="reorder_level"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="Reorder at quantity"
+                hint="Low-stock alert"
+                placeholder="0"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("reorder_quantity", { valueAsNumber: true })}
-            onFocus={maybePromptPublish}
-            type="number"
-            label="Reorder qty"
-            hint="How many to order when triggered"
+          <Controller
+            control={control}
+            name="reorder_quantity"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="Reorder qty"
+                hint="How many to order when triggered"
+                placeholder="0"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={() => {
+                  maybePromptPublish();
+                  field.onBlur();
+                }}
+                error={fieldState.error?.message}
+              />
+            )}
           />
         </div>
 
@@ -592,11 +656,20 @@ export function ProductFormModal({
                   hint="Lowercase, hyphens only"
                   error={(errors as any).web?.slug?.message}
                 />
-                <Input
-                  {...register("web.size_ml", { valueAsNumber: true })}
-                  type="number"
-                  label="Size (ml)"
-                  error={(errors as any).web?.size_ml?.message}
+                <Controller
+                  control={control}
+                  name="web.size_ml"
+                  render={({ field, fieldState }) => (
+                    <NumberField
+                      surface="light"
+                      label="Size (ml)"
+                      placeholder="0"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                    />
+                  )}
                 />
                 <Select
                   {...register("web.scent_family")}

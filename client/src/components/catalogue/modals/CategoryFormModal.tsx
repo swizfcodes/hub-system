@@ -1,9 +1,10 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { categorySchema, type CategoryValues } from "@lib/schemas/catalogue";
@@ -33,6 +34,7 @@ export function CategoryFormModal({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -118,11 +120,21 @@ export function CategoryFormModal({
           ]}
         />
         <Textarea {...register("description")} label="Description" rows={3} />
-        <Input
-          {...register("display_order", { valueAsNumber: true })}
-          type="number"
-          label="Display order"
-          hint="Lower = first"
+        <Controller
+          control={control}
+          name="display_order"
+          render={({ field, fieldState }) => (
+            <NumberField
+              surface="light"
+              label="Display order"
+              hint="Lower = first"
+              placeholder="0"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
       </form>
     </Modal>

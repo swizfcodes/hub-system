@@ -1,10 +1,11 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, Phone, MessageCircle, UserPlus } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import {
@@ -33,6 +34,7 @@ export function InviteSupplierModal({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -148,10 +150,20 @@ export function InviteSupplierModal({
               label: `${c.symbol} ${c.code}`,
             }))}
           />
-          <Input
-            {...register("payment_terms_days", { valueAsNumber: true })}
-            type="number"
-            label="Payment terms (days)"
+          <Controller
+            control={control}
+            name="payment_terms_days"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="Payment terms (days)"
+                placeholder="30"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
         </div>
         <Textarea {...register("notes")} label="Notes (optional)" rows={3} />

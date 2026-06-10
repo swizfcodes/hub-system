@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Textarea } from "@components/ui/Textarea";
 import { Select } from "@components/ui/Select";
 import { CURRENCIES } from "@lib/constants/currencies";
+import { showToast } from "@hooks/useToast";
 
 /**
  * Public-facing supplier portal. NO login required.
@@ -32,6 +33,13 @@ import { CURRENCIES } from "@lib/constants/currencies";
 export default function SupplierPortal() {
   const { token } = useParams();
   const [submitted, setSubmitted] = useState(false);
+  // Per-line quote inputs keyed by line index. Boxes start empty (undefined).
+  const [unitPrices, setUnitPrices] = useState<
+    Record<number, number | undefined>
+  >({});
+  const [leadTimes, setLeadTimes] = useState<
+    Record<number, number | undefined>
+  >({});
 
   // TODO when backend ready:
   // const { data: rfq, isLoading } = useQuery({ queryKey: ['rfq-portal', token], queryFn: () => fetchRFQByToken(token!) });
@@ -138,6 +146,14 @@ export default function SupplierPortal() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                // Unit price was a required field — keep that gate.
+                const missingPrice = rfq.lines.some(
+                  (_, i) => unitPrices[i] === undefined,
+                );
+                if (missingPrice) {
+                  showToast.error("Enter a unit price for every line");
+                  return;
+                }
                 setSubmitted(true);
               }}
               className="space-y-4"
@@ -163,13 +179,15 @@ export default function SupplierPortal() {
                     )}
                   </div>
                   <div className="grid gap-3 sm:grid-cols-[1fr_120px_140px]">
-                    <Input
+                    <NumberField
                       surface="dark"
-                      type="number"
-                      step="0.01"
+                      decimal
                       label="Your unit price"
                       placeholder="0.00"
-                      required
+                      value={unitPrices[i]}
+                      onValueChange={(v) =>
+                        setUnitPrices((p) => ({ ...p, [i]: v }))
+                      }
                     />
                     <Select
                       surface="dark"
@@ -180,11 +198,14 @@ export default function SupplierPortal() {
                       }))}
                       defaultValue="USD"
                     />
-                    <Input
+                    <NumberField
                       surface="dark"
-                      type="number"
                       label="Lead time (days)"
                       placeholder="14"
+                      value={leadTimes[i]}
+                      onValueChange={(v) =>
+                        setLeadTimes((p) => ({ ...p, [i]: v }))
+                      }
                     />
                   </div>
                   <Textarea
