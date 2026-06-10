@@ -1,12 +1,13 @@
-// Supplier bills (supplier_invoices in the schema). The backend doesn't expose
-// CRUD endpoints yet — see backend/PROCUREMENT_PATCH_NOTES.md §bills.
-// All functions here fail soft (return empty / stub responses) so the UI loads.
+// Supplier bills (supplier_invoices in the schema).
 
 import { api, errMsg } from "../api";
-import type { SupplierInvoice } from "@typedefs/purchasing";
+import type {
+  SupplierInvoice,
+  SupplierInvoiceLine,
+} from "@typedefs/purchasing";
 
 export async function listBills(
-  params: { status?: string; supplier_id?: string } = {},
+  params: { status?: string; supplier_id?: string; po_id?: string } = {},
 ): Promise<SupplierInvoice[]> {
   try {
     const { data } = await api.get<
@@ -25,8 +26,22 @@ export async function getBill(id: string): Promise<SupplierInvoice> {
   return data;
 }
 
+export interface CreateBillPayload {
+  supplier_id: string;
+  po_id?: string;
+  supplier_invoice_number: string;
+  invoice_date: string;
+  due_date: string;
+  currency: string;
+  amount?: number;
+  amount_ngn?: number;
+  notes?: string;
+  document_id?: string;
+  lines?: SupplierInvoiceLine[];
+}
+
 export async function createBill(
-  payload: Partial<SupplierInvoice>,
+  payload: CreateBillPayload,
 ): Promise<SupplierInvoice> {
   const { data } = await api.post<SupplierInvoice>(
     "/purchasing/bills",
@@ -38,6 +53,17 @@ export async function createBill(
 export async function approveBill(id: string): Promise<SupplierInvoice> {
   const { data } = await api.post<SupplierInvoice>(
     `/purchasing/bills/${id}/approve`,
+  );
+  return data;
+}
+
+export async function payBill(
+  id: string,
+  payload: { amount: number; bank_account_code?: string },
+): Promise<SupplierInvoice> {
+  const { data } = await api.post<SupplierInvoice>(
+    `/purchasing/bills/${id}/pay`,
+    payload,
   );
   return data;
 }

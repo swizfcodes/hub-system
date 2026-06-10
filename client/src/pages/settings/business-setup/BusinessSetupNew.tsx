@@ -243,10 +243,10 @@ export default function BusinessSetupNew() {
               />
             )}
             {stepIndex === 2 && (
-              <StepFinancial register={register} errors={errors} />
+              <StepFinancial control={control} register={register} errors={errors} />
             )}
             {stepIndex === 3 && (
-              <StepLocalisation control={control} register={register} />
+              <StepLocalisation control={control} />
             )}
             {stepIndex === 4 && (
               <StepProvisioning

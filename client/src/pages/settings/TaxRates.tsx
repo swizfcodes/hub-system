@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Receipt, Archive, Pencil } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
@@ -8,6 +8,7 @@ import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
+import { NumberField } from "@components/ui/NumberField";
 import { Card } from "@components/ui/Card";
 import { Badge } from "@components/ui/Badge";
 import { Modal } from "@components/ui/Modal";
@@ -202,6 +203,7 @@ function TaxRateFormModal({
   const qc = useQueryClient();
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -312,14 +314,22 @@ function TaxRateFormModal({
           ]}
           error={errors.applies_to?.message}
         />
-        <Input
-          {...register("rate", { valueAsNumber: true })}
-          type="number"
-          step="0.001"
-          label="Rate"
-          hint="Decimal 0–1 (0.075 = 7.5%)"
-          className="sm:col-span-2"
-          error={errors.rate?.message}
+        <Controller
+          control={control}
+          name="rate"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              surface="light"
+              label="Rate"
+              hint="Decimal 0–1 (0.075 = 7.5%)"
+              className="sm:col-span-2"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input
           {...register("effective_from")}

@@ -31,6 +31,7 @@ import { Badge } from "@components/ui/Badge";
 import { Card } from "@components/ui/Card";
 import { Modal } from "@components/ui/Modal";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { ConfirmationModal } from "@components/ui/ConfirmationModal";
 import { ProductImage } from "@components/catalogue/shared/ProductImage";
 import { ProductPrice } from "@components/catalogue/shared/ProductPrice";
@@ -595,8 +596,8 @@ function LinkSupplierModal({
 }) {
   const qc = useQueryClient();
   const [supplierId, setSupplierId] = useState("");
-  const [unitCost, setUnitCost] = useState("");
-  const [leadTime, setLeadTime] = useState("");
+  const [unitCost, setUnitCost] = useState<number | undefined>(undefined);
+  const [leadTime, setLeadTime] = useState<number | undefined>(undefined);
   const [isPreferred, setIsPreferred] = useState(false);
 
   const { data: sups } = useQuery({
@@ -608,8 +609,8 @@ function LinkSupplierModal({
     mutationFn: () =>
       linkSupplier(productId, {
         supplier_id: supplierId,
-        unit_cost: unitCost ? parseFloat(unitCost) : undefined,
-        lead_time_days: leadTime ? parseInt(leadTime) : undefined,
+        unit_cost: unitCost,
+        lead_time_days: leadTime,
         is_preferred: isPreferred,
       }),
     onSuccess: () => {
@@ -619,8 +620,8 @@ function LinkSupplierModal({
       showToast.success("Supplier linked");
       onClose();
       setSupplierId("");
-      setUnitCost("");
-      setLeadTime("");
+      setUnitCost(undefined);
+      setLeadTime(undefined);
       setIsPreferred(false);
     },
     onError: (e) => showToast.error("Failed", errMsg(e)),
@@ -663,18 +664,20 @@ function LinkSupplierModal({
           ))}
         </select>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input
+          <NumberField
+            surface="light"
+            decimal
             value={unitCost}
-            onChange={(e) => setUnitCost(e.target.value)}
-            type="number"
-            step="0.01"
+            onValueChange={setUnitCost}
             label="Unit cost (optional)"
+            placeholder="0.00"
           />
-          <Input
+          <NumberField
+            surface="light"
             value={leadTime}
-            onChange={(e) => setLeadTime(e.target.value)}
-            type="number"
+            onValueChange={setLeadTime}
             label="Lead time (days)"
+            placeholder="0"
           />
         </div>
         <label className="flex items-center gap-2 text-sm">
@@ -790,20 +793,15 @@ function BarcodesTab({ product }: { product: Product }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <div className="flex items-center gap-1.5 mr-auto">
-          <label className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
-            Copies
-          </label>
-          <input
-            type="number"
-            min={1}
-            max={99}
+          <NumberField
+            surface="dark"
+            label="Copies"
+            placeholder="1"
+            className="w-16 py-1.5 px-2"
             value={copies}
-            onChange={(e) =>
-              setCopies(
-                Math.max(1, Math.min(99, parseInt(e.target.value) || 1)),
-              )
+            onValueChange={(v) =>
+              setCopies(v === undefined ? 1 : Math.max(1, Math.min(99, v)))
             }
-            className="w-16 bg-orika-charcoal border border-orika-graphite rounded-lg py-1.5 px-2 text-sm text-orika-cream"
           />
         </div>
         <Button

@@ -6,6 +6,7 @@ import { ArrowDownToLine, AlertTriangle, Check, X } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Textarea } from "@components/ui/Textarea";
 import { Select } from "@components/ui/Select";
 import { grnSchema, type GRNValues } from "@lib/schemas/purchasing";
@@ -20,9 +21,11 @@ interface Props {
   open: boolean;
   onClose: () => void;
   po: PurchaseOrder;
+  /** Fired after a successful receipt — used to chain into billing. */
+  onReceived?: () => void;
 }
 
-export function ReceiveGoodsModal({ open, onClose, po }: Props) {
+export function ReceiveGoodsModal({ open, onClose, po, onReceived }: Props) {
   const qc = useQueryClient();
 
   const { data: locations = [] } = useQuery({
@@ -102,6 +105,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
       showToast.success("Goods received", "Stock updated automatically.");
       reset();
       onClose();
+      onReceived?.();
     },
     onError: (e) => showToast.error("Failed", errMsg(e)),
   });
@@ -223,29 +227,50 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
                     render={({ field }) => <input type="hidden" {...field} />}
                   />
                   <div className="grid grid-cols-3 gap-2 w-full sm:w-auto sm:min-w-[360px]">
-                    <Input
-                      {...register(`lines.${i}.quantity_received` as const, {
-                        valueAsNumber: true,
-                      })}
-                      type="number"
-                      min={0}
-                      label="Received"
+                    <Controller
+                      control={control}
+                      name={`lines.${i}.quantity_received` as const}
+                      render={({ field, fieldState }) => (
+                        <NumberField
+                          surface="light"
+                          label="Received"
+                          placeholder="0"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={fieldState.error?.message}
+                        />
+                      )}
                     />
-                    <Input
-                      {...register(`lines.${i}.quantity_accepted` as const, {
-                        valueAsNumber: true,
-                      })}
-                      type="number"
-                      min={0}
-                      label="Accepted"
+                    <Controller
+                      control={control}
+                      name={`lines.${i}.quantity_accepted` as const}
+                      render={({ field, fieldState }) => (
+                        <NumberField
+                          surface="light"
+                          label="Accepted"
+                          placeholder="0"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={fieldState.error?.message}
+                        />
+                      )}
                     />
-                    <Input
-                      {...register(`lines.${i}.quantity_rejected` as const, {
-                        valueAsNumber: true,
-                      })}
-                      type="number"
-                      min={0}
-                      label="Rejected"
+                    <Controller
+                      control={control}
+                      name={`lines.${i}.quantity_rejected` as const}
+                      render={({ field, fieldState }) => (
+                        <NumberField
+                          surface="light"
+                          label="Rejected"
+                          placeholder="0"
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          onBlur={field.onBlur}
+                          error={fieldState.error?.message}
+                        />
+                      )}
                     />
                   </div>
                 </div>

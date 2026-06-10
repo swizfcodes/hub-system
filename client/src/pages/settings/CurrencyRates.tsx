@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Plus, TrendingUp, Database, RefreshCw } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
+import { NumberField } from "@components/ui/NumberField";
 import { Card } from "@components/ui/Card";
 import { Modal } from "@components/ui/Modal";
 import { Skeleton } from "@components/ui/Skeleton";
@@ -197,8 +197,8 @@ function NewRateForm({
 }) {
   const {
     register,
+    control,
     handleSubmit,
-    formState: { errors },
   } = useForm<NewRateValues>({
     defaultValues: { from_currency: "USD", to_currency: "NGN", rate: 1500 },
   });
@@ -228,13 +228,21 @@ function NewRateForm({
           options={CURRENCIES.map((c) => ({ value: c.code, label: c.code }))}
         />
       </div>
-      <Input
-        {...register("rate", { valueAsNumber: true })}
-        type="number"
-        step="0.0001"
-        label="Rate"
-        placeholder="1500"
-        error={errors.rate?.message}
+      <Controller
+        control={control}
+        name="rate"
+        render={({ field, fieldState }) => (
+          <NumberField
+            decimal
+            surface="light"
+            label="Rate"
+            placeholder="1500"
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            error={fieldState.error?.message}
+          />
+        )}
       />
       <div className="flex justify-end gap-3 pt-2">
         <Button variant="outline-light" type="button" onClick={onCancel}>

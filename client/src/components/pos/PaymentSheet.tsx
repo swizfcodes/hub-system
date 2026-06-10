@@ -4,6 +4,7 @@ import { Plus, Trash2 as Trash } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
+import { NumberField } from "@components/ui/NumberField";
 import { usePOSStore } from "@stores/posStore";
 import { POS_PAYMENT_META } from "@lib/constants/posConstants";
 import { cn } from "@lib/cn";
@@ -257,16 +258,14 @@ export function PaymentSheet({
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
                       {symbol}
                     </span>
-                    <input
-                      type="number"
-                      step="0.01"
+                    <NumberField
+                      decimal
+                      surface="light"
                       value={split.amount}
-                      onChange={(e) =>
-                        updateSplit(split.id, {
-                          amount: parseFloat(e.target.value) || 0,
-                        })
+                      onValueChange={(v) =>
+                        updateSplit(split.id, { amount: v ?? 0 })
                       }
-                      className="w-full rounded border border-black/10 py-2 pl-5 pr-2 text-right text-sm text-orika-black tabular-nums focus:border-orika-gold/40 focus:outline-none"
+                      className="w-full rounded border border-black/10 bg-white py-2 pl-5 pr-2 text-right text-sm font-normal text-orika-black tabular-nums shadow-none focus:border-orika-gold/40 focus:ring-0"
                     />
                   </div>
                   {POS_PAYMENT_META[split.method].requiresRef && (

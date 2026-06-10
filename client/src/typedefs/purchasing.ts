@@ -101,6 +101,7 @@ export interface POLine {
   product_id: string;
   product_name?: string;
   product_sku?: string;
+  description?: string | null;
   quantity_ordered: number;
   quantity_received: number;
   unit_price: number;
@@ -159,10 +160,24 @@ export interface GoodsReceipt {
   lines?: GoodsReceiptLine[];
 }
 
+export interface SupplierInvoiceLine {
+  bill_line_id?: string;
+  po_line_id?: string | null;
+  product_id?: string | null;
+  product_name?: string;
+  product_sku?: string;
+  description?: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total?: number;
+  variance_note?: string | null;
+}
+
 export interface SupplierInvoice {
   sup_invoice_id: string;
   supplier_id: string;
   supplier_name?: string;
+  supplier_email?: string | null;
   po_id?: string | null;
   po_number?: string;
   supplier_invoice_number: string;
@@ -173,11 +188,14 @@ export interface SupplierInvoice {
   amount_ngn?: number | null;
   status: BillStatus;
   amount_paid: number;
+  amount_outstanding?: number;
+  has_variance?: boolean;
   paid_at?: string | null;
   document_id?: string | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;
+  lines?: SupplierInvoiceLine[];
 }
 
 // Best-value scoring weights (Q5 answer B+C)

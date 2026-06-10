@@ -67,6 +67,7 @@ const PONew = lazy(() => import("@pages/procurement/PONew"));
 const PODetail = lazy(() => import("@pages/procurement/PODetail"));
 const BillsPage = lazy(() => import("@pages/procurement/BillsPage"));
 const BillNew = lazy(() => import("@pages/procurement/BillNew"));
+const BillDetail = lazy(() => import("@pages/procurement/BillDetail"));
 const SupplierPortal = lazy(() => import("@pages/procurement/SupplierPortal"));
 
 // Stock module
@@ -376,6 +377,7 @@ export default function App() {
           />
           <Route path="/procurement/bills" element={<BillsPage />} />
           <Route path="/procurement/bills/new" element={<BillNew />} />
+          <Route path="/procurement/bills/:id" element={<BillDetail />} />
           <Route
             path="/purchasing"
             element={<Navigate to="/procurement" replace />}

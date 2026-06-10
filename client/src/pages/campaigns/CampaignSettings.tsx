@@ -10,6 +10,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { getBusiness, updateBusiness } from "@services/settings/businesses";
@@ -91,14 +92,11 @@ export default function CampaignSettings() {
         title="Approval Workflow"
         desc="Control who can send campaigns and when approval is required."
       >
-        <Input
+        <NumberField
           label="Approval required above this many recipients"
-          type="number"
-          min={1}
+          placeholder="50"
           value={settings.requireApprovalAbove}
-          onChange={(e) =>
-            update({ requireApprovalAbove: parseInt(e.target.value) || 50 })
-          }
+          onValueChange={(v) => update({ requireApprovalAbove: v ?? 50 })}
           surface="dark"
           hint="Campaigns below this number can be sent directly. Above this, a manager must approve."
         />
@@ -122,15 +120,11 @@ export default function CampaignSettings() {
               Phone Numbers.
             </p>
           </div>
-          <Input
+          <NumberField
             label="Your WhatsApp daily send limit"
-            type="number"
-            min={1_000}
-            step={1_000}
+            placeholder="1000"
             value={settings.waDailyLimit}
-            onChange={(e) =>
-              update({ waDailyLimit: parseInt(e.target.value) || 1000 })
-            }
+            onValueChange={(v) => update({ waDailyLimit: v ?? 1000 })}
             surface="dark"
             hint="The system warns you when a campaign audience approaches 80% of this limit."
           />

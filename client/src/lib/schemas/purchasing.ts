@@ -70,6 +70,7 @@ export const poLineSchema = z.object({
   product_id: z.string().uuid().optional().or(z.literal("")),
   quantity_ordered: z.number().int().min(1),
   unit_price: z.number().min(0),
+  description: z.string().max(300).optional().or(z.literal("")),
 });
 export type POLineValues = z.infer<typeof poLineSchema>;
 
