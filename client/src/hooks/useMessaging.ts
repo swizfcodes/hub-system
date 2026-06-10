@@ -1,64 +1,143 @@
 // ── hooks/useMessaging.ts ───────────────────────────────────────────────────
 // Socket-event → react-query refresh bridge for the SmartComm Messaging
-// module. The server emits `message:new` and `channel:created` events on
-// the business socket room. Wherever you initialise socket.io (typically
-// at AppLayout root), call `dispatchSocketEvent('message:new', payload)`
-// for each incoming event so these hooks can pick them up.
-//
-// This keeps components decoupled from socket.io — they just listen on
-// `window` CustomEvents and invalidate the relevant react-query keys.
+// module. lib/socket.ts forwards server socket events to window
+// CustomEvents; these hooks listen and invalidate the relevant
+// react-query keys, keeping components decoupled from socket.io.
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-const NEW_MESSAGE_EVENT = "orika:message:new";
-const NEW_CHANNEL_EVENT = "orika:channel:created";
+export type MessagingSocketEvent =
+  | "message:new"
+  | "message:updated"
+  | "message:deleted"
+  | "message:read"
+  | "channel:created"
+  | "channel:updated"
+  | "typing"
+  | "presence:online"
+  | "presence:offline"
+  | "notification:new";
+
+const eventName = (type: MessagingSocketEvent) => `orika:${type}`;
 
 /** Helper for the socket-bootstrap layer to publish events. */
 export function dispatchSocketEvent(
-  type: "message:new" | "channel:created",
+  type: MessagingSocketEvent,
   detail: unknown,
 ) {
-  const eventName =
-    type === "message:new" ? NEW_MESSAGE_EVENT : NEW_CHANNEL_EVENT;
-  window.dispatchEvent(new CustomEvent(eventName, { detail }));
+  window.dispatchEvent(new CustomEvent(eventName(type), { detail }));
+}
+
+function useSocketEvent(
+  types: MessagingSocketEvent[],
+  handler: (type: MessagingSocketEvent, detail: unknown) => void,
+) {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+  // Key the effect on the (stable) list of event names, not the array
+  // identity, so callers can pass inline arrays.
+  const key = types.join(",");
+  useEffect(() => {
+    const names = key.split(",") as MessagingSocketEvent[];
+    const listeners = names.map((type) => {
+      const fn = (e: Event) =>
+        handlerRef.current(type, (e as CustomEvent).detail);
+      window.addEventListener(eventName(type), fn);
+      return { type, fn };
+    });
+    return () => {
+      for (const { type, fn } of listeners) {
+        window.removeEventListener(eventName(type), fn);
+      }
+    };
+  }, [key]);
 }
 
 /**
- * Refresh the channel list (and unread count) when any new message arrives
- * or a new channel is created for the active business.
+ * Refresh the channel list (and unread count) on any messaging activity.
  */
 export function useChannelListUpdates(_business: string | null) {
   const qc = useQueryClient();
-  useEffect(() => {
-    const onAny = () => {
+  useSocketEvent(
+    [
+      "message:new",
+      "message:deleted",
+      "channel:created",
+      "channel:updated",
+      "message:read",
+    ],
+    () => {
       qc.invalidateQueries({ queryKey: ["channels"] });
       qc.invalidateQueries({ queryKey: ["unread-count"] });
-    };
-    window.addEventListener(NEW_MESSAGE_EVENT, onAny);
-    window.addEventListener(NEW_CHANNEL_EVENT, onAny);
-    return () => {
-      window.removeEventListener(NEW_MESSAGE_EVENT, onAny);
-      window.removeEventListener(NEW_CHANNEL_EVENT, onAny);
-    };
-  }, [qc]);
+    },
+  );
 }
 
 /**
- * Refresh a single channel's message list when a message:new event
- * targets this channel.
+ * Refresh a single channel's message list when a message event targets
+ * this channel.
  */
 export function useChannelMessages(channelId: string | null) {
   const qc = useQueryClient();
-  useEffect(() => {
-    if (!channelId) return;
-    const onMessage = (e: Event) => {
-      const ev = e as CustomEvent<{ channelId?: string }>;
-      if (!ev.detail || ev.detail.channelId === channelId) {
+  useSocketEvent(
+    ["message:new", "message:updated", "message:deleted", "message:read"],
+    (_type, detail) => {
+      if (!channelId) return;
+      const d = detail as { channelId?: string } | undefined;
+      if (!d || !d.channelId || d.channelId === channelId) {
         qc.invalidateQueries({ queryKey: ["messages", channelId] });
       }
-    };
-    window.addEventListener(NEW_MESSAGE_EVENT, onMessage);
-    return () => window.removeEventListener(NEW_MESSAGE_EVENT, onMessage);
-  }, [channelId, qc]);
+    },
+  );
+}
+
+/**
+ * "Olu is typing…" — returns the set of user ids currently typing in the
+ * channel. Entries expire 3 s after the last typing ping.
+ */
+export function useTypingIndicator(
+  channelId: string | null,
+  selfUserId?: string,
+): string[] {
+  const [typing, setTyping] = useState<Record<string, number>>({});
+
+  useSocketEvent(["typing"], (_type, detail) => {
+    const d = detail as { channelId?: string; userId?: string } | undefined;
+    if (!channelId || !d?.userId || d.channelId !== channelId) return;
+    if (d.userId === selfUserId) return;
+    setTyping((prev) => ({ ...prev, [d.userId as string]: Date.now() }));
+  });
+
+  // Sweep out stale entries.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTyping((prev) => {
+        const now = Date.now();
+        const next: Record<string, number> = {};
+        let changed = false;
+        for (const [uid, ts] of Object.entries(prev)) {
+          if (now - ts < 3000) next[uid] = ts;
+          else changed = true;
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return Object.keys(typing);
+}
+
+/**
+ * Re-render on presence changes so online dots / "last seen" stay fresh.
+ * Returns a counter — callers just need the re-render plus
+ * isUserOnline() from lib/socket.
+ */
+export function usePresence(): number {
+  const [version, setVersion] = useState(0);
+  useSocketEvent(["presence:online", "presence:offline"], () =>
+    setVersion((v) => v + 1),
+  );
+  return version;
 }

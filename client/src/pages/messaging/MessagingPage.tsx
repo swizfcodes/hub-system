@@ -1,9 +1,13 @@
 /**
- * MessagingPage — SmartComm unified inbox
- * Three-column layout (on wide screens):
- *   Left:   ChannelList (platform tabs, search, channel rows)
- *   Center: MessageThread (active conversation + composer)
- *   Right:  CustomerSidebar (customer 360: contact, orders, invoices, deliveries)
+ * MessagingPage — in-house team chat (SmartComm), WhatsApp-style.
+ * Two-pane layout on desktop, single-pane navigation on mobile:
+ *   Left:   ChannelList (tabs: All / Unread / Groups / Emails, search)
+ *   Center: MessageThread, or the EmailLogPanel when the Emails tab
+ *           is active
+ *
+ * EXTERNAL-COMMS-DISABLED: the Customer-360 sidebar still renders for
+ * old customer threads opened via deep link, but no new external
+ * conversations arrive while the Meta bridge is off.
  *
  * Route: /messaging
  */
@@ -18,23 +22,29 @@ import { Select } from "@components/ui/Select";
 import { ChannelList } from "@components/messaging/ChannelList";
 import { MessageThread } from "@components/messaging/MessageThread";
 import { CustomerSidebar } from "@components/messaging/CustomerSidebar";
+import { EmailLogPanel } from "@components/messaging/EmailLogPanel";
 import { getChannel, createChannel } from "@services/messaging";
 import { StaffSearchCombobox } from "@components/messaging/StaffSearchCombobox";
 import type { StaffOption } from "@components/messaging/StaffSearchCombobox";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { useAuthStore } from "@stores/useAuthStore";
+import type { InboxTabKey } from "@lib/constants/messagingConstants";
 import { cn } from "@lib/cn";
 import type { Channel } from "@typedefs/messaging";
 import { Topbar } from "@/components/shell/Topbar";
+
 export default function MessagingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { active: business } = useActiveBusiness();
+  const user = useAuthStore((s) => s.user);
   const qc = useQueryClient();
 
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
+  const [activeTab, setActiveTab] = useState<InboxTabKey>("all");
   const [showNewChannel, setShowNewChannel] = useState(false);
-  const [mobilePanelOpen, setMobilePanelOpen] = useState<
-    "list" | "thread" | "sidebar"
-  >("list");
+  const [mobilePanelOpen, setMobilePanelOpen] = useState<"list" | "thread">(
+    "list",
+  );
 
   // Support deep-link via ?channel=UUID
   const channelParam = searchParams.get("channel");
@@ -49,7 +59,7 @@ export default function MessagingPage() {
       setActiveChannel(linkedChannel);
       setMobilePanelOpen("thread");
     }
-  }, [linkedChannel]);
+  }, [linkedChannel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSelectChannel(channel: Channel) {
     setActiveChannel(channel);
@@ -57,39 +67,60 @@ export default function MessagingPage() {
     setMobilePanelOpen("thread");
   }
 
+  function handleTabChange(tab: InboxTabKey) {
+    setActiveTab(tab);
+    if (tab === "emails") {
+      setActiveChannel(null);
+      setSearchParams({});
+      setMobilePanelOpen("thread");
+    }
+  }
+
+  function handleBackToList() {
+    setActiveChannel(null);
+    setSearchParams({});
+    setMobilePanelOpen("list");
+  }
+
   const isCustomerThread = activeChannel?.channel_type === "customer_thread";
+  const showEmails = activeTab === "emails";
 
   return (
     <>
-      <Topbar title="Messaging" subtitle="Inbox · Conversations" />
+      <Topbar title="Messaging" subtitle="Team chat · In-house" />
       <div className="flex h-screen overflow-hidden">
         {/* Column 1: Channel list */}
         <div
           className={cn(
-            "w-72 shrink-0 transition-all duration-200",
-            // Mobile: show/hide based on panel state
-            "hidden lg:flex lg:flex-col",
-            mobilePanelOpen === "list" && "flex flex-col lg:flex",
+            "w-full shrink-0 transition-all duration-200 lg:w-80",
+            "lg:flex lg:flex-col",
+            mobilePanelOpen === "list" ? "flex flex-col" : "hidden",
           )}
         >
           <ChannelList
             activeChannelId={activeChannel?.channel_id ?? null}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
             onSelect={handleSelectChannel}
             onNewChannel={() => setShowNewChannel(true)}
+            userId={user?.user_id}
           />
         </div>
 
-        {/* Column 2: Message thread */}
+        {/* Column 2: Thread / email log */}
         <div
           className={cn(
-            "flex-1 flex flex-col min-w-0",
-            !activeChannel && "hidden lg:flex",
+            "flex min-w-0 flex-1 flex-col",
             mobilePanelOpen === "thread" ? "flex" : "hidden lg:flex",
           )}
         >
-          {activeChannel ? (
+          {showEmails ? (
+            <EmailLogPanel />
+          ) : activeChannel ? (
             <MessageThread
               channel={activeChannel}
+              userId={user?.user_id}
+              onBack={handleBackToList}
               onResolve={(ch) => {
                 setActiveChannel(ch as Channel);
                 qc.invalidateQueries({ queryKey: ["channels"] });
@@ -100,15 +131,9 @@ export default function MessagingPage() {
           )}
         </div>
 
-        {/* Column 3: Customer 360 sidebar (only for customer threads) */}
+        {/* Column 3: Customer 360 sidebar — legacy customer threads only */}
         {activeChannel && isCustomerThread && (
-          <div
-            className={cn(
-              "w-64 shrink-0",
-              "hidden xl:block",
-              mobilePanelOpen === "sidebar" && "block xl:block",
-            )}
-          >
+          <div className="hidden w-64 shrink-0 xl:block">
             <CustomerSidebar channel={activeChannel} />
           </div>
         )}
@@ -133,13 +158,13 @@ export default function MessagingPage() {
 
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-orika-black gap-4">
-      <div className="h-16 w-16 rounded-full bg-orika-charcoal flex items-center justify-center">
+    <div className="flex h-full flex-col items-center justify-center gap-4 bg-orika-black">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orika-charcoal">
         <MessageSquare className="h-8 w-8 text-orika-smoke/40" />
       </div>
       <div className="text-center">
         <p className="text-sm font-medium text-orika-cream">SmartComm</p>
-        <p className="text-xs text-orika-smoke mt-1">
+        <p className="mt-1 text-xs text-orika-smoke">
           Select a conversation or start a new one
         </p>
       </div>
@@ -169,6 +194,7 @@ function NewChannelModal({
 }) {
   const [channelType, setChannelType] = useState<"group" | "direct">("direct");
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [members, setMembers] = useState<StaffOption[]>(
     preselected ? [preselected] : [],
   );
@@ -190,12 +216,17 @@ function NewChannelModal({
       createChannel({
         channel_type: channelType,
         name: channelType === "group" ? name : undefined,
+        description:
+          channelType === "group" && description.trim()
+            ? description.trim()
+            : undefined,
         business,
         member_user_ids: validMembers.map((m) => m.user_id as string),
       }),
     onSuccess: (ch) => {
       onCreated(ch);
       setName("");
+      setDescription("");
       setMembers([]);
       setChannelType("direct");
     },
@@ -205,7 +236,7 @@ function NewChannelModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="New Internal Conversation"
+      title="New Conversation"
       size="sm"
       surface="light"
       footer={
@@ -248,19 +279,28 @@ function NewChannelModal({
         />
 
         {channelType === "group" && (
-          <Input
-            label="Channel name *"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Sales Team, Jewellery Support"
-            surface="light"
-          />
+          <>
+            <Input
+              label="Group name *"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sales Team, Jewellery Support"
+              surface="light"
+            />
+            <Input
+              label="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What is this group about? (optional)"
+              surface="light"
+            />
+          </>
         )}
 
         <div>
           <label className="mb-1.5 block text-xs font-medium text-orika-black/70">
             {channelType === "direct" ? "Message" : "Add members"}
-            <span className="text-red-500 ml-0.5">*</span>
+            <span className="ml-0.5 text-red-500">*</span>
           </label>
           <StaffSearchCombobox
             selected={members}
