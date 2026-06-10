@@ -16,6 +16,7 @@ export const EXPENSE_STATUS_META: Record<
   pending: { label: "Pending", tone: "warn", dot: true },
   approved: { label: "Approved", tone: "info", dot: false },
   rejected: { label: "Rejected", tone: "danger", dot: false },
+  partially_paid: { label: "Partially Paid", tone: "gold", dot: true },
   paid: { label: "Paid", tone: "sage", dot: false },
 };
 
@@ -47,7 +48,16 @@ export const EXPENSE_TYPE_LABEL: Record<ExpenseType, string> = {
   reimbursement: "Reimbursement",
   petty_cash: "Petty Cash",
   direct_payment: "Direct Payment",
+  cash_advance_retirement: "Advance Retirement",
 };
+
+export const PAYMENT_METHOD_OPTIONS: SelectOption[] = [
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "cash", label: "Cash" },
+  { value: "card", label: "Card" },
+  { value: "petty_cash", label: "Petty Cash" },
+  { value: "other", label: "Other" },
+];
 
 // ── Category options ──────────────────────────────────────────────────────────
 
@@ -62,29 +72,34 @@ export const CATEGORY_OPTIONS: SelectOption[] = [
   { value: "marketing", label: "Marketing & Advertising" },
   { value: "insurance", label: "Insurance" },
   { value: "professional_fees", label: "Professional Fees" },
+  { value: "software_subscriptions", label: "Software & Subscriptions" },
   { value: "other", label: "Other" },
 ];
 
-// Map each category to its COA code (for display, actual posting is backend)
+// Map each category to its COA code — MUST mirror CATEGORY_ACCOUNT_MAP
+// in modules/expenses/expenses.service.js (display only, posting is backend)
 export const CATEGORY_COA: Record<ExpenseCategory, string> = {
-  rent: "6100",
+  rent: "6300",
   transport: "6200",
-  office_supplies: "6300",
-  meals: "6400",
-  client_entertainment: "6400",
-  utilities: "6500",
-  maintenance: "6600",
-  marketing: "6700",
-  insurance: "6800",
-  professional_fees: "6800",
-  other: "6800",
+  office_supplies: "6500",
+  meals: "6860",
+  client_entertainment: "6860",
+  utilities: "6840",
+  maintenance: "6850",
+  marketing: "6400",
+  insurance: "6830",
+  professional_fees: "6820",
+  software_subscriptions: "6810",
+  other: "6500",
 };
 
-// Credit account per expense type (for display — actual posting is backend)
+// Credit account per expense type (for display — actual posting is backend,
+// driven by the payment method on each recorded payment)
 export const EXPENSE_TYPE_CR_ACCOUNT: Record<ExpenseType, string> = {
-  reimbursement: "Staff Payables (2300)",
-  petty_cash: "Petty Cash (1150)",
+  reimbursement: "Bank (1210)",
+  petty_cash: "Petty Cash (1110)",
   direct_payment: "Bank / Card (1210)",
+  cash_advance_retirement: "Bank (1210)",
 };
 
 // ── Status filter tabs ────────────────────────────────────────────────────────
@@ -93,6 +108,7 @@ export const EXPENSE_STATUS_TABS = [
   { key: "all", label: "All" },
   { key: "pending", label: "Pending" },
   { key: "approved", label: "Approved" },
+  { key: "partially_paid", label: "Partially Paid" },
   { key: "paid", label: "Paid" },
   { key: "rejected", label: "Rejected" },
 ] as const;

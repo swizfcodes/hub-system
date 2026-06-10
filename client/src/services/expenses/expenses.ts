@@ -11,6 +11,7 @@ import type {
 import type {
   CreateExpenseValues,
   RejectExpenseValues,
+  RecordPaymentValues,
   CreateAdvanceValues,
   ApproveAdvanceValues,
 } from "@lib/schemas/expenses";
@@ -65,6 +66,29 @@ export async function rejectExpense(
 
 export async function markExpensePaid(id: string): Promise<Expense> {
   const { data } = await api.post<Expense>(`/expenses/${id}/mark-paid`, {});
+  return data;
+}
+
+export async function recordExpensePayment(
+  id: string,
+  values: RecordPaymentValues,
+): Promise<Expense> {
+  const { data } = await api.post<Expense>(`/expenses/${id}/payments`, values);
+  return data;
+}
+
+export async function uploadExpenseReceipt(
+  id: string,
+  file: File,
+  meta: { receipt_date?: string; merchant_name?: string } = {},
+) {
+  const form = new FormData();
+  form.append("file", file);
+  if (meta.receipt_date) form.append("receipt_date", meta.receipt_date);
+  if (meta.merchant_name) form.append("merchant_name", meta.merchant_name);
+  const { data } = await api.post(`/expenses/${id}/receipts`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return data;
 }
 

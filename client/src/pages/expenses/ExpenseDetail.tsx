@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,21 +7,26 @@ import {
   DollarSign,
   FileText,
   Receipt,
+  Download,
 } from "lucide-react";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Skeleton } from "@components/ui/Skeleton";
-import { ExpenseStatusBadge } from "@components/expenses/ExpenseComponents";
-import { RejectModal } from "@components/expenses/ExpenseComponents";
+import {
+  ExpenseStatusBadge,
+  RejectModal,
+  RecordPaymentModal,
+} from "@components/expenses/ExpenseComponents";
 import {
   getExpense,
   approveExpense,
-  markExpensePaid,
+  uploadExpenseReceipt,
 } from "@services/expenses";
+import { api } from "@services/api";
 import {
   CATEGORY_OPTIONS,
   EXPENSE_TYPE_LABEL,
-  EXPENSE_TYPE_CR_ACCOUNT,
+  PAYMENT_METHOD_OPTIONS,
   CATEGORY_COA,
 } from "@lib/constants/expensesConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
@@ -37,6 +42,8 @@ export default function ExpenseDetail() {
   const { currency } = useActiveBusiness();
 
   const [showReject, setShowReject] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: expense, isLoading } = useQuery({
     queryKey: ["expense", id],
@@ -55,16 +62,36 @@ export default function ExpenseDetail() {
     onError: (err) => showToast.error(errMsg(err)),
   });
 
-  const paidMutation = useMutation({
-    mutationFn: () => markExpensePaid(id!),
+  const receiptMutation = useMutation({
+    mutationFn: (file: File) => uploadExpenseReceipt(id!, file),
     onSuccess: () => {
-      showToast.success("Marked paid — journal entry posted to accounting");
+      showToast.success("Receipt attached");
       qc.invalidateQueries({ queryKey: ["expense", id] });
-      qc.invalidateQueries({ queryKey: ["expenses"] });
-      qc.invalidateQueries({ queryKey: ["expense-kpis"] });
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
+
+  function handleReceiptFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) receiptMutation.mutate(file);
+    e.target.value = "";
+  }
+
+  async function downloadReceipt(documentId: string, fileName?: string) {
+    try {
+      const res = await api.get(`/documents/${documentId}/download`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || "receipt";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast.error(errMsg(err));
+    }
+  }
 
   if (isLoading) {
     return (
@@ -94,13 +121,17 @@ export default function ExpenseDetail() {
     CATEGORY_OPTIONS.find((c) => c.value === expense.category)?.label ??
     expense.category;
   const expenseCode = CATEGORY_COA[expense.category];
-  const creditAccount = EXPENSE_TYPE_CR_ACCOUNT[expense.expense_type];
+  const amountPaid = Number(expense.amount_paid ?? 0);
+  const balance = Number(expense.balance ?? expense.amount) - 0;
+  const isPayable =
+    expense.status === "approved" || expense.status === "partially_paid";
+  const payments = expense.payments ?? [];
 
   return (
     <div className="px-4 sm:px-8 py-6 max-w-3xl mx-auto space-y-6">
       <PageHeader
         title={expense.expense_number}
-        subtitle={`${expense.staff_name} · ${fmtDate(expense.expense_date)}`}
+        subtitle={`${expense.staff_name ?? expense.vendor_name ?? "—"} · ${fmtDate(expense.expense_date)}`}
         crumbs={[
           { label: "Expenses", to: "/expenses" },
           { label: expense.expense_number },
@@ -128,14 +159,10 @@ export default function ExpenseDetail() {
                 </Button>
               </>
             )}
-            {expense.status === "approved" && (
-              <Button
-                size="sm"
-                onClick={() => paidMutation.mutate()}
-                loading={paidMutation.isPending}
-              >
+            {isPayable && (
+              <Button size="sm" onClick={() => setShowPayment(true)}>
                 <DollarSign className="h-4 w-4" />
-                Mark Paid
+                Record Payment
               </Button>
             )}
           </div>
@@ -149,6 +176,52 @@ export default function ExpenseDetail() {
           <p>{expense.rejection_reason}</p>
         </div>
       )}
+
+      {/* Payment progress */}
+      <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-3">
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              Total
+            </p>
+            <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+              {fmtMoney(expense.amount, currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              Paid
+            </p>
+            <p className="font-display text-2xl font-light text-green-400 tabular-nums">
+              {fmtMoney(amountPaid, currency)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              Balance
+            </p>
+            <p
+              className={cn(
+                "font-display text-2xl font-light tabular-nums",
+                balance > 0 ? "text-amber-400" : "text-green-400",
+              )}
+            >
+              {fmtMoney(balance, currency)}
+            </p>
+          </div>
+        </div>
+        <div className="h-2 rounded-full bg-orika-graphite overflow-hidden">
+          <div
+            className="h-full rounded-full bg-orika-gold transition-all duration-500"
+            style={{
+              width: `${Math.min(
+                Math.round((amountPaid / Number(expense.amount || 1)) * 100),
+                100,
+              )}%`,
+            }}
+          />
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {/* Expense details */}
@@ -182,7 +255,7 @@ export default function ExpenseDetail() {
           )}
           {expense.paid_at && (
             <DetailRow
-              label="Paid"
+              label="Fully Paid"
               value={fmtDateTime(expense.paid_at)}
               highlight="success"
             />
@@ -203,7 +276,7 @@ export default function ExpenseDetail() {
               </span>
             </div>
             <div className="flex items-center justify-between rounded-lg bg-orika-graphite/30 px-3 py-2.5">
-              <span className="text-orika-smoke">CR {creditAccount}</span>
+              <span className="text-orika-smoke">CR Cash / Bank</span>
               <span className="text-orika-cream">
                 {fmtMoney(expense.amount, currency)}
               </span>
@@ -212,31 +285,98 @@ export default function ExpenseDetail() {
 
           <p className="text-xs text-orika-smoke/60">
             {expense.status === "paid"
-              ? "Journal entry posted to accounting."
-              : expense.status === "approved"
-                ? "Journal will post when marked paid."
-                : "Journal will post on approval + payment."}
+              ? "Journal entries posted for every payment."
+              : expense.status === "partially_paid"
+                ? "Journals post per payment — balance still outstanding."
+                : expense.status === "approved"
+                  ? "Journal posts as payments are recorded."
+                  : "Journal will post once approved and paid."}
           </p>
 
-          {/* Reimbursement note */}
           {expense.expense_type === "reimbursement" &&
-            expense.status !== "paid" && (
+            isPayable &&
+            balance > 0 && (
               <div className="rounded-lg border border-orika-gold/20 bg-orika-gold/5 px-3 py-2 text-xs text-orika-gold/80">
-                Reimbursement — staff is owed{" "}
-                {fmtMoney(expense.amount, currency)}. Mark paid once the
-                transfer is made.
+                Reimbursement — staff is owed {fmtMoney(balance, currency)}.
+                Record the payment once the transfer is made.
               </div>
             )}
         </div>
+      </div>
+
+      {/* Payments history */}
+      <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            Payments
+          </p>
+          {isPayable && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-orika-smoke"
+              onClick={() => setShowPayment(true)}
+            >
+              <DollarSign className="h-4 w-4" />
+              Record Payment
+            </Button>
+          )}
+        </div>
+
+        {payments.length > 0 ? (
+          <div className="space-y-2">
+            {payments.map((p) => (
+              <div
+                key={p.payment_id}
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-orika-graphite/30 px-4 py-3"
+              >
+                <DollarSign className="h-4 w-4 text-green-400 shrink-0" />
+                <span className="text-sm font-medium text-orika-cream tabular-nums">
+                  {fmtMoney(p.amount, currency)}
+                </span>
+                <span className="text-xs text-orika-smoke">
+                  {PAYMENT_METHOD_OPTIONS.find((m) => m.value === p.method)
+                    ?.label ?? p.method}
+                </span>
+                {p.reference && (
+                  <span className="text-xs text-orika-smoke font-mono">
+                    {p.reference}
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-orika-smoke">
+                  {fmtDate(p.payment_date)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-orika-smoke">
+            No payments recorded yet.
+            {isPayable && " Use “Record Payment” to log full or part payments."}
+          </p>
+        )}
       </div>
 
       {/* Receipts */}
       <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6">
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
-            Receipts
+            Receipts & Invoices
           </p>
-          <Button variant="ghost" size="sm" className="text-orika-smoke">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            className="hidden"
+            onChange={handleReceiptFile}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-orika-smoke"
+            loading={receiptMutation.isPending}
+            onClick={() => fileInputRef.current?.click()}
+          >
             <Receipt className="h-4 w-4" />
             Upload Receipt
           </Button>
@@ -249,20 +389,32 @@ export default function ExpenseDetail() {
                 key={r.receipt_id}
                 className="flex items-center gap-3 rounded-lg border border-white/5 bg-orika-graphite/30 px-4 py-3"
               >
-                <FileText className="h-4 w-4 text-orika-smoke" />
-                <span className="text-sm text-orika-cloud">
-                  Receipt attached
+                <FileText className="h-4 w-4 text-orika-smoke shrink-0" />
+                <span className="text-sm text-orika-cloud truncate">
+                  {r.file_name ?? "Receipt attached"}
                 </span>
-                <span className="ml-auto text-xs text-orika-smoke">
-                  {fmtDate(r.uploaded_at)}
+                {r.merchant_name && (
+                  <span className="text-xs text-orika-smoke">
+                    {r.merchant_name}
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-orika-smoke shrink-0">
+                  {r.uploaded_at ? fmtDate(r.uploaded_at) : ""}
                 </span>
+                <button
+                  onClick={() => downloadReceipt(r.document_id, r.file_name)}
+                  title="Download"
+                  className="text-orika-smoke hover:text-orika-gold transition-colors shrink-0"
+                >
+                  <Download className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
         ) : (
           <p className="text-sm text-orika-smoke">
             No receipt attached.
-            {expense.amount > 10_000 && (
+            {Number(expense.amount) > 10_000 && (
               <span className="ml-1 text-amber-400 font-medium">
                 Required for this amount.
               </span>
@@ -271,12 +423,20 @@ export default function ExpenseDetail() {
         )}
       </div>
 
-      {/* Reject modal */}
+      {/* Modals */}
       <RejectModal
         open={showReject}
         onClose={() => setShowReject(false)}
         expenseId={expense.expense_id}
         expenseNum={expense.expense_number}
+      />
+      <RecordPaymentModal
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        expenseId={expense.expense_id}
+        expenseNum={expense.expense_number}
+        balance={balance}
+        currency={currency}
       />
     </div>
   );

@@ -14,6 +14,7 @@ export const createExpenseSchema = z.object({
       "marketing",
       "insurance",
       "professional_fees",
+      "software_subscriptions",
       "other",
     ],
     { required_error: "Select a category" },
@@ -29,6 +30,17 @@ export const createExpenseSchema = z.object({
   currency: z.string().length(3).optional().default("NGN"),
 });
 export type CreateExpenseValues = z.infer<typeof createExpenseSchema>;
+
+export const recordPaymentSchema = z.object({
+  amount: z.number().positive("Amount must be greater than 0"),
+  payment_date: z.string().min(1, "Date required"),
+  method: z
+    .enum(["bank_transfer", "cash", "card", "petty_cash", "other"])
+    .default("bank_transfer"),
+  reference: z.string().max(200).optional().or(z.literal("")),
+  notes: z.string().max(500).optional().or(z.literal("")),
+});
+export type RecordPaymentValues = z.infer<typeof recordPaymentSchema>;
 
 export const rejectExpenseSchema = z.object({
   rejection_reason: z.string().min(3, "Reason required").max(500),

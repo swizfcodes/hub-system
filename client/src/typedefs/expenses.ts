@@ -1,7 +1,12 @@
 // ── typedefs/expenses.ts ──────────────────────────────────────────────────────
 // Types for the Expenses module — expenses, cash advances and KPI rollups.
 
-export type ExpenseStatus = "pending" | "approved" | "rejected" | "paid";
+export type ExpenseStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "partially_paid"
+  | "paid";
 
 export type AdvanceStatus =
   | "pending"
@@ -10,7 +15,18 @@ export type AdvanceStatus =
   | "settled"
   | "rejected";
 
-export type ExpenseType = "reimbursement" | "petty_cash" | "direct_payment";
+export type ExpenseType =
+  | "reimbursement"
+  | "petty_cash"
+  | "direct_payment"
+  | "cash_advance_retirement";
+
+export type PaymentMethod =
+  | "bank_transfer"
+  | "cash"
+  | "card"
+  | "petty_cash"
+  | "other";
 
 export type ExpenseCategory =
   | "rent"
@@ -23,13 +39,30 @@ export type ExpenseCategory =
   | "marketing"
   | "insurance"
   | "professional_fees"
+  | "software_subscriptions"
   | "other";
 
 export interface ExpenseReceipt {
   receipt_id: string;
-  file_url: string;
+  document_id: string;
   file_name?: string;
+  receipt_date?: string | null;
+  merchant_name?: string | null;
+  amount_on_receipt?: number | null;
   uploaded_at?: string;
+}
+
+export interface ExpensePayment {
+  payment_id: string;
+  expense_id: string;
+  amount: number;
+  payment_date: string;
+  method: PaymentMethod;
+  reference?: string | null;
+  notes?: string | null;
+  recorded_by?: string | null;
+  recorded_by_name?: string | null;
+  created_at?: string;
 }
 
 export interface Expense {
@@ -38,6 +71,8 @@ export interface Expense {
   category: ExpenseCategory;
   expense_type: ExpenseType;
   amount: number;
+  amount_paid?: number;
+  balance?: number;
   description: string;
   expense_date: string;
   status: ExpenseStatus;
@@ -51,6 +86,7 @@ export interface Expense {
   rejection_reason?: string | null;
   auto_approved?: boolean;
   receipts?: ExpenseReceipt[];
+  payments?: ExpensePayment[];
   created_at?: string;
 }
 
@@ -83,7 +119,7 @@ export interface ExpenseKpis {
 
 export interface ExpenseListResponse {
   data: Expense[];
-  pagination?: { total: number };
+  pagination?: { total: number; page?: number; limit?: number };
 }
 
 export interface AdvanceListResponse {

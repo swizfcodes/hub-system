@@ -61,6 +61,8 @@ const TEMPLATE_ORDER = [
   // Sprint 4 schema gaps (per-business additions)
   "000023_close_sprint3_schema_gaps.sql.template",
   "000024_loyalty_management.sql.template",
+  // Expenses uplift (vendor expenses + partial payments)
+  "000066_expenses_uplift.sql.template",
 ];
 
 // Document types that should be seeded for every new business —

@@ -10,6 +10,7 @@
     "db:status": "node scripts/migrate.js status",
     "db:verify": "node scripts/migrate.js verify",
     "seed": "node scripts/seed.js",
+    "seed:expenses": "node scripts/seedExpenses.js",
     "admin": "node scripts/createAdmin.js",
     "smoke": "node scripts/smokeTest.js",
     "smoke:store": "node scripts/storeSmokeTest.js",
@@ -49,8 +50,5 @@
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.3"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   }
 }

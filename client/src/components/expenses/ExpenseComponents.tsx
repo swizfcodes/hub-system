@@ -1,8 +1,8 @@
 /**
  * ExpenseComponents.tsx
  * Exports: ExpenseStatusBadge, AdvanceStatusBadge, ExpenseKpiStrip,
- *          SpendingInsightsChart, RejectModal, AdvanceFormModal,
- *          ApproveAdvanceModal
+ *          SpendingInsightsChart, RejectModal, RecordPaymentModal,
+ *          AdvanceFormModal, ApproveAdvanceModal
  */
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,14 +19,18 @@ import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Skeleton } from "@components/ui/Skeleton";
+import { Select } from "@components/ui/Select";
 import {
   EXPENSE_STATUS_META,
   ADVANCE_STATUS_META,
   CATEGORY_OPTIONS,
+  PAYMENT_METHOD_OPTIONS,
 } from "@lib/constants/expensesConstants";
 import {
   rejectExpenseSchema,
   type RejectExpenseValues,
+  recordPaymentSchema,
+  type RecordPaymentValues,
   createAdvanceSchema,
   type CreateAdvanceValues,
   approveAdvanceSchema,
@@ -34,6 +38,7 @@ import {
 } from "@lib/schemas/expenses";
 import {
   rejectExpense,
+  recordExpensePayment,
   getExpenseKpis,
   createAdvance,
   approveAdvance,
@@ -290,6 +295,168 @@ export function RejectModal({
             />
           )}
         />
+      </div>
+    </Modal>
+  );
+}
+
+// ── RecordPaymentModal ────────────────────────────────────────────────────────
+// Record a partial or full payment against an approved expense.
+
+interface RecordPaymentModalProps {
+  open: boolean;
+  onClose: () => void;
+  expenseId: string;
+  expenseNum: string;
+  balance: number;
+  currency?: string;
+}
+
+export function RecordPaymentModal({
+  open,
+  onClose,
+  expenseId,
+  expenseNum,
+  balance,
+  currency = "NGN",
+}: RecordPaymentModalProps) {
+  const qc = useQueryClient();
+  const form = useForm<RecordPaymentValues>({
+    resolver: zodResolver(recordPaymentSchema),
+    defaultValues: {
+      amount: balance,
+      payment_date: new Date().toISOString().split("T")[0],
+      method: "bank_transfer",
+      reference: "",
+      notes: "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (values: RecordPaymentValues) =>
+      recordExpensePayment(expenseId, values),
+    onSuccess: (expense) => {
+      showToast.success(
+        expense.status === "paid"
+          ? `${expenseNum} fully paid — journal posted`
+          : `Payment recorded — ${fmtMoney(expense.balance ?? 0, currency)} outstanding`,
+      );
+      qc.invalidateQueries({ queryKey: ["expense", expenseId] });
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["expense-kpis"] });
+      form.reset();
+      onClose();
+    },
+    onError: (err) => showToast.error(errMsg(err)),
+  });
+
+  const watchedAmount = form.watch("amount");
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Record Payment"
+      size="sm"
+      surface="light"
+      footer={
+        <div className="flex justify-end gap-3">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={form.handleSubmit((v) => mutation.mutate(v))}
+            loading={mutation.isPending}
+          >
+            Record Payment
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm flex justify-between">
+          <span className="text-text-on-light-muted">Outstanding balance</span>
+          <span className="font-semibold text-orika-black tabular-nums">
+            {fmtMoney(balance, currency)}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Controller
+            name="amount"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                label="Amount (₦) *"
+                type="number"
+                step="0.01"
+                min={0}
+                surface="light"
+                onChange={(e) =>
+                  field.onChange(parseFloat(e.target.value) || 0)
+                }
+                error={fieldState.error?.message}
+              />
+            )}
+          />
+          <Controller
+            name="payment_date"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Input
+                {...field}
+                label="Payment Date *"
+                type="date"
+                surface="light"
+                error={fieldState.error?.message}
+              />
+            )}
+          />
+        </div>
+
+        <Controller
+          name="method"
+          control={form.control}
+          render={({ field }) => (
+            <Select
+              label="Method *"
+              options={PAYMENT_METHOD_OPTIONS}
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              surface="light"
+            />
+          )}
+        />
+
+        <Controller
+          name="reference"
+          control={form.control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              label="Reference"
+              placeholder="e.g. transfer reference, invoice no."
+              surface="light"
+            />
+          )}
+        />
+
+        {watchedAmount > 0 && watchedAmount < balance && (
+          <p className="text-xs text-amber-600">
+            Partial payment — {fmtMoney(balance - watchedAmount, currency)}{" "}
+            will remain outstanding.
+          </p>
+        )}
+        {watchedAmount > balance && (
+          <p className="text-xs text-red-500">
+            Exceeds the outstanding balance — the server will reject this.
+          </p>
+        )}
       </div>
     </Modal>
   );
