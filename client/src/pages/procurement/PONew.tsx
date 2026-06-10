@@ -10,7 +10,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Plus, Trash2, Zap } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Zap, Mail } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { Button } from "@components/ui/Button";
@@ -24,12 +24,13 @@ import {
   type SupplierOption,
 } from "@components/procurement/suppliers/SupplierSearchInput";
 import { poCreateSchema, type POCreateValues } from "@lib/schemas/purchasing";
-import { createPO } from "@services/purchasing/purchaseOrders";
+import { createPO, emailPO } from "@services/purchasing/purchaseOrders";
 import { CURRENCIES } from "@lib/constants/currencies";
 import { fmtMoney } from "@lib/format";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { CatalogueSearchInput } from "@components/shared/CatalogueSearchInput";
+import { QuickAddProductModal } from "@components/procurement/QuickAddProductModal";
 
 // ProductLineSearch replaced by shared CatalogueSearchInput
 
@@ -56,6 +57,14 @@ export default function PONew() {
   >({});
   // Index of a freshly added line — its product search grabs focus on mount.
   const [focusLine, setFocusLine] = useState<number | null>(null);
+  // Inline product creation, scoped to the line that triggered it.
+  const [quickAdd, setQuickAdd] = useState<{
+    open: boolean;
+    line: number;
+    query: string;
+  }>({ open: false, line: 0, query: "" });
+  // Email the PO to the supplier as soon as it's created (both modes).
+  const [emailOnCreate, setEmailOnCreate] = useState(false);
 
   const {
     register,
@@ -120,18 +129,38 @@ export default function PONew() {
   const ngnEquivalent = fxRate ? total * fxRate : null;
 
   const mutation = useMutation({
-    mutationFn: (v: POCreateValues) =>
-      createPO({
+    mutationFn: async (v: POCreateValues) => {
+      const po = await createPO({
         ...v,
         expected_delivery: v.expected_delivery || undefined,
         delivery_address: v.delivery_address || undefined,
         exchange_rate: v.exchange_rate || undefined,
         rfq_id: v.rfq_id || undefined,
         notes: v.notes || undefined,
-      }),
+        // Merge the per-line description (held in local state by index).
+        lines: v.lines.map((l, i) => ({
+          product_id: l.product_id as string,
+          quantity_ordered: l.quantity_ordered,
+          unit_price: l.unit_price,
+          description: lineDescriptions[i] || undefined,
+        })),
+      });
+      if (emailOnCreate) {
+        try {
+          await emailPO(po.po_id);
+        } catch (e) {
+          // PO is saved; surface the email problem without losing the PO.
+          showToast.error("PO saved, but email failed", errMsg(e));
+        }
+      }
+      return po;
+    },
     onSuccess: (po) => {
       qc.invalidateQueries({ queryKey: ["purchasing", "purchase-orders"] });
-      showToast.success(`PO ${po.po_number} created`);
+      showToast.success(
+        `PO ${po.po_number} created`,
+        emailOnCreate ? "Emailed to the supplier." : undefined,
+      );
       // Quick mode: go straight to the detail page with receive modal pre-opened
       if (isQuickMode) {
         navigate(`/procurement/purchase-orders/${po.po_id}?receive=1`);
@@ -141,6 +170,19 @@ export default function PONew() {
     },
     onError: (e) => showToast.error("Could not save", errMsg(e)),
   });
+
+  // Guard product-on-every-line before submitting (backend enforces too).
+  function submit(v: POCreateValues) {
+    const missing = v.lines.findIndex((l) => !l.product_id);
+    if (missing !== -1) {
+      showToast.error(
+        "Each line needs a product",
+        `Line ${missing + 1} has no product. Pick one or use "Add new product".`,
+      );
+      return;
+    }
+    mutation.mutate(v);
+  }
 
   return (
     <>
@@ -188,7 +230,7 @@ export default function PONew() {
         </header>
 
         <form
-          onSubmit={handleSubmit((v) => mutation.mutate(v))}
+          onSubmit={handleSubmit(submit)}
           className="space-y-6"
         >
           <Card className="p-5 sm:p-6 space-y-4">
@@ -237,18 +279,33 @@ export default function PONew() {
                       <CatalogueSearchInput
                         surface="dark"
                         currency="NGN"
-                        label="Product search (optional)"
+                        label="Product *"
                         instanceKey={i}
                         autoFocus={focusLine === i}
+                        allowQuickAdd
+                        onQuickAdd={(query) =>
+                          setQuickAdd({ open: true, line: i, query })
+                        }
                         onSelect={(p) => {
                           setValue(`lines.${i}.product_id`, p.product_id);
                           setLineDescriptions((d) => ({ ...d, [i]: p.name }));
                         }}
                       />
+                      {/* Selected-product confirmation / required hint */}
+                      {linesWatch?.[i]?.product_id ? (
+                        <p className="text-[0.65rem] text-living-sage">
+                          ✓ {lineDescriptions[i] || "Product linked"}
+                        </p>
+                      ) : (
+                        <p className="text-[0.65rem] text-orika-smoke/70">
+                          Pick a product, or use “Add new product” if it isn’t
+                          in the catalogue yet.
+                        </p>
+                      )}
                       <div className="grid gap-3 sm:grid-cols-[2fr_auto_auto] items-end">
                         <div>
                           <label className="mb-1 block text-[0.65rem] uppercase tracking-widest text-orika-smoke font-medium">
-                            Description / SKU
+                            Description / note (optional)
                           </label>
                           <input
                             type="text"
@@ -259,7 +316,7 @@ export default function PONew() {
                                 [i]: e.target.value,
                               }))
                             }
-                            placeholder="Auto-filled from search above"
+                            placeholder="Spec or note for this line"
                             className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
                           />
                         </div>
@@ -441,6 +498,23 @@ export default function PONew() {
             />
           </Card>
 
+          {/* Email option — available on both quick and full modes */}
+          <label className="flex items-center gap-2.5 rounded-xl border border-orika-graphite bg-orika-black/30 px-4 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={emailOnCreate}
+              onChange={(e) => setEmailOnCreate(e.target.checked)}
+              className="h-4 w-4 accent-orika-gold"
+            />
+            <Mail className="h-4 w-4 text-orika-gold" />
+            <span className="text-sm text-orika-cream">
+              Email this PO to the supplier now
+            </span>
+            <span className="ml-auto text-[0.65rem] text-orika-smoke">
+              Requires an email on the supplier’s contact
+            </span>
+          </label>
+
           <div className="flex justify-end gap-3">
             <Button
               type="button"
@@ -450,11 +524,21 @@ export default function PONew() {
               Cancel
             </Button>
             <Button type="submit" variant="gold" loading={mutation.isPending}>
-              Create PO
+              {emailOnCreate ? "Create & email PO" : "Create PO"}
             </Button>
           </div>
         </form>
       </div>
+
+      <QuickAddProductModal
+        open={quickAdd.open}
+        initialName={quickAdd.query}
+        onClose={() => setQuickAdd((s) => ({ ...s, open: false }))}
+        onCreated={(p) => {
+          setValue(`lines.${quickAdd.line}.product_id`, p.product_id);
+          setLineDescriptions((d) => ({ ...d, [quickAdd.line]: p.name }));
+        }}
+      />
     </>
   );
 }

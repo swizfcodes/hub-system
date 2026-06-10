@@ -21,9 +21,11 @@ interface Props {
   open: boolean;
   onClose: () => void;
   po: PurchaseOrder;
+  /** Fired after a successful receipt — used to chain into billing. */
+  onReceived?: () => void;
 }
 
-export function ReceiveGoodsModal({ open, onClose, po }: Props) {
+export function ReceiveGoodsModal({ open, onClose, po, onReceived }: Props) {
   const qc = useQueryClient();
 
   const { data: locations = [] } = useQuery({
@@ -103,6 +105,7 @@ export function ReceiveGoodsModal({ open, onClose, po }: Props) {
       showToast.success("Goods received", "Stock updated automatically.");
       reset();
       onClose();
+      onReceived?.();
     },
     onError: (e) => showToast.error("Failed", errMsg(e)),
   });
