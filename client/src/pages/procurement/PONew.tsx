@@ -7,7 +7,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Plus, Trash2, Zap } from "lucide-react";
@@ -15,6 +15,7 @@ import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { Card } from "@components/ui/Card";
@@ -32,6 +33,15 @@ import { CatalogueSearchInput } from "@components/shared/CatalogueSearchInput";
 
 // ProductLineSearch replaced by shared CatalogueSearchInput
 
+/** A blank line — qty/price start empty (undefined), not seeded with 0/1. */
+function emptyLine(): POCreateValues["lines"][number] {
+  return {
+    product_id: "",
+    quantity_ordered: undefined,
+    unit_price: undefined,
+  } as unknown as POCreateValues["lines"][number];
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PONew() {
@@ -44,6 +54,8 @@ export default function PONew() {
   const [lineDescriptions, setLineDescriptions] = useState<
     Record<number, string>
   >({});
+  // Index of a freshly added line — its product search grabs focus on mount.
+  const [focusLine, setFocusLine] = useState<number | null>(null);
 
   const {
     register,
@@ -57,14 +69,35 @@ export default function PONew() {
     defaultValues: {
       supplier_id: params.get("supplier_id") ?? "",
       currency: "USD",
-      shipping_cost: 0,
-      import_duty: 0,
-      other_charges: 0,
-      lines: [{ product_id: "", quantity_ordered: 1, unit_price: 0 }],
+      // Charges start empty; the schema defaults them to 0 on submit.
+      shipping_cost: undefined,
+      import_duty: undefined,
+      other_charges: undefined,
+      // Lines start empty so staff type into blank boxes, not over a seed.
+      lines: [emptyLine()],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
+
+  // Append a blank line and focus its product search.
+  function addLine() {
+    append(emptyLine());
+    setFocusLine(fields.length); // new line's index
+  }
+
+  // Remove a line and keep the description map aligned to the new indices.
+  function removeLine(i: number) {
+    remove(i);
+    setLineDescriptions((prev) => {
+      const next: Record<number, string> = {};
+      for (const key of Object.keys(prev).map(Number)) {
+        if (key < i) next[key] = prev[key];
+        else if (key > i) next[key - 1] = prev[key];
+      }
+      return next;
+    });
+  }
   const linesWatch = watch("lines");
   const currency = watch("currency");
   const shipping = watch("shipping_cost") ?? 0;
@@ -186,17 +219,9 @@ export default function PONew() {
               <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
                 Line items
               </h3>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-                onClick={() =>
-                  append({ product_id: "", quantity_ordered: 1, unit_price: 0 })
-                }
-              >
-                Add line
-              </Button>
+              <span className="text-[0.6rem] text-orika-smoke">
+                {fields.length} {fields.length === 1 ? "line" : "lines"}
+              </span>
             </div>
             <div className="space-y-3">
               {fields.map((f, i) => (
@@ -214,6 +239,7 @@ export default function PONew() {
                         currency="NGN"
                         label="Product search (optional)"
                         instanceKey={i}
+                        autoFocus={focusLine === i}
                         onSelect={(p) => {
                           setValue(`lines.${i}.product_id`, p.product_id);
                           setLineDescriptions((d) => ({ ...d, [i]: p.name }));
@@ -237,30 +263,48 @@ export default function PONew() {
                             className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
                           />
                         </div>
-                        <Input
-                          surface="dark"
-                          {...register(`lines.${i}.quantity_ordered` as const, {
-                            valueAsNumber: true,
-                          })}
-                          type="number"
-                          min={1}
-                          label="Qty"
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.quantity_ordered` as const}
+                          render={({ field, fieldState }) => (
+                            <NumberField
+                              surface="dark"
+                              label="Qty"
+                              placeholder="0"
+                              className="w-24"
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              onBlur={field.onBlur}
+                              error={fieldState.error?.message}
+                            />
+                          )}
                         />
-                        <Input
-                          surface="dark"
-                          {...register(`lines.${i}.unit_price` as const, {
-                            valueAsNumber: true,
-                          })}
-                          type="number"
-                          step="0.01"
-                          label="Unit price"
+                        <Controller
+                          control={control}
+                          name={`lines.${i}.unit_price` as const}
+                          render={({ field, fieldState }) => (
+                            <NumberField
+                              surface="dark"
+                              decimal
+                              label="Unit price"
+                              placeholder="0.00"
+                              className="w-32"
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              onBlur={field.onBlur}
+                              error={fieldState.error?.message}
+                              onEnter={
+                                i === fields.length - 1 ? addLine : undefined
+                              }
+                            />
+                          )}
                         />
                       </div>
                     </div>
                     {fields.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => remove(i)}
+                        onClick={() => removeLine(i)}
                         className="p-2 mt-7 text-orika-smoke hover:text-state-danger"
                         aria-label="Remove"
                       >
@@ -284,6 +328,17 @@ export default function PONew() {
                 </div>
               ))}
             </div>
+
+            {/* Add line — sits below the list so adding flows downward and
+                jumps focus straight to the new line's product search. */}
+            <button
+              type="button"
+              onClick={addLine}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orika-graphite py-3 text-xs font-medium text-orika-smoke transition-colors hover:border-orika-gold/50 hover:text-orika-gold"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add line
+            </button>
           </Card>
 
           {/* Charges + FX + totals */}
@@ -300,33 +355,65 @@ export default function PONew() {
                   label: `${c.symbol} ${c.code}`,
                 }))}
               />
-              <Input
-                {...register("shipping_cost", { valueAsNumber: true })}
-                type="number"
-                step="0.01"
-                label="Shipping"
+              <Controller
+                control={control}
+                name="shipping_cost"
+                render={({ field }) => (
+                  <NumberField
+                    decimal
+                    label="Shipping"
+                    placeholder="0.00"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
-              <Input
-                {...register("import_duty", { valueAsNumber: true })}
-                type="number"
-                step="0.01"
-                label="Import duty"
+              <Controller
+                control={control}
+                name="import_duty"
+                render={({ field }) => (
+                  <NumberField
+                    decimal
+                    label="Import duty"
+                    placeholder="0.00"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
-              <Input
-                {...register("other_charges", { valueAsNumber: true })}
-                type="number"
-                step="0.01"
-                label="Other charges"
+              <Controller
+                control={control}
+                name="other_charges"
+                render={({ field }) => (
+                  <NumberField
+                    decimal
+                    label="Other charges"
+                    placeholder="0.00"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
               />
               {/* Exchange rate only needed for non-NGN currencies */}
               {currency !== "NGN" && (
-                <Input
-                  {...register("exchange_rate", { valueAsNumber: true })}
-                  type="number"
-                  step="0.0001"
-                  label="Exchange rate (to NGN)"
-                  hint="Rate locked at time of creation"
-                  className="sm:col-span-2"
+                <Controller
+                  control={control}
+                  name="exchange_rate"
+                  render={({ field }) => (
+                    <NumberField
+                      decimal
+                      label="Exchange rate (to NGN)"
+                      placeholder="0.0000"
+                      hint="Rate locked at time of creation"
+                      className="sm:col-span-2"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                    />
+                  )}
                 />
               )}
             </div>

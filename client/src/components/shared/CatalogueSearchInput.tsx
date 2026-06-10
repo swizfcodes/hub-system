@@ -39,6 +39,8 @@ interface CatalogueSearchInputProps {
   /** Unique key per instance — prevents cross-instance query cache collisions. */
   instanceKey?: string | number;
   className?: string;
+  /** Focus the input on mount — used to jump to a freshly added line. */
+  autoFocus?: boolean;
 }
 
 export function CatalogueSearchInput({
@@ -49,6 +51,7 @@ export function CatalogueSearchInput({
   surface = "dark",
   instanceKey = 0,
   className = "",
+  autoFocus = false,
 }: CatalogueSearchInputProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -206,6 +209,7 @@ export function CatalogueSearchInput({
           onFocus={handleFocus}
           placeholder={placeholder}
           className={inputCls}
+          autoFocus={autoFocus}
         />
       </div>
       {dropdown}
