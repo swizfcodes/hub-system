@@ -18,7 +18,7 @@ import { Topbar } from "@components/shell/Topbar";
 import { Breadcrumbs } from "@components/ui/Breadcrumbs";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import { Card } from "@components/ui/Card";
@@ -366,13 +366,20 @@ function CreateTransferModal({
                     />
                   )}
                 />
-                <Input
-                  {...register(`lines.${i}.quantity` as const, {
-                    valueAsNumber: true,
-                  })}
-                  type="number"
-                  min={1}
-                  label="Qty"
+                <Controller
+                  control={control}
+                  name={`lines.${i}.quantity` as const}
+                  render={({ field, fieldState }) => (
+                    <NumberField
+                      surface="dark"
+                      label="Qty"
+                      placeholder="0"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                    />
+                  )}
                 />
                 {fields.length > 1 && (
                   <Button

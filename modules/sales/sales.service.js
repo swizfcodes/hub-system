@@ -5,7 +5,8 @@ const { getVatRate } = require("../../config/businesses");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const { sendEmail } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const auditService = require("../../shared/audit/audit.service");
 const crmService = require("../crm/crm.service");
 const movementsService = require("../stock/movements.service");
@@ -168,11 +169,15 @@ async function sendQuotation(
       throw Object.assign(new Error("Contact has no email address on file"), {
         status: 400,
       });
-    if (channel === "whatsapp" && !q.whatsapp_number)
-      throw Object.assign(new Error("Contact has no WhatsApp number on file"), {
-        status: 400,
-      });
-    if (channel !== "email" && channel !== "whatsapp")
+    // EXTERNAL-COMMS-DISABLED: WhatsApp sending requires Meta API access.
+    // Re-enable the whatsapp branch below (and the adapter require at the
+    // top of this file) once credentials are available.
+    if (channel === "whatsapp")
+      throw Object.assign(
+        new Error("WhatsApp sending is temporarily disabled — use email"),
+        { status: 400 },
+      );
+    if (channel !== "email")
       throw Object.assign(new Error(`Unsupported channel: ${channel}`), {
         status: 400,
       });
@@ -201,12 +206,14 @@ async function sendQuotation(
           },
         ],
       });
-    } else {
-      await whatsapp.sendMessage({
-        to: q.whatsapp_number,
-        text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
-      });
     }
+    // EXTERNAL-COMMS-DISABLED: WhatsApp delivery path.
+    // else {
+    //   await whatsapp.sendMessage({
+    //     to: q.whatsapp_number,
+    //     text: `Dear ${q.contact_name}, your quotation ${q.quotation_number} for ₦${Number(q.total_amount).toLocaleString()} is valid until ${q.valid_until}.`,
+    //   });
+    // }
 
     return { message: "Quotation sent" };
   });
@@ -384,6 +391,11 @@ async function createDirectOrder(business, data, user) {
     throw Object.assign(new Error("At least one payment is required"), { status: 400 });
   }
 
+  // Normalise: frontend sends "method", backend uses "payment_method"
+  for (const p of data.payments) {
+    if (p.method && !p.payment_method) p.payment_method = p.method;
+  }
+
   // ── Currency handling ──────────────────────────────────────────────
   const currency = data.currency || "NGN";
   let exchangeRate = 1;
@@ -407,13 +419,18 @@ async function createDirectOrder(business, data, user) {
   const result = await withBusinessContext(business, async (client) => {
     // ── Validate lines & min-price floor ─────────────────────────────
     for (const line of data.lines) {
-      if (typeof line.quantity !== "number" || line.quantity <= 0) {
+      // Coerce string numerics (pg driver returns NUMERIC as strings)
+      line.quantity = Number(line.quantity);
+      line.unit_price = Number(line.unit_price);
+      line.discount_amount = Number(line.discount_amount || 0);
+
+      if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
         throw Object.assign(
           new Error(`Invalid quantity for ${line.description || line.product_id}`),
           { status: 400 },
         );
       }
-      if (typeof line.unit_price !== "number" || line.unit_price < 0) {
+      if (!Number.isFinite(line.unit_price) || line.unit_price < 0) {
         throw Object.assign(
           new Error(`Invalid price for ${line.description || line.product_id}`),
           { status: 400 },
@@ -421,7 +438,7 @@ async function createDirectOrder(business, data, user) {
       }
       if (line.product_id) {
         const { rows: [prod] } = await client.query(
-          `SELECT min_selling_price, product_name FROM products WHERE product_id = $1`,
+          `SELECT min_selling_price, name AS product_name FROM products WHERE product_id = $1`,
           [line.product_id],
         );
         if (!prod) {
@@ -461,11 +478,12 @@ async function createDirectOrder(business, data, user) {
 
     const totalAmount = Math.round((subtotal + vatTotal) * 100) / 100;
 
-    // Convert foreign currency payments to NGN for validation
+    // Catalogue prices and payment amounts are always in NGN.
+    // Foreign currency selection is informational — records that the customer
+    // paid in FC, with amount_foreign = totalAmount / exchangeRate.
     const totalPaid = Math.round(
       data.payments.reduce((s, p) => s + parseFloat(p.amount), 0) * 100,
     ) / 100;
-    // Payments are entered in the sale currency; total is also in sale currency
     if (totalPaid < totalAmount) {
       throw Object.assign(
         new Error(
@@ -475,16 +493,19 @@ async function createDirectOrder(business, data, user) {
       );
     }
 
-    // NGN equivalent for journals and storage
-    const totalAmountNGN = currency === "NGN"
-      ? totalAmount
-      : Math.round(totalAmount * exchangeRate * 100) / 100;
-    const subtotalNGN = currency === "NGN"
-      ? subtotal
-      : Math.round(subtotal * exchangeRate * 100) / 100;
-    const vatTotalNGN = currency === "NGN"
-      ? vatTotal
-      : Math.round(vatTotal * exchangeRate * 100) / 100;
+    // Everything is already in NGN — no conversion needed
+    const totalAmountNGN = totalAmount;
+    const subtotalNGN = subtotal;
+    const vatTotalNGN = vatTotal;
+
+    // ── Resolve default stock location for outbound movements ──────
+    const { rows: [defaultLoc] } = await client.query(
+      `SELECT location_id FROM stock_locations
+       WHERE is_active = true
+       ORDER BY location_type = 'warehouse' DESC, created_at ASC
+       LIMIT 1`,
+    );
+    const defaultLocationId = defaultLoc?.location_id || null;
 
     // ── Create order ─────────────────────────────────────────────────
     const orderNumber = await nextDocumentNumber(client, business, "sales_order");
@@ -495,11 +516,13 @@ async function createDirectOrder(business, data, user) {
          (order_number, contact_id, status, fulfilment_type,
           source, currency, exchange_rate, amount_foreign,
           subtotal, discount_total, vat_amount,
-          total_amount, amount_paid, created_by)
+          total_amount, amount_paid,
+          delivery_address, courier_preference, created_by)
        VALUES ($1, $2, 'confirmed', $3,
                'direct', $4, $5, $6,
                $7, $8, $9,
-               $10, $11, $12)
+               $10, $11,
+               $12, $13, $14)
        RETURNING *`,
       [
         orderNumber,
@@ -507,12 +530,14 @@ async function createDirectOrder(business, data, user) {
         fulfilmentType,
         currency,
         exchangeRate,
-        currency !== "NGN" ? totalAmount : null,
+        currency !== "NGN" ? Math.round(totalAmount / exchangeRate * 100) / 100 : null,
         subtotalNGN,
-        Math.round(discountTotal * (currency === "NGN" ? 1 : exchangeRate) * 100) / 100,
+        discountTotal,
         vatTotalNGN,
         totalAmountNGN,
         totalAmountNGN, // fully paid at creation
+        data.delivery_address || null,
+        data.courier_preference || null,
         user.user_id,
       ],
     );
@@ -523,7 +548,6 @@ async function createDirectOrder(business, data, user) {
       const lineGross = l.unit_price * l.quantity;
       const disc = l.discount_amount || 0;
       const net = lineGross - disc;
-      const netNGN = currency === "NGN" ? net : Math.round(net * exchangeRate * 100) / 100;
 
       await client.query(
         `INSERT INTO order_lines
@@ -534,9 +558,8 @@ async function createDirectOrder(business, data, user) {
           l.product_id || null,
           l.description,
           l.quantity,
-          currency === "NGN" ? l.unit_price : Math.round(l.unit_price * exchangeRate * 100) / 100,
-          netNGN,
-          i,
+          l.unit_price,
+          net,
         ],
       );
 
@@ -548,6 +571,7 @@ async function createDirectOrder(business, data, user) {
           movementType: "sold",
           quantity: l.quantity,
           direction: -1,
+          fromLocationId: defaultLocationId,
           referenceType: "sales_order",
           referenceId: order.order_id,
           performedBy: user.user_id,
@@ -571,10 +595,9 @@ async function createDirectOrder(business, data, user) {
       const code = paymentMethodToCOA(p.payment_method);
       const accId = await journalService.getAccountId(client, code);
       if (!accId) continue;
-      const amtNGN = currency === "NGN"
-        ? parseFloat(p.amount)
-        : Math.round(parseFloat(p.amount) * exchangeRate * 100) / 100;
-      debitsByAccount.set(accId, (debitsByAccount.get(accId) || 0) + amtNGN);
+      // Payments are already in NGN — no conversion needed
+      const amt = parseFloat(p.amount);
+      debitsByAccount.set(accId, (debitsByAccount.get(accId) || 0) + amt);
     }
 
     const revAcc = await journalService.getAccountId(client, "4100");
@@ -648,7 +671,7 @@ async function createDirectOrder(business, data, user) {
         data.contact_id,
         order.order_id,
         subtotalNGN,
-        Math.round(discountTotal * (currency === "NGN" ? 1 : exchangeRate) * 100) / 100,
+        discountTotal,
         vatTotalNGN,
         totalAmountNGN,
         totalAmountNGN,
@@ -669,10 +692,6 @@ async function createDirectOrder(business, data, user) {
 
     // ── Record payment splits on the invoice ─────────────────────────
     for (const p of data.payments) {
-      const amtNGN = currency === "NGN"
-        ? parseFloat(p.amount)
-        : Math.round(parseFloat(p.amount) * exchangeRate * 100) / 100;
-
       await client.query(
         `INSERT INTO invoice_payments
            (invoice_id, payment_date, amount, payment_method, reference,
@@ -680,11 +699,11 @@ async function createDirectOrder(business, data, user) {
          VALUES ($1, CURRENT_DATE, $2, $3, $4, true, $5, $6)`,
         [
           invoice.invoice_id,
-          amtNGN,
+          parseFloat(p.amount),
           p.payment_method,
           p.reference || null,
           user.user_id,
-          currency !== "NGN" ? `${currency} ${p.amount} @ ${exchangeRate}` : null,
+          currency !== "NGN" ? `${currency} @ ${exchangeRate}` : null,
         ],
       );
     }
@@ -718,9 +737,7 @@ async function createDirectOrder(business, data, user) {
 
   // ── Loyalty points (outside transaction — non-fatal) ───────────────
   try {
-    const totalForLoyalty = currency === "NGN"
-      ? result.total_amount
-      : Math.round(parseFloat(result.total_amount) * 100) / 100;
+    const totalForLoyalty = parseFloat(result.total_amount);
     await loyaltyService.awardPoints(
       business,
       data.contact_id,

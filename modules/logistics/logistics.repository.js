@@ -82,7 +82,7 @@ async function insertDeliveryItem(
 
 async function getOrderLines(client, referenceId) {
   const { rows } = await client.query(
-    `SELECT product_id, description, quantity FROM order_lines WHERE order_id = $1 AND status = 'pending'`,
+    `SELECT product_id, description, quantity FROM order_lines WHERE order_id = $1`,
     [referenceId],
   );
   return rows;
@@ -180,6 +180,23 @@ async function getTracking(client, deliveryId) {
   return rows;
 }
 
+async function updateDelivery(client, deliveryId, fields) {
+  const sets = [];
+  const vals = [];
+  let i = 1;
+  for (const [key, val] of Object.entries(fields)) {
+    sets.push(`${key} = $${i++}`);
+    vals.push(val);
+  }
+  if (!sets.length) return null;
+  vals.push(deliveryId);
+  const { rows: [updated] } = await client.query(
+    `UPDATE deliveries SET ${sets.join(", ")}, updated_at = now() WHERE delivery_id = $${i} RETURNING *`,
+    vals,
+  );
+  return updated || null;
+}
+
 module.exports = {
   listDeliveries,
   findDeliveryById,
@@ -196,4 +213,5 @@ module.exports = {
   setFailed,
   getLogisticsManagers,
   getTracking,
+  updateDelivery,
 };

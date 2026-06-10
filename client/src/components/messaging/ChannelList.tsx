@@ -1,14 +1,23 @@
+/**
+ * ChannelList — WhatsApp-style conversation list:
+ *   tabs (All / Unread / Groups / Emails), search, pinned-first rows
+ *   with avatar, online dot, last-message preview, time, unread badge,
+ *   pin & mute indicators.
+ */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, CheckCheck } from "lucide-react";
+import { Search, Plus, Check, CheckCheck, Pin, BellOff } from "lucide-react";
 import { Skeleton } from "@components/ui/Skeleton";
 import { listChannels } from "@services/messaging";
-import { useChannelListUpdates } from "@hooks/useMessaging";
+import { useChannelListUpdates, usePresence } from "@hooks/useMessaging";
+import { isUserOnline } from "@lib/socket";
 import {
   INBOX_TABS,
-  PLATFORM_META,
+  type InboxTabKey,
   getChannelDisplayName,
-  getChannelPlatform,
+  getDirectPeer,
+  getAvatarColour,
+  getInitials,
   fmtRelativeTime,
 } from "@lib/constants/messagingConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
@@ -17,25 +26,31 @@ import type { Channel } from "@typedefs/messaging";
 
 interface ChannelListProps {
   activeChannelId: string | null;
+  activeTab: InboxTabKey;
+  onTabChange: (tab: InboxTabKey) => void;
   onSelect: (channel: Channel) => void;
   onNewChannel: () => void;
+  userId?: string;
 }
 
 export function ChannelList({
   activeChannelId,
+  activeTab,
+  onTabChange,
   onSelect,
   onNewChannel,
+  userId,
 }: ChannelListProps) {
   const { active: business } = useActiveBusiness();
-  const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
 
   useChannelListUpdates(business);
+  usePresence();
 
   const tab = INBOX_TABS.find((t) => t.key === activeTab) ?? INBOX_TABS[0];
 
   const { data, isLoading } = useQuery({
-    queryKey: ["channels", business, activeTab, search],
+    queryKey: ["channels", business, tab.channelType ?? "all", search],
     queryFn: () =>
       listChannels({
         business: business ?? undefined,
@@ -46,11 +61,9 @@ export function ChannelList({
     refetchInterval: 30_000,
   });
 
-  const channels = (data?.data ?? []).filter((ch) => {
-    const key = tab.key as string;
-    if (!tab.platform || key === "all" || key === "internal") return true;
-    return getChannelPlatform(ch) === tab.platform;
-  });
+  const channels = (data?.data ?? []).filter((ch) =>
+    activeTab === "unread" ? (ch.unread_count ?? 0) > 0 : true,
+  );
 
   const totalUnread = (data?.data ?? []).reduce(
     (s, c) => s + (c.unread_count ?? 0),
@@ -60,18 +73,18 @@ export function ChannelList({
   return (
     <div className="flex h-full flex-col border-r border-white/5 bg-orika-black">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+      <div className="flex items-center justify-between border-b border-white/5 px-4 py-4">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-orika-cream">Messages</h2>
           {totalUnread > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orika-gold text-[10px] font-bold text-orika-black px-1">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orika-gold px-1 text-[10px] font-bold text-orika-black">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
         </div>
         <button
           onClick={onNewChannel}
-          className="text-orika-smoke hover:text-orika-gold transition-colors"
+          className="text-orika-smoke transition-colors hover:text-orika-gold"
           title="New conversation"
         >
           <Plus className="h-4 w-4" />
@@ -92,52 +105,45 @@ export function ChannelList({
         </div>
       </div>
 
-      {/* Platform tabs */}
-      <div className="flex overflow-x-auto px-3 pb-2 gap-1 scrollbar-none">
-        {INBOX_TABS.map((t) => {
-          const tabUnread =
-            t.key === "all"
-              ? totalUnread
-              : (data?.data ?? [])
-                  .filter((ch) => {
-                    if (t.key === "internal")
-                      return ch.channel_type !== "customer_thread";
-                    return getChannelPlatform(ch) === t.platform;
-                  })
-                  .reduce((s, c) => s + (c.unread_count ?? 0), 0);
-
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={cn(
-                "flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-medium transition-all",
-                activeTab === t.key
-                  ? "bg-orika-gold text-orika-black"
-                  : "text-orika-smoke hover:text-orika-cream hover:bg-orika-charcoal",
-              )}
-            >
-              {t.label}
-              {tabUnread > 0 && (
-                <span
-                  className={cn(
-                    "rounded-full px-1 text-[9px] font-bold",
-                    activeTab === t.key
-                      ? "bg-orika-black/20 text-orika-black"
-                      : "bg-orika-gold/20 text-orika-gold",
-                  )}
-                >
-                  {tabUnread}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* Tabs */}
+      <div className="flex gap-1 overflow-x-auto px-3 pb-2 scrollbar-none">
+        {INBOX_TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => onTabChange(t.key)}
+            className={cn(
+              "flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-medium transition-all",
+              activeTab === t.key
+                ? "bg-orika-gold text-orika-black"
+                : "text-orika-smoke hover:bg-orika-charcoal hover:text-orika-cream",
+            )}
+          >
+            {t.label}
+            {t.key === "unread" && totalUnread > 0 && (
+              <span
+                className={cn(
+                  "rounded-full px-1 text-[9px] font-bold",
+                  activeTab === t.key
+                    ? "bg-orika-black/20 text-orika-black"
+                    : "bg-orika-gold/20 text-orika-gold",
+                )}
+              >
+                {totalUnread}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Channel list */}
+      {/* Channel list (the Emails tab renders in the main panel) */}
       <div className="flex-1 overflow-y-auto">
-        {isLoading ? (
+        {activeTab === "emails" ? (
+          <div className="py-12 px-4 text-center">
+            <p className="text-xs text-orika-smoke">
+              Outbound emails are shown in the panel →
+            </p>
+          </div>
+        ) : isLoading ? (
           <div className="space-y-px p-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-14 rounded-xl" />
@@ -145,7 +151,11 @@ export function ChannelList({
           </div>
         ) : channels.length === 0 ? (
           <div className="py-12 text-center">
-            <p className="text-xs text-orika-smoke">No conversations yet</p>
+            <p className="text-xs text-orika-smoke">
+              {activeTab === "unread"
+                ? "You're all caught up 🎉"
+                : "No conversations yet"}
+            </p>
           </div>
         ) : (
           <div className="space-y-px p-2">
@@ -155,6 +165,7 @@ export function ChannelList({
                 channel={channel}
                 isActive={channel.channel_id === activeChannelId}
                 onClick={() => onSelect(channel)}
+                userId={userId}
               />
             ))}
           </div>
@@ -170,15 +181,31 @@ function ChannelRow({
   channel,
   isActive,
   onClick,
+  userId,
 }: {
   channel: Channel;
   isActive: boolean;
   onClick: () => void;
+  userId?: string;
 }) {
-  const platform = getChannelPlatform(channel);
-  const meta = PLATFORM_META[platform];
-  const name = getChannelDisplayName(channel);
+  const name = getChannelDisplayName(channel, userId);
+  const peer = getDirectPeer(channel, userId);
+  const online = isUserOnline(peer?.user_id);
   const hasUnread = (channel.unread_count ?? 0) > 0;
+  const last = channel.last_message;
+  const lastIsOwn = last?.sender_user_id === userId;
+
+  const preview = !last
+    ? "No messages yet"
+    : last.is_deleted
+      ? "This message was deleted"
+      : last.message_type === "image"
+        ? "📷 Photo"
+        : last.message_type === "voice_note"
+          ? "🎤 Voice note"
+          : last.message_type === "document"
+            ? "📄 Document"
+            : (last.content ?? "");
 
   return (
     <button
@@ -187,48 +214,84 @@ function ChannelRow({
       className={cn(
         "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
         isActive
-          ? "bg-orika-charcoal border border-white/10"
+          ? "border border-white/10 bg-orika-charcoal"
           : "hover:bg-orika-charcoal/50",
       )}
     >
-      {/* Platform avatar */}
-      <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm"
-        style={{
-          backgroundColor: meta.bg,
-          border: `1.5px solid ${meta.color}40`,
-        }}
-      >
-        <span>{meta.icon}</span>
+      {/* Avatar + online dot */}
+      <div className="relative shrink-0">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white"
+          style={{ backgroundColor: getAvatarColour(name) }}
+        >
+          {getInitials(name)}
+        </div>
+        {online && (
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-orika-black bg-green-400" />
+        )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-1">
           <p
             className={cn(
-              "truncate text-xs font-medium",
+              "flex items-center gap-1 truncate text-xs font-medium",
               hasUnread ? "text-orika-cream" : "text-orika-cloud",
             )}
           >
-            {name}
+            <span className="truncate">{name}</span>
+            {channel.is_pinned && (
+              <Pin className="h-2.5 w-2.5 shrink-0 text-orika-gold/70" />
+            )}
+            {channel.is_muted && (
+              <BellOff className="h-2.5 w-2.5 shrink-0 text-orika-smoke/50" />
+            )}
           </p>
-          {channel.last_message?.created_at && (
-            <span className="shrink-0 text-[10px] text-orika-smoke/60">
-              {fmtRelativeTime(channel.last_message.created_at)}
+          {last?.created_at && (
+            <span
+              className={cn(
+                "shrink-0 text-[10px]",
+                hasUnread ? "font-semibold text-orika-gold" : "text-orika-smoke/60",
+              )}
+            >
+              {fmtRelativeTime(last.created_at)}
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-1 mt-0.5">
-          <p className="truncate text-[11px] text-orika-smoke/70">
-            {channel.last_message?.content ?? "No messages yet"}
+        <div className="mt-0.5 flex items-center justify-between gap-1">
+          <p
+            className={cn(
+              "flex min-w-0 items-center gap-1 truncate text-[11px]",
+              hasUnread ? "text-orika-cloud" : "text-orika-smoke/70",
+            )}
+          >
+            {lastIsOwn && !last?.is_deleted && (
+              <CheckCheck className="h-3 w-3 shrink-0 text-orika-smoke/40" />
+            )}
+            {channel.channel_type === "group" &&
+              last &&
+              !lastIsOwn &&
+              last.sender_name !== "System" && (
+                <span className="shrink-0">
+                  {last.sender_name.split(" ")[0]}:
+                </span>
+              )}
+            <span className="truncate">{preview}</span>
           </p>
           {hasUnread ? (
-            <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-orika-gold text-[9px] font-bold text-orika-black px-1">
+            <span
+              className={cn(
+                "flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[9px] font-bold",
+                channel.is_muted
+                  ? "bg-orika-smoke/30 text-orika-black"
+                  : "bg-orika-gold text-orika-black",
+              )}
+            >
               {channel.unread_count}
             </span>
-          ) : channel.last_message ? (
-            <CheckCheck className="h-3 w-3 shrink-0 text-orika-smoke/30" />
+          ) : last && lastIsOwn ? (
+            <Check className="h-3 w-3 shrink-0 text-orika-smoke/30" />
           ) : null}
         </div>
       </div>

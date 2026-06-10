@@ -1,4 +1,5 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Business } from "@typedefs/settings";
@@ -33,6 +34,7 @@ export function FinancialTab({ business }: { business: Business }) {
   const qc = useQueryClient();
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isDirty },
   } = useForm<FinancialPatchValues>({
@@ -81,21 +83,37 @@ export function FinancialTab({ business }: { business: Business }) {
           options={MONTHS.map((m, i) => ({ value: String(i + 1), label: m }))}
           error={errors.fiscal_year_start?.message}
         />
-        <Input
-          {...register("vat_rate", { valueAsNumber: true })}
-          type="number"
-          step="0.001"
-          label="VAT rate"
-          hint="Decimal 0–1 (0.075 = 7.5%)"
-          error={errors.vat_rate?.message}
+        <Controller
+          control={control}
+          name="vat_rate"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              label="VAT rate"
+              placeholder="0.075"
+              hint="Decimal 0–1 (0.075 = 7.5%)"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
-        <Input
-          {...register("wht_rate", { valueAsNumber: true })}
-          type="number"
-          step="0.001"
-          label="WHT rate"
-          hint="Decimal 0–1 (0.05 = 5%)"
-          error={errors.wht_rate?.message}
+        <Controller
+          control={control}
+          name="wht_rate"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              label="WHT rate"
+              placeholder="0.05"
+              hint="Decimal 0–1 (0.05 = 5%)"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <Input
           {...register("vat_number")}

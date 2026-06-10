@@ -5,7 +5,8 @@ const courierService = require("../../integrations/logistics/logistics.service")
 const stockService = require("../stock/stock.service");
 const notifService = require("../../shared/notifications/notifications.service");
 const auditService = require("../../shared/audit/audit.service");
-const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../../integrations/messaging/adapters/whatsapp");
 const { emitToBusiness } = require("../../config/sockets");
 const { renderToPDF } = require("../../lib/pdf/generator");
 const logger = require("../../config/logger");
@@ -35,6 +36,48 @@ async function getDelivery(business, deliveryId) {
     if (!delivery)
       throw Object.assign(new Error("Delivery not found"), { status: 404 });
     return delivery;
+  });
+}
+
+// PATCH — update editable delivery fields (waybill, fee, courier ID)
+async function updateDeliveryDetails(business, deliveryId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const existing = await repo.findDeliveryById(client, deliveryId);
+    if (!existing)
+      throw Object.assign(new Error("Delivery not found"), { status: 404 });
+
+    // Only allow certain fields to be updated manually
+    const allowed = ["waybill_number", "courier_order_id", "delivery_fee"];
+    const fields = {};
+    for (const key of allowed) {
+      if (data[key] !== undefined) fields[key] = data[key];
+    }
+
+    const updated = await repo.updateDelivery(client, deliveryId, fields);
+
+    // Add a tracking entry for the manual update
+    if (data.waybill_number) {
+      await repo.insertTrackingEntry(client, {
+        delivery_id: deliveryId,
+        status: existing.status,
+        source: "manual",
+        message: `Waybill updated: ${data.waybill_number}`,
+      });
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: "staff",
+      business,
+      module: "logistics",
+      action: "update",
+      table: "deliveries",
+      recordId: deliveryId,
+      before: existing,
+      after: updated,
+    });
+
+    return updated;
   });
 }
 
@@ -150,16 +193,17 @@ async function dispatchDelivery(business, deliveryId, user) {
       }
     }
 
-    if (delivery.whatsapp_number) {
-      await whatsapp
-        .sendMessage({
-          to: delivery.whatsapp_number,
-          text: `Your order ${delivery.delivery_number} has been dispatched via ${delivery.courier.toUpperCase()}. ${booking.trackingUrl ? `Track: ${booking.trackingUrl}` : "We will update you when it arrives."}`,
-        })
-        .catch((err) =>
-          logger.warn("WhatsApp dispatch notification failed", err),
-        );
-    }
+    // EXTERNAL-COMMS-DISABLED: WhatsApp dispatch notification.
+    // if (delivery.whatsapp_number) {
+    //   await whatsapp
+    //     .sendMessage({
+    //       to: delivery.whatsapp_number,
+    //       text: `Your order ${delivery.delivery_number} has been dispatched via ${delivery.courier.toUpperCase()}. ${booking.trackingUrl ? `Track: ${booking.trackingUrl}` : "We will update you when it arrives."}`,
+    //     })
+    //     .catch((err) =>
+    //       logger.warn("WhatsApp dispatch notification failed", err),
+    //     );
+    // }
 
     // Generate signature token (48h expiry) for proof-of-delivery signing page
     const signatureToken = uuidv4();
@@ -174,20 +218,22 @@ async function dispatchDelivery(business, deliveryId, user) {
       [signatureToken, tokenExpiresAt, deliveryId],
     );
 
-    const signingUrl = `${process.env.HUB_BASE_URL}/sign/${signatureToken}`;
-    if (delivery.whatsapp_number) {
-      await whatsapp
-        .sendMessage({
-          to: delivery.whatsapp_number,
-          text:
-            `Your Orika order ${delivery.delivery_number} is here — please confirm receipt:\n` +
-            `${signingUrl}\n\n` +
-            `${booking.trackingUrl ? `Track your order: ${booking.trackingUrl}` : ""}`,
-        })
-        .catch((err) =>
-          logger.warn("WhatsApp signing URL notification failed", err),
-        );
-    }
+    // EXTERNAL-COMMS-DISABLED: WhatsApp proof-of-delivery signing link.
+    // The signing URL stays available from the delivery record in the Hub.
+    // const signingUrl = `${process.env.HUB_BASE_URL}/sign/${signatureToken}`;
+    // if (delivery.whatsapp_number) {
+    //   await whatsapp
+    //     .sendMessage({
+    //       to: delivery.whatsapp_number,
+    //       text:
+    //         `Your Orika order ${delivery.delivery_number} is here — please confirm receipt:\n` +
+    //         `${signingUrl}\n\n` +
+    //         `${booking.trackingUrl ? `Track your order: ${booking.trackingUrl}` : ""}`,
+    //     })
+    //     .catch((err) =>
+    //       logger.warn("WhatsApp signing URL notification failed", err),
+    //     );
+    // }
 
     emitToBusiness(business, "delivery:dispatched", {
       deliveryId,
@@ -214,15 +260,16 @@ async function markDelivered(business, deliveryId, user) {
       message: "Marked as delivered by staff",
     });
 
-    const contact = await repo.getDeliveryContact(client, deliveryId);
-    if (contact?.whatsapp_number) {
-      await whatsapp
-        .sendMessage({
-          to: contact.whatsapp_number,
-          text: `Your order ${delivery.delivery_number} has been delivered successfully. Thank you for shopping with us!`,
-        })
-        .catch(() => {});
-    }
+    // EXTERNAL-COMMS-DISABLED: WhatsApp delivered notification.
+    // const contact = await repo.getDeliveryContact(client, deliveryId);
+    // if (contact?.whatsapp_number) {
+    //   await whatsapp
+    //     .sendMessage({
+    //       to: contact.whatsapp_number,
+    //       text: `Your order ${delivery.delivery_number} has been delivered successfully. Thank you for shopping with us!`,
+    //     })
+    //     .catch(() => {});
+    // }
 
     emitToBusiness(business, "delivery:delivered", { deliveryId });
     return delivery;
@@ -488,6 +535,7 @@ async function generatePackingSlip(business, deliveryId) {
 module.exports = {
   listDeliveries,
   getDelivery,
+  updateDeliveryDetails,
   createDelivery,
   dispatchDelivery,
   markDelivered,

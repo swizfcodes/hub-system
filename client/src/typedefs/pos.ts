@@ -97,7 +97,6 @@ export interface PosTransaction {
 export type POSPaymentMethod =
   | "cash"
   | "pos_card"
-  | "paystack"
   | "bank_transfer";
 
 export interface CartLine {

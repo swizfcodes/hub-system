@@ -1,4 +1,6 @@
 import { api } from "@services/api";
+import { getToken } from "@services/auth";
+import { useBusinessStore } from "@stores/useBusinessStore";
 import type { Quotation, SalesKpis, SalesListResponse } from "@typedefs/sales";
 import type {
   CreateQuotationValues,
@@ -83,7 +85,12 @@ export async function cancelQuotation(
 
 /** Returns a URL pointing to the PDF stream endpoint — used in the preview pane */
 export function quotationPdfUrl(id: string): string {
-  return `${api.defaults.baseURL}/sales/quotations/${id}/pdf`;
+  const token = getToken();
+  const biz = useBusinessStore.getState().active;
+  const params = [token ? `token=${token}` : "", biz ? `business=${biz}` : ""]
+    .filter(Boolean)
+    .join("&");
+  return `${api.defaults.baseURL}/sales/quotations/${id}/pdf${params ? `?${params}` : ""}`;
 }
 
 // L3 fix: propagate errors so callers (React Query) can show error states

@@ -1,4 +1,6 @@
 import { api } from "@services/api";
+import { getToken } from "@services/auth";
+import { useBusinessStore } from "@stores/useBusinessStore";
 import type {
   Delivery,
   DeliveryListResponse,
@@ -44,6 +46,16 @@ export async function getDelivery(id: string): Promise<Delivery | null> {
   } catch {
     return null;
   }
+}
+
+// ── Update details (waybill, fee) ────────────────────────────────────────────
+
+export async function updateDeliveryDetails(
+  id: string,
+  fields: { waybill_number?: string; courier_order_id?: string; delivery_fee?: number },
+): Promise<Delivery> {
+  const { data } = await api.patch<Delivery>(`/logistics/${id}`, fields);
+  return data;
 }
 
 // ── Create ────────────────────────────────────────────────────────────────────
@@ -117,7 +129,12 @@ export async function getTracking(
 // ── Packing slip ──────────────────────────────────────────────────────────────
 
 export function packingSlipUrl(deliveryId: string): string {
-  return `${api.defaults.baseURL}/logistics/${deliveryId}/packing-slip`;
+  const token = getToken();
+  const biz = useBusinessStore.getState().active;
+  const params = [token ? `token=${token}` : "", biz ? `business=${biz}` : ""]
+    .filter(Boolean)
+    .join("&");
+  return `${api.defaults.baseURL}/logistics/${deliveryId}/packing-slip${params ? `?${params}` : ""}`;
 }
 
 // ── Courier suggest ───────────────────────────────────────────────────────────

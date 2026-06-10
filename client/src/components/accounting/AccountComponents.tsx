@@ -5,6 +5,7 @@
  */
 import { useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, RotateCcw, Lock, Eye } from "lucide-react";
@@ -546,16 +547,13 @@ export function ManualJournalModal({
                   name={`lines.${i}.debit`}
                   control={form.control}
                   render={({ field: f }) => (
-                    <Input
-                      {...f}
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="0.00"
+                    <NumberField
                       surface="light"
-                      onChange={(e) =>
-                        f.onChange(parseFloat(e.target.value) || 0)
-                      }
+                      decimal
+                      placeholder="0.00"
+                      value={f.value}
+                      onValueChange={(v) => f.onChange(v ?? 0)}
+                      onBlur={f.onBlur}
                     />
                   )}
                 />
@@ -565,16 +563,13 @@ export function ManualJournalModal({
                   name={`lines.${i}.credit`}
                   control={form.control}
                   render={({ field: f }) => (
-                    <Input
-                      {...f}
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="0.00"
+                    <NumberField
                       surface="light"
-                      onChange={(e) =>
-                        f.onChange(parseFloat(e.target.value) || 0)
-                      }
+                      decimal
+                      placeholder="0.00"
+                      value={f.value}
+                      onValueChange={(v) => f.onChange(v ?? 0)}
+                      onBlur={f.onBlur}
                     />
                   )}
                 />

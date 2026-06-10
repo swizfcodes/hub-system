@@ -70,6 +70,22 @@ router.post(
   },
 );
 
+router.patch(
+  "/channels/:id",
+  param("id").isUUID(),
+  body("name").optional().isString(),
+  body("description").optional().isString(),
+  validate,
+  can("messaging", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.updateChannel(req.params.id, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.post(
   "/channels/:id/archive",
   param("id").isUUID(),
@@ -78,6 +94,51 @@ router.post(
   async (req, res, next) => {
     try {
       res.json(await service.archiveChannel(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Pin / mute are per-user preferences — view permission is enough.
+router.post(
+  "/channels/:id/pin",
+  param("id").isUUID(),
+  body("pinned").isBoolean(),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.setChannelFlag(
+          req.params.id,
+          "is_pinned",
+          req.body.pinned,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/channels/:id/mute",
+  param("id").isUUID(),
+  body("muted").isBoolean(),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.setChannelFlag(
+          req.params.id,
+          "is_muted",
+          req.body.muted,
+          req.user,
+        ),
+      );
     } catch (e) {
       next(e);
     }
@@ -115,6 +176,24 @@ router.delete(
   async (req, res, next) => {
     try {
       res.json(await service.removeMember(req.params.id, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.patch(
+  "/channels/:id/members/role",
+  param("id").isUUID(),
+  body("user_id").isUUID(),
+  body("role").isIn(["member", "admin"]),
+  validate,
+  can("messaging", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.changeMemberRole(req.params.id, req.body, req.user),
+      );
     } catch (e) {
       next(e);
     }
@@ -166,6 +245,21 @@ router.post(
   },
 );
 
+router.patch(
+  "/messages/:id",
+  param("id").isUUID(),
+  body("content").isString().notEmpty(),
+  validate,
+  can("messaging", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.editMessage(req.params.id, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.delete(
   "/messages/:id",
   param("id").isUUID(),
@@ -174,6 +268,90 @@ router.delete(
   async (req, res, next) => {
     try {
       res.json(await service.deleteMessage(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/messages/:id/forward",
+  param("id").isUUID(),
+  body("channel_ids").isArray({ min: 1 }),
+  body("channel_ids.*").isUUID(),
+  validate,
+  can("messaging", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.forwardMessage(req.params.id, req.body, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.post(
+  "/messages/:id/star",
+  param("id").isUUID(),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.toggleStar(req.params.id, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/starred",
+  query("limit").optional().isInt({ min: 1, max: 200 }),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.listStarred(req.query, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/search",
+  query("q").isString().notEmpty(),
+  query("channel_id").optional().isUUID(),
+  query("limit").optional().isInt({ min: 1, max: 100 }),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.searchMessages(req.query, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// ─── EMAIL LOG ───────────────────────────────────────────────
+// Outbound emails (invoices, payslips, quotations, campaigns) — the
+// "Emails" tab in the messaging UI.
+
+router.get(
+  "/emails",
+  query("q").optional().isString(),
+  query("business").optional().isString(),
+  query("status").optional().isIn(["sent", "failed"]),
+  query("page").optional().isInt({ min: 1 }),
+  query("limit").optional().isInt({ min: 1, max: 200 }),
+  validate,
+  can("messaging", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.listEmailLog(req.query, req.user));
     } catch (e) {
       next(e);
     }

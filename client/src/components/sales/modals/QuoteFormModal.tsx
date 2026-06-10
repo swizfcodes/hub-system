@@ -35,6 +35,7 @@ import {
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Textarea } from "@components/ui/Textarea";
 import { Select } from "@components/ui/Select";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
@@ -72,13 +73,14 @@ const STEPS = [
 ] as const;
 type StepKey = (typeof STEPS)[number]["key"];
 
+/** A blank line — qty/price/discount start empty (undefined), not seeded. */
 const DEFAULT_LINE = {
   product_id: "",
   description: "",
-  quantity: 1,
-  unit_price: 0,
-  discount_pct: 0,
-};
+  quantity: undefined,
+  unit_price: undefined,
+  discount_pct: undefined,
+} as unknown as CreateQuotationValues["lines"][number];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODULE-LEVEL COMPONENTS
@@ -461,60 +463,47 @@ function StepProducts({
               name={`lines.${i}.quantity`}
               control={form.control}
               render={({ field: f, fieldState }) => (
-                <div>
-                  <label className="mb-1 block text-xs text-orika-smoke">
-                    Qty *
-                  </label>
-                  <Input
-                    {...f}
-                    type="number"
-                    min={1}
-                    onChange={(e) => f.onChange(parseInt(e.target.value) || 1)}
-                    error={fieldState.error?.message}
-                  />
-                </div>
+                <NumberField
+                  surface="light"
+                  label="Qty *"
+                  placeholder="1"
+                  value={f.value}
+                  onValueChange={f.onChange}
+                  onBlur={f.onBlur}
+                  error={fieldState.error?.message}
+                />
               )}
             />
             <Controller
               name={`lines.${i}.unit_price`}
               control={form.control}
               render={({ field: f, fieldState }) => (
-                <div>
-                  <label className="mb-1 block text-xs text-orika-smoke">
-                    Unit Price *
-                  </label>
-                  <Input
-                    {...f}
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    onChange={(e) =>
-                      f.onChange(parseFloat(e.target.value) || 0)
-                    }
-                    error={fieldState.error?.message}
-                  />
-                </div>
+                <NumberField
+                  surface="light"
+                  decimal
+                  label="Unit Price *"
+                  placeholder="0.00"
+                  value={f.value}
+                  onValueChange={f.onChange}
+                  onBlur={f.onBlur}
+                  error={fieldState.error?.message}
+                />
               )}
             />
             <Controller
               name={`lines.${i}.discount_pct`}
               control={form.control}
-              render={({ field: f }) => (
-                <div>
-                  <label className="mb-1 block text-xs text-orika-smoke">
-                    Discount %
-                  </label>
-                  <Input
-                    {...f}
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    max={100}
-                    onChange={(e) =>
-                      f.onChange(parseFloat(e.target.value) || 0)
-                    }
-                  />
-                </div>
+              render={({ field: f, fieldState }) => (
+                <NumberField
+                  surface="light"
+                  decimal
+                  label="Discount %"
+                  placeholder="0"
+                  value={f.value}
+                  onValueChange={f.onChange}
+                  onBlur={f.onBlur}
+                  error={fieldState.error?.message}
+                />
               )}
             />
             <div className="flex items-end">
@@ -583,17 +572,18 @@ function StepPricing({
           <Controller
             name="order_discount_value"
             control={form.control}
-            render={({ field: f }) => (
-              <Input
-                {...f}
-                type="number"
-                step="0.01"
-                min={0}
-                max={orderDiscType === "percentage" ? 100 : undefined}
-                onChange={(e) => f.onChange(parseFloat(e.target.value) || 0)}
-                placeholder={orderDiscType === "percentage" ? "0%" : "0.00"}
-                className="flex-1"
-              />
+            render={({ field: f, fieldState }) => (
+              <div className="flex-1">
+                <NumberField
+                  surface="light"
+                  decimal
+                  value={f.value}
+                  onValueChange={f.onChange}
+                  onBlur={f.onBlur}
+                  placeholder={orderDiscType === "percentage" ? "0%" : "0.00"}
+                  error={fieldState.error?.message}
+                />
+              </div>
             )}
           />
         </div>
@@ -808,7 +798,7 @@ export function QuoteFormModal({ open, onClose, onCreated, prefill }: Props) {
       notes: "",
       terms_conditions: "",
       order_discount_type: "percentage",
-      order_discount_value: 0,
+      order_discount_value: undefined,
       apply_vat: true,
       lines: [DEFAULT_LINE],
     },

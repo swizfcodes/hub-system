@@ -17,7 +17,7 @@
 import { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X } from "lucide-react";
+import { Search, X, Plus } from "lucide-react";
 import { api } from "@services/api";
 import { fmtMoney } from "@lib/format";
 import { cn } from "@lib/cn";
@@ -39,6 +39,12 @@ interface CatalogueSearchInputProps {
   /** Unique key per instance — prevents cross-instance query cache collisions. */
   instanceKey?: string | number;
   className?: string;
+  /** Focus the input on mount — used to jump to a freshly added line. */
+  autoFocus?: boolean;
+  /** Show an "Add new product" row so a missing product can be created inline. */
+  allowQuickAdd?: boolean;
+  /** Called with the current search text when the quick-add row is clicked. */
+  onQuickAdd?: (query: string) => void;
 }
 
 export function CatalogueSearchInput({
@@ -49,6 +55,9 @@ export function CatalogueSearchInput({
   surface = "dark",
   instanceKey = 0,
   className = "",
+  autoFocus = false,
+  allowQuickAdd = false,
+  onQuickAdd,
 }: CatalogueSearchInputProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -183,11 +192,29 @@ export function CatalogueSearchInput({
                 </button>
               ))
             ) : (
-              <p className={msgCls}>
-                {query
-                  ? `No products found for "${query}"`
-                  : "No active products found"}
-              </p>
+              !allowQuickAdd && (
+                <p className={msgCls}>
+                  {query
+                    ? `No products found for "${query}"`
+                    : "No active products found"}
+                </p>
+              )
+            )}
+            {allowQuickAdd && (
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onQuickAdd?.(query.trim());
+                  setIsOpen(false);
+                }}
+                className={`${rowCls} border-t ${isDark ? "border-white/10 text-orika-gold" : "border-orika-cloud/30 text-orika-black"}`}
+              >
+                <span className="flex items-center gap-2 text-xs font-medium">
+                  <Plus className="h-3.5 w-3.5" />
+                  {query ? `Add new product "${query}"` : "Add a new product"}
+                </span>
+              </button>
             )}
           </div>,
           document.body,
@@ -206,6 +233,7 @@ export function CatalogueSearchInput({
           onFocus={handleFocus}
           placeholder={placeholder}
           className={inputCls}
+          autoFocus={autoFocus}
         />
       </div>
       {dropdown}

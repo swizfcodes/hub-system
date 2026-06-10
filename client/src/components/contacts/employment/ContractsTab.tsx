@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, FileSignature, Lock } from "lucide-react";
 import { Card } from "@components/ui/Card";
@@ -127,6 +128,7 @@ function AddContractModal({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -199,12 +201,20 @@ function AddContractModal({
             { value: "amendment", label: "Amendment" },
           ]}
         />
-        <Input
-          {...register("gross_salary", { valueAsNumber: true })}
-          type="number"
-          step="0.01"
-          label="Gross salary (NGN)"
-          error={errors.gross_salary?.message}
+        <Controller
+          control={control}
+          name="gross_salary"
+          render={({ field, fieldState }) => (
+            <NumberField
+              decimal
+              label="Gross salary (NGN)"
+              placeholder="0.00"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldState.error?.message}
+            />
+          )}
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <Input

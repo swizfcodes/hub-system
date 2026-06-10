@@ -11,6 +11,7 @@ import { useUiStore } from "@stores/useUiStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { connectSocket, disconnectSocket } from "@lib/socket";
 import { cn } from "@lib/cn";
 
 export function AppShell() {
@@ -35,6 +36,31 @@ export function AppShell() {
     hydrate();
   }, [hydrate]);
   useActiveBusiness();
+
+  // Real-time socket — connect once the user is known, drop on sign-out.
+  useEffect(() => {
+    if (!user) return;
+    connectSocket();
+    return () => disconnectSocket();
+  }, [user?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Global guard: scrolling the mouse wheel over a focused number input
+  // silently increments/decrements its value. Blur the input on wheel so
+  // the page scrolls but the figure never changes on its own.
+  useEffect(() => {
+    function onWheel(e: WheelEvent) {
+      const el = e.target as HTMLElement | null;
+      if (
+        el instanceof HTMLInputElement &&
+        el.type === "number" &&
+        el === document.activeElement
+      ) {
+        el.blur();
+      }
+    }
+    document.addEventListener("wheel", onWheel, { passive: true });
+    return () => document.removeEventListener("wheel", onWheel);
+  }, []);
 
   // Still loading from localStorage — show a blank screen, not a redirect.
   if (!isHydrated) {

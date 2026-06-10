@@ -68,6 +68,28 @@ router.post(
   },
 );
 
+// PATCH /api/logistics/:id — update delivery details (waybill, fee, etc.)
+router.patch(
+  "/:id",
+  param("id").isUUID(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.updateDeliveryDetails(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // POST /api/logistics/:id/dispatch — book courier and dispatch
 router.post(
   "/:id/dispatch",

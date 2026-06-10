@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Modal } from "@components/ui/Modal";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Button } from "@components/ui/Button";
 import { Save, X } from "lucide-react";
@@ -192,12 +193,14 @@ export function EditStaffModal({ staff, open, onClose }: Props) {
         {/* Compensation */}
         <Section title="Compensation">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <NumberField
+              decimal
               label="Base salary (₦)"
-              type="number"
-              value={baseSalary}
-              onChange={(e) => setBaseSalary(e.target.value)}
               placeholder="0.00"
+              value={baseSalary === "" ? undefined : Number(baseSalary)}
+              onValueChange={(v) =>
+                setBaseSalary(v === undefined ? "" : String(v))
+              }
               hint="Changing salary creates a contract amendment record"
             />
           </div>

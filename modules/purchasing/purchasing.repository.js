@@ -311,17 +311,18 @@ async function insertPO(
 
 async function insertPOLine(
   client,
-  { po_id, product_id, quantity_ordered, unit_price },
+  { po_id, product_id, quantity_ordered, unit_price, description },
 ) {
   await client.query(
-    `INSERT INTO po_lines (po_id, product_id, quantity_ordered, quantity_received, unit_price, line_total)
-     VALUES ($1,$2,$3,0,$4,$5)`,
+    `INSERT INTO po_lines (po_id, product_id, quantity_ordered, quantity_received, unit_price, line_total, description)
+     VALUES ($1,$2,$3,0,$4,$5,$6)`,
     [
       po_id,
       product_id,
       quantity_ordered,
       unit_price,
       unit_price * quantity_ordered,
+      description || null,
     ],
   );
 }
@@ -330,14 +331,32 @@ async function findPOById(client, poId) {
   const {
     rows: [po],
   } = await client.query(
-    `SELECT po.*, c.display_name AS supplier_name,
-            json_agg(pl.* ORDER BY pl.line_id) AS lines
+    `SELECT po.*, c.display_name AS supplier_name, c.email AS supplier_email,
+            COALESCE(
+              json_agg(
+                json_build_object(
+                  'line_id', pl.line_id,
+                  'po_id', pl.po_id,
+                  'product_id', pl.product_id,
+                  'product_name', p.name,
+                  'product_sku', p.sku,
+                  'description', pl.description,
+                  'quantity_ordered', pl.quantity_ordered,
+                  'quantity_received', pl.quantity_received,
+                  'unit_price', pl.unit_price,
+                  'line_total', pl.line_total,
+                  'tracking_number', pl.tracking_number
+                ) ORDER BY pl.line_id
+              ) FILTER (WHERE pl.line_id IS NOT NULL),
+              '[]'::json
+            ) AS lines
      FROM purchase_orders po
      JOIN suppliers s ON s.supplier_id = po.supplier_id
      JOIN shared.contacts c ON c.contact_id = s.contact_id
      LEFT JOIN po_lines pl ON pl.po_id = po.po_id
+     LEFT JOIN products p ON p.product_id = pl.product_id
      WHERE po.po_id = $1 AND po.is_deleted = false
-     GROUP BY po.po_id, c.display_name`,
+     GROUP BY po.po_id, c.display_name, c.email`,
     [poId],
   );
   return po || null;
@@ -460,19 +479,24 @@ async function getPOLineProduct(client, po_line_id) {
 
 // ── BILLS (supplier_invoices) ────────────────────────────────
 
-async function listBills(client, { status, supplierId, limit, offset }) {
+async function listBills(client, { status, supplierId, poId, limit, offset }) {
   const { rows } = await client.query(
     `SELECT si.sup_invoice_id, si.supplier_invoice_number, si.invoice_date,
             si.due_date, si.amount, si.currency, si.status, si.amount_paid,
-            si.created_at, c.display_name AS supplier_name
+            si.has_variance, si.po_id, si.created_at,
+            c.display_name AS supplier_name,
+            po.po_number,
+            (si.amount - si.amount_paid) AS amount_outstanding
      FROM supplier_invoices si
      JOIN suppliers s ON s.supplier_id = si.supplier_id
      JOIN shared.contacts c ON c.contact_id = s.contact_id
+     LEFT JOIN purchase_orders po ON po.po_id = si.po_id
      WHERE ($1::TEXT IS NULL OR si.status = $1)
        AND ($2::UUID IS NULL OR si.supplier_id = $2)
+       AND ($3::UUID IS NULL OR si.po_id = $3)
      ORDER BY si.invoice_date DESC
-     LIMIT $3 OFFSET $4`,
-    [status || null, supplierId || null, limit, offset],
+     LIMIT $4 OFFSET $5`,
+    [status || null, supplierId || null, poId || null, limit, offset],
   );
   return rows;
 }
@@ -481,14 +505,65 @@ async function findBillById(client, billId) {
   const {
     rows: [bill],
   } = await client.query(
-    `SELECT si.*, c.display_name AS supplier_name
+    `SELECT si.*, c.display_name AS supplier_name, c.email AS supplier_email,
+            po.po_number,
+            (si.amount - si.amount_paid) AS amount_outstanding,
+            COALESCE(
+              (SELECT json_agg(
+                        json_build_object(
+                          'bill_line_id', bl.bill_line_id,
+                          'po_line_id', bl.po_line_id,
+                          'product_id', bl.product_id,
+                          'product_name', p.name,
+                          'product_sku', p.sku,
+                          'description', bl.description,
+                          'quantity', bl.quantity,
+                          'unit_price', bl.unit_price,
+                          'line_total', bl.line_total,
+                          'variance_note', bl.variance_note
+                        ) ORDER BY bl.bill_line_id)
+               FROM supplier_invoice_lines bl
+               LEFT JOIN products p ON p.product_id = bl.product_id
+               WHERE bl.sup_invoice_id = si.sup_invoice_id),
+              '[]'::json
+            ) AS lines
      FROM supplier_invoices si
      JOIN suppliers s ON s.supplier_id = si.supplier_id
      JOIN shared.contacts c ON c.contact_id = s.contact_id
+     LEFT JOIN purchase_orders po ON po.po_id = si.po_id
      WHERE si.sup_invoice_id = $1`,
     [billId],
   );
   return bill || null;
+}
+
+async function insertBillLine(
+  client,
+  {
+    sup_invoice_id,
+    po_line_id,
+    product_id,
+    description,
+    quantity,
+    unit_price,
+    variance_note,
+  },
+) {
+  await client.query(
+    `INSERT INTO supplier_invoice_lines
+       (sup_invoice_id, po_line_id, product_id, description, quantity, unit_price, line_total, variance_note)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+    [
+      sup_invoice_id,
+      po_line_id || null,
+      product_id || null,
+      description || null,
+      quantity,
+      unit_price,
+      Number(quantity) * Number(unit_price),
+      variance_note || null,
+    ],
+  );
 }
 
 async function insertBill(
@@ -505,6 +580,7 @@ async function insertBill(
     notes,
     document_id,
     status,
+    has_variance,
   },
 ) {
   const {
@@ -512,8 +588,8 @@ async function insertBill(
   } = await client.query(
     `INSERT INTO supplier_invoices
        (supplier_id, po_id, supplier_invoice_number, invoice_date, due_date,
-        amount, currency, amount_ngn, notes, document_id, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        amount, currency, amount_ngn, notes, document_id, status, has_variance)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
      RETURNING *`,
     [
       supplier_id,
@@ -527,6 +603,7 @@ async function insertBill(
       notes || null,
       document_id || null,
       status || "pending",
+      has_variance || false,
     ],
   );
   return bill;
@@ -602,6 +679,7 @@ module.exports = {
   listBills,
   findBillById,
   insertBill,
+  insertBillLine,
   updateBillStatus,
   recordBillPayment,
 };

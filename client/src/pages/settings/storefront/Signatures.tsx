@@ -15,6 +15,7 @@ import { Topbar } from "@/components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { showToast } from "@hooks/useToast";
 import { useBusinessStore } from "@stores/useBusinessStore";
 import {
@@ -234,10 +235,10 @@ function SignatureEditor({
         </label>
         <label className="block">
           <span className="text-xs text-orika-smoke">Display order</span>
-          <Input
-            type="number"
-            value={String(form.display_order)}
-            onChange={(e) => set("display_order", Number(e.target.value) || 0)}
+          <NumberField
+            placeholder="0"
+            value={form.display_order}
+            onValueChange={(v) => set("display_order", v ?? 0)}
           />
         </label>
       </div>

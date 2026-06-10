@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
-import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Textarea } from "@components/ui/Textarea";
 import {
@@ -172,17 +172,35 @@ export function AdjustmentModal({
         />
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <Input
-            {...register("quantity_before", { valueAsNumber: true })}
-            type="number"
-            min={0}
-            label="System count"
+          <Controller
+            control={control}
+            name="quantity_before"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="System count"
+                placeholder="0"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            {...register("quantity_after", { valueAsNumber: true })}
-            type="number"
-            min={0}
-            label="Actual count"
+          <Controller
+            control={control}
+            name="quantity_after"
+            render={({ field, fieldState }) => (
+              <NumberField
+                surface="light"
+                label="Actual count"
+                placeholder="0"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <div className="flex items-end">
             <div

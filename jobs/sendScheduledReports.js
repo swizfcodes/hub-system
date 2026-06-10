@@ -4,7 +4,8 @@ const { pool } = require("../config/db");
 const reportsService = require("../modules/reports/reports.service");
 const smtp = require("../integrations/messaging/adapters/smtp");
 const { renderEmail } = require("../lib/email/render");
-const whatsapp = require("../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../integrations/messaging/adapters/whatsapp");
 const logger = require("../config/logger");
 const businesses = require("../config/businesses");
 
@@ -76,19 +77,20 @@ module.exports = async function sendScheduledReports() {
           }
         }
 
-        if (
-          schedule.channels?.includes("whatsapp") &&
-          schedule.whatsapp_numbers?.length
-        ) {
-          const summaryText = `*${report.report_name}*\n${startDate} → ${endDate}\n\nFull report available in Orika Hub.`;
-          for (const number of schedule.whatsapp_numbers) {
-            await whatsapp.sendMessage({
-              to: number,
-              text: summaryText,
-              business,
-            });
-          }
-        }
+        // EXTERNAL-COMMS-DISABLED: WhatsApp report summaries.
+        // if (
+        //   schedule.channels?.includes("whatsapp") &&
+        //   schedule.whatsapp_numbers?.length
+        // ) {
+        //   const summaryText = `*${report.report_name}*\n${startDate} → ${endDate}\n\nFull report available in Orika Hub.`;
+        //   for (const number of schedule.whatsapp_numbers) {
+        //     await whatsapp.sendMessage({
+        //       to: number,
+        //       text: summaryText,
+        //       business,
+        //     });
+        //   }
+        // }
 
         logger.info(
           `[scheduled-reports] Delivered "${report.report_name}" for ${business}`,

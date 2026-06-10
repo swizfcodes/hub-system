@@ -24,6 +24,7 @@ import CampaignOrders from "@components/campaigns/CampaignOrders";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
+import { NumberField } from "@components/ui/NumberField";
 import { Select } from "@components/ui/Select";
 import { Modal } from "@components/ui/Modal";
 import { Badge } from "@components/ui/Badge";
@@ -649,17 +650,24 @@ export default function CampaignBuilder() {
               )}
             />
             {watch("discount_type") !== "none" && (
-              <Input
-                label={
-                  watch("discount_type") === "percentage"
-                    ? "Discount %"
-                    : "Discount amount (₦)"
-                }
-                type="number"
-                min={0}
-                surface="dark"
-                error={errors.discount_value?.message}
-                {...register("discount_value", { valueAsNumber: true })}
+              <Controller
+                name="discount_value"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <NumberField
+                    decimal
+                    surface="dark"
+                    label={
+                      watch("discount_type") === "percentage"
+                        ? "Discount %"
+                        : "Discount amount (₦)"
+                    }
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                  />
+                )}
               />
             )}
           </div>
@@ -1311,7 +1319,9 @@ function ProductPickerModal({
 }) {
   const [search, setSearch] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
-  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+  const [qtyInputs, setQtyInputs] = useState<
+    Record<string, number | undefined>
+  >({});
 
   const { data } = useQuery({
     queryKey: ["catalogue-search", search],
@@ -1347,7 +1357,7 @@ function ProductPickerModal({
         )}
         <div className="space-y-2 max-h-80 overflow-y-auto">
           {products.map((p: any) => {
-            const qty = qtyInputs[p.product_id] ?? "";
+            const qty = qtyInputs[p.product_id];
             return (
               <div
                 key={p.product_id}
@@ -1370,20 +1380,19 @@ function ProductPickerModal({
                 </div>
                 {/* Quantity to allocate */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="Qty"
-                    title="Units to allocate (leave blank for unlimited)"
-                    value={qty}
-                    onChange={(e) =>
-                      setQtyInputs((q) => ({
-                        ...q,
-                        [p.product_id]: e.target.value,
-                      }))
-                    }
-                    className="w-16 rounded-lg border border-white/10 bg-orika-charcoal px-2 py-1.5 text-xs text-center text-orika-cream focus:outline-none focus:border-orika-gold/40"
-                  />
+                  <div title="Units to allocate (leave blank for unlimited)">
+                    <NumberField
+                      placeholder="Qty"
+                      value={qty}
+                      onValueChange={(v) =>
+                        setQtyInputs((q) => ({
+                          ...q,
+                          [p.product_id]: v,
+                        }))
+                      }
+                      className="w-16 rounded-lg px-2 py-1.5 text-xs text-center"
+                    />
+                  </div>
                   <span className="text-[10px] text-orika-smoke">units</span>
                 </div>
                 <Button
@@ -1393,7 +1402,7 @@ function ProductPickerModal({
                   onClick={async () => {
                     setAdding(p.product_id);
                     try {
-                      const allocated = qty ? parseInt(qty, 10) : 0;
+                      const allocated = qty ?? 0;
                       await upsertCampaignProduct(campaignId, {
                         product_id: p.product_id,
                         display_order: 0,

@@ -1,4 +1,6 @@
 import { api } from "@services/api";
+import { getToken } from "@services/auth";
+import { useBusinessStore } from "@stores/useBusinessStore";
 import type {
   PosTransaction,
   PendingTransaction,
@@ -11,6 +13,8 @@ import type { ReturnValues } from "@lib/schemas/pos";
 export interface CreateTransactionPayload {
   session_id: string;
   contact_id?: string;
+  currency?: string;
+  exchange_rate?: number | null;
   lines: {
     product_id?: string;
     description: string;
@@ -69,7 +73,12 @@ export async function sendReceipt(
 }
 
 export function receiptPdfUrl(transactionId: string): string {
-  return `${api.defaults.baseURL}/pos/transactions/${transactionId}/receipt.pdf`;
+  const token = getToken();
+  const biz = useBusinessStore.getState().active;
+  const params = [token ? `token=${token}` : "", biz ? `business=${biz}` : ""]
+    .filter(Boolean)
+    .join("&");
+  return `${api.defaults.baseURL}/pos/transactions/${transactionId}/receipt.pdf${params ? `?${params}` : ""}`;
 }
 
 // ── Invoice from POS ──────────────────────────────────────────────────────────

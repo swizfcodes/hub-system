@@ -119,6 +119,8 @@ export interface Quotation {
   has_pending_approval?: boolean;
 }
 
+export type CourierOption = "manual" | "chowdeck" | "gigl";
+
 export interface SalesOrder {
   order_id: string;
   order_number: string;
@@ -132,10 +134,17 @@ export interface SalesOrder {
   fulfilment_type: FulfilmentType;
   source?: OrderSource;
   currency?: string;
+  exchange_rate?: number;
+  amount_foreign?: number | null;
   pos_transaction_id?: string | null;
+  subtotal?: number;
+  discount_total?: number;
+  vat_amount?: number;
   total_amount: number;
   amount_paid: number;
   amount_outstanding: number; // GENERATED ALWAYS AS STORED — never write
+  delivery_address?: string | null;
+  courier_preference?: string | null;
   notes?: string | null;
   created_by?: string | null;
   created_at: string;

@@ -3,7 +3,8 @@
 const { withBusinessContext } = require("../config/db");
 const { sendEmail } = require("../lib/email/sender");
 const { renderEmail } = require("../lib/email/render");
-const whatsapp = require("../integrations/messaging/adapters/whatsapp");
+// EXTERNAL-COMMS-DISABLED: WhatsApp adapter needs Meta API access.
+// const whatsapp = require("../integrations/messaging/adapters/whatsapp");
 const logger = require("../config/logger");
 const config = require("../config/config");
 const { getActiveBusinesses } = require("../config/businesses");
@@ -77,13 +78,16 @@ module.exports = async function sendPartnerPaymentReminders() {
 
           let sent = false;
 
-          if (r.whatsapp_number) {
-            await whatsapp.sendMessage({ to: r.whatsapp_number, text: body });
-            sent = true;
-            logger.info(
-              `[partner_reminders:${business}] WhatsApp reminder sent: ${r.settlement_number} → ${r.partner_code} (day ${r.days_past_due})`,
-            );
-          } else if (r.email) {
+          // EXTERNAL-COMMS-DISABLED: WhatsApp reminders — email is now the
+          // primary channel until Meta API access is available.
+          // if (r.whatsapp_number) {
+          //   await whatsapp.sendMessage({ to: r.whatsapp_number, text: body });
+          //   sent = true;
+          //   logger.info(
+          //     `[partner_reminders:${business}] WhatsApp reminder sent: ${r.settlement_number} → ${r.partner_code} (day ${r.days_past_due})`,
+          //   );
+          // } else if (r.email) {
+          if (r.email) {
             const { subject: subj, html: emailHtml } = renderEmail("partner_reminder", business, {
               settlement_number: r.settlement_number,
               body: body.replace(/\n/g, "<br>"),

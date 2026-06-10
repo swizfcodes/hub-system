@@ -302,6 +302,19 @@ async function listPOs(
 
 async function createPO(business, data, user) {
   return withBusinessContext(business, async (client) => {
+    // Every line must reference a real catalogue product — this is what
+    // lets goods receipt match to inventory and the PO show product names.
+    // The UI offers a quick-add product flow so there is always one to pick.
+    for (const l of data.lines) {
+      if (!l.product_id) {
+        throw Object.assign(
+          new Error(
+            "Every line needs a product. Use 'Add new product' on the line if it isn't in the catalogue yet.",
+          ),
+          { status: 400 },
+        );
+      }
+    }
     const poNumber = await nextDocumentNumber(
       client,
       business,
@@ -334,9 +347,10 @@ async function createPO(business, data, user) {
     for (const l of data.lines) {
       await repo.insertPOLine(client, {
         po_id: po.po_id,
-        product_id: l.product_id || null,
+        product_id: l.product_id,
         quantity_ordered: l.quantity_ordered,
         unit_price: l.unit_price,
+        description: l.description,
       });
     }
     await auditService.log(client, {
@@ -413,6 +427,85 @@ async function sendPO(business, poId, user) {
       after: { status: "sent" },
     });
     return updated;
+  });
+}
+
+/**
+ * Email the PO to the supplier (an option on both quick and full modes).
+ * Renders the full line table + totals as a branded HTML email. If the PO
+ * is still a draft it is advanced to 'sent', so emailing doubles as
+ * "confirm & send".
+ */
+async function emailPO(business, poId, user) {
+  const { sendEmail } = require("../../lib/email/sender");
+  const { renderEmail } = require("../../lib/email/render");
+  return withBusinessContext(business, async (client) => {
+    const po = await repo.findPOById(client, poId);
+    if (!po) throw Object.assign(new Error("PO not found"), { status: 404 });
+    if (!po.supplier_email) {
+      throw Object.assign(
+        new Error(
+          "This supplier has no email address on file. Add one on the supplier's contact, then try again.",
+        ),
+        { status: 400 },
+      );
+    }
+
+    const currency = po.currency || "USD";
+    const fmt = (n) =>
+      `${currency} ${Number(n || 0).toLocaleString("en-NG", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+
+    const { subject, html } = renderEmail("purchase_order", business, {
+      po_number: po.po_number,
+      supplier_name: po.supplier_name,
+      expected_delivery: po.expected_delivery,
+      delivery_address: po.delivery_address,
+      currency,
+      lines: (po.lines || []).map((l) => ({
+        name: l.product_name || l.description || "Item",
+        sku: l.product_sku || "",
+        description: l.description || "",
+        quantity: l.quantity_ordered,
+        unit_price: fmt(l.unit_price),
+        line_total: fmt(l.line_total),
+      })),
+      subtotal: fmt(po.subtotal),
+      shipping_cost: Number(po.shipping_cost) > 0 ? fmt(po.shipping_cost) : null,
+      import_duty: Number(po.import_duty) > 0 ? fmt(po.import_duty) : null,
+      other_charges: Number(po.other_charges) > 0 ? fmt(po.other_charges) : null,
+      total_amount: fmt(po.total_amount),
+      notes: po.notes || "",
+    });
+
+    await sendEmail({
+      to: po.supplier_email,
+      subject,
+      html,
+      business,
+      senderUserId: user.user_id,
+      senderBusiness: business,
+    });
+
+    // Emailing the PO confirms it — advance draft → sent.
+    let updated = po;
+    if (po.status === "draft") {
+      updated = await repo.updatePOStatusDirect(client, poId, "sent");
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name,
+      business,
+      module: "purchasing",
+      action: "email",
+      table: "purchase_orders",
+      recordId: poId,
+      after: { emailed_to: po.supplier_email },
+    });
+    return { emailed_to: po.supplier_email, status: updated.status };
   });
 }
 
@@ -670,14 +763,15 @@ async function generatePOFromQuote(business, quoteId, user) {
 
 async function listBills(
   business,
-  { page = 1, limit = 20, status, supplierId } = {},
+  { page = 1, limit = 20, status, supplierId, supplier_id, poId, po_id } = {},
 ) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     return {
       data: await repo.listBills(client, {
         status,
-        supplierId,
+        supplierId: supplierId || supplier_id,
+        poId: poId || po_id,
         limit: parseInt(limit),
         offset,
       }),
@@ -694,43 +788,74 @@ async function getBill(business, billId) {
   });
 }
 
+/**
+ * Create a supplier bill.
+ *
+ * 3-way match rules (PO + GRN + bill), per the agreed policy:
+ *   - HARD BLOCK when billed qty exceeds the qty actually received
+ *     (you never pay for more than arrived).
+ *   - WARN, don't block, when the billed unit price differs >5% from the
+ *     PO price. The line must carry a variance_note explaining it; the
+ *     bill is flagged has_variance for the approver's attention.
+ *
+ * Bill lines are persisted so the match stays auditable later. The bill
+ * `amount` is computed authoritatively from the line totals when lines
+ * are supplied (falling back to the passed amount for non-PO/manual bills).
+ */
 async function createBill(business, data, user) {
   return withBusinessContext(business, async (client) => {
-    // 3-way match — if a PO is linked, validate quantity and price tolerance
-    if (data.po_id && data.lines?.length) {
+    const lines = Array.isArray(data.lines) ? data.lines : [];
+    let hasVariance = false;
+    let poLineMap = {};
+
+    if (data.po_id) {
       const po = await repo.findPOById(client, data.po_id);
       if (!po) throw Object.assign(new Error("PO not found"), { status: 404 });
-
-      const poLineMap = {};
       for (const pl of po.lines || []) {
-        poLineMap[pl.product_id] = pl;
-      }
-
-      for (const bl of data.lines) {
-        const pl = poLineMap[bl.product_id];
-        if (!pl) continue; // tolerate extra lines on the bill
-        // Quantity: billed must not exceed received
-        if (bl.quantity > pl.quantity_received) {
-          throw Object.assign(
-            new Error(
-              `3-way match failed: billed qty (${bl.quantity}) exceeds received qty (${pl.quantity_received}) for product ${bl.product_id}`,
-            ),
-            { status: 400 },
-          );
-        }
-        // Price: within ±5% of PO unit price
-        const priceDiff =
-          Math.abs(bl.unit_price - pl.unit_price) / pl.unit_price;
-        if (priceDiff > 0.05) {
-          throw Object.assign(
-            new Error(
-              `3-way match failed: billed price (${bl.unit_price}) differs >5% from PO price (${pl.unit_price}) for product ${bl.product_id}`,
-            ),
-            { status: 400 },
-          );
-        }
+        // Key by po_line_id (preferred) and product_id (fallback).
+        poLineMap[pl.line_id] = pl;
+        if (pl.product_id) poLineMap[pl.product_id] = pl;
       }
     }
+
+    for (const bl of lines) {
+      const pl = poLineMap[bl.po_line_id] || poLineMap[bl.product_id];
+      if (!pl) continue; // manual/extra line — no PO counterpart to match
+      const billedQty = Number(bl.quantity);
+      const received = Number(pl.quantity_received);
+      if (billedQty > received) {
+        throw Object.assign(
+          new Error(
+            `Cannot bill ${billedQty} of "${pl.product_name || "item"}" — only ${received} have been received. Receive the goods first.`,
+          ),
+          { status: 400 },
+        );
+      }
+      const poPrice = Number(pl.unit_price);
+      const priceDiff =
+        poPrice > 0
+          ? Math.abs(Number(bl.unit_price) - poPrice) / poPrice
+          : 0;
+      if (priceDiff > 0.05) {
+        // Warn-and-accept: require a note rather than rejecting outright.
+        if (!bl.variance_note || !String(bl.variance_note).trim()) {
+          throw Object.assign(
+            new Error(
+              `Price for "${pl.product_name || "item"}" differs from the PO by ${(priceDiff * 100).toFixed(1)}%. Add a short note to accept the variance.`,
+            ),
+            { status: 400 },
+          );
+        }
+        hasVariance = true;
+      }
+    }
+
+    // Authoritative amount from line detail when present.
+    const computedAmount = lines.reduce(
+      (s, l) => s + Number(l.quantity) * Number(l.unit_price),
+      0,
+    );
+    const amount = lines.length ? computedAmount : Number(data.amount);
 
     const bill = await repo.insertBill(client, {
       supplier_id: data.supplier_id,
@@ -738,13 +863,26 @@ async function createBill(business, data, user) {
       supplier_invoice_number: data.supplier_invoice_number,
       invoice_date: data.invoice_date,
       due_date: data.due_date,
-      amount: data.amount,
+      amount,
       currency: data.currency,
       amount_ngn: data.amount_ngn || null,
       notes: data.notes || null,
       document_id: data.document_id || null,
       status: data.po_id ? "matched" : "pending",
+      has_variance: hasVariance,
     });
+
+    for (const bl of lines) {
+      await repo.insertBillLine(client, {
+        sup_invoice_id: bill.sup_invoice_id,
+        po_line_id: bl.po_line_id || null,
+        product_id: bl.product_id || null,
+        description: bl.description || null,
+        quantity: bl.quantity,
+        unit_price: bl.unit_price,
+        variance_note: bl.variance_note || null,
+      });
+    }
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -756,8 +894,47 @@ async function createBill(business, data, user) {
       recordId: bill.sup_invoice_id,
       after: bill,
     });
-    return bill;
+    return repo.findBillById(client, bill.sup_invoice_id);
   });
+}
+
+/**
+ * Recognise the payable on approval (accrual basis):
+ *   PO-linked bill: DR GRNI (2150) / CR AP (2100)  — clears the GRNI accrual
+ *   Non-PO bill:    DR Purchases-Non-stock (6700) / CR AP (2100)
+ * Flips the bill to 'approved'. Shared by approveBill and payBill (the
+ * latter auto-approves so a quick-mode payment is a single action).
+ */
+async function recognizePayable(client, business, bill, user) {
+  const updated = await repo.updateBillStatus(
+    client,
+    bill.sup_invoice_id,
+    "approved",
+  );
+
+  const debitCode = bill.po_id ? "2150" : "6700";
+  const [debitAcc, apAcc] = await Promise.all([
+    journalService.getAccountId(client, debitCode),
+    journalService.getAccountId(client, "2100"),
+  ]);
+  if (debitAcc && apAcc) {
+    const amount = parseFloat(bill.amount);
+    await journalService.postEntry(client, {
+      entryDate:
+        (bill.invoice_date &&
+          new Date(bill.invoice_date).toISOString().slice(0, 10)) ||
+        new Date().toISOString().slice(0, 10),
+      description: `Supplier invoice — ${bill.supplier_invoice_number}`,
+      referenceType: "supplier_invoice",
+      referenceId: bill.sup_invoice_id,
+      postedBy: user.user_id,
+      lines: [
+        { account_id: debitAcc, debit: amount, credit: 0 },
+        { account_id: apAcc, debit: 0, credit: amount },
+      ],
+    });
+  }
+  return updated;
 }
 
 async function approveBill(business, billId, user) {
@@ -771,35 +948,7 @@ async function approveBill(business, billId, user) {
         { status: 400 },
       );
     }
-    const updated = await repo.updateBillStatus(client, billId, "approved");
-
-    // Recognise the payable on approval (accrual basis).
-    //   PO-linked bill: DR GRNI (2150) / CR AP (2100)  — clears the GRNI accrual
-    //   Non-PO bill:    DR Purchases-Non-stock (6700) / CR AP (2100)
-    {
-      const debitCode = bill.po_id ? "2150" : "6700";
-      const [debitAcc, apAcc] = await Promise.all([
-        journalService.getAccountId(client, debitCode),
-        journalService.getAccountId(client, "2100"),
-      ]);
-      if (debitAcc && apAcc) {
-        const amount = parseFloat(bill.amount);
-        await journalService.postEntry(client, {
-          entryDate:
-            (bill.invoice_date &&
-              new Date(bill.invoice_date).toISOString().slice(0, 10)) ||
-            new Date().toISOString().slice(0, 10),
-          description: `Supplier invoice — ${bill.supplier_invoice_number}`,
-          referenceType: "supplier_invoice",
-          referenceId: billId,
-          postedBy: user.user_id,
-          lines: [
-            { account_id: debitAcc, debit: amount, credit: 0 },
-            { account_id: apAcc, debit: 0, credit: amount },
-          ],
-        });
-      }
-    }
+    const updated = await recognizePayable(client, business, bill, user);
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -846,13 +995,25 @@ async function disputeBill(business, billId, reason, user) {
 
 async function payBill(business, billId, data, user) {
   return withBusinessContext(business, async (client) => {
-    const bill = await repo.findBillById(client, billId);
+    let bill = await repo.findBillById(client, billId);
     if (!bill)
       throw Object.assign(new Error("Bill not found"), { status: 404 });
-    if (bill.status !== "approved") {
-      throw Object.assign(new Error("Bill must be approved before payment"), {
+    if (bill.status === "paid") {
+      throw Object.assign(new Error("This bill is already fully paid"), {
         status: 400,
       });
+    }
+    if (bill.status === "disputed") {
+      throw Object.assign(
+        new Error("Resolve the dispute before paying this bill"),
+        { status: 400 },
+      );
+    }
+    // Auto-recognise the payable if not yet approved, so a payment can be
+    // recorded in one step (the quick-mode flow) while keeping the books
+    // correct — AP must exist before we settle against it.
+    if (bill.status !== "approved") {
+      bill = await recognizePayable(client, business, bill, user);
     }
     const newAmountPaid =
       parseFloat(bill.amount_paid) + parseFloat(data.amount);
@@ -922,6 +1083,7 @@ module.exports = {
   getPO,
   updatePO,
   sendPO,
+  emailPO,
   approvePO,
   cancelPO,
   listReceiptsForPO,

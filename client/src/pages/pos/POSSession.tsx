@@ -171,13 +171,19 @@ export default function POSSession() {
     setShowPayment(true);
   }
 
-  async function handleConfirmPayment(payments: PaymentSplitInput[]) {
+  async function handleConfirmPayment(
+    payments: PaymentSplitInput[],
+    saleCurrency: string = "NGN",
+    exchangeRate: number | null = null,
+  ) {
     if (!sessionId) return;
     setIsSubmitting(true);
 
     const txPayload = {
       session_id: sessionId,
       contact_id: customer?.contact_id,
+      currency: saleCurrency,
+      exchange_rate: exchangeRate,
       lines: lines.map((l) => ({
         product_id: l.product_id,
         description: l.description,

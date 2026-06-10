@@ -134,9 +134,9 @@ export default function OrderDetail() {
               <LineItemsTable
                 lines={order.lines}
                 totals={{
-                  subtotal: order.total_amount,
-                  discount_total: 0,
-                  vat_amount: 0,
+                  subtotal: order.subtotal ?? order.total_amount,
+                  discount_total: order.discount_total ?? 0,
+                  vat_amount: order.vat_amount ?? 0,
                   total_amount: order.total_amount,
                 }}
                 currency={currency}
@@ -270,6 +270,8 @@ export default function OrderDetail() {
           orderId={order.order_id}
           orderNumber={order.order_number}
           contactPhone={order.primary_phone ?? ""}
+          deliveryAddress={order.delivery_address ?? ""}
+          courierPreference={order.courier_preference ?? ""}
           onDispatched={() => setShowLogistics(false)}
         />
       )}
