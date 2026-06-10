@@ -25,11 +25,13 @@ async function verifyToken(req, res, next) {
     // ---------------------------
 
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
+    // Fallback: accept ?token= query param for PDF/download links opened in new tabs
+    const queryToken = req.query.token;
+    if (!authHeader?.startsWith("Bearer ") && !queryToken) {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = queryToken || authHeader.split(" ")[1];
     const decoded = jwt.verify(token, config.app.jwtSecret);
 
     // Check token hasn't been revoked (DB lookup — cached in Redis per session)

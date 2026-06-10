@@ -1,7 +1,6 @@
 import {
   Banknote,
   CreditCard,
-  Smartphone,
   ArrowLeftRight,
   CheckCircle,
   Clock,
@@ -9,15 +8,15 @@ import {
   Lock,
 } from "lucide-react";
 import type {
-  POSPaymentMethod,
   SessionStatus,
   SyncStatus,
 } from "@typedefs/pos";
 
 // ── Payment method meta ───────────────────────────────────────────────────────
 
+// Only in-store payment methods — Paystack is online-only, not on the physical POS.
 export const POS_PAYMENT_META: Record<
-  POSPaymentMethod,
+  string,
   {
     label: string;
     icon: typeof Banknote;
@@ -36,12 +35,6 @@ export const POS_PAYMENT_META: Record<
     icon: CreditCard,
     description: "Card terminal",
     requiresRef: true,
-  },
-  paystack: {
-    label: "Paystack",
-    icon: Smartphone,
-    description: "Online / QR payment",
-    requiresRef: false,
   },
   bank_transfer: {
     label: "Bank Transfer",

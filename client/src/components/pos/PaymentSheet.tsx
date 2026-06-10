@@ -1,5 +1,5 @@
 // ── PaymentSheet.tsx ───────────────────────────────────────────────────────────
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2 as Trash } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { Modal } from "@components/ui/Modal";
@@ -7,20 +7,32 @@ import { Button } from "@components/ui/Button";
 import { NumberField } from "@components/ui/NumberField";
 import { usePOSStore } from "@stores/posStore";
 import { POS_PAYMENT_META } from "@lib/constants/posConstants";
-import { fmtMoney as fmtMoneyPS } from "@lib/format";
 import { cn } from "@lib/cn";
+import { getLatestRate } from "@services/settings/currencyRates";
 import type {
   PaymentSplitInput,
   CartTotals,
   POSPaymentMethod,
 } from "@typedefs/pos";
 
+const CURRENCIES = ["NGN", "USD", "GBP", "EUR"] as const;
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  NGN: "₦",
+  USD: "$",
+  GBP: "£",
+  EUR: "€",
+};
+
 interface PaymentSheetProps {
   open: boolean;
   onClose: () => void;
   totals: CartTotals;
   currency?: string;
-  onConfirm: (payments: PaymentSplitInput[]) => void;
+  onConfirm: (
+    payments: PaymentSplitInput[],
+    saleCurrency: string,
+    exchangeRate: number | null,
+  ) => void;
   isLoading?: boolean;
 }
 
@@ -28,7 +40,7 @@ export function PaymentSheet({
   open,
   onClose,
   totals,
-  currency = "NGN",
+  currency: _baseCurrency = "NGN",
   onConfirm,
   isLoading = false,
 }: PaymentSheetProps) {
@@ -40,11 +52,51 @@ export function PaymentSheet({
   const [splits, setSplits] = useState<PaymentSplitInput[]>([
     { id: uuid(), method: "cash", amount: totals.total },
   ]);
+  const [saleCurrency, setSaleCurrency] = useState("NGN");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [rateLoading, setRateLoading] = useState(false);
+
+  // Fetch rate when a foreign currency is selected
+  useEffect(() => {
+    if (saleCurrency === "NGN") {
+      setExchangeRate(null);
+      return;
+    }
+    let cancelled = false;
+    setRateLoading(true);
+    getLatestRate(saleCurrency, "NGN")
+      .then((r) => {
+        if (!cancelled) setExchangeRate(r?.rate ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setExchangeRate(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRateLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [saleCurrency]);
+
+  const displayCurrency = saleCurrency;
+  const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
+
+  // When foreign currency, show the foreign equivalent of the NGN total
+  const displayTotal =
+    saleCurrency !== "NGN" && exchangeRate && exchangeRate > 0
+      ? Math.round((totals.total / exchangeRate) * 100) / 100
+      : totals.total;
 
   const totalPaid = splits.reduce((s, p) => s + (p.amount || 0), 0);
-  const change = Math.max(0, totalPaid - totals.total);
-  const shortfall = Math.max(0, totals.total - totalPaid);
-  const isReady = totalPaid >= totals.total;
+  const change = Math.max(0, totalPaid - displayTotal);
+  const shortfall = Math.max(0, displayTotal - totalPaid);
+  const isReady = totalPaid >= displayTotal;
+
+  // Reset splits when currency changes
+  useEffect(() => {
+    setSplits([{ id: uuid(), method: "cash", amount: displayTotal }]);
+  }, [displayTotal]);
 
   function addSplit() {
     setSplits([
@@ -73,7 +125,7 @@ export function PaymentSheet({
         <div className="flex items-center justify-between gap-3">
           {change > 0 && (
             <span className="text-sm font-semibold text-green-400">
-              Change: {fmtMoneyPS(change, currency)}
+              Change: {symbol}{change.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
             </span>
           )}
           <div className="flex gap-3 ml-auto">
@@ -81,11 +133,20 @@ export function PaymentSheet({
               Back
             </Button>
             <Button
-              onClick={() => isReady && onConfirm(splits)}
-              disabled={!isReady || isLoading}
+              onClick={() =>
+                isReady && onConfirm(splits, saleCurrency, exchangeRate)
+              }
+              disabled={
+                !isReady ||
+                isLoading ||
+                (saleCurrency !== "NGN" && !exchangeRate)
+              }
               loading={isLoading}
             >
-              Confirm {fmtMoneyPS(totals.total, currency)}
+              Confirm {symbol}
+              {displayTotal.toLocaleString("en-NG", {
+                minimumFractionDigits: 2,
+              })}
             </Button>
           </div>
         </div>
@@ -96,9 +157,59 @@ export function PaymentSheet({
         <div className="rounded-lg bg-orika-graphite/40 px-4 py-3 flex justify-between items-center">
           <span className="text-sm text-orika-smoke">Total Due</span>
           <span className="font-display text-xl font-extrabold text-orika-gold">
-            {fmtMoneyPS(totals.total, currency)}
+            {symbol}
+            {displayTotal.toLocaleString("en-NG", {
+              minimumFractionDigits: 2,
+            })}
           </span>
         </div>
+
+        {/* Currency selector */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-orika-smoke">Paying in:</span>
+          <div className="flex gap-1">
+            {CURRENCIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setSaleCurrency(c)}
+                className={cn(
+                  "rounded-md px-3 py-1 text-xs font-medium transition-all",
+                  saleCurrency === c
+                    ? "bg-orika-gold/10 border border-orika-gold/60 text-orika-gold"
+                    : "border border-black/10 text-orika-smoke hover:border-black/20",
+                )}
+              >
+                {CURRENCY_SYMBOLS[c]} {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Exchange rate info */}
+        {saleCurrency !== "NGN" && (
+          <div className="rounded-lg border border-orika-gold/20 bg-orika-gold/5 px-3 py-2 text-xs">
+            {rateLoading ? (
+              <span className="text-orika-smoke">Fetching rate...</span>
+            ) : exchangeRate ? (
+              <span className="text-orika-gold">
+                1 {saleCurrency} = ₦
+                {exchangeRate.toLocaleString("en-NG", {
+                  maximumFractionDigits: 2,
+                })}{" "}
+                &middot; NGN total: ₦
+                {totals.total.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                })}
+              </span>
+            ) : (
+              <span className="text-red-400">
+                No rate available for {saleCurrency}. Check Settings &rarr;
+                Currency Rates.
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Loyalty redemption hint */}
         {loyaltyInfo && loyaltyInfo.balance > 0 && customer && (
@@ -114,38 +225,38 @@ export function PaymentSheet({
             return (
               <div key={split.id} className="space-y-2">
                 {/* Method selector */}
-                <div className="grid grid-cols-4 gap-1.5">
-                  {(Object.keys(POS_PAYMENT_META) as POSPaymentMethod[]).map(
-                    (method) => {
-                      const m = POS_PAYMENT_META[method];
-                      const M = m.icon;
-                      return (
-                        <button
-                          key={method}
-                          type="button"
-                          onClick={() => updateSplit(split.id, { method })}
-                          className={cn(
-                            "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all",
-                            split.method === method
-                              ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                              : "border-black/10 text-orika-smoke hover:border-black/20",
-                          )}
-                        >
-                          <M className="h-4 w-4" />
-                          <span className="text-[9px] leading-tight">
-                            {m.label}
-                          </span>
-                        </button>
-                      );
-                    },
-                  )}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(
+                    Object.keys(POS_PAYMENT_META) as POSPaymentMethod[]
+                  ).map((method) => {
+                    const m = POS_PAYMENT_META[method];
+                    const M = m.icon;
+                    return (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => updateSplit(split.id, { method })}
+                        className={cn(
+                          "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all",
+                          split.method === method
+                            ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
+                            : "border-black/10 text-orika-smoke hover:border-black/20",
+                        )}
+                      >
+                        <M className="h-4 w-4" />
+                        <span className="text-[9px] leading-tight">
+                          {m.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Amount + optional ref */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-xs text-orika-smoke">
-                      {currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency}
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                      {symbol}
                     </span>
                     <NumberField
                       decimal
@@ -154,7 +265,7 @@ export function PaymentSheet({
                       onValueChange={(v) =>
                         updateSplit(split.id, { amount: v ?? 0 })
                       }
-                      className="py-2 pl-5 pr-2 text-right text-orika-black tabular-nums"
+                      className="w-full rounded border border-black/10 bg-white py-2 pl-5 pr-2 text-right text-sm font-normal text-orika-black tabular-nums shadow-none focus:border-orika-gold/40 focus:ring-0"
                     />
                   </div>
                   {POS_PAYMENT_META[split.method].requiresRef && (
@@ -190,7 +301,9 @@ export function PaymentSheet({
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 py-2 text-xs text-orika-smoke hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add payment method — {fmtMoneyPS(shortfall, currency)} remaining
+            Add payment method — {symbol}
+            {shortfall.toLocaleString("en-NG", { minimumFractionDigits: 2 })}{" "}
+            remaining
           </button>
         )}
 
@@ -199,7 +312,8 @@ export function PaymentSheet({
           <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3 flex justify-between">
             <span className="text-sm text-green-300">Give change</span>
             <span className="font-semibold text-green-300">
-              {fmtMoneyPS(change, currency)}
+              {symbol}
+              {change.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
             </span>
           </div>
         )}

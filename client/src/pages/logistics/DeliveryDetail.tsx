@@ -26,6 +26,7 @@ import {
   markDelivered,
   getTracking,
   packingSlipUrl,
+  updateDeliveryDetails,
 } from "@services/logistics";
 //import { COURIER_META } from '@lib/constants/logisticsConstants';
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
@@ -42,6 +43,10 @@ export default function DeliveryDetail() {
 
   const [showFailed, setShowFailed] = useState(false);
   const [showReturned, setShowReturned] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [waybill, setWaybill] = useState("");
+  const [courierOrderId, setCourierOrderId] = useState("");
+  const [editFee, setEditFee] = useState("");
 
   const { data: delivery, isLoading } = useQuery({
     queryKey: ["delivery", id],
@@ -73,6 +78,35 @@ export default function DeliveryDetail() {
     },
     onError: (err) => showToast.error(errMsg(err)),
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (fields: { waybill_number?: string; courier_order_id?: string; delivery_fee?: number }) =>
+      updateDeliveryDetails(id!, fields),
+    onSuccess: () => {
+      showToast.success("Delivery details updated");
+      qc.invalidateQueries({ queryKey: ["delivery", id] });
+      qc.invalidateQueries({ queryKey: ["delivery-tracking", id] });
+      setEditMode(false);
+    },
+    onError: (err) => showToast.error(errMsg(err)),
+  });
+
+  function openEditMode() {
+    setWaybill(delivery?.waybill_number ?? "");
+    setCourierOrderId(delivery?.courier_order_id ?? "");
+    setEditFee(String(delivery?.delivery_fee ?? 0));
+    setEditMode(true);
+  }
+
+  function saveDetails() {
+    const fields: Record<string, unknown> = {};
+    if (waybill !== (delivery?.waybill_number ?? "")) fields.waybill_number = waybill || null;
+    if (courierOrderId !== (delivery?.courier_order_id ?? "")) fields.courier_order_id = courierOrderId || null;
+    const feeNum = parseFloat(editFee) || 0;
+    if (feeNum !== parseFloat(String(delivery?.delivery_fee ?? 0))) fields.delivery_fee = feeNum;
+    if (!Object.keys(fields).length) { setEditMode(false); return; }
+    updateMutation.mutate(fields as any);
+  }
 
   if (isLoading) {
     return (
@@ -198,48 +232,96 @@ export default function DeliveryDetail() {
           <div className="flex items-start gap-3">
             <MapPin className="h-4 w-4 shrink-0 text-orika-smoke mt-0.5" />
             <div className="text-sm text-orika-cloud">
-              <p>{addr.line1}</p>
+              {addr.line1 && <p>{addr.line1}</p>}
               {addr.area && <p>{addr.area}</p>}
-              <p>
-                {addr.city}, {addr.state}
-              </p>
+              {(addr.city || addr.state) && (
+                <p>
+                  {[addr.city, addr.state].filter(Boolean).join(", ")}
+                </p>
+              )}
               {addr.landmark && (
                 <p className="text-xs text-orika-smoke">Near {addr.landmark}</p>
               )}
             </div>
           </div>
 
-          {/* Courier details */}
-          {delivery.waybill_number && (
-            <div className="text-sm">
-              <span className="text-orika-smoke">Waybill: </span>
-              <span className="font-mono text-orika-cream">
-                {delivery.waybill_number}
-              </span>
-            </div>
-          )}
-          {delivery.courier_order_id && (
-            <div className="text-sm">
-              <span className="text-orika-smoke">Courier ID: </span>
-              <span className="font-mono text-orika-cream">
-                {delivery.courier_order_id}
-              </span>
-            </div>
-          )}
-
-          {/* Fee */}
-          <div className="flex justify-between text-sm border-t border-white/5 pt-3">
-            <span className="text-orika-smoke">Delivery Fee</span>
-            <span className="text-orika-cream tabular-nums">
-              {fmtMoney(delivery.delivery_fee, currency)}
-              {delivery.fee_borne_by !== "customer" && (
-                <span className="ml-1 text-xs text-orika-smoke">
-                  ({delivery.fee_borne_by === "business" ? "absorbed" : "split"}
-                  )
-                </span>
+          {/* Courier details & fee — editable */}
+          {!editMode ? (
+            <>
+              {delivery.waybill_number && (
+                <div className="text-sm">
+                  <span className="text-orika-smoke">Waybill: </span>
+                  <span className="font-mono text-orika-cream">{delivery.waybill_number}</span>
+                </div>
               )}
-            </span>
-          </div>
+              {delivery.courier_order_id && (
+                <div className="text-sm">
+                  <span className="text-orika-smoke">Courier ID: </span>
+                  <span className="font-mono text-orika-cream">{delivery.courier_order_id}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm border-t border-white/5 pt-3">
+                <span className="text-orika-smoke">Delivery Fee</span>
+                <span className="text-orika-cream tabular-nums">
+                  {fmtMoney(delivery.delivery_fee, currency)}
+                  {delivery.fee_borne_by !== "customer" && (
+                    <span className="ml-1 text-xs text-orika-smoke">
+                      ({delivery.fee_borne_by === "business" ? "absorbed" : "split"})
+                    </span>
+                  )}
+                </span>
+              </div>
+              {!["delivered", "returned"].includes(delivery.status) && (
+                <button
+                  type="button"
+                  onClick={openEditMode}
+                  className="text-xs text-orika-gold hover:underline mt-1"
+                >
+                  Edit waybill / fee
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="space-y-3 border-t border-white/5 pt-3">
+              <div>
+                <label className="block text-xs text-orika-smoke mb-1">Waybill Number</label>
+                <input
+                  value={waybill}
+                  onChange={(e) => setWaybill(e.target.value)}
+                  placeholder="e.g. GIGL-12345"
+                  className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/50 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-orika-smoke mb-1">Courier Order ID</label>
+                <input
+                  value={courierOrderId}
+                  onChange={(e) => setCourierOrderId(e.target.value)}
+                  placeholder="Courier reference"
+                  className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/50 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-orika-smoke mb-1">Delivery Fee (₦)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={editFee}
+                  onChange={(e) => setEditFee(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/50 focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={saveDetails} loading={updateMutation.isPending}>
+                  Save
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditMode(false)} disabled={updateMutation.isPending}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Timestamps */}
           {delivery.dispatched_at && (
@@ -377,3 +459,4 @@ export default function DeliveryDetail() {
     </div>
   );
 }
+

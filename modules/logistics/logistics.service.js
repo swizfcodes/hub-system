@@ -39,6 +39,48 @@ async function getDelivery(business, deliveryId) {
   });
 }
 
+// PATCH — update editable delivery fields (waybill, fee, courier ID)
+async function updateDeliveryDetails(business, deliveryId, data, user) {
+  return withBusinessContext(business, async (client) => {
+    const existing = await repo.findDeliveryById(client, deliveryId);
+    if (!existing)
+      throw Object.assign(new Error("Delivery not found"), { status: 404 });
+
+    // Only allow certain fields to be updated manually
+    const allowed = ["waybill_number", "courier_order_id", "delivery_fee"];
+    const fields = {};
+    for (const key of allowed) {
+      if (data[key] !== undefined) fields[key] = data[key];
+    }
+
+    const updated = await repo.updateDelivery(client, deliveryId, fields);
+
+    // Add a tracking entry for the manual update
+    if (data.waybill_number) {
+      await repo.insertTrackingEntry(client, {
+        delivery_id: deliveryId,
+        status: existing.status,
+        source: "manual",
+        message: `Waybill updated: ${data.waybill_number}`,
+      });
+    }
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: "staff",
+      business,
+      module: "logistics",
+      action: "update",
+      table: "deliveries",
+      recordId: deliveryId,
+      before: existing,
+      after: updated,
+    });
+
+    return updated;
+  });
+}
+
 async function createDelivery(business, data, user) {
   return withBusinessContext(business, async (client) => {
     const deliveryNumber = await nextDocumentNumber(
@@ -493,6 +535,7 @@ async function generatePackingSlip(business, deliveryId) {
 module.exports = {
   listDeliveries,
   getDelivery,
+  updateDeliveryDetails,
   createDelivery,
   dispatchDelivery,
   markDelivered,

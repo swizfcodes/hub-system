@@ -450,7 +450,7 @@ async function findReceiptById(client, receiptId) {
 
 async function listDiscountApprovals(client, { status, quotation_id }) {
   const { rows } = await client.query(
-    `SELECT da.*, p.product_name, u.display_name AS requested_by_name
+    `SELECT da.*, p.name AS product_name, u.display_name AS requested_by_name
      FROM discount_approvals da
      LEFT JOIN products p ON p.product_id = da.product_id
      LEFT JOIN shared.users u ON u.user_id = da.requested_by

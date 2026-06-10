@@ -534,6 +534,8 @@ interface HandToLogisticsModalProps {
   orderId: string;
   orderNumber: string;
   contactPhone?: string;
+  deliveryAddress?: string;
+  courierPreference?: string;
   onDispatched: () => void;
 }
 
@@ -543,6 +545,8 @@ export function HandToLogisticsModal({
   orderId,
   orderNumber,
   contactPhone = "",
+  deliveryAddress = "",
+  courierPreference = "",
   onDispatched,
 }: HandToLogisticsModalProps) {
   const qc = useQueryClient();
@@ -550,10 +554,13 @@ export function HandToLogisticsModal({
   const form = useFormLogistics<HandToLogisticsValues>({
     resolver: zodResolverLogistics(handToLogisticsSchema),
     defaultValues: {
-      delivery_address: "",
+      delivery_address: deliveryAddress,
       delivery_notes: "",
-      courier_preference: "chowdeck",
+      courier_preference: (["chowdeck", "gigl", "manual"].includes(courierPreference)
+        ? courierPreference
+        : "chowdeck") as HandToLogisticsValues["courier_preference"],
       contact_phone: contactPhone,
+      delivery_fee: 0,
     },
   });
 
@@ -587,7 +594,7 @@ export function HandToLogisticsModal({
             Cancel
           </Button>
           <Button
-            onClick={form.handleSubmit((v) => mutation.mutate(v))}
+            onClick={form.handleSubmit((v) => mutation.mutate(v as HandToLogisticsValues))}
             loading={mutation.isPending}
           >
             Confirm Dispatch
@@ -663,6 +670,30 @@ export function HandToLogisticsModal({
                 placeholder="Full address including area and city"
                 error={fieldState.error?.message}
               />
+            </div>
+          )}
+        />
+
+        <ControllerLogistics
+          name="delivery_fee"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                Delivery Fee
+              </label>
+              <Input
+                {...field}
+                type="number"
+                min="0"
+                step="100"
+                placeholder="0"
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                error={fieldState.error?.message}
+              />
+              <p className="mt-1 text-[10px] text-orika-smoke/60">
+                Enter the delivery cost charged to the client (₦). Leave 0 if unknown.
+              </p>
             </div>
           )}
         />
