@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────
--- 000061 — In-house messaging uplift (WhatsApp-style internal chat)
+-- 000065 — In-house messaging uplift (WhatsApp-style internal chat)
 --
 -- 1. Message edits, forwards and per-user stars
 -- 2. Per-member pinned / muted conversations
