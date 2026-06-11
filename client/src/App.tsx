@@ -37,7 +37,6 @@ const StorefrontSignatures = lazy(
 const StorefrontContent = lazy(
   () => import("@pages/settings/storefront/Content"),
 );
-const PermissionsPage = lazy(() => import("@pages/settings/Permissions"));
 
 // Contacts module
 const ContactsHome = lazy(() => import("@pages/contacts/ContactsHome"));
@@ -338,7 +337,11 @@ export default function App() {
               </StorefrontGuard>
             }
           />
-          <Route path="/settings/permissions" element={<PermissionsPage />} />
+          {/* RBAC lives in Security — old settings URL redirects there */}
+          <Route
+            path="/settings/permissions"
+            element={<Navigate to="/security/roles" replace />}
+          />
           <Route path="/settings/help-editor" element={<HelpEditor />} />
 
           {/* Contacts */}

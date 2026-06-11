@@ -204,27 +204,41 @@ export const HEALTH_CHECKS = [
   },
 ] as const;
 
-// Module display names
+// Module display names — keys MUST match the backend module names
+// used in can() guards / shared.permissions (see MODULE_CATALOGUE in
+// shared/permissions/permissions.service.js). The old list used keys
+// like "invoices"/"contacts"/"retail-partners" that don't exist in
+// the backend, which broke the audit-log module filter.
 export const MODULE_LABELS: Record<string, string> = {
-  sales: "Sales",
-  invoices: "Invoices",
-  pos: "Point of Sale",
-  logistics: "Logistics",
-  catalogue: "Product Catalogue",
-  expenses: "Expenses",
-  payroll: "Payroll",
   accounting: "Accounting",
-  staff: "HR & Staff",
-  contacts: "Contacts & CRM",
-  messaging: "Messaging",
+  audit: "Audit Log",
+  calendar: "Calendar",
   campaigns: "Campaigns",
-  social: "Social Media",
-  loyalty: "Loyalty",
-  reports: "Reports",
+  catalogue: "Product Catalogue",
+  crm: "Contacts & CRM",
   dashboards: "Dashboards",
-  "retail-partners": "Retail Partners",
-  settings: "Settings",
+  discounts: "Discounts",
+  documents: "Documents",
+  expenses: "Expenses",
+  help: "Help Center",
+  invoicing: "Invoicing",
+  logistics: "Logistics",
+  loyalty: "Loyalty",
+  messaging: "Messaging",
+  payroll: "Payroll",
+  pos: "Point of Sale",
+  purchasing: "Purchasing",
+  reports: "Reports",
+  retail_partners: "Retail Partners",
+  sales: "Sales",
+  sales_campaigns: "Sales Campaigns",
   security: "Security",
+  settings: "Settings",
+  social: "Social Media",
+  staff: "HR & Staff",
+  stock: "Stock",
+  tasks: "Tasks",
+  tax: "Tax",
 };
 
 export const BUSINESS_LABELS: Record<string, string> = {

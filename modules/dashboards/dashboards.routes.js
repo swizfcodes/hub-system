@@ -84,7 +84,7 @@ router.get(
 // Requires: retail-partners:view
 router.get(
   "/retail-partners",
-  can("retail-partners", "view"),
+  can("retail_partners", "view"),
   async (req, res, next) => {
     try {
       res.json(

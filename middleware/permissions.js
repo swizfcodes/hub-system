@@ -23,6 +23,38 @@ async function loadPermissions(roleId) {
   return permissions;
 }
 
+// ── Hidden-field enforcement ──────────────────────────────
+// A role permission can carry hidden_fields (e.g. ['cost_price',
+// 'salary']). Until now these were stored and displayed in the role
+// editor but never enforced. This wraps res.json once per request
+// and deep-strips any matching keys from the response payload, so
+// the rule applies uniformly across every module without per-route
+// code.
+function stripHiddenFields(value, hidden) {
+  if (Array.isArray(value)) {
+    for (const item of value) stripHiddenFields(item, hidden);
+  } else if (value && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      if (hidden.has(key)) {
+        delete value[key];
+      } else {
+        stripHiddenFields(value[key], hidden);
+      }
+    }
+  }
+  return value;
+}
+
+function applyHiddenFieldFilter(req, res) {
+  const fields = req.hiddenFields;
+  if (!fields || fields.length === 0) return;
+  if (res._hiddenFieldFilterApplied) return;
+  res._hiddenFieldFilterApplied = true;
+  const hidden = new Set(fields);
+  const originalJson = res.json.bind(res);
+  res.json = (body) => originalJson(stripHiddenFields(body, hidden));
+}
+
 // ── can(module, action) ───────────────────────────────────
 // Passes if the user has exactly this module + action.
 // Usage:  router.post('/invoices', verifyToken, businessContext, can('invoicing','create'), handler)
@@ -40,6 +72,7 @@ function can(module, action) {
       }
       req.permissionScope = perm.record_scope;
       req.hiddenFields = perm.hidden_fields || [];
+      applyHiddenFieldFilter(req, res);
       next();
     } catch (err) {
       next(err);
@@ -70,6 +103,7 @@ function canAny(checks) {
       );
       req.permissionScope = perm.record_scope;
       req.hiddenFields = perm.hidden_fields || [];
+      applyHiddenFieldFilter(req, res);
       next();
     } catch (err) {
       next(err);
@@ -77,4 +111,4 @@ function canAny(checks) {
   };
 }
 
-module.exports = { can, canAny };
+module.exports = { can, canAny, loadPermissions };

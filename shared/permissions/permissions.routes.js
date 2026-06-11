@@ -4,7 +4,7 @@ const express = require("express");
 const router = express.Router();
 const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
-const { can } = require("../../middleware/permissions");
+const { can, canAny } = require("../../middleware/permissions");
 const service = require("./permissions.service");
 
 // ─────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ const service = require("./permissions.service");
 
 // ── READ ─────────────────────────────────────────────────────
 
-router.get("/catalogue", can("settings", "view"), async (req, res, next) => {
+router.get("/catalogue", canAny([{ module: "security", action: "view" }, { module: "settings", action: "view" }]), async (req, res, next) => {
   try {
     res.json(await service.getCatalogue());
   } catch (err) {
@@ -46,7 +46,7 @@ router.get("/catalogue", can("settings", "view"), async (req, res, next) => {
   }
 });
 
-router.get("/roles", can("settings", "view"), async (req, res, next) => {
+router.get("/roles", canAny([{ module: "security", action: "view" }, { module: "settings", action: "view" }]), async (req, res, next) => {
   try {
     // Optional ?business=jewelry filter — returns roles for that
     // business plus the global (business IS NULL) roles, which is
@@ -62,7 +62,7 @@ router.get(
   "/roles/:roleId",
   param("roleId").isUUID(),
   validate,
-  can("settings", "view"),
+  canAny([{ module: "security", action: "view" }, { module: "settings", action: "view" }]),
   async (req, res, next) => {
     try {
       res.json(await service.getRoleWithPermissions(req.params.roleId));
@@ -81,7 +81,7 @@ router.post(
   body("description").optional().isString(),
   body("clone_from_role_id").optional({ checkFalsy: true }).isUUID(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.status(201).json(await service.createRole(req.user, req.body));
@@ -99,7 +99,7 @@ router.patch(
   body("role_name").optional().isString(),
   body("description").optional().isString(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(await service.updateRole(req.user, req.params.roleId, req.body));
@@ -115,7 +115,7 @@ router.delete(
   "/roles/:roleId",
   param("roleId").isUUID(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(await service.deleteRole(req.user, req.params.roleId));
@@ -135,7 +135,7 @@ router.put(
   body("record_scope").optional().isIn(["all", "own", "team"]),
   body("hidden_fields").optional().isArray(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       const result = await service.grant(req.user, req.params.roleId, req.body);
@@ -154,7 +154,7 @@ router.put(
   body("module").isString().notEmpty(),
   body("action").isString().notEmpty(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       const result = await service.revoke(
@@ -176,7 +176,7 @@ router.post(
   param("roleId").isUUID(),
   body("permissions").isArray(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       const result = await service.bulkReplace(
@@ -202,7 +202,7 @@ router.get(
   "/users/:userId/access",
   param("userId").isUUID(),
   validate,
-  can("settings", "view"),
+  canAny([{ module: "security", action: "view" }, { module: "settings", action: "view" }]),
   async (req, res, next) => {
     try {
       res.json(await service.getUserAccess(req.params.userId));
@@ -217,7 +217,7 @@ router.put(
   param("userId").isUUID(),
   body("permitted_businesses").isArray(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(
@@ -239,7 +239,7 @@ router.put(
   // Allow null to clear the default.
   body("default_business").optional({ nullable: true }).isString(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(
@@ -262,7 +262,7 @@ router.put(
   body("role_id").isUUID(),
   body("expires_at").optional().isISO8601(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(
@@ -284,7 +284,7 @@ router.delete(
   param("userId").isUUID(),
   param("business").isString().notEmpty(),
   validate,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
     try {
       res.json(

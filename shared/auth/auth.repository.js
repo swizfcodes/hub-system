@@ -1,5 +1,14 @@
 "use strict";
 
+// ─────────────────────────────────────────────────────────────
+// Role resolution: a user's role can be assigned per business
+// (e.g. 'diffusers') or globally ('*'). The invite flow assigns
+// per-business roles, so login/refresh/profile MUST consider both —
+// matching only '*' (the old behaviour) left every invited user with
+// no role and therefore zero permissions. Exact business match wins
+// over the wildcard.
+// ─────────────────────────────────────────────────────────────
+
 async function findUserByEmail(client, email) {
   const { rows } = await client.query(
     `SELECT u.user_id, u.email, u.password_hash, u.is_active, u.failed_login_attempts,
@@ -8,7 +17,13 @@ async function findUserByEmail(client, email) {
             r.role_id, r.role_name,
             c.display_name
     FROM shared.users u
-    LEFT JOIN shared.user_roles ur ON ur.user_id = u.user_id AND ur.business = '*'
+    LEFT JOIN LATERAL (
+      SELECT x.role_id FROM shared.user_roles x
+      WHERE x.user_id = u.user_id
+        AND (x.business = u.default_business OR x.business = '*')
+      ORDER BY (x.business = '*') ASC
+      LIMIT 1
+    ) ur ON true
     LEFT JOIN shared.roles r ON r.role_id = ur.role_id
     LEFT JOIN shared.contacts c ON c.contact_id = u.staff_profile_id
     WHERE u.email = $1 LIMIT 1`,
@@ -45,7 +60,13 @@ async function findRefreshToken(client, hash) {
             ur.role_id
      FROM shared.refresh_tokens rt
      JOIN shared.users u ON u.user_id = rt.user_id
-     LEFT JOIN shared.user_roles ur ON ur.user_id = rt.user_id AND ur.business = '*'
+     LEFT JOIN LATERAL (
+       SELECT x.role_id FROM shared.user_roles x
+       WHERE x.user_id = rt.user_id
+         AND (x.business = u.default_business OR x.business = '*')
+       ORDER BY (x.business = '*') ASC
+       LIMIT 1
+     ) ur ON true
      WHERE rt.token_hash = $1`,
     [hash],
   );
@@ -82,7 +103,10 @@ async function findUserPermissions(client, userId) {
 
 async function findRoleForBusiness(client, { userId, business }) {
   const { rows } = await client.query(
-    `SELECT role_id FROM shared.user_roles WHERE user_id = $1 AND (business = $2 OR business = '*') LIMIT 1`,
+    `SELECT role_id FROM shared.user_roles
+     WHERE user_id = $1 AND (business = $2 OR business = '*')
+     ORDER BY (business = '*') ASC
+     LIMIT 1`,
     [userId, business],
   );
   return rows[0] || null;
@@ -97,7 +121,13 @@ async function findUserProfile(client, userId) {
      FROM shared.users u
      LEFT JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
      LEFT JOIN shared.contacts c ON c.contact_id = sp.contact_id
-     LEFT JOIN shared.user_roles ur ON ur.user_id = u.user_id AND ur.business = '*'
+     LEFT JOIN LATERAL (
+       SELECT x.role_id FROM shared.user_roles x
+       WHERE x.user_id = u.user_id
+         AND (x.business = u.default_business OR x.business = '*')
+       ORDER BY (x.business = '*') ASC
+       LIMIT 1
+     ) ur ON true
      LEFT JOIN shared.roles r ON r.role_id = ur.role_id
      WHERE u.user_id = $1`,
     [userId],

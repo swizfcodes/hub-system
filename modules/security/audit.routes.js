@@ -4,7 +4,7 @@ const express = require("express");
 const router = express.Router();
 const { query } = require("express-validator");
 const validate = require("../../middleware/validateBody");
-const { can } = require("../../middleware/permissions");
+const { can, canAny } = require("../../middleware/permissions");
 const service = require("./audit.service");
 
 // GET /api/security/audit
@@ -19,7 +19,7 @@ router.get(
   query("limit").optional().isInt({ min: 1, max: 200 }),
   query("format").optional().isIn(["json", "csv"]),
   validate,
-  can("settings", "view"),
+  canAny([{ module: "security", action: "view" }, { module: "audit", action: "view" }, { module: "settings", action: "view" }]),
   async (req, res, next) => {
     try {
       const result = await service.queryAuditLog(req.user, {
@@ -41,7 +41,7 @@ router.get(
 );
 
 // GET /api/security/audit/stats
-router.get("/stats", can("settings", "view"), async (req, res, next) => {
+router.get("/stats", canAny([{ module: "security", action: "view" }, { module: "audit", action: "view" }, { module: "settings", action: "view" }]), async (req, res, next) => {
   try {
     res.json(
       await service.getSecurityStats(req.user, { business: req.business }),

@@ -199,9 +199,15 @@ router.use(
   protect,
   require("../modules/security/audit.routes"),
 );
-// Permissions admin — mounted BEFORE /settings so Express matches the
-// more specific path first. The router lives in shared/permissions/
-// because it manages global role definitions, not per-module config.
+// Permissions admin — canonical home is /security/permissions (the
+// Security module owns RBAC). The /settings/permissions mount stays
+// as an alias so existing clients keep working. Mounted BEFORE
+// /settings so Express matches the more specific path first.
+router.use(
+  "/security/permissions",
+  protect,
+  require("../shared/permissions/permissions.routes"),
+);
 router.use(
   "/settings/permissions",
   protect,

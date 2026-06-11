@@ -377,15 +377,8 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
     accent: "gold",
     group: "system",
   },
-  {
-    key: "permissions",
-    label: "Permissions & Roles",
-    description: "RBAC, role matrix, user access",
-    icon: ShieldCheck,
-    route: "/settings/permissions",
-    accent: "mixed",
-    group: "system",
-  },
+  // Permissions & Roles moved to the Security module (/security/roles)
+  // — the old /settings/permissions route redirects there.
   {
     key: "storefront",
     label: "Storefront",

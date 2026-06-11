@@ -5,7 +5,7 @@ const router = express.Router();
 const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { verifyToken } = require("../../middleware/auth");
-const { can } = require("../../middleware/permissions");
+const { can, canAny } = require("../../middleware/permissions");
 const authService = require("./auth.service");
 const inviteService = require("./invite.service");
 
@@ -119,7 +119,7 @@ router.post(
 router.post(
   "/invite",
   verifyToken,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   body("email").isEmail().trim().toLowerCase(),
   body("role_id").isUUID(),
   body("businesses").isArray(),
@@ -191,7 +191,7 @@ router.get(
 router.delete(
   "/sessions/:userId/:tokenId",
   verifyToken,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   param("userId").isUUID(),
   param("tokenId").isUUID(),
   validate,
@@ -214,7 +214,7 @@ router.delete(
 router.delete(
   "/sessions/:userId",
   verifyToken,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   param("userId").isUUID(),
   validate,
   async (req, res, next) => {
