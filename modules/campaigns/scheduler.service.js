@@ -140,6 +140,43 @@ async function sendNow(business, campaignId, user) {
 }
 
 /**
+ * Send a single test email — no recipients touched, no tracking pixel,
+ * no status change. Works on any status so users can re-test sent
+ * campaigns. Variables are filled with sample values via a fake
+ * recipient so the test looks like the real thing.
+ */
+async function sendTest(business, campaignId, email, user) {
+  const campaign = await withBusinessContext(business, async (client) => {
+    const c = await repo.findById(client, campaignId);
+    if (!c) {
+      throw Object.assign(new Error("Campaign not found"), { status: 404 });
+    }
+    return c;
+  });
+  if (campaign.campaign_type !== "email") {
+    throw Object.assign(
+      new Error("Test sends are only available for email campaigns"),
+      { status: 400 },
+    );
+  }
+  assertSendableContent(campaign);
+
+  const sampleRecipient = {
+    display_name: user?.display_name || "Adaeze Obi",
+    tracking_token: null, // unsubscribe link renders as '#' in tests
+  };
+  await sendEmail({
+    to: email,
+    subject: `[TEST] ${personaliseSubject(campaign.subject_line, sampleRecipient)}`,
+    html: personaliseContent(campaign.html_content, sampleRecipient),
+    from: campaign.from_name,
+    business,
+  });
+  logger.info(`Campaign ${campaignId} test email sent to ${email}`);
+  return { sent: true, to: email };
+}
+
+/**
  * Cancel a campaign. Only works if it's not yet sent. If currently
  * 'sending', recipients already dispatched are not unsent — only the
  * pending recipients are stopped.
@@ -431,12 +468,20 @@ function personalise(text, recipient) {
   const rawName   = (recipient.display_name || "").trim();
   const name      = rawName || FALLBACK_NAME;
   const firstName = rawName ? rawName.split(/\s+/)[0] : FALLBACK_NAME;
+  // Per-recipient unsubscribe link (design-studio footer blocks emit
+  // {{unsubscribe_url}}). Falls back to '#' for test sends.
+  const baseUrl = config.app?.hubBaseUrl || "";
+  const unsubscribeUrl =
+    recipient.tracking_token && baseUrl
+      ? `${baseUrl}/api/campaigns/unsubscribe/${recipient.tracking_token}`
+      : "#";
   return text
-    .replace(/\{\{name\}\}/g,           name)
-    .replace(/\{\{full_name\}\}/g,       name)
-    .replace(/\{\{first_name\}\}/g,      firstName)
-    .replace(/\{\{customer_name\}\}/g,   name)   // advertised in UI as "full name" — must match
-    .replace(/\{\{display_name\}\}/g,    name);
+    .replace(/\{\{name\}\}/g,            name)
+    .replace(/\{\{full_name\}\}/g,        name)
+    .replace(/\{\{first_name\}\}/g,       firstName)
+    .replace(/\{\{customer_name\}\}/g,    name)   // advertised in UI as "full name" — must match
+    .replace(/\{\{display_name\}\}/g,     name)
+    .replace(/\{\{unsubscribe_url\}\}/g,  unsubscribeUrl);
 }
 
 function personaliseContent(html, recipient) {
@@ -477,6 +522,7 @@ function sleep(ms) {
 module.exports = {
   schedule,
   sendNow,
+  sendTest,
   cancel,
   processSend,
   runScheduledSweep,

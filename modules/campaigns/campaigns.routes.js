@@ -325,6 +325,30 @@ router.post(
   },
 );
 
+// Test send — single email to the requester, no recipients touched.
+// Gated on 'edit' (not 'approve') so staff can test before approval.
+router.post(
+  "/:id/test-send",
+  param("id").isUUID(),
+  body("email").isEmail(),
+  validate,
+  can("campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.sendTest(
+          req.business,
+          req.params.id,
+          req.body.email,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.post(
   "/:id/send-now",
   param("id").isUUID(),

@@ -24,6 +24,7 @@ async function insert(
     from_name,
     html_content,
     audience_filter,
+    design_json,
     userId,
   },
 ) {
@@ -32,8 +33,8 @@ async function insert(
   } = await client.query(
     `INSERT INTO campaigns
        (campaign_name, campaign_type, subject_line, from_name,
-        html_content, audience_filter, status, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,'draft',$7)
+        html_content, audience_filter, design_json, status, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8)
      RETURNING *`,
     [
       campaign_name,
@@ -44,6 +45,7 @@ async function insert(
       // store an empty string. Send-time guards reject empty content.
       html_content || "",
       JSON.stringify(audience_filter || {}),
+      design_json ? JSON.stringify(design_json) : null,
       userId,
     ],
   );

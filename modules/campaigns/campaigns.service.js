@@ -44,6 +44,7 @@ async function create(business, data, user) {
       from_name: data.from_name,
       html_content: data.html_content,
       audience_filter: data.audience_filter,
+      design_json: data.design_json,
       userId: user.user_id,
     });
 
@@ -87,12 +88,21 @@ async function update(business, campaignId, data, user) {
       "from_name",
       "html_content",
       "audience_filter",
+      "design_json",
     ];
+    const jsonFields = ["audience_filter", "design_json"];
     const sets = [],
       vals = [];
     for (const f of allowed) {
       if (data[f] !== undefined) {
-        vals.push(f === "audience_filter" ? JSON.stringify(data[f]) : data[f]);
+        // design_json: null clears the studio design (raw-HTML mode).
+        vals.push(
+          jsonFields.includes(f)
+            ? data[f] === null
+              ? null
+              : JSON.stringify(data[f])
+            : data[f],
+        );
         sets.push(`${f} = $${vals.length}`);
       }
     }
@@ -147,6 +157,10 @@ async function schedule(business, campaignId, scheduledAt, user) {
 
 async function sendNow(business, campaignId, user) {
   return scheduler.sendNow(business, campaignId, user);
+}
+
+async function sendTest(business, campaignId, email, user) {
+  return scheduler.sendTest(business, campaignId, email, user);
 }
 
 async function cancel(business, campaignId, user) {
@@ -209,6 +223,7 @@ module.exports = {
   // scheduling
   schedule,
   sendNow,
+  sendTest,
   cancel,
   // tracking
   trackEvent,
