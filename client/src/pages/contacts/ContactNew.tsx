@@ -29,7 +29,7 @@ import { listBusinesses } from "@services/settings/businesses";
 import { useBusinessStore } from "@stores/useBusinessStore";
 import { CONTACT_TYPE_META } from "@lib/constants/contactTypes";
 import { showToast } from "@hooks/useToast";
-import { errMsg } from "@services/api";
+import { api, errMsg } from "@services/api";
 import { cn } from "@lib/cn";
 
 const MONTHS = [
@@ -84,8 +84,8 @@ export default function ContactNew() {
   const types = watch("contact_type");
 
   const mutation = useMutation({
-    mutationFn: (v: FullValues) =>
-      createContact({
+    mutationFn: async (v: FullValues) => {
+      const contact = await createContact({
         ...v,
         first_name: v.first_name || undefined,
         last_name: v.last_name || undefined,
@@ -96,16 +96,49 @@ export default function ContactNew() {
         notes: v.notes || undefined,
         birthday_month: v.birthday_month || undefined,
         birthday_day: v.birthday_day || undefined,
-      }),
-    onSuccess: (c) => {
+      });
+      // Connected creation: a supplier-typed contact gets its procurement
+      // record immediately (idempotent endpoint), so the type is never an
+      // empty label.
+      if (v.contact_type.includes("supplier")) {
+        try {
+          await api.post(
+            `/purchasing/suppliers/from-contact/${contact.contact_id}`,
+          );
+        } catch {
+          /* supplier record can still be activated from the profile */
+        }
+      }
+      return contact;
+    },
+    onSuccess: (c, v) => {
       qc.invalidateQueries({ queryKey: ["contacts"] });
-      showToast.success(`${c.display_name} created`);
+      showToast.success(
+        `${c.display_name} created`,
+        v.contact_type.includes("retail_partner")
+          ? "Open the Partnership tab to set up their terms."
+          : undefined,
+      );
       navigate(`/contacts/${c.contact_id}`);
     },
     onError: (e) => showToast.error("Could not save", errMsg(e)),
   });
 
   const isStaffType = types.includes("staff");
+
+  // Employees are created through the onboarding wizard — a bare
+  // 'staff'-typed contact with no employee profile is a ghost record.
+  function submit(v: FullValues) {
+    if (v.contact_type.includes("staff")) {
+      showToast.error(
+        "Use Staff Onboarding for employees",
+        "It creates the contact, employee profile and login together.",
+      );
+      navigate("/contacts/staff/new");
+      return;
+    }
+    mutation.mutate(v);
+  }
 
   return (
     <>
@@ -346,7 +379,7 @@ export default function ContactNew() {
                 type="button"
                 leftIcon={<UserPlus className="w-4 h-4" />}
                 loading={isSubmitting || mutation.isPending}
-                onClick={handleSubmit((v) => mutation.mutate(v))}
+                onClick={handleSubmit(submit)}
               >
                 Create contact
               </Button>

@@ -8,6 +8,9 @@ import {
   MapPin,
   ArrowRight,
   FileText,
+  Briefcase,
+  ShoppingCart,
+  Handshake,
 } from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { Skeleton } from "@components/ui/Skeleton";
@@ -15,6 +18,11 @@ import { Badge } from "@components/ui/Badge";
 import { getTimeline } from "@services/contacts/contacts";
 import { listTasks } from "@services/contacts/tasks";
 import { listEventsForReference } from "@services/contacts/calendar";
+import { listSuppliers } from "@services/purchasing/suppliers";
+import { listPOs } from "@services/purchasing/purchaseOrders";
+import { listBills } from "@services/purchasing/bills";
+import { listPartners } from "@services/retail-partners/retailPartnersService";
+import { useStaffByContact } from "@components/contacts/employment/useStaffByContact";
 import { fmtMoney, fmtDateTime, fmtRelative, fmtDate } from "@lib/format";
 import { useBusinessStore } from "@stores/useBusinessStore";
 import type { Contact } from "@typedefs/contacts";
@@ -27,6 +35,11 @@ interface Props {
 
 export function OverviewTab({ contact, onJumpTab }: Props) {
   const active = useBusinessStore((s) => s.active);
+  const types = contact.contact_type ?? [];
+  const isCustomer = types.includes("customer");
+  const isSupplier = types.includes("supplier");
+  const isPartner = types.includes("retail_partner");
+  const isEmployee = types.includes("staff");
 
   const { data: timeline, isLoading: tlLoading } = useQuery({
     queryKey: ["contacts", contact.contact_id, "timeline"],
@@ -64,20 +77,24 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {/* Key stats */}
+      {/* Key stats — adapt to who this contact is */}
       <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          icon={<TrendingUp className="w-4 h-4" />}
-          label="Lifetime value"
-          value={tlLoading ? "—" : fmtMoney(lifetimeValue, "NGN")}
-          accent="gold"
-        />
-        <KpiCard
-          icon={<Receipt className="w-4 h-4" />}
-          label="Invoices"
-          value={tlLoading ? "—" : `${timeline?.invoices?.length ?? 0}`}
-          accent="gold"
-        />
+        {isCustomer && (
+          <>
+            <KpiCard
+              icon={<TrendingUp className="w-4 h-4" />}
+              label="Lifetime value"
+              value={tlLoading ? "—" : fmtMoney(lifetimeValue, "NGN")}
+              accent="gold"
+            />
+            <KpiCard
+              icon={<Receipt className="w-4 h-4" />}
+              label="Invoices"
+              value={tlLoading ? "—" : `${timeline?.invoices?.length ?? 0}`}
+              accent="gold"
+            />
+          </>
+        )}
         <KpiCard
           icon={<CheckSquare className="w-4 h-4" />}
           label="Open tasks"
@@ -85,14 +102,29 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
           accent="rose"
           onClick={() => onJumpTab("tasks")}
         />
-        <KpiCard
-          icon={<MessageSquare className="w-4 h-4" />}
-          label="Open deals"
-          value={`${openDeals}`}
-          accent="sage"
-          onClick={() => onJumpTab("deals")}
-        />
+        {isCustomer ? (
+          <KpiCard
+            icon={<MessageSquare className="w-4 h-4" />}
+            label="Open deals"
+            value={`${openDeals}`}
+            accent="sage"
+            onClick={() => onJumpTab("deals")}
+          />
+        ) : (
+          <KpiCard
+            icon={<Calendar className="w-4 h-4" />}
+            label="Upcoming events"
+            value={`${upcomingEvents.length}`}
+            accent="sage"
+            onClick={() => onJumpTab("calendar")}
+          />
+        )}
       </div>
+
+      {/* Stakeholder snapshots */}
+      {isEmployee && <EmployeeSnapshot contactId={contact.contact_id} onJumpTab={onJumpTab} />}
+      {isSupplier && <SupplierSnapshot contactId={contact.contact_id} onJumpTab={onJumpTab} />}
+      {isPartner && <PartnerSnapshot contactId={contact.contact_id} onJumpTab={onJumpTab} />}
 
       {/* Upcoming events */}
       <Card className="p-5">
@@ -341,5 +373,219 @@ function KpiCard({
         {value}
       </div>
     </button>
+  );
+}
+
+// ── Per-type snapshots ───────────────────────────────────────────────────────
+// Employee: role & tenure only — salary stays inside the restricted
+// Employment tab, never on the overview.
+
+function EmployeeSnapshot({
+  contactId,
+  onJumpTab,
+}: {
+  contactId: string;
+  onJumpTab: (tab: string) => void;
+}) {
+  const { staff } = useStaffByContact(contactId);
+  if (!staff) return null;
+  const tenure = staff.start_date
+    ? fmtRelative(staff.start_date).replace(" ago", "")
+    : null;
+  return (
+    <Card className="p-5 lg:col-span-2">
+      <button
+        type="button"
+        onClick={() => onJumpTab("employment")}
+        className="w-full text-left"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Briefcase className="w-4 h-4 text-orika-gold" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+            Employment
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Role
+            </div>
+            <div className="text-orika-cream mt-0.5">{staff.job_title}</div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Employee #
+            </div>
+            <div className="text-orika-cream mt-0.5 font-mono text-xs">
+              {staff.employee_number}
+            </div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Department
+            </div>
+            <div className="text-orika-cream mt-0.5 capitalize">
+              {staff.department ?? "—"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              With us for
+            </div>
+            <div className="text-orika-cream mt-0.5">
+              {tenure ?? "—"}
+              {staff.end_date ? " (ended)" : ""}
+            </div>
+          </div>
+        </div>
+      </button>
+    </Card>
+  );
+}
+
+function SupplierSnapshot({
+  contactId,
+  onJumpTab,
+}: {
+  contactId: string;
+  onJumpTab: (tab: string) => void;
+}) {
+  const { data: sups } = useQuery({
+    queryKey: ["purchasing", "suppliers", "by-contact", contactId],
+    queryFn: () => listSuppliers({ contact_id: contactId, limit: 1 }),
+  });
+  const supplier = sups?.data?.[0] ?? null;
+
+  const { data: poResp } = useQuery({
+    queryKey: ["purchasing", "pos", "by-supplier", supplier?.supplier_id],
+    queryFn: () => listPOs({ supplier_id: supplier!.supplier_id, limit: 100 }),
+    enabled: !!supplier,
+  });
+  const { data: bills = [] } = useQuery({
+    queryKey: ["purchasing", "bills", "by-supplier", supplier?.supplier_id],
+    queryFn: () => listBills({ supplier_id: supplier!.supplier_id }),
+    enabled: !!supplier,
+  });
+  if (!supplier) return null;
+
+  const pos = poResp?.data ?? [];
+  const openPOs = pos.filter(
+    (po) => !["received", "cancelled", "paid"].includes(po.status),
+  ).length;
+  const owed = bills.reduce(
+    (s, b) => s + Math.max(0, Number(b.amount) - Number(b.amount_paid ?? 0)),
+    0,
+  );
+  return (
+    <Card className="p-5 lg:col-span-2">
+      <button
+        type="button"
+        onClick={() => onJumpTab("purchasing")}
+        className="w-full text-left"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <ShoppingCart className="w-4 h-4 text-orika-gold" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+            Supplier · {supplier.supplier_code}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+        </div>
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Open POs
+            </div>
+            <div className="text-orika-cream mt-0.5 tabular-nums">{openPOs}</div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              We owe them
+            </div>
+            <div
+              className={cn(
+                "mt-0.5 tabular-nums",
+                owed > 0 ? "text-state-warn" : "text-living-sage",
+              )}
+            >
+              {fmtMoney(owed, "NGN")}
+            </div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Payment terms
+            </div>
+            <div className="text-orika-cream mt-0.5">
+              {supplier.payment_terms_days ?? 30} days
+            </div>
+          </div>
+        </div>
+      </button>
+    </Card>
+  );
+}
+
+function PartnerSnapshot({
+  contactId,
+  onJumpTab,
+}: {
+  contactId: string;
+  onJumpTab: (tab: string) => void;
+}) {
+  const { data: partners } = useQuery({
+    queryKey: ["retail-partners", "by-contact", contactId],
+    queryFn: () => listPartners({ contact_id: contactId, limit: 1 }),
+  });
+  const partner = partners?.data?.[0] ?? null;
+  if (!partner) return null;
+  return (
+    <Card className="p-5 lg:col-span-2">
+      <button
+        type="button"
+        onClick={() => onJumpTab("partner")}
+        className="w-full text-left"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Handshake className="w-4 h-4 text-orika-gold" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+            Retail partner · {partner.partner_code}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+        </div>
+        <div className="grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Arrangement
+            </div>
+            <div className="text-orika-cream mt-0.5 capitalize">
+              {partner.arrangement_type}
+            </div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Balance owed to us
+            </div>
+            <div
+              className={cn(
+                "mt-0.5 tabular-nums",
+                Number(partner.current_balance) > 0
+                  ? "text-state-warn"
+                  : "text-living-sage",
+              )}
+            >
+              {fmtMoney(partner.current_balance ?? 0, "NGN")}
+            </div>
+          </div>
+          <div>
+            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              Settlement cycle
+            </div>
+            <div className="text-orika-cream mt-0.5 capitalize">
+              {partner.settlement_cycle ?? "monthly"}
+            </div>
+          </div>
+        </div>
+      </button>
+    </Card>
   );
 }

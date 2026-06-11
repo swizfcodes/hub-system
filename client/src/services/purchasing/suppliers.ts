@@ -2,7 +2,12 @@ import { api } from "../api";
 import type { Supplier } from "@typedefs/purchasing";
 
 export async function listSuppliers(
-  params: { search?: string; page?: number; limit?: number } = {},
+  params: {
+    search?: string;
+    contact_id?: string;
+    page?: number;
+    limit?: number;
+  } = {},
 ): Promise<{ data: Supplier[] }> {
   const { data } = await api.get<{ data: Supplier[] }>(
     "/purchasing/suppliers",

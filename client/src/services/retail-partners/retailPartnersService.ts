@@ -18,8 +18,10 @@ import type {
 export async function listPartners(params?: {
   search?: string;
   arrangement_type?: string;
+  contact_id?: string;
   is_active?: boolean;
   page?: number;
+  limit?: number;
 }): Promise<{ data: RetailPartner[]; pagination: { total: number } }> {
   try {
     const { data } = await api.get("/retail-partners", { params });
