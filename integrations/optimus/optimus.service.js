@@ -116,8 +116,17 @@ async function openVirtualAccount({
   email,
   mobileNo,
 }) {
-  const { baseUrl, notificationUrl } = config.optimusPay;
+  const { baseUrl, notificationUrl, accountName, mockMode } =
+    config.optimusPay;
   const requestRef = makeRequestRef("openacct");
+
+  // Name to register on the virtual account. Without it the bank's
+  // name-enquiry fails and payers cannot transfer in. Prefer a configured
+  // business name; otherwise use the customer's full name.
+  const nameOnAccount =
+    accountName ||
+    [firstname, surname].filter(Boolean).join(" ").trim() ||
+    "Orika Living";
 
   const body = {
     request_ref: requestRef,
@@ -131,9 +140,13 @@ async function openVirtualAccount({
       route_mode: null,
     },
     transaction: {
-      amount: amountKobo,
+      // Per the Open Account spec, transaction.amount is 0 — the expected
+      // inflow goes in meta.amount. mock_mode "Live" processes real txns.
+      mock_mode: mockMode,
       transaction_ref: transactionRef,
       transaction_desc: description,
+      transaction_ref_parent: null,
+      amount: 0,
       customer: {
         customer_ref: customerRef,
         firstname,
@@ -141,8 +154,28 @@ async function openVirtualAccount({
         email,
         mobile_no: mobileNo,
       },
-      meta: {},
+      meta: {
+        // Expected payment for this account, in kobo (per the integration's
+        // kobo convention). Verify against your Optimus account if amounts
+        // appear off by 100×.
+        amount: amountKobo,
+      },
       details: {
+        // Account-holder name the bank registers; required for payers'
+        // name-enquiry to succeed before they can transfer in.
+        name_on_account: nameOnAccount,
+        middlename: null,
+        dob: null,
+        gender: null,
+        title: null,
+        address_line_1: null,
+        address_line_2: null,
+        city: null,
+        state: null,
+        country: null,
+        // Not in the documented schema but harmless; the live notification
+        // URL is configured on the Optimus dashboard's Transaction
+        // Notification service. Kept as a fallback for the local mock.
         notification_url: notificationUrl,
       },
     },

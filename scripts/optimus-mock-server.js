@@ -75,12 +75,15 @@ function fireWebhook(ref) {
 app.post("/v2/transact", (req, res) => {
   const txn = (req.body && req.body.transaction) || {};
   const ref = txn.transaction_ref || `mock-${Date.now()}`;
+  // Open Account puts the expected amount in meta.amount (transaction.amount
+  // is 0); fall back to transaction.amount for older callers.
+  const expectedAmount = txn.meta?.amount ?? txn.amount ?? 0;
   const accountNumber =
     "99" + String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
 
-  provisioned.set(ref, { amount: txn.amount, accountNumber });
+  provisioned.set(ref, { amount: expectedAmount, accountNumber });
   console.log(
-    `[optimus-mock] open_account ref=${ref} amount=${txn.amount} kobo → acct ${accountNumber}`,
+    `[optimus-mock] open_account ref=${ref} amount=${expectedAmount} kobo → acct ${accountNumber}`,
   );
 
   if (AUTO_CONFIRM_SECONDS > 0) {

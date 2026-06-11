@@ -216,16 +216,18 @@ router.get(
 
 // ── Optimus Pay ──────────────────────────────────────────────
 
-// Client-initiated verify — called on the return URL after the
-// customer has completed a bank transfer via Optimus Pay virtual account.
-// Idempotent with the server-to-server webhook.
+// Client-initiated status poll — the storefront calls this while the
+// customer completes a bank transfer. READ-ONLY: it only reports whether
+// the order has been marked paid. Fulfilment happens exclusively in the
+// Optimus webhook, which proves the inflow actually landed — the client
+// must never be able to confirm a payment that hasn't happened.
 router.get(
   "/optimus/verify",
   query("transaction_ref").isString().notEmpty(),
   validate,
   async (req, res, next) => {
     try {
-      res.json(await service.fulfillOptimusOrder(req.query.transaction_ref));
+      res.json(await service.getOptimusOrderStatus(req.query.transaction_ref));
     } catch (e) {
       next(e);
     }
