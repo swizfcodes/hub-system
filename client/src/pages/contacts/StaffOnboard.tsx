@@ -43,12 +43,18 @@ const STEPS = [
   { key: "access", label: "Access", description: "Login & businesses" },
 ];
 
+// Keep in sync with DEPARTMENT_OPTIONS in EditStaffModal.tsx — a staff
+// member must stay editable in whatever department they were hired into.
 const DEPARTMENTS = [
-  "sales",
-  "operations",
-  "finance",
-  "logistics",
-  "management",
+  { value: "management", label: "Management" },
+  { value: "sales", label: "Sales" },
+  { value: "operations", label: "Operations" },
+  { value: "finance", label: "Finance" },
+  { value: "logistics", label: "Logistics" },
+  { value: "marketing", label: "Marketing" },
+  { value: "hr", label: "Human Resources" },
+  { value: "it", label: "IT" },
+  { value: "customer_service", label: "Customer Service" },
 ];
 
 export default function StaffOnboard() {
@@ -348,10 +354,7 @@ export default function StaffOnboard() {
                     {...register("department")}
                     label="Department"
                     placeholder="—"
-                    options={DEPARTMENTS.map((d) => ({
-                      value: d,
-                      label: d.charAt(0).toUpperCase() + d.slice(1),
-                    }))}
+                    options={DEPARTMENTS}
                   />
                   <Select
                     {...register("employment_type")}

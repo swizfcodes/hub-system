@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employment Contract — {{display_name}}</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #1a1a1a;
+        background: #fff;
+      }
+
+      :root {
+        --gold: #c9a86c;
+        --gold-dark: #8a6a30;
+        --charcoal: #1a1814;
+        --smoke: #6b6560;
+        --line: #e5e0d8;
+        --bg-alt: #f9f7f4;
+      }
+
+      .page {
+        max-width: 794px;
+        margin: 0 auto;
+        padding: 48px 56px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 28px;
+        border-bottom: 2px solid var(--gold);
+        margin-bottom: 32px;
+      }
+
+      .brand-name {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--charcoal);
+        text-transform: uppercase;
+      }
+      .brand-sub {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--smoke);
+        margin-top: 4px;
+      }
+
+      .doc-meta {
+        text-align: right;
+      }
+      .doc-title {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+      }
+      .doc-ref {
+        font-size: 11px;
+        color: var(--smoke);
+        margin-top: 4px;
+      }
+
+      h2 {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gold-dark);
+        margin: 26px 0 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      p {
+        margin-bottom: 10px;
+      }
+
+      table.facts {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 8px 0 4px;
+      }
+      table.facts td {
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.facts td.k {
+        width: 38%;
+        background: var(--bg-alt);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--smoke);
+      }
+      .money {
+        font-weight: 700;
+        color: var(--gold-dark);
+      }
+
+      ol.terms {
+        padding-left: 18px;
+      }
+      ol.terms li {
+        margin-bottom: 8px;
+      }
+
+      .signatures {
+        display: flex;
+        gap: 48px;
+        margin-top: 56px;
+      }
+      .sig {
+        flex: 1;
+      }
+      .sig .line {
+        border-bottom: 1px solid var(--charcoal);
+        height: 44px;
+      }
+      .sig .label {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--smoke);
+        margin-top: 6px;
+      }
+
+      .footer {
+        margin-top: 48px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        font-size: 10px;
+        color: var(--smoke);
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="header">
+        <div class="brand-block">
+          <div class="brand-name">Orika Hub</div>
+          <div class="brand-sub">Where luxury meets intelligence</div>
+        </div>
+        <div class="doc-meta">
+          <div class="doc-title">Contract of Employment</div>
+          <div class="doc-ref">Ref: {{contract_ref}}</div>
+          <div class="doc-ref">Generated {{generated_date}}</div>
+        </div>
+      </div>
+
+      <p>
+        This Contract of Employment is made between
+        <strong>{{business_label}}</strong> (“the Company”) and
+        <strong>{{display_name}}</strong> (“the Employee”), employee number
+        <strong>{{employee_number}}</strong>.
+      </p>
+
+      <h2>Particulars of engagement</h2>
+      <table class="facts">
+        <tr>
+          <td class="k">Position</td>
+          <td>{{job_title}}</td>
+        </tr>
+        <tr>
+          <td class="k">Department</td>
+          <td>{{department}}</td>
+        </tr>
+        <tr>
+          <td class="k">Engagement type</td>
+          <td>{{contract_type_label}}</td>
+        </tr>
+        <tr>
+          <td class="k">Effective from</td>
+          <td>{{effective_from}}</td>
+        </tr>
+        <tr>
+          <td class="k">Effective to</td>
+          <td>{{effective_to_label}}</td>
+        </tr>
+        <tr>
+          <td class="k">Reports to</td>
+          <td>{{reports_to_name}}</td>
+        </tr>
+      </table>
+
+      <h2>Remuneration</h2>
+      <table class="facts">
+        <tr>
+          <td class="k">Gross monthly salary</td>
+          <td class="money">{{gross_salary}}</td>
+        </tr>
+        <tr>
+          <td class="k">Gross annual salary</td>
+          <td class="money">{{annual_gross}}</td>
+        </tr>
+      </table>
+      <p style="font-size: 11px; color: var(--smoke)">
+        Salary is paid monthly in arrears, less statutory deductions (PAYE,
+        employee pension contribution and NHF where applicable), into the
+        Employee's nominated bank account.
+      </p>
+
+      <h2>General terms</h2>
+      <ol class="terms">
+        <li>
+          The Employee's employment with the Company is governed by Nigerian
+          labour law and the Company's staff handbook as amended from time to
+          time.
+        </li>
+        <li>
+          The Company will remit the employer pension contribution required by
+          the Pension Reform Act in addition to the gross salary stated above.
+        </li>
+        <li>
+          The Employee shall keep confidential all commercial, customer and
+          product information belonging to the Company, both during and after
+          employment.
+        </li>
+        <li>
+          Company property issued to the Employee remains the property of the
+          Company and must be returned on or before the last day of employment.
+        </li>
+        <li>
+          Annual, sick and other leave entitlements are administered through
+          the Company's HR system and require prior approval.
+        </li>
+      </ol>
+
+      <p style="margin-top: 14px; font-style: italic; color: var(--smoke)">
+        {{notes}}
+      </p>
+
+      <div class="signatures">
+        <div class="sig">
+          <div class="line"></div>
+          <div class="label">For the Company — name, signature &amp; date</div>
+        </div>
+        <div class="sig">
+          <div class="line"></div>
+          <div class="label">{{display_name}} — signature &amp; date</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <span>Orika Hub — Contract of Employment</span>
+        <span>{{contract_ref}}</span>
+      </div>
+    </div>
+  </body>
+</html>

@@ -90,6 +90,17 @@ export async function addContract(
   return data;
 }
 
+export async function openContractPdf(
+  id: string,
+  contractId: string,
+): Promise<void> {
+  const { openPdf } = await import("@lib/openPdf");
+  return openPdf(
+    `/staff/${id}/contracts/${contractId}/pdf`,
+    `contract-${contractId}.pdf`,
+  );
+}
+
 // ── Assets ──
 export async function listAssets(
   id: string,

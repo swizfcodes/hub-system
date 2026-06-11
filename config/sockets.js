@@ -86,6 +86,9 @@ async function init(httpServer) {
 
     socket.on("typing", ({ channelId } = {}) => {
       if (typeof channelId !== "string") return;
+      // Membership was verified on channel:join — only relay typing
+      // events for rooms this socket actually joined.
+      if (!socket.rooms.has(`channel:${channelId}`)) return;
       socket.to(`channel:${channelId}`).emit("typing", {
         channelId,
         userId: socket.userId,
@@ -120,12 +123,6 @@ async function init(httpServer) {
         /* presence is best-effort */
       }
     });
-  });
-
-  io = new Server(httpServer, {
-    cors: { origin: config.app.allowedOrigins, credentials: true },
-    adapter: createAdapter(pubClient, subClient),
-    transports: ["polling"], // disable websocket upgrade
   });
 
   logger.info("Socket.io initialised with Redis adapter");
