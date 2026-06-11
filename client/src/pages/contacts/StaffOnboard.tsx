@@ -26,6 +26,9 @@ import {
   type StaffOnboardValues,
 } from "@lib/schemas/staff";
 import { createStaff } from "@services/contacts/staff";
+import { getContact } from "@services/contacts/contacts";
+import { ContactSearchInput } from "@components/shared/ContactSearchInput";
+import type { Contact } from "@typedefs/contacts";
 import { listStaff } from "@services/contacts/staff";
 import { listBusinesses } from "@services/settings/businesses";
 import { useBusinessStore } from "@stores/useBusinessStore";
@@ -56,6 +59,19 @@ export default function StaffOnboard() {
   const [stepIndex, setStepIndex] = useState(0);
   const [credentials, setCredentials] =
     useState<StaffOnboardResult["credentials"]>(null);
+  // Onboarding an existing directory contact (e.g. from their profile's
+  // "Onboard as employee" action, via ?contact_id=...).
+  const [linkedContact, setLinkedContact] = useState<Contact | null>(null);
+  const prefillContactId = params.get("contact_id");
+  useQuery({
+    queryKey: ["contacts", "prefill", prefillContactId],
+    queryFn: async () => {
+      const c = await getContact(prefillContactId!);
+      setLinkedContact(c);
+      return c;
+    },
+    enabled: !!prefillContactId && !linkedContact,
+  });
 
   const { data: businesses = [] } = useQuery({
     queryKey: ["settings", "businesses", "active"],
@@ -104,6 +120,7 @@ export default function StaffOnboard() {
     handleSubmit,
     trigger,
     watch,
+    setValue,
     formState: { errors },
   } = form;
   const createLogin = watch("create_login");
@@ -252,39 +269,52 @@ export default function StaffOnboard() {
                 </header>
 
                 <div className="rounded-2xl border border-orika-cloud/40 bg-white/50 p-5">
-                  <Controller
-                    control={control}
-                    name="contact_id"
-                    render={({ field }) => (
-                      <Select
-                        {...field}
-                        label="Link to existing contact (optional)"
-                        placeholder="Create a new contact for this person"
-                        options={(staffList?.data ?? [])
-                          .map(() => ({ value: "", label: "" }))
-                          .slice(0, 0)} // intentionally empty; staffList isn't the right source. Switch to a contact picker when contacts list endpoint is wired here.
-                        hint="Or fill the fields below to create a fresh contact"
-                      />
-                    )}
+                  <ContactSearchInput
+                    value={linkedContact}
+                    onChange={(c) => {
+                      setLinkedContact(c);
+                      setValue("contact_id", c?.contact_id ?? "");
+                      if (c?.email) setValue("email", c.email);
+                    }}
+                    label="Link to existing contact (optional)"
                   />
+                  <p className="mt-2 text-[0.65rem] text-text-on-light-muted">
+                    Pick someone already in the directory (a converted
+                    customer, for example) — or leave empty and fill the
+                    fields below to create them fresh.
+                  </p>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
-                    {...register("first_name")}
-                    label="First name"
-                    error={errors.first_name?.message as string | undefined}
-                  />
-                  <Input {...register("last_name")} label="Last name" />
-                  <Input {...register("primary_phone")} label="Primary phone" />
-                  <Input {...register("whatsapp_number")} label="WhatsApp" />
-                  <Input
-                    {...register("email")}
-                    type="email"
-                    label="Email"
-                    className="sm:col-span-2"
-                  />
-                </div>
+                {linkedContact ? (
+                  <div className="rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.05] p-4 text-sm text-orika-black">
+                    Onboarding <strong>{linkedContact.display_name}</strong>
+                    {linkedContact.primary_phone
+                      ? ` · ${linkedContact.primary_phone}`
+                      : ""}
+                    {linkedContact.email ? ` · ${linkedContact.email}` : ""} —
+                    their existing contact details will be used.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      {...register("first_name")}
+                      label="First name"
+                      error={errors.first_name?.message as string | undefined}
+                    />
+                    <Input {...register("last_name")} label="Last name" />
+                    <Input
+                      {...register("primary_phone")}
+                      label="Primary phone"
+                    />
+                    <Input {...register("whatsapp_number")} label="WhatsApp" />
+                    <Input
+                      {...register("email")}
+                      type="email"
+                      label="Email"
+                      className="sm:col-span-2"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
