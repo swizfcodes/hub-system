@@ -30,6 +30,11 @@ const repo = require("./pos.repository");
 // ─────────────────────────────────────────────────────────────
 
 const VALID_CHANNELS = ["whatsapp", "email", "both"];
+
+// EXTERNAL-COMMS-DISABLED: flip to true when the Meta API integration
+// lands (next phase). Drives auto-channel resolution below so customers
+// with a phone number still get their receipt by email meanwhile.
+const WHATSAPP_ENABLED = false;
 const RECEIPT_TEMPLATE = "pos-receipt"; // looked up under /templates/pos-receipt/index.html
 const FALLBACK_HTML_TEMPLATE = buildInlineTemplate();
 
@@ -74,11 +79,15 @@ async function sendReceipt(
     );
   }
 
-  // Resolve auto channel.
+  // Resolve auto channel. WhatsApp is preferred when enabled; while it
+  // is disabled (next phase), fall through to email so customers with
+  // both phone and email on file still receive their receipt.
   if (channel === "auto") {
-    if (tx.whatsapp_number || tx.primary_phone) channel = "whatsapp";
-    else if (tx.email) channel = "email";
-    else {
+    if (WHATSAPP_ENABLED && (tx.whatsapp_number || tx.primary_phone)) {
+      channel = "whatsapp";
+    } else if (tx.email) {
+      channel = "email";
+    } else {
       return { sent: false, reason: "no_contact_method" };
     }
   }

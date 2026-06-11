@@ -2,18 +2,19 @@
 
 // ── SUPPLIERS ────────────────────────────────────────────────
 
-async function listSuppliers(client, { search, limit, offset }) {
+async function listSuppliers(client, { search, contactId, limit, offset }) {
   const { rows } = await client.query(
-    `SELECT s.supplier_id, s.supplier_code, s.payment_terms_days,
+    `SELECT s.supplier_id, s.contact_id, s.supplier_code, s.payment_terms_days,
             s.preferred_currency, s.rating, s.is_active,
             c.display_name, c.email, c.primary_phone
      FROM suppliers s
      JOIN shared.contacts c ON c.contact_id = s.contact_id
      WHERE s.is_active = true
        AND ($1::TEXT IS NULL OR c.display_name ILIKE $1)
+       AND ($2::UUID IS NULL OR s.contact_id = $2)
      ORDER BY c.display_name
-     LIMIT $2 OFFSET $3`,
-    [search ? `%${search}%` : null, limit, offset],
+     LIMIT $3 OFFSET $4`,
+    [search ? `%${search}%` : null, contactId || null, limit, offset],
   );
   return rows;
 }

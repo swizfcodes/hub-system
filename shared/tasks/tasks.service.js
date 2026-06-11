@@ -50,6 +50,8 @@ async function listTasks(query) {
       status: query.status,
       assignedTo: query.assigned_to,
       createdBy: query.created_by,
+      referenceType: query.reference_type,
+      referenceId: query.reference_id,
       search: query.search,
       includeDeleted: false,
       limit,
@@ -74,6 +76,8 @@ async function getBoard(query) {
     repo.getBoard(client, {
       business: query.business,
       assignedTo: query.assigned_to,
+      referenceType: query.reference_type,
+      referenceId: query.reference_id,
     }),
   );
 }

@@ -9,7 +9,11 @@ const { setBusinessContext } = require("../middleware/businessContext");
 const protect = [verifyToken, setBusinessContext];
 
 // ── Public ────────────────────────────────────────────────
-router.use("/auth", loginRateLimiter, require("../shared/auth/auth.routes"));
+// NOTE: loginRateLimiter (10 req / 15 min / IP) must NOT wrap the whole
+// auth router — /auth/me/permissions is called by every client for nav
+// filtering and an office NAT would burn the budget in seconds. The
+// limiter is applied inside auth.routes to credential endpoints only.
+router.use("/auth", require("../shared/auth/auth.routes"));
 
 // ── Storefront (Orika Living) ─────────────────────────────
 // Public store API — no auth (CORS-gated in app.js). Storefront
@@ -199,9 +203,15 @@ router.use(
   protect,
   require("../modules/security/audit.routes"),
 );
-// Permissions admin — mounted BEFORE /settings so Express matches the
-// more specific path first. The router lives in shared/permissions/
-// because it manages global role definitions, not per-module config.
+// Permissions admin — canonical home is /security/permissions (the
+// Security module owns RBAC). The /settings/permissions mount stays
+// as an alias so existing clients keep working. Mounted BEFORE
+// /settings so Express matches the more specific path first.
+router.use(
+  "/security/permissions",
+  protect,
+  require("../shared/permissions/permissions.routes"),
+);
 router.use(
   "/settings/permissions",
   protect,

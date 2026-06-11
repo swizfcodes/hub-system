@@ -55,7 +55,7 @@ export function PermissionMatrix({
     return <Skeleton className="h-64 rounded-2xl" />;
   }
 
-  const modules = catalogue.slice(0, 15); // show first 15 modules in matrix overview
+  const modules = catalogue; // show every module — the table scrolls horizontally
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-white/5">
@@ -88,8 +88,8 @@ export function PermissionMatrix({
         </tbody>
       </table>
       <p className="px-4 py-2 text-[10px] text-orika-smoke/50">
-        Showing {modules.length} of {catalogue.length} modules. Click a role row
-        to open the full editor.
+        All {catalogue.length} modules shown — scroll horizontally. Click a
+        role row to open the full editor.
       </p>
     </div>
   );

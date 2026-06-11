@@ -16,7 +16,7 @@ import type {
 export async function listRoles(business?: string): Promise<Role[]> {
   try {
     const { data } = await api.get<{ data: Role[] }>(
-      "/settings/permissions/roles",
+      "/security/permissions/roles",
       {
         params: business ? { business } : undefined,
       },
@@ -32,7 +32,7 @@ export async function getRoleWithPermissions(
 ): Promise<RoleWithPermissions | null> {
   try {
     const { data } = await api.get<RoleWithPermissions>(
-      `/settings/permissions/roles/${roleId}`,
+      `/security/permissions/roles/${roleId}`,
     );
     return data;
   } catch {
@@ -46,7 +46,7 @@ export async function createRole(values: {
   description?: string;
   clone_from_role_id?: string;
 }): Promise<Role> {
-  const { data } = await api.post<Role>("/settings/permissions/roles", values);
+  const { data } = await api.post<Role>("/security/permissions/roles", values);
   return data;
 }
 
@@ -55,24 +55,28 @@ export async function updateRole(
   values: { role_name?: string; description?: string },
 ): Promise<Role> {
   const { data } = await api.patch<Role>(
-    `/settings/permissions/roles/${roleId}`,
+    `/security/permissions/roles/${roleId}`,
     values,
   );
   return data;
 }
 
 export async function deleteRole(roleId: string): Promise<void> {
-  await api.delete(`/settings/permissions/roles/${roleId}`);
+  await api.delete(`/security/permissions/roles/${roleId}`);
 }
 
 // ── Permission matrix ─────────────────────────────────────────────────────────
 
 export async function getModuleCatalogue(): Promise<ModuleCatalogue[]> {
   try {
-    const { data } = await api.get<ModuleCatalogue[]>(
-      "/settings/permissions/catalogue",
-    );
-    return Array.isArray(data) ? data : [];
+    // Backend returns { modules, valid_actions, valid_scopes } — the
+    // old code expected a bare array, so the catalogue was always
+    // empty and the role editor rendered no modules at all.
+    const { data } = await api.get<
+      { modules: ModuleCatalogue[] } | ModuleCatalogue[]
+    >("/security/permissions/catalogue");
+    if (Array.isArray(data)) return data;
+    return Array.isArray(data?.modules) ? data.modules : [];
   } catch {
     return [];
   }
@@ -87,7 +91,7 @@ export async function grantPermission(
     hidden_fields?: string[];
   },
 ): Promise<void> {
-  await api.put(`/settings/permissions/roles/${roleId}/grant`, values);
+  await api.put(`/security/permissions/roles/${roleId}/grant`, values);
 }
 
 export async function revokePermission(
@@ -95,7 +99,7 @@ export async function revokePermission(
   module: string,
   action: string,
 ): Promise<void> {
-  await api.put(`/settings/permissions/roles/${roleId}/revoke`, {
+  await api.put(`/security/permissions/roles/${roleId}/revoke`, {
     module,
     action,
   });
@@ -110,7 +114,7 @@ export async function bulkReplacePermissions(
     hidden_fields?: string[];
   }[],
 ): Promise<void> {
-  await api.post(`/settings/permissions/roles/${roleId}/bulk`, { permissions });
+  await api.post(`/security/permissions/roles/${roleId}/bulk`, { permissions });
 }
 
 // ── User access ───────────────────────────────────────────────────────────────
@@ -119,10 +123,11 @@ export async function getUserAccess(
   userId: string,
 ): Promise<UserAccess | null> {
   try {
-    const { data } = await api.get<UserAccess>(
-      `/settings/permissions/users/${userId}/access`,
-    );
-    return data;
+    // Backend names the array roles_by_business — normalise to .roles
+    const { data } = await api.get<
+      UserAccess & { roles_by_business?: UserAccess["roles"] }
+    >(`/security/permissions/users/${userId}/access`);
+    return { ...data, roles: data.roles ?? data.roles_by_business ?? [] };
   } catch {
     return null;
   }
@@ -137,7 +142,7 @@ export async function setRoleAtBusiness(
   },
 ): Promise<void> {
   await api.put(
-    `/settings/permissions/users/${userId}/roles/${business}`,
+    `/security/permissions/users/${userId}/roles/${business}`,
     values,
   );
 }
@@ -146,7 +151,7 @@ export async function setPermittedBusinesses(
   userId: string,
   businesses: string[],
 ): Promise<void> {
-  await api.put(`/settings/permissions/users/${userId}/permitted-businesses`, {
+  await api.put(`/security/permissions/users/${userId}/permitted-businesses`, {
     permitted_businesses: businesses,
   });
 }
@@ -155,7 +160,7 @@ export async function removeRoleAtBusiness(
   userId: string,
   business: string,
 ): Promise<void> {
-  await api.delete(`/settings/permissions/users/${userId}/roles/${business}`);
+  await api.delete(`/security/permissions/users/${userId}/roles/${business}`);
 }
 
 // ── Staff / users ─────────────────────────────────────────────────────────────
@@ -202,11 +207,11 @@ export async function resetPassword(
 // ── Invite tokens ─────────────────────────────────────────────────────────────
 
 export async function sendInvite(values: {
-  email: string;
+  /** Staff-only invites: the target is an existing staff profile —
+   *  email / name / job title are read from the HR record server-side. */
+  profile_id: string;
   role_id: string;
   businesses: string[];
-  display_name: string;
-  job_title?: string;
 }): Promise<{ message: string; expires_in: string }> {
   const { data } = await api.post("/auth/invite", values);
   return data;

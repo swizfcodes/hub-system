@@ -6,15 +6,20 @@ const stockService = require("../stock/stock.service");
 const journalService = require("../accounting/journal.service");
 const auditService = require("../../shared/audit/audit.service");
 const repo = require("./purchasing.repository");
+const contactsRepo = require("../../shared/contacts/contacts.repository");
 
 // ── SUPPLIERS ────────────────────────────────────────────────
 
-async function listSuppliers(business, { page = 1, limit = 50, search } = {}) {
+async function listSuppliers(
+  business,
+  { page = 1, limit = 50, search, contact_id } = {},
+) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
     return {
       data: await repo.listSuppliers(client, {
         search,
+        contactId: contact_id,
         limit: parseInt(limit),
         offset,
       }),
@@ -31,6 +36,8 @@ async function createSupplier(business, data, user) {
     // leaving two suppliers with an identical code. nextDocumentNumber
     // locks the sequence row, so concurrent callers get distinct codes.
     const code = await nextDocumentNumber(client, business, "supplier");
+    // Keep the directory truthful — tag the contact as a supplier.
+    await contactsRepo.ensureContactType(client, data.contact_id, "supplier");
     const supplier = await repo.insertSupplier(client, {
       contact_id: data.contact_id,
       code,

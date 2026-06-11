@@ -10,13 +10,15 @@ import { fmtRelative } from "@lib/format";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useBusinessStore } from "@stores/useBusinessStore";
 import { AppGrid } from "@components/hub/AppGrid";
-import { HUB_MODULES } from "@lib/constants/modules";
+import { useVisibleModules } from "@hooks/useVisibleModules";
 import { Topbar } from "@components/shell/Topbar";
 
 export default function HubHome() {
   const { time, greeting } = useGreeting();
   const user = useAuthStore((s) => s.user);
   const active = useBusinessStore((s) => s.active);
+  // Permission-driven app grid — only modules the user's role can view.
+  const { visibleModules } = useVisibleModules();
 
   const firstName =
     (user?.display_name || user?.email || "").split(" ")[0]?.split("@")[0] ??
@@ -199,7 +201,7 @@ export default function HubHome() {
             </div>
             <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/30 to-transparent" />
           </div>
-          <AppGrid modules={HUB_MODULES} badges={badges} />
+          <AppGrid modules={visibleModules} badges={badges} />
         </section>
 
         {/* Recent activity strip */}

@@ -46,6 +46,7 @@ import {
   InviteModal,
   SessionsPanel,
 } from "@components/security/InviteAndSessions";
+import { UserAccessDrawer } from "@components/security/UserAccessDrawer";
 import {
   getSecurityStats,
   queryAuditLog,
@@ -241,6 +242,7 @@ export function UsersPage() {
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
   const [sessions, setSessions] = useState<StaffUser | null>(null);
+  const [accessUser, setAccessUser] = useState<StaffUser | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["staff", search],
@@ -361,6 +363,13 @@ export function UsersPage() {
                 {user.user_id && (
                   <div className="flex items-center gap-2 shrink-0">
                     <button
+                      onClick={() => setAccessUser(user)}
+                      title="Manage role & business access"
+                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                    >
+                      <Key className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => setSessions(user)}
                       title="View sessions"
                       className="text-orika-smoke hover:text-orika-gold transition-colors"
@@ -408,6 +417,15 @@ export function UsersPage() {
             displayName={sessions.display_name}
             open={!!sessions}
             onClose={() => setSessions(null)}
+          />
+        )}
+
+        {accessUser && (
+          <UserAccessDrawer
+            userId={accessUser.user_id!}
+            displayName={accessUser.display_name}
+            open={!!accessUser}
+            onClose={() => setAccessUser(null)}
           />
         )}
       </div>

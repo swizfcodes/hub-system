@@ -62,9 +62,34 @@ const VALID_SCOPES = ["all", "own", "team"];
 
 // ── READ ENDPOINTS ───────────────────────────────────────────
 
+// Canonical module list — single source of truth for what can be
+// granted. Previously the catalogue was derived purely from existing
+// permission rows, so a module nobody had yet could never be granted
+// from the UI (chicken-and-egg). Keep in sync with migration 000067.
+const MODULE_CATALOGUE = [
+  'accounting','audit','calendar','campaigns','catalogue','crm',
+  'dashboards','discounts','documents','expenses','help','invoicing',
+  'logistics','loyalty','messaging','payroll','pos','purchasing',
+  'reports','retail_partners','sales','sales_campaigns','security',
+  'settings','social','staff','stock','tasks','tax',
+];
+
 async function getCatalogue() {
   return withSharedContext(async (client) => {
-    const modules = await repo.listModuleCatalogue(client);
+    const dbModules = await repo.listModuleCatalogue(client);
+    const byModule = new Map(dbModules.map((m) => [m.module, m.actions]));
+    // Every canonical module is grantable with the full action set;
+    // DB-discovered extras (custom modules) are appended after.
+    const modules = MODULE_CATALOGUE.map((module) => ({
+      module,
+      actions: VALID_ACTIONS,
+    }));
+    for (const m of dbModules) {
+      if (!MODULE_CATALOGUE.includes(m.module)) {
+        modules.push({ module: m.module, actions: m.actions });
+      }
+    }
+    void byModule;
     return {
       modules,
       valid_actions: VALID_ACTIONS,

@@ -28,6 +28,7 @@ import { ContactCard } from "@components/contacts/shell/ContactCard";
 import { QuickAddModal } from "@components/contacts/modals/QuickAddModal";
 import WalkinQRModal from "@components/contacts/modals/WalkinQRModal";
 import { InviteSupplierModal } from "@components/procurement/suppliers/InviteSupplierModal";
+import { PartnerFormModal } from "@components/retail-partners/RetailPartnerComponents";
 import { listContacts } from "@services/contacts/contacts";
 import { CONTACT_TYPE_META } from "@lib/constants/contactTypes";
 import { useIsDesktop } from "@hooks/useMediaQuery";
@@ -52,6 +53,7 @@ export default function ContactsHome() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
   const [walkinQROpen, setWalkinQROpen] = useState(false);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<DirectoryFilterValues>({
@@ -131,11 +133,14 @@ export default function ContactsHome() {
                 variant="gold"
                 size="md"
                 leftIcon={<Plus className="w-4 h-4" />}
-                onClick={() =>
-                  activeTab === "supplier"
-                    ? setSupplierModalOpen(true)
-                    : setQuickAddOpen(true)
-                }
+                onClick={() => {
+                  if (activeTab === "supplier") setSupplierModalOpen(true);
+                  else if (activeTab === "retail_partner")
+                    setPartnerModalOpen(true);
+                  else if (activeTab === "staff")
+                    navigate("/contacts/staff/new");
+                  else setQuickAddOpen(true);
+                }}
               >
                 Quick add
               </Button>
@@ -181,11 +186,14 @@ export default function ContactsHome() {
                 <Button
                   variant="gold"
                   leftIcon={<Plus className="w-4 h-4" />}
-                  onClick={() =>
-                    activeTab === "supplier"
-                      ? setSupplierModalOpen(true)
-                      : setQuickAddOpen(true)
-                  }
+                  onClick={() => {
+                    if (activeTab === "supplier") setSupplierModalOpen(true);
+                    else if (activeTab === "retail_partner")
+                      setPartnerModalOpen(true);
+                    else if (activeTab === "staff")
+                      navigate("/contacts/staff/new");
+                    else setQuickAddOpen(true);
+                  }}
                 >
                   Quick add
                 </Button>
@@ -274,6 +282,16 @@ export default function ContactsHome() {
       <WalkinQRModal
         open={walkinQROpen}
         onClose={() => setWalkinQROpen(false)}
+      />
+      {/* Partner add — creates the directory contact (quick-create inside
+          the picker) AND the procurement-style partner record in one flow */}
+      <PartnerFormModal
+        open={partnerModalOpen}
+        onClose={() => setPartnerModalOpen(false)}
+        onSaved={(p) => {
+          setPartnerModalOpen(false);
+          navigate(`/contacts/${p.contact_id}`);
+        }}
       />
       <InviteSupplierModal
         open={supplierModalOpen}

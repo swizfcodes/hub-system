@@ -5,13 +5,15 @@ const router = express.Router();
 const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { verifyToken } = require("../../middleware/auth");
-const { can } = require("../../middleware/permissions");
+const { can, canAny } = require("../../middleware/permissions");
+const { loginRateLimiter } = require("../../middleware/auth");
 const authService = require("./auth.service");
 const inviteService = require("./invite.service");
 
 // POST /api/auth/login
 router.post(
   "/login",
+  loginRateLimiter,
   body("email").isEmail().trim().toLowerCase(),
   body("password").isLength({ min: 8 }),
   validate,
@@ -119,18 +121,22 @@ router.post(
 router.post(
   "/invite",
   verifyToken,
-  can("settings", "approve"),
-  body("email").isEmail().trim().toLowerCase(),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
+  // Invites are staff-only: the target is an existing staff profile and
+  // name / email / job title are read from the staff record server-side.
+  body("profile_id").isUUID(),
   body("role_id").isUUID(),
-  body("businesses").isArray(),
-  body("display_name").isString().notEmpty(),
-  body("job_title").optional().isString(),
+  body("businesses").isArray({ min: 1 }),
   validate,
   async (req, res, next) => {
     try {
+      // Brand the invite email with the business the admin is working in.
+      const activeBusiness = req.headers["x-business-line"] || null;
       res
         .status(201)
-        .json(await inviteService.createInvite(req.user, req.body));
+        .json(
+          await inviteService.createInvite(req.user, req.body, activeBusiness),
+        );
     } catch (err) {
       next(err);
     }
@@ -149,6 +155,7 @@ router.get("/invite/:token", async (req, res, next) => {
 // POST /api/auth/invite/:token/accept — accept invite (public)
 router.post(
   "/invite/:token/accept",
+  loginRateLimiter,
   body("password").isLength({ min: 12 }),
   body("display_name").isString().notEmpty(),
   validate,
@@ -191,7 +198,7 @@ router.get(
 router.delete(
   "/sessions/:userId/:tokenId",
   verifyToken,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   param("userId").isUUID(),
   param("tokenId").isUUID(),
   validate,
@@ -214,7 +221,7 @@ router.delete(
 router.delete(
   "/sessions/:userId",
   verifyToken,
-  can("settings", "approve"),
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   param("userId").isUUID(),
   validate,
   async (req, res, next) => {

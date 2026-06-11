@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Star, Pencil, Archive, ArrowLeft, MessageSquare, ShoppingCart } from "lucide-react";
+import { Star, Pencil, Archive, ArrowLeft, MessageSquare, ShoppingCart, Briefcase } from "lucide-react";
 import { ContactAvatar } from "../shared/ContactAvatar";
 import { ContactTypeBadges } from "../shared/ContactTypeBadges";
 import { QuickActions } from "../shared/QuickActions";
@@ -142,6 +142,21 @@ export function ContactDetailHeader({
                   title="Activate in Procurement"
                 >
                   Activate supplier
+                </Button>
+              )}
+              {!isStaff && !contact.contact_type?.includes("staff") && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Briefcase className="w-3.5 h-3.5" />}
+                  onClick={() =>
+                    navigate(
+                      `/contacts/staff/new?contact_id=${contact.contact_id}`,
+                    )
+                  }
+                  title="Run the onboarding wizard for this contact"
+                >
+                  Onboard as employee
                 </Button>
               )}
               {canMessage && (

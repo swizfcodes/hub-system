@@ -69,11 +69,11 @@ app.use(requestLogger);
 app.use("/api", rateLimiter.general);
 // cookieParser is already registered above — removed duplicate.
 
-// ── Public signing routes (proof-of-delivery) — NO auth middleware ────────────
-// Must be registered before /api so verifyToken is never applied.
-// Mounted at BOTH /sign and /api/sign: the frontend axios client has a
-// baseURL of /api, so the signing page 404-ed before the second mount.
-app.use("/sign", require("./modules/logistics/sign/sign.routes"));
+// ── Public signing API (proof-of-delivery) — NO auth middleware ──────────────
+// Mounted ONLY at /api/sign. The browser-facing URL /sign/:token must fall
+// through to the SPA fallback below so React renders the signing page —
+// mounting the API at /sign too made the link show raw JSON instead of
+// the signature screen.
 app.use("/api/sign", require("./modules/logistics/sign/sign.routes"));
 
 // ── Public campaign tracking routes — NO auth middleware ─────────────────────
