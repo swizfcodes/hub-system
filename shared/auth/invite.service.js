@@ -15,11 +15,69 @@ function hashToken(raw) {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
+function httpError(message, status) {
+  return Object.assign(new Error(message), { status });
+}
+
+/**
+ * Create an invite for an EXISTING staff profile.
+ *
+ * Invites are staff-only by design: the admin picks a vetted employee
+ * (autocomplete in the UI), and name / email / job title come from the
+ * staff record — not free text. This prevents inviting unvetted people
+ * and guarantees the accepted account links to a real staff profile.
+ *
+ * @param user            acting admin (req.user)
+ * @param profile_id      shared.staff_profiles.profile_id to invite
+ * @param role_id         role granted on acceptance
+ * @param businesses      business keys the account may access
+ * @param activeBusiness  the business the admin is working in — used to
+ *                        brand the invite email (NOT businesses[0], which
+ *                        is just checkbox order)
+ */
 async function createInvite(
   user,
-  { email, role_id, businesses, display_name, job_title },
+  { profile_id, role_id, businesses },
+  activeBusiness,
 ) {
   return withSharedContext(async (client) => {
+    // ── Resolve + vet the staff profile ─────────────────────
+    const {
+      rows: [staff],
+    } = await client.query(
+      `SELECT sp.profile_id, sp.job_title, sp.business AS home_business,
+              c.display_name, c.email,
+              u.user_id AS existing_user_id
+       FROM shared.staff_profiles sp
+       JOIN shared.contacts c ON c.contact_id = sp.contact_id
+       LEFT JOIN shared.users u ON u.staff_profile_id = sp.profile_id
+       WHERE sp.profile_id = $1`,
+      [profile_id],
+    );
+
+    if (!staff) throw httpError("Staff profile not found", 404);
+    if (staff.existing_user_id)
+      throw httpError(
+        `${staff.display_name} already has a login. Manage their access in Security → Users.`,
+        409,
+      );
+    if (!staff.email)
+      throw httpError(
+        `${staff.display_name} has no email on their staff record. Add one in HR & Staff first.`,
+        400,
+      );
+
+    const email = staff.email.toLowerCase();
+
+    const {
+      rows: [existingUser],
+    } = await client.query(
+      `SELECT user_id FROM shared.users WHERE email = $1`,
+      [email],
+    );
+    if (existingUser)
+      throw httpError("An account with this email already exists", 409);
+
     // Clear any prior pending invite for this email.
     await client.query(
       `DELETE FROM shared.invite_tokens
@@ -40,13 +98,27 @@ async function createInvite(
         role_id,
         businesses,
         user.user_id,
-        JSON.stringify({ display_name, job_title: job_title || null }),
+        JSON.stringify({
+          display_name: staff.display_name,
+          job_title: staff.job_title || null,
+          profile_id: staff.profile_id,
+        }),
       ],
     );
 
+    // Brand the email with the business the ADMIN is working in (or the
+    // employee's home business as fallback) — never raw checkbox order.
+    const brandBusiness =
+      (activeBusiness && businesses.includes(activeBusiness)
+        ? activeBusiness
+        : null) ||
+      (businesses.includes(staff.home_business)
+        ? staff.home_business
+        : businesses[0]);
+
     const inviteUrl = `${config.app.hubBaseUrl}/invite/${rawToken}`;
-    const { subject, html } = renderEmail("invite", businesses[0], {
-      display_name,
+    const { subject, html } = renderEmail("invite", brandBusiness, {
+      display_name: staff.display_name,
       invited_by: user.display_name || "the admin",
       invite_url: inviteUrl,
     });
@@ -56,7 +128,7 @@ async function createInvite(
         to: email,
         subject,
         html,
-        business: businesses[0],
+        business: brandBusiness,
       });
     } catch (err) {
       logger.error(`[invite] email send failed for ${email}`, err);
@@ -67,11 +139,11 @@ async function createInvite(
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name || "admin",
-      business: businesses[0],
+      business: brandBusiness,
       module: "security",
       action: "invite_sent",
       table: "shared.invite_tokens",
-      metadata: { email, role_id, businesses },
+      metadata: { email, role_id, businesses, profile_id: staff.profile_id },
     });
 
     logger.info(`[invite] token created for ${email} by ${user.email}`);
@@ -94,15 +166,11 @@ async function verifyInvite(rawToken) {
     );
 
     if (!row)
-      throw Object.assign(new Error("Invite link is invalid"), { status: 404 });
+      throw httpError("Invite link is invalid", 404);
     if (row.used_at)
-      throw Object.assign(new Error("This invite link has already been used"), {
-        status: 410,
-      });
+      throw httpError("This invite link has already been used", 410);
     if (new Date(row.expires_at) < new Date())
-      throw Object.assign(new Error("This invite link has expired"), {
-        status: 410,
-      });
+      throw httpError("This invite link has expired", 410);
 
     return {
       email: row.email,
@@ -124,9 +192,7 @@ async function acceptInvite(rawToken, { password, display_name }) {
       [hash],
     );
     if (!row || row.used_at || new Date(row.expires_at) < new Date())
-      throw Object.assign(new Error("Invite link is invalid or expired"), {
-        status: 410,
-      });
+      throw httpError("Invite link is invalid or expired", 410);
 
     const {
       rows: [existing],
@@ -135,10 +201,7 @@ async function acceptInvite(rawToken, { password, display_name }) {
       [row.email],
     );
     if (existing)
-      throw Object.assign(
-        new Error("An account with this email already exists"),
-        { status: 409 },
-      );
+      throw httpError("An account with this email already exists", 409);
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
 
@@ -162,22 +225,59 @@ async function acceptInvite(rawToken, { password, display_name }) {
       );
     }
 
-    // Create a staff contact. contacts.primary_phone is NOT NULL, so seed a
-    // placeholder the user can edit later; email lives in the email column.
-    const {
-      rows: [contact],
-    } = await client.query(
-      `INSERT INTO shared.contacts
-         (display_name, email, primary_phone, contact_type, visible_to)
-       VALUES ($1,$2,$3,ARRAY['staff']::text[],$4)
-       RETURNING contact_id`,
-      [display_name, row.email, "", row.businesses],
-    );
+    // ── Link the staff profile ───────────────────────────────
+    // users.staff_profile_id REFERENCES shared.staff_profiles(profile_id).
+    // The previous implementation inserted a contacts.contact_id here,
+    // which violated the FK and rolled back the WHOLE acceptance — the
+    // "entered my password and nothing happened" bug.
+    let profileId = row.metadata?.profile_id || null;
 
-    // Link contact to the user.
+    if (profileId) {
+      // Staff-linked invite (the normal path): verify the profile is
+      // still free, then link it.
+      const {
+        rows: [taken],
+      } = await client.query(
+        `SELECT user_id FROM shared.users WHERE staff_profile_id = $1`,
+        [profileId],
+      );
+      if (taken) profileId = null; // raced — fall through to legacy path
+    }
+
+    if (!profileId) {
+      // Legacy invite without a staff profile: create contact + a real
+      // staff_profiles row so the FK and downstream modules (expenses,
+      // payroll) all work.
+      const {
+        rows: [contact],
+      } = await client.query(
+        `INSERT INTO shared.contacts
+           (display_name, email, primary_phone, contact_type, visible_to)
+         VALUES ($1,$2,'',ARRAY['staff']::text[],$3)
+         RETURNING contact_id`,
+        [display_name, row.email, row.businesses],
+      );
+      const empNo = `EMP-${Date.now().toString(36).toUpperCase()}`;
+      const {
+        rows: [profile],
+      } = await client.query(
+        `INSERT INTO shared.staff_profiles
+           (contact_id, employee_number, business, job_title, employment_type, start_date)
+         VALUES ($1,$2,$3,$4,'full_time',CURRENT_DATE)
+         RETURNING profile_id`,
+        [
+          contact.contact_id,
+          empNo,
+          row.businesses[0],
+          row.metadata?.job_title || "Staff",
+        ],
+      );
+      profileId = profile.profile_id;
+    }
+
     await client.query(
       `UPDATE shared.users SET staff_profile_id = $2 WHERE user_id = $1`,
-      [newUser.user_id, contact.contact_id],
+      [newUser.user_id, profileId],
     );
 
     // Mark the token used.
@@ -194,7 +294,7 @@ async function acceptInvite(rawToken, { password, display_name }) {
       action: "account_created",
       table: "shared.users",
       recordId: newUser.user_id,
-      metadata: { via: "invite_token" },
+      metadata: { via: "invite_token", profile_id: profileId },
     });
 
     logger.info(

@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 import { HUB_MODULES, SETTINGS_SUBMODULES } from "@lib/constants/modules";
+import { useVisibleModules } from "@hooks/useVisibleModules";
 import { cn } from "@lib/cn";
 
 /**
@@ -22,7 +23,10 @@ interface BottomItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-function bottomItemsForRoute(pathname: string): BottomItem[] | null {
+function bottomItemsForRoute(
+  pathname: string,
+  visibleKeys: Set<string>,
+): BottomItem[] | null {
   if (pathname === "/" || pathname === "/hub") return null;
 
   if (pathname.startsWith("/settings")) {
@@ -30,7 +34,7 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
       "business-setup",
       "bank-accounts",
       "custom-fields",
-      "permissions",
+      "tax-rates",
     ];
     const items: BottomItem[] = picks
       .map((k) => SETTINGS_SUBMODULES.find((m) => m.key === k))
@@ -49,7 +53,8 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
   if (pathname.startsWith("/contacts")) {
     const picks = ["contacts", "crm", "messaging", "tasks"];
     const items: BottomItem[] = picks
-      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((k) => visibleKeys.has(k))
+    .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
       .map((m) => ({
         key: m.key,
@@ -68,7 +73,8 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
   ) {
     const picks = ["catalogue", "purchasing", "stock", "contacts"];
     const items: BottomItem[] = picks
-      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((k) => visibleKeys.has(k))
+    .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
       .map((m) => ({
         key: m.key,
@@ -84,7 +90,8 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
   if (pathname.startsWith("/crm")) {
     const picks = ["crm", "contacts", "calendar", "sales"];
     const items: BottomItem[] = picks
-      .map((k) => HUB_MODULES.find((m) => m.key === k))
+      .filter((k) => visibleKeys.has(k))
+    .map((k) => HUB_MODULES.find((m) => m.key === k))
       .filter((m): m is NonNullable<typeof m> => !!m)
       .map((m) => ({
         key: m.key,
@@ -99,6 +106,7 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
   // Default mobile bottom nav
   const picks = ["dashboard", "crm", "sales", "stock"];
   const items: BottomItem[] = picks
+    .filter((k) => visibleKeys.has(k))
     .map((k) => HUB_MODULES.find((m) => m.key === k))
     .filter((m): m is NonNullable<typeof m> => !!m)
     .map((m) => ({
@@ -113,7 +121,8 @@ function bottomItemsForRoute(pathname: string): BottomItem[] | null {
 
 export function MobileBottomNav() {
   const { pathname } = useLocation();
-  const items = bottomItemsForRoute(pathname);
+  const { visibleKeys } = useVisibleModules();
+  const items = bottomItemsForRoute(pathname, visibleKeys);
 
   if (!items) return null;
 

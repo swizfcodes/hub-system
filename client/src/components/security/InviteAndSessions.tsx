@@ -7,7 +7,17 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, LogOut, Laptop, Clock, Trash2, Shield } from "lucide-react";
+import {
+  Send,
+  LogOut,
+  Laptop,
+  Clock,
+  Trash2,
+  Shield,
+  Search,
+  UserCheck,
+  AlertTriangle,
+} from "lucide-react";
 import { Modal } from "@components/ui/Modal";
 import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
@@ -16,10 +26,12 @@ import { Skeleton } from "@components/ui/Skeleton";
 import {
   listRoles,
   sendInvite,
+  listStaffUsers,
   listActiveSessions,
   revokeSession,
   revokeAllSessions,
 } from "@services/security";
+import type { StaffUser } from "@typedefs/security";
 import { BUSINESS_LABELS } from "@typedefs/security";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
@@ -28,12 +40,15 @@ import { cn } from "@lib/cn";
 
 // ── InviteModal ───────────────────────────────────────────────────────────────
 
+// Invites are staff-only: the admin picks a vetted employee and the
+// server reads name / email / job title from the staff record.
 const inviteSchema = z.object({
-  display_name: z.string().min(2, "Name required"),
-  email: z.string().email("Valid email required"),
+  profile_id: z.string().uuid("Select a staff member"),
+  display_name: z.string(),
+  email: z.string(),
+  job_title: z.string().optional().or(z.literal("")),
   role_id: z.string().uuid("Role required"),
   businesses: z.array(z.string()).min(1, "At least one business required"),
-  job_title: z.string().optional().or(z.literal("")),
 });
 type InviteValues = z.infer<typeof inviteSchema>;
 
@@ -49,6 +64,8 @@ const AVAILABLE_BUSINESSES = Object.entries(BUSINESS_LABELS).map(
 export function InviteModal({ open, onClose }: InviteModalProps) {
   const qc = useQueryClient();
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [staffSearch, setStaffSearch] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState<StaffUser | null>(null);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["roles"],
@@ -56,25 +73,33 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
     enabled: open,
   });
 
+  // Staff autocomplete — kicks in from 2 characters.
+  const { data: staffResults, isFetching: staffLoading } = useQuery({
+    queryKey: ["invite-staff-search", staffSearch],
+    queryFn: () => listStaffUsers({ search: staffSearch }),
+    enabled: open && staffSearch.trim().length >= 2,
+  });
+  // Only employees without an existing login are invitable.
+  const candidates = (staffResults?.data ?? []).filter((u) => !u.user_id);
+
   const form = useForm<InviteValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
+      profile_id: "",
       display_name: "",
       email: "",
+      job_title: "",
       role_id: "",
       businesses: ["jewelry"],
-      job_title: "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: (values: InviteValues) =>
       sendInvite({
-        email: values.email,
+        profile_id: values.profile_id,
         role_id: values.role_id,
         businesses: values.businesses,
-        display_name: values.display_name,
-        job_title: values.job_title || undefined,
       }),
     onSuccess: (result) => {
       showToast.success(result.message);
@@ -96,7 +121,17 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
   function handleClose() {
     form.reset();
     setStep(1);
+    setStaffSearch("");
+    setSelectedStaff(null);
     onClose();
+  }
+
+  function pickStaff(u: StaffUser) {
+    setSelectedStaff(u);
+    form.setValue("profile_id", u.profile_id, { shouldValidate: true });
+    form.setValue("display_name", u.display_name);
+    form.setValue("email", u.email ?? "");
+    form.setValue("job_title", u.job_title ?? "");
   }
 
   return (
@@ -132,9 +167,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
               <Button
                 onClick={async () => {
                   const fields: (keyof InviteValues)[] =
-                    step === 1
-                      ? ["display_name", "email", "job_title"]
-                      : ["role_id", "businesses"];
+                    step === 1 ? ["profile_id"] : ["role_id", "businesses"];
                   const valid = await form.trigger(fields);
                   if (valid) setStep((s) => (s + 1) as 1 | 2 | 3);
                 }}
@@ -154,52 +187,112 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
         </div>
       }
     >
-      {/* Step 1 — Personal details */}
+      {/* Step 1 — Pick a vetted staff member */}
       {step === 1 && (
         <div className="space-y-4">
           <p className="text-sm text-text-on-light-muted">
-            The invite link expires after <strong>1 hour</strong> and can only
-            be used once.
+            Invites can only be sent to <strong>registered employees</strong>.
+            Search the staff directory — their email and job title come from
+            their HR record. The link expires after <strong>1 hour</strong>.
           </p>
-          <Controller
-            name="display_name"
-            control={form.control}
-            render={({ field, fieldState }) => (
+
+          {!selectedStaff ? (
+            <>
               <Input
-                {...field}
-                label="Full Name *"
-                placeholder="Amara Okafor"
+                label="Find employee *"
+                placeholder="Type at least 2 characters of their name…"
                 surface="light"
-                error={fieldState.error?.message}
+                value={staffSearch}
+                onChange={(e) => setStaffSearch(e.target.value)}
+                leftIcon={<Search className="h-4 w-4" />}
               />
-            )}
-          />
-          <Controller
-            name="email"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Input
-                {...field}
-                label="Email Address *"
-                type="email"
-                placeholder="amara@example.com"
-                surface="light"
-                error={fieldState.error?.message}
-              />
-            )}
-          />
-          <Controller
-            name="job_title"
-            control={form.control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                label="Job Title"
-                placeholder="Sales Associate"
-                surface="light"
-              />
-            )}
-          />
+
+              {staffSearch.trim().length >= 2 && (
+                <div className="max-h-56 overflow-y-auto rounded-xl border border-gray-100 divide-y divide-gray-100">
+                  {staffLoading ? (
+                    <p className="px-4 py-3 text-sm text-text-on-light-muted">
+                      Searching…
+                    </p>
+                  ) : candidates.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-text-on-light-muted">
+                      No staff without a login match "{staffSearch}". Employees
+                      who already have access are managed in Security → Users;
+                      new employees are onboarded in HR &amp; Staff first.
+                    </p>
+                  ) : (
+                    candidates.map((u) => {
+                      const noEmail = !u.email;
+                      return (
+                        <button
+                          key={u.profile_id}
+                          disabled={noEmail}
+                          onClick={() => pickStaff(u)}
+                          className={cn(
+                            "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+                            noEmail
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-gray-50",
+                          )}
+                        >
+                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-text-on-light">
+                              {u.display_name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-text-on-light truncate">
+                              {u.display_name}
+                            </p>
+                            <p className="text-xs text-text-on-light-muted truncate">
+                              {u.job_title || "—"}
+                              {u.email ? ` · ${u.email}` : ""}
+                            </p>
+                          </div>
+                          {noEmail && (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-600 shrink-0">
+                              <AlertTriangle className="h-3 w-3" />
+                              No email on record
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {form.formState.errors.profile_id && (
+                <p className="text-xs text-state-danger">
+                  {form.formState.errors.profile_id.message}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <UserCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text-on-light">
+                    {selectedStaff.display_name}
+                  </p>
+                  <p className="text-xs text-text-on-light-muted">
+                    {selectedStaff.job_title || "—"} ·{" "}
+                    {selectedStaff.email}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedStaff(null);
+                    form.setValue("profile_id", "");
+                  }}
+                >
+                  Change
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

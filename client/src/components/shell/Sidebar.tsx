@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useUiStore } from "@stores/useUiStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { HUB_MODULES } from "@lib/constants/modules";
+import { useVisibleModules } from "@hooks/useVisibleModules";
 import { BusinessSwitcher } from "./BusinessSwitcher";
 import { AccountMenu } from "./AccountMenu";
 import { cn } from "@lib/cn";
@@ -53,6 +54,8 @@ export function Sidebar() {
   // user + signOut are handled by AccountMenu now
 
   const isOnSettings = location.pathname.startsWith("/settings");
+  // Permission-driven navigation: only modules the user's role can view.
+  const { visibleKeys } = useVisibleModules();
   const collapsed = isDesktop ? sidebarCollapsed : false;
 
   // Mobile = drawer; desktop = always-visible rail.
@@ -120,6 +123,7 @@ export function Sidebar() {
         <nav className="flex-1 overflow-y-auto py-3 px-2">
           {NAV_GROUPS.map((g) => {
             const items = g.modules
+              .filter((k) => visibleKeys.has(k))
               .map((k) => HUB_MODULES.find((m) => m.key === k))
               .filter((m): m is NonNullable<typeof m> => !!m);
             if (!items.length) return null;

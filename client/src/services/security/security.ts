@@ -207,11 +207,11 @@ export async function resetPassword(
 // ── Invite tokens ─────────────────────────────────────────────────────────────
 
 export async function sendInvite(values: {
-  email: string;
+  /** Staff-only invites: the target is an existing staff profile —
+   *  email / name / job title are read from the HR record server-side. */
+  profile_id: string;
   role_id: string;
   businesses: string[];
-  display_name: string;
-  job_title?: string;
 }): Promise<{ message: string; expires_in: string }> {
   const { data } = await api.post("/auth/invite", values);
   return data;

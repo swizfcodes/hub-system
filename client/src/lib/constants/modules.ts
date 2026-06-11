@@ -39,11 +39,18 @@ export interface AppModule {
   group: "main" | "finance" | "people" | "ops" | "system";
   // Restrict this module/tile to specific businesses. Omit = all businesses.
   businesses?: string[];
+  // Backend permission module(s) that unlock this tile — the user needs
+  // 'view' on at least one of them (see useVisibleModules). Keys MUST
+  // match MODULE_CATALOGUE in shared/permissions/permissions.service.js.
+  permissionModule?: string | string[];
+  // Personal-workspace tiles every signed-in user may see.
+  alwaysVisible?: boolean;
 }
 
 export const HUB_MODULES: AppModule[] = [
   {
     key: "dashboard",
+    permissionModule: "dashboards",
     label: "Dashboard",
     description: "Live metrics across all businesses",
     icon: LayoutGrid,
@@ -53,6 +60,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "crm",
+    permissionModule: "crm",
     label: "CRM",
     description: "Customer relationships",
     icon: Users,
@@ -63,6 +71,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "sales",
+    permissionModule: "sales",
     label: "Sales",
     description: "Orders & quotations",
     icon: ShoppingBag,
@@ -72,6 +81,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "pos",
+    permissionModule: "pos",
     label: "POS",
     description: "In-store point of sale",
     icon: CreditCard,
@@ -81,6 +91,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "logistics",
+    permissionModule: "logistics",
     label: "Logistics",
     description: "Deliveries & shipping",
     icon: Truck,
@@ -91,6 +102,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "stock",
+    permissionModule: "stock",
     label: "Stock & Inv",
     description: "Inventory across locations",
     icon: Package,
@@ -100,6 +112,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "purchasing",
+    permissionModule: "purchasing",
     label: "Procurement",
     description: "RFQ · PO · GRN · Bills",
     icon: Factory,
@@ -110,6 +123,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "invoicing",
+    permissionModule: "invoicing",
     label: "Invoices",
     description: "Issue & track invoices",
     icon: FileText,
@@ -120,6 +134,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "accounting",
+    permissionModule: "accounting",
     label: "Accounting",
     description: "Chart of accounts, ledgers",
     icon: BookOpen,
@@ -129,6 +144,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "tax",
+    permissionModule: "tax",
     label: "Tax Center",
     description: "VAT, WHT, PAYE & CIT filing",
     icon: Landmark,
@@ -138,6 +154,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "expenses",
+    permissionModule: "expenses",
     label: "Expenses",
     description: "Submissions & approvals",
     icon: Wallet,
@@ -148,6 +165,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "payroll",
+    permissionModule: "payroll",
     label: "Payroll",
     description: "Staff salaries & payslips",
     icon: UserCog,
@@ -157,6 +175,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "staff",
+    permissionModule: "staff",
     label: "HR & Staff",
     description: "Team profiles & directory",
     icon: Users,
@@ -166,6 +185,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "contacts",
+    permissionModule: "crm",
     label: "Contacts",
     description: "Shared address book",
     icon: Mail,
@@ -175,6 +195,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "messaging",
+    permissionModule: "messaging",
     label: "Messaging",
     description: "WhatsApp, email, SMS",
     icon: MessageCircle,
@@ -185,6 +206,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "campaigns",
+    permissionModule: "campaigns",
     label: "Campaigns",
     description: "Marketing & promotions",
     icon: Megaphone,
@@ -194,6 +216,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "sales-campaigns",
+    permissionModule: "sales_campaigns",
     label: "Sales Campaigns",
     description: "Landing pages & storefronts",
     icon: Share2,
@@ -203,6 +226,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "workspace",
+    alwaysVisible: true,
     label: "Workspace",
     description: "Personal notes & scratch area",
     icon: Layers,
@@ -212,6 +236,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "social",
+    permissionModule: "social",
     label: "Social",
     description: "Connected channels & posts",
     icon: Heart,
@@ -221,6 +246,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "loyalty",
+    permissionModule: "loyalty",
     label: "Loyalty",
     description: "Tiers, points & rewards",
     icon: Heart,
@@ -230,6 +256,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "catalogue",
+    permissionModule: "catalogue",
     label: "Catalogue",
     description: "Products · Categories · Locations",
     icon: Package,
@@ -239,6 +266,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "retail-partners",
+    permissionModule: "retail_partners",
     label: "Retail Partners",
     description: "Consignment & wholesale partners",
     icon: Building2,
@@ -248,6 +276,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "calendar",
+    permissionModule: "calendar",
     label: "Calendar",
     description: "Shared schedule",
     icon: Calendar,
@@ -258,6 +287,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "tasks",
+    permissionModule: "tasks",
     label: "Tasks",
     description: "Personal & team to-dos",
     icon: CheckSquare,
@@ -268,6 +298,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "reports",
+    permissionModule: "reports",
     label: "Reports",
     description: "Standard & custom reports",
     icon: BarChart3,
@@ -277,6 +308,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "settings",
+    permissionModule: "settings",
     label: "Settings",
     description: "Business config, RBAC, integrations",
     icon: Settings,
@@ -286,6 +318,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "security",
+    permissionModule: ["security", "audit"],
     label: "Security",
     description: "Audit log & sessions",
     icon: ShieldCheck,
@@ -295,6 +328,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "documents",
+    permissionModule: "documents",
     label: "Document Vault",
     description: "Tamper-proof document archive",
     icon: Vault,
@@ -304,6 +338,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "help",
+    permissionModule: "help",
     label: "Help Center",
     description: "Guides, workflows & FAQs",
     icon: HelpCircle,
@@ -316,6 +351,7 @@ export const HUB_MODULES: AppModule[] = [
 export const SETTINGS_SUBMODULES: AppModule[] = [
   {
     key: "business-setup",
+    permissionModule: "settings",
     label: "Business Setup",
     description: "Profile, branding, identity per business",
     icon: Building2,
@@ -325,6 +361,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "bank-accounts",
+    permissionModule: "settings",
     label: "Bank Accounts",
     description: "Bank accounts per business",
     icon: Wallet,
@@ -334,6 +371,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "tax-rates",
+    permissionModule: "settings",
     label: "Tax Rates",
     description: "VAT, WHT, PAYE & more",
     icon: FileText,
@@ -343,6 +381,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "currency-rates",
+    permissionModule: "settings",
     label: "Currency Rates",
     description: "FX rates & manual overrides",
     icon: BarChart3,
@@ -352,6 +391,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "custom-fields",
+    permissionModule: "settings",
     label: "Custom Fields",
     description: "Per-entity field definitions",
     icon: LayoutGrid,
@@ -361,6 +401,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "pipeline-stages",
+    permissionModule: "settings",
     label: "Pipeline Stages",
     description: "CRM & sales pipeline definitions",
     icon: ShoppingBag,
@@ -370,6 +411,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "document-numbering",
+    permissionModule: "settings",
     label: "Document Numbering",
     description: "Prefixes, padding & sequence resets",
     icon: FileText,
@@ -381,6 +423,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   // — the old /settings/permissions route redirects there.
   {
     key: "storefront",
+    permissionModule: "settings",
     label: "Storefront",
     description: "Homepage content, formats & scents",
     icon: Sparkles,
@@ -392,6 +435,7 @@ export const SETTINGS_SUBMODULES: AppModule[] = [
   },
   {
     key: "help-editor",
+    permissionModule: "help",
     label: "Help Center Editor",
     description: "Manage guides and FAQs",
     icon: HelpCircle,
