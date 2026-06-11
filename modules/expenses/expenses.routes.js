@@ -160,17 +160,6 @@ router.post(
   },
 );
 
-// KPI summary for the expenses dashboard.
-// MUST be declared before "/:id" so the literal "kpis" isn't captured
-// as an :id param (which fails UUID validation).
-router.get("/kpis", can("expenses", "view"), async (req, res, next) => {
-  try {
-    res.json(await service.getKpis(req.business));
-  } catch (e) {
-    next(e);
-  }
-});
-
 // Advances — literal "/advances" MUST be declared before "/:id" so it isn't
 // captured as an :id param (which fails UUID validation → 422).
 router.get("/advances", can("expenses", "view"), async (req, res, next) => {

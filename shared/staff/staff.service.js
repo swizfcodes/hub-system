@@ -2,7 +2,9 @@
 
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const { renderToPDF } = require("../../lib/pdf/generator");
 const { withSharedContext } = require("../../config/db");
+const logger = require("../../config/logger");
 const contactsService = require("../contacts/contacts.service");
 const auditService = require("../audit/audit.service");
 const notifService = require("../notifications/notifications.service");
@@ -217,6 +219,12 @@ async function createStaff(data, user) {
         default_business: data.business,
         permitted_businesses: data.permitted_businesses || [data.business],
       });
+      await grantDefaultStaffRole(
+        client,
+        newUser.user_id,
+        data.permitted_businesses || [data.business],
+        user.user_id,
+      );
       credentials = {
         user_id: newUser.user_id,
         email: newUser.email,
@@ -457,6 +465,78 @@ async function addContract(profileId, data, user) {
   });
 }
 
+/**
+ * Render a contract as a printable PDF. Same visibility rule as
+ * listContracts — self or privileged (owner/manager/hr_manager) only.
+ */
+async function generateContractPDF(profileId, contractId, requestingUser) {
+  const { profile, contract } = await withSharedContext(async (client) => {
+    const isSelf = requestingUser.staff_profile_id === profileId;
+    const isPrivileged = userHasAnyRole(requestingUser, [
+      "owner",
+      "manager",
+      "hr_manager",
+    ]);
+    if (!isSelf && !isPrivileged) {
+      throw Object.assign(new Error("Forbidden"), { status: 403 });
+    }
+
+    const profile = await repo.findProfileById(client, profileId);
+    if (!profile) {
+      throw Object.assign(new Error("Staff member not found"), { status: 404 });
+    }
+    const contract = await repo.findContractById(client, contractId);
+    if (!contract || contract.profile_id !== profileId) {
+      throw Object.assign(new Error("Contract not found"), { status: 404 });
+    }
+
+    await auditService.log(client, {
+      userId: requestingUser.user_id,
+      userName: requestingUser.display_name,
+      business: profile.business,
+      module: "staff",
+      action: "export_contract",
+      table: "shared.staff_contracts",
+      recordId: contractId,
+      metadata: { sensitive: true, reason: "contract PDF generated" },
+    });
+
+    return { profile, contract };
+  });
+
+  const fmtAmt = (n) =>
+    `NGN ${Number(n || 0).toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const fmtDate = (d) => (d ? String(d).slice(0, 10) : "—");
+  const label = (s) =>
+    String(s || "—")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const gross = parseFloat(contract.gross_salary) || 0;
+
+  return renderToPDF("employment-contract", {
+    contract_ref: `${profile.employee_number}/CT-${String(contract.contract_id).slice(0, 8).toUpperCase()}`,
+    generated_date: new Date().toISOString().slice(0, 10),
+    business_label: label(profile.business),
+    display_name: profile.display_name || "—",
+    employee_number: profile.employee_number || "—",
+    job_title: profile.job_title || "—",
+    department: label(profile.department),
+    contract_type_label: label(contract.contract_type),
+    effective_from: fmtDate(contract.effective_from),
+    effective_to_label: contract.effective_to
+      ? fmtDate(contract.effective_to)
+      : "Open-ended (until terminated per the terms below)",
+    reports_to_name: profile.reports_to_name || "—",
+    gross_salary: fmtAmt(gross),
+    annual_gross: fmtAmt(gross * 12),
+    notes: contract.notes || "",
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // ASSETS
 // ─────────────────────────────────────────────────────────────
@@ -561,6 +641,12 @@ async function provisionLogin(profileId, data, user) {
       default_business: data.default_business || profile.business,
       permitted_businesses: data.permitted_businesses || [profile.business],
     });
+    await grantDefaultStaffRole(
+      client,
+      newUser.user_id,
+      data.permitted_businesses || [profile.business],
+      user.user_id,
+    );
 
     await auditService.log(client, {
       userId: user.user_id,
@@ -742,6 +828,26 @@ async function revokeRole(profileId, { role_name, business }, user) {
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Give a freshly provisioned login the baseline `staff` role for each
+ * permitted business. Without a role a new login has zero permissions
+ * — it can authenticate but can't reach messaging, its own payslips
+ * or anything else, which defeats the point of provisioning it. HR
+ * can grant additional roles afterwards via POST /staff/:id/roles.
+ */
+async function grantDefaultStaffRole(client, userId, businesses, grantedBy) {
+  const role = await repo.findRoleByName(client, "staff");
+  if (!role) return; // role catalogue not seeded — leave to manual grants
+  for (const business of businesses) {
+    await repo.grantRole(client, {
+      userId,
+      roleId: role.role_id,
+      business,
+      grantedBy,
+    });
+  }
+}
 
 function userHasAnyRole(user, roleNames) {
   if (!user || !Array.isArray(user.roles)) return false;
@@ -934,7 +1040,7 @@ async function submitLeave(data, user, { onBehalf = false } = {}) {
       } = await client.query(
         `SELECT u.user_id
          FROM shared.staff_profiles sp
-         JOIN shared.staff_profiles mgr ON mgr.profile_id = sp.manager_profile_id
+         JOIN shared.staff_profiles mgr ON mgr.profile_id = sp.reports_to
          JOIN shared.users u ON u.staff_profile_id = mgr.profile_id
          WHERE sp.profile_id = $1`,
         [profileId],
@@ -1221,6 +1327,7 @@ module.exports = {
   // contracts
   listContracts,
   addContract,
+  generateContractPDF,
   // assets
   listAssets,
   issueAsset,

@@ -33,8 +33,11 @@ router.get("/roles", can("staff", "view"), async (req, res, next) => {
   }
 });
 
+// The UUID pattern on :id keeps this route from swallowing literal
+// one-segment paths registered later in this file (e.g. GET /leave —
+// without it, /staff/leave matched here and 422'd on UUID validation).
 router.get(
-  "/:id",
+  "/:id([0-9a-fA-F-]{36})",
   param("id").isUUID(),
   validate,
   can("staff", "view"),
@@ -159,6 +162,30 @@ router.post(
       res
         .status(201)
         .json(await service.addContract(req.params.id, req.body, req.user));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+router.get(
+  "/:id/contracts/:contractId/pdf",
+  param("id").isUUID(),
+  param("contractId").isUUID(),
+  validate,
+  can("staff", "view"),
+  async (req, res, next) => {
+    try {
+      const pdf = await service.generateContractPDF(
+        req.params.id,
+        req.params.contractId,
+        req.user,
+      );
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+      });
+      res.send(pdf);
     } catch (e) {
       next(e);
     }
