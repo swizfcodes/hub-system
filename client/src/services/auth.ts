@@ -15,6 +15,8 @@ export interface AuthResponse {
   user: {
     user_id: string;
     role_id: string;
+    /** Role name returned by login (e.g. "owner", "manager", "sales"). */
+    role?: string | null;
     current_business: string;
     permitted_businesses: string[];
     default_business: string;

@@ -7,6 +7,8 @@ import type {
   LogisticsDashboard,
   OverviewData,
   YesterdaySummary,
+  TodaySummary,
+  MyRecentSale,
   AppNotification,
   NotificationPreference,
 } from "@typedefs/dashboard";
@@ -14,8 +16,8 @@ import type {
 // ── Dashboard API ─────────────────────────────────────────────────────────────
 
 export async function getSalesData(params?: {
-  year?: number;
-  month?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<SalesDashboard | null> {
   try {
     const { data } = await api.get<SalesDashboard>("/dashboards/sales", {
@@ -28,8 +30,8 @@ export async function getSalesData(params?: {
 }
 
 export async function getFinanceData(params?: {
-  year?: number;
-  month?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<FinanceDashboard | null> {
   try {
     const { data } = await api.get<FinanceDashboard>("/dashboards/finance", {
@@ -51,8 +53,8 @@ export async function getStockData(): Promise<StockDashboard | null> {
 }
 
 export async function getCustomerData(params?: {
-  year?: number;
-  month?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<CustomerDashboard | null> {
   try {
     const { data } = await api.get<CustomerDashboard>("/dashboards/customers", {
@@ -65,8 +67,8 @@ export async function getCustomerData(params?: {
 }
 
 export async function getLogisticsData(params?: {
-  year?: number;
-  month?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<LogisticsDashboard | null> {
   try {
     const { data } = await api.get<LogisticsDashboard>(
@@ -80,8 +82,8 @@ export async function getLogisticsData(params?: {
 }
 
 export async function getOverviewData(params?: {
-  year?: number;
-  month?: number;
+  start_date?: string;
+  end_date?: string;
 }): Promise<OverviewData | null> {
   try {
     const { data } = await api.get<OverviewData>("/dashboards/overview", {
@@ -99,6 +101,26 @@ export async function getYesterdaySummary(): Promise<YesterdaySummary | null> {
     return data;
   } catch {
     return null;
+  }
+}
+
+export async function getTodaySummary(): Promise<TodaySummary | null> {
+  try {
+    const { data } = await api.get<TodaySummary>("/dashboards/today");
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getMyRecentSales(): Promise<MyRecentSale[]> {
+  try {
+    const { data } = await api.get<{ data: MyRecentSale[] }>(
+      "/dashboards/my-recent-sales",
+    );
+    return data.data ?? [];
+  } catch {
+    return [];
   }
 }
 

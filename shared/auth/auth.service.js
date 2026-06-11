@@ -172,6 +172,60 @@ async function getMe(userId) {
   });
 }
 
+// ── Navigation preferences ────────────────────────────────
+
+// Validate a nav list: array of short string keys, deduped, max 10.
+// Module-key existence is enforced client-side against HUB_MODULES;
+// unknown keys are harmless (ignored at render) so we only sanity-check.
+function sanitizeNavList(list) {
+  if (!Array.isArray(list)) {
+    throw Object.assign(new Error("pinned must be an array of module keys"), {
+      status: 400,
+    });
+  }
+  const cleaned = [
+    ...new Set(
+      list.filter(
+        (k) => typeof k === "string" && k.length > 0 && k.length <= 40,
+      ),
+    ),
+  ];
+  if (cleaned.length > 10) {
+    throw Object.assign(new Error("pinned cannot exceed 10 modules"), {
+      status: 400,
+    });
+  }
+  return cleaned;
+}
+
+async function getMyNav(userId) {
+  return withSharedContext(async (client) => {
+    const [prefs, roleDefault] = await Promise.all([
+      repo.findNavPrefs(client, userId),
+      repo.findRoleDefaultNav(client, userId),
+    ]);
+    return {
+      pinned: prefs?.pinned ?? null,
+      role_default: roleDefault,
+    };
+  });
+}
+
+async function setMyNav(userId, pinned) {
+  const cleaned = sanitizeNavList(pinned);
+  return withSharedContext(async (client) => {
+    await repo.upsertNavPrefs(client, { userId, pinned: cleaned });
+    return { pinned: cleaned };
+  });
+}
+
+async function resetMyNav(userId) {
+  return withSharedContext(async (client) => {
+    await repo.deleteNavPrefs(client, userId);
+    return { pinned: null };
+  });
+}
+
 async function changePassword(userId, currentPassword, newPassword) {
   return withSharedContext(async (client) => {
     const row = await repo.findPasswordHash(client, userId);
@@ -272,6 +326,9 @@ module.exports = {
   logout,
   switchBusiness,
   getMe,
+  getMyNav,
+  setMyNav,
+  resetMyNav,
   changePassword,
   listActiveSessions,
   revokeSession,

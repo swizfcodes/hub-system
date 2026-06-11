@@ -4,40 +4,36 @@ import { useGreeting } from "@hooks/useGreeting";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
 import { getSalesData, getFinanceData } from "@services/dashboard/dashboard";
+import { getPeriodParams } from "@lib/constants/dashboardConstants";
 import { getMyAuditFeed } from "@services/audit";
 import { formatAuditEntry, auditActionColor } from "@lib/formatAuditEntry";
 import { fmtRelative } from "@lib/format";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useBusinessStore } from "@stores/useBusinessStore";
-import { AppGrid } from "@components/hub/AppGrid";
-import { useVisibleModules } from "@hooks/useVisibleModules";
+import { PriorityAppGrid } from "@components/hub/PriorityAppGrid";
 import { Topbar } from "@components/shell/Topbar";
 
 export default function HubHome() {
   const { time, greeting } = useGreeting();
   const user = useAuthStore((s) => s.user);
   const active = useBusinessStore((s) => s.active);
-  // Permission-driven app grid — only modules the user's role can view.
-  const { visibleModules } = useVisibleModules();
 
   const firstName =
     (user?.display_name || user?.email || "").split(" ")[0]?.split("@")[0] ??
     "";
   const { active: business } = useActiveBusiness();
 
-  // Live KPIs from the dashboards module
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  // Live KPIs from the dashboards module — current month range
+  const params = getPeriodParams("this_month");
   const { data: salesData } = useQuery({
-    queryKey: ["dashboard", "sales", business, year, month],
-    queryFn: () => getSalesData({ year, month }),
+    queryKey: ["dashboard", "sales", business, params.start_date],
+    queryFn: () => getSalesData(params),
     enabled: !!business,
     staleTime: 5 * 60_000,
   });
   const { data: financeData } = useQuery({
-    queryKey: ["dashboard", "finance", business, year, month],
-    queryFn: () => getFinanceData({ year, month }),
+    queryKey: ["dashboard", "finance", business, params.start_date],
+    queryFn: () => getFinanceData(params),
     enabled: !!business,
     staleTime: 5 * 60_000,
   });
@@ -201,7 +197,7 @@ export default function HubHome() {
             </div>
             <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/30 to-transparent" />
           </div>
-          <AppGrid modules={visibleModules} badges={badges} />
+          <PriorityAppGrid badges={badges} />
         </section>
 
         {/* Recent activity strip */}

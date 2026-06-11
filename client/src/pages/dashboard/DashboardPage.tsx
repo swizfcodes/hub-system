@@ -27,6 +27,11 @@ import {
 } from "@components/dashboard/DashboardSections";
 import WorkspacePage from "@pages/workspace/WorkspacePage";
 import {
+  TodayHeroCard,
+  QuickActions,
+  MyRecentSales,
+} from "@components/dashboard/RoleDashboards";
+import {
   getSalesData,
   getFinanceData,
   getStockData,
@@ -37,15 +42,14 @@ import {
 } from "@services/dashboard";
 import {
   DASHBOARD_SECTIONS,
-  BRAND_OPTIONS,
   PERIOD_OPTIONS,
   getPeriodParams,
   type SectionKey,
-  type BrandOption,
 } from "@lib/constants/dashboardConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useAuthStore } from "@stores/useAuthStore";
 import { usePermissions } from "@hooks/usePermissions";
+import { useDashboardPersona } from "@hooks/useDashboardPersona";
 import { useUiStore } from "@stores/useUiStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { CommandPalette } from "@components/search/CommandPalette";
@@ -57,7 +61,11 @@ type Tab = "dashboard" | "workspace" | "notifications";
 
 export default function DashboardPage() {
   const qc = useQueryClient();
-  const { currency } = useActiveBusiness();
+  // `active` is the single source of truth for which business the dashboard
+  // shows — it drives the X-Business-Line header on every API call. The old
+  // separate "brand" toggle never reached the API and has been removed; the
+  // business switcher in the shell is the one control for this concept.
+  const { currency, active } = useActiveBusiness();
   const { setMobileSidebarOpen } = useUiStore();
   const isDesktop = useIsDesktop();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -66,7 +74,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("dashboard");
 
   // Dashboard controls
-  const [brand, setBrand] = useState<BrandOption>("jewelry");
   const [period, setPeriod] = useState("this_month");
   const [manualHidden, setManualHidden] = useState<SectionKey[]>(() => {
     // Store only sections the user has explicitly *hidden*, not all visible ones.
@@ -86,6 +93,13 @@ export default function DashboardPage() {
   // ── Permissions — resolved before queries so enabled flags are correct ──────
   const { hasPermission, hasAnyPermission, isLoading: permsLoading } = usePermissions();
 
+  // ── Persona — which layout this user gets, derived from permissions ─────────
+  // (see useDashboardPersona for the ladder; new roles fit automatically)
+  const { persona } = useDashboardPersona();
+  const isOwnerView = persona === "owner";
+  const isManagerView = persona === "manager";
+  const isCashierView = persona === "cashier";
+
   const canSeeSales     = hasAnyPermission([{ module: "sales", action: "view" }, { module: "pos", action: "view" }, { module: "invoicing", action: "view" }]);
   const canSeeFinance   = hasAnyPermission([{ module: "accounting", action: "view" }, { module: "invoicing", action: "view" }, { module: "expenses", action: "view" }]);
   const canSeeStock     = hasAnyPermission([{ module: "stock", action: "view" }, { module: "catalogue", action: "view" }, { module: "purchasing", action: "view" }]);
@@ -95,41 +109,50 @@ export default function DashboardPage() {
 
   // All data queries — each fires only when permissions have loaded and the
   // user actually has access to that module. This prevents wasted 403 requests.
+  //
+  // Query keys are structured arrays starting with "dash" so that
+  // `invalidateQueries({ queryKey: ["dash"] })` matches them all (the old
+  // string-prefix keys like "dash-sales" were never matched by refresh).
+  // `active` (business) is included so switching business refetches.
+  //
+  // The cashier layout doesn't render KPI sections, so section queries are
+  // skipped entirely for that persona.
+  const sectionsEnabled = !permsLoading && !isCashierView;
   const { data: salesData, isLoading: salesLoading } = useQuery({
-    queryKey: ["dash-sales", brand, period],
+    queryKey: ["dash", "sales", active, period],
     queryFn: () => getSalesData(params),
     refetchInterval: 5 * 60_000,
-    enabled: !permsLoading && canSeeSales,
+    enabled: sectionsEnabled && canSeeSales,
   });
   const { data: financeData, isLoading: financeLoading } = useQuery({
-    queryKey: ["dash-finance", brand, period],
+    queryKey: ["dash", "finance", active, period],
     queryFn: () => getFinanceData(params),
     refetchInterval: 5 * 60_000,
-    enabled: !permsLoading && canSeeFinance,
+    enabled: sectionsEnabled && canSeeFinance,
   });
   const { data: stockData, isLoading: stockLoading } = useQuery({
-    queryKey: ["dash-stock", brand],
+    queryKey: ["dash", "stock", active],
     queryFn: () => getStockData(),
     refetchInterval: 5 * 60_000,
-    enabled: !permsLoading && canSeeStock,
+    enabled: sectionsEnabled && canSeeStock,
   });
   const { data: customerData, isLoading: customerLoading } = useQuery({
-    queryKey: ["dash-customers", brand, period],
+    queryKey: ["dash", "customers", active, period],
     queryFn: () => getCustomerData(params),
     refetchInterval: 5 * 60_000,
-    enabled: !permsLoading && canSeeCustomers,
+    enabled: sectionsEnabled && canSeeCustomers,
   });
   const { data: logisticsData, isLoading: logisticsLoading } = useQuery({
-    queryKey: ["dash-logistics", brand, period],
+    queryKey: ["dash", "logistics", active, period],
     queryFn: () => getLogisticsData(params),
     refetchInterval: 5 * 60_000,
-    enabled: !permsLoading && canSeeLogistics,
+    enabled: sectionsEnabled && canSeeLogistics,
   });
   const { data: yesterday } = useQuery({
-    queryKey: ["dash-yesterday", brand],
+    queryKey: ["dash", "yesterday", active],
     queryFn: () => getYesterdaySummary(),
     staleTime: 30 * 60_000,
-    enabled: !permsLoading && canSeeSales,
+    enabled: !permsLoading && canSeeSales && isOwnerView,
   });
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["unread-count"],
@@ -154,6 +177,12 @@ export default function DashboardPage() {
   const visibleSections = permittedSections.filter(
     (k) => !manualHidden.includes(k),
   );
+
+  // Managers get a fixed layout: every permitted section, no manual
+  // hiding and no picker — the dashboard just knows what to show them
+  // (an accountant-persona keeps Finance, a stock manager keeps Stock).
+  // Owner/generic get the configurable permission-filtered set.
+  const sectionsToRender = isManagerView ? permittedSections : visibleSections;
 
   // Finance detail (net profit, bank balances) unblurred only for
   // users with accounting:approve or accounting:view.
@@ -197,9 +226,9 @@ export default function DashboardPage() {
       href: "/logistics",
     });
 
-  // Refresh all dashboard queries
+  // Refresh all dashboard queries — matches every ["dash", ...] key.
   function handleRefresh() {
-    qc.invalidateQueries({ queryKey: ["dash-"] });
+    qc.invalidateQueries({ queryKey: ["dash"] });
     setLastRefresh(new Date());
   }
 
@@ -290,75 +319,61 @@ export default function DashboardPage() {
             right-aligned inline on desktop, so the bar never feels crammed. */}
         {activeTab === "dashboard" && (
           <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
-            {/* Brand toggle */}
-            <div className="flex rounded-lg border border-white/10 bg-orika-charcoal overflow-hidden">
-              {BRAND_OPTIONS.map((b) => (
-                <button
-                  key={b.value}
-                  onClick={() => setBrand(b.value)}
-                  className={cn(
-                    "px-2.5 py-1.5 text-xs font-medium transition-colors",
-                    brand === b.value
-                      ? "bg-orika-gold text-orika-black"
-                      : "text-orika-smoke hover:text-orika-cream",
-                  )}
-                >
-                  {b.icon}{" "}
-                  <span className="hidden sm:inline ml-1">{b.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Period selector */}
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
-            >
-              {PERIOD_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-
-            {/* Section visibility */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSectionPicker((s) => !s)}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+            {/* Period selector — hidden for cashiers (their view is "today") */}
+            {!isCashierView && (
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
               >
-                <Settings2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:block">Sections</span>
-              </button>
-              {showSectionPicker && (
-                <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-orika-charcoal shadow-xl p-2">
-                  {DASHBOARD_SECTIONS.filter((s) =>
-                    permittedSections.includes(s.key),
-                  ).map((s) => (
-                    <label
-                      key={s.key}
-                      className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-orika-graphite/30"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={visibleSections.includes(s.key)}
-                        onChange={() => toggleSection(s.key)}
-                        className="rounded"
-                      />
-                      <span className="text-xs text-orika-cream">
-                        {s.icon} {s.label}
-                      </span>
-                    </label>
-                  ))}
-                  {permittedSections.length === 0 && (
-                    <p className="text-[10px] text-orika-smoke px-2 py-2">
-                      No sections permitted
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                {PERIOD_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Section visibility — owner only; other personas get fixed,
+                curated layouts and shouldn't need to configure anything */}
+            {isOwnerView && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowSectionPicker((s) => !s)}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                  <span className="hidden sm:block">Sections</span>
+                </button>
+                {showSectionPicker && (
+                  <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-orika-charcoal shadow-xl p-2">
+                    {DASHBOARD_SECTIONS.filter((s) =>
+                      permittedSections.includes(s.key),
+                    ).map((s) => (
+                      <label
+                        key={s.key}
+                        className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-orika-graphite/30"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleSections.includes(s.key)}
+                          onChange={() => toggleSection(s.key)}
+                          className="rounded"
+                        />
+                        <span className="text-xs text-orika-cream">
+                          {s.icon} {s.label}
+                        </span>
+                      </label>
+                    ))}
+                    {permittedSections.length === 0 && (
+                      <p className="text-[10px] text-orika-smoke px-2 py-2">
+                        No sections permitted
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Refresh */}
             <button
@@ -387,8 +402,27 @@ export default function DashboardPage() {
         {/* ── Dashboard tab ── */}
         {activeTab === "dashboard" && (
           <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto space-y-8">
-            {/* Morning briefing */}
-            {yesterday && (
+            {/* ── Cashier layout — today's number, quick actions, own sales ── */}
+            {isCashierView && (
+              <>
+                <p className="text-sm text-orika-smoke">{greeting}</p>
+                <TodayHeroCard currency={currency} />
+                <QuickActions />
+                <MyRecentSales currency={currency} />
+              </>
+            )}
+
+            {/* ── Manager layout — today hero + quick actions above curated sections ── */}
+            {isManagerView && (
+              <>
+                <p className="text-sm text-orika-smoke">{greeting}</p>
+                <TodayHeroCard currency={currency} />
+                <QuickActions />
+              </>
+            )}
+
+            {/* ── Owner layout — yesterday briefing + quick actions ── */}
+            {isOwnerView && yesterday && (
               <div className="rounded-2xl border border-orika-gold/20 bg-orika-gold/5 px-5 py-4">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
@@ -437,48 +471,57 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Alerts strip */}
-            {alerts.length > 0 && <AlertsStrip alerts={alerts} />}
+            {/* Owner quick actions */}
+            {isOwnerView && <QuickActions max={3} />}
 
-            {/* KPI sections */}
-            <div className="space-y-10">
-              {visibleSections.includes("sales") && (
-                <SalesSection
-                  data={salesData ?? null}
-                  isLoading={salesLoading}
-                  currency={currency}
-                />
-              )}
-              {visibleSections.includes("finance") && (
-                <FinanceSection
-                  data={financeData ?? null}
-                  isLoading={financeLoading}
-                  currency={currency}
-                  canView={canViewFinance}
-                />
-              )}
-              {visibleSections.includes("customers") && (
-                <CustomersSection
-                  data={customerData ?? null}
-                  isLoading={customerLoading}
-                  currency={currency}
-                />
-              )}
-              {visibleSections.includes("stock") && (
-                <StockSection
-                  data={stockData ?? null}
-                  isLoading={stockLoading}
-                  currency={currency}
-                />
-              )}
-              {visibleSections.includes("logistics") && (
-                <LogisticsSection
-                  data={logisticsData ?? null}
-                  isLoading={logisticsLoading}
-                  currency={currency}
-                />
-              )}
-            </div>
+            {/* Alerts strip — operational alerts for everyone except cashiers */}
+            {!isCashierView && alerts.length > 0 && <AlertsStrip alerts={alerts} />}
+
+            {/* KPI sections.
+                Owner/generic: permission-filtered minus manually-hidden.
+                Manager: fixed curated set (sales, stock, logistics) — no
+                configuration decisions to make.
+                Cashier: none — their layout is rendered above. */}
+            {!isCashierView && (
+              <div className="space-y-10">
+                {sectionsToRender.includes("sales") && (
+                  <SalesSection
+                    data={salesData ?? null}
+                    isLoading={salesLoading}
+                    currency={currency}
+                  />
+                )}
+                {sectionsToRender.includes("finance") && (
+                  <FinanceSection
+                    data={financeData ?? null}
+                    isLoading={financeLoading}
+                    currency={currency}
+                    canView={canViewFinance}
+                  />
+                )}
+                {sectionsToRender.includes("customers") && (
+                  <CustomersSection
+                    data={customerData ?? null}
+                    isLoading={customerLoading}
+                    currency={currency}
+                  />
+                )}
+                {sectionsToRender.includes("stock") && (
+                  <StockSection
+                    data={stockData ?? null}
+                    isLoading={stockLoading}
+                    currency={currency}
+                  />
+                )}
+                {sectionsToRender.includes("logistics") && (
+                  <LogisticsSection
+                    data={logisticsData ?? null}
+                    isLoading={logisticsLoading}
+                    currency={currency}
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 

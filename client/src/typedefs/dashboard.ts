@@ -170,6 +170,24 @@ export interface YesterdaySummary {
   top_product: { name: string; units: number; revenue: number } | null;
 }
 
+// ── Today summary (live hero card) ────────────────────────────────────────────
+
+export interface TodaySummary extends YesterdaySummary {
+  transaction_count: number;
+  order_count: number;
+}
+
+// ── My recent sales (cashier dashboard) ───────────────────────────────────────
+
+export interface MyRecentSale {
+  order_id: string;
+  order_number: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  customer_name: string | null;
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export interface AppNotification {

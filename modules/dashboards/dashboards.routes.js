@@ -142,7 +142,44 @@ router.get(
   ]),
   async (req, res, next) => {
     try {
-      res.json(await service.getYesterdaySummary(req.business, req.user));
+      res.json(await service.getYesterdaySummary(req.business));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/dashboards/today — live "today so far" rollup (hero card)
+// Requires: sales:view OR invoicing:view OR pos:view
+router.get(
+  "/today",
+  canAny([
+    { module: "sales", action: "view" },
+    { module: "invoicing", action: "view" },
+    { module: "pos", action: "view" },
+  ]),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getTodaySummary(req.business));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/dashboards/my-recent-sales — last 10 orders created by the
+// current user (cashier dashboard). Scoped to own records by design.
+router.get(
+  "/my-recent-sales",
+  canAny([
+    { module: "sales", action: "view" },
+    { module: "pos", action: "view" },
+  ]),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.getMyRecentSales(req.business, req.user, req.query.limit),
+      );
     } catch (err) {
       next(err);
     }

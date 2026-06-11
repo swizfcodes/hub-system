@@ -165,6 +165,52 @@ async function findUserRole(client, userId) {
   return rows[0] || null;
 }
 
+// ── Navigation preferences ────────────────────────────────
+// Per-user pinned top-10; role default used as fallback.
+
+async function findNavPrefs(client, userId) {
+  const { rows } = await client.query(
+    `SELECT pinned FROM shared.user_nav_prefs WHERE user_id = $1`,
+    [userId],
+  );
+  return rows[0] || null;
+}
+
+async function upsertNavPrefs(client, { userId, pinned }) {
+  await client.query(
+    `INSERT INTO shared.user_nav_prefs (user_id, pinned, updated_at)
+     VALUES ($1, $2, now())
+     ON CONFLICT (user_id) DO UPDATE SET pinned = $2, updated_at = now()`,
+    [userId, pinned],
+  );
+}
+
+async function deleteNavPrefs(client, userId) {
+  await client.query(`DELETE FROM shared.user_nav_prefs WHERE user_id = $1`, [
+    userId,
+  ]);
+}
+
+// Role default_nav for the user's role at their default business
+// (same role-resolution rule as findUserProfile).
+async function findRoleDefaultNav(client, userId) {
+  const { rows } = await client.query(
+    `SELECT r.default_nav
+     FROM shared.users u
+     LEFT JOIN LATERAL (
+       SELECT x.role_id FROM shared.user_roles x
+       WHERE x.user_id = u.user_id
+         AND (x.business = u.default_business OR x.business = '*')
+       ORDER BY (x.business = '*') ASC
+       LIMIT 1
+     ) ur ON true
+     LEFT JOIN shared.roles r ON r.role_id = ur.role_id
+     WHERE u.user_id = $1`,
+    [userId],
+  );
+  return rows[0]?.default_nav || null;
+}
+
 module.exports = {
   findUserByEmail,
   incrementFailedLogins,
@@ -181,4 +227,8 @@ module.exports = {
   updatePasswordHash,
   revokeAllRefreshTokens,
   findUserRole,
+  findNavPrefs,
+  upsertNavPrefs,
+  deleteNavPrefs,
+  findRoleDefaultNav,
 };

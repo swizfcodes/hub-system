@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 import { HUB_MODULES, SETTINGS_SUBMODULES } from "@lib/constants/modules";
 import { useVisibleModules } from "@hooks/useVisibleModules";
+import { useNavPriority } from "@hooks/useNavPriority";
 import { cn } from "@lib/cn";
 
 /**
@@ -26,6 +27,7 @@ interface BottomItem {
 function bottomItemsForRoute(
   pathname: string,
   visibleKeys: Set<string>,
+  topKeys: string[],
 ): BottomItem[] | null {
   if (pathname === "/" || pathname === "/hub") return null;
 
@@ -103,8 +105,11 @@ function bottomItemsForRoute(
     return items;
   }
 
-  // Default mobile bottom nav
-  const picks = ["dashboard", "crm", "sales", "stock"];
+  // Default mobile bottom nav — the user's resolved nav priority
+  // (useNavPriority ladder), so it personalises per role/user.
+  const picks = topKeys.length
+    ? topKeys.slice(0, 4)
+    : ["dashboard", "crm", "sales", "stock"];
   const items: BottomItem[] = picks
     .filter((k) => visibleKeys.has(k))
     .map((k) => HUB_MODULES.find((m) => m.key === k))
@@ -122,7 +127,12 @@ function bottomItemsForRoute(
 export function MobileBottomNav() {
   const { pathname } = useLocation();
   const { visibleKeys } = useVisibleModules();
-  const items = bottomItemsForRoute(pathname, visibleKeys);
+  const { topModules } = useNavPriority();
+  const items = bottomItemsForRoute(
+    pathname,
+    visibleKeys,
+    topModules.map((m) => m.key),
+  );
 
   if (!items) return null;
 

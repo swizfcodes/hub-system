@@ -85,6 +85,34 @@ router.get("/me", verifyToken, async (req, res, next) => {
   }
 });
 
+// ── Navigation preferences ────────────────────────────────
+// GET    /api/auth/me/nav — { pinned: string[]|null, role_default: string[]|null }
+// PUT    /api/auth/me/nav — body { pinned: string[] } (max 10) → saves user pins
+// DELETE /api/auth/me/nav — clears user pins (falls back to role/global default)
+router.get("/me/nav", verifyToken, async (req, res, next) => {
+  try {
+    res.json(await authService.getMyNav(req.user.user_id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/me/nav", verifyToken, async (req, res, next) => {
+  try {
+    res.json(await authService.setMyNav(req.user.user_id, req.body?.pinned));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/me/nav", verifyToken, async (req, res, next) => {
+  try {
+    res.json(await authService.resetMyNav(req.user.user_id));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/auth/me/permissions — returns the current user's flat permission list
 // Reuses the Redis cache already used by the permissions middleware.
 router.get("/me/permissions", verifyToken, async (req, res, next) => {
@@ -180,8 +208,12 @@ router.get(
     try {
       const isSelf = req.params.userId === req.user.user_id;
       if (!isSelf) {
-        const adminRoles = ["owner", "manager", "admin"];
-        if (!adminRoles.includes(req.user.role_name)) {
+        // Check ALL assigned roles, not role_name — role_name is an
+        // arbitrary pick when a user holds multiple roles. ("admin" was
+        // listed here previously but no such system role exists.)
+        const adminRoles = ["owner", "manager"];
+        const userRoles = req.user.roles || [req.user.role_name];
+        if (!userRoles.some((r) => adminRoles.includes(r))) {
           return res
             .status(403)
             .json({ message: "Not permitted to view other users' sessions" });
