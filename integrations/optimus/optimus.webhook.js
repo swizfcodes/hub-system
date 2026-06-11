@@ -116,14 +116,29 @@ router.post("/", async (req, res) => {
 
 async function handleTransactionSuccess(transactionRef, providerData) {
   // ── Path 1: Invoice payment ───────────────────────────────────────────────
+  // Loop every active business looking for a matching invoice payment. Each
+  // lookup is guarded per-business: a business whose invoice_payments predates
+  // the Optimus columns (migration 000053 added them only to jewelry/diffusers)
+  // simply can't be an Optimus invoice payer — skip it quietly and keep scanning
+  // the others, rather than logging an error or aborting the store path below.
   for (const business of getActiveBusinesses()) {
-    const result = await pool.query(
-      `SET LOCAL search_path TO ${business}, shared, public;
-       SELECT payment_id, amount FROM invoice_payments
-       WHERE optimus_transaction_ref = $1
-       LIMIT 1`,
-      [transactionRef],
-    );
+    let result;
+    try {
+      result = await pool.query(
+        // Schema-qualified single statement. A parameterized query runs as a
+        // prepared statement, which cannot contain multiple ;-separated
+        // commands — so the search_path must NOT be prepended here.
+        `SELECT payment_id, amount FROM ${business}.invoice_payments
+         WHERE optimus_transaction_ref = $1
+         LIMIT 1`,
+        [transactionRef],
+      );
+    } catch (err) {
+      logger.debug(
+        `[optimus] invoice lookup skipped for ${business}: ${err.message}`,
+      );
+      continue;
+    }
 
     if (result.rows.length) {
       const { payment_id: paymentId, amount: expectedNaira } = result.rows[0];
@@ -140,8 +155,7 @@ async function handleTransactionSuccess(transactionRef, providerData) {
       }
 
       await pool.query(
-        `SET LOCAL search_path TO ${business}, shared, public;
-         UPDATE invoice_payments
+        `UPDATE ${business}.invoice_payments
          SET is_confirmed = true, confirmed_at = now()
          WHERE optimus_transaction_ref = $1`,
         [transactionRef],
@@ -184,42 +198,46 @@ async function handleTransactionSuccess(transactionRef, providerData) {
   }
 
   // ── Path 2: Campaign storefront order ────────────────────────────────────
-  try {
-    const storefrontService = require("../../modules/sales_campaigns/storefront.service");
-    const {
-      rows: [order],
-    } = await pool.query(
-      `SELECT co.order_id, sc.business
-         FROM jewelry.campaign_orders co
-         JOIN jewelry.sales_campaigns sc ON sc.campaign_id = co.campaign_id
-        WHERE co.optimus_transaction_ref = $1
-          AND co.payment_method = 'optimus_pay'
-          AND co.status = 'pending'
-       UNION ALL
-       SELECT co.order_id, sc.business
-         FROM diffusers.campaign_orders co
-         JOIN diffusers.sales_campaigns sc ON sc.campaign_id = co.campaign_id
-        WHERE co.optimus_transaction_ref = $1
-          AND co.payment_method = 'optimus_pay'
-          AND co.status = 'pending'
-       LIMIT 1`,
-      [transactionRef],
-    );
-
-    if (order) {
-      await storefrontService.handleOptimusConfirmation(
-        order.business,
-        order.order_id,
+  // Loop every active business (same pattern as the invoice path) so this
+  // covers any business, not just jewelry/diffusers. The business IS the
+  // schema — sales_campaigns has no `business` column — so it's passed
+  // through directly. Per-business guard skips schemas that predate the
+  // Optimus columns.
+  const storefrontService = require("../../modules/sales_campaigns/storefront.service");
+  for (const business of getActiveBusinesses()) {
+    let rows;
+    try {
+      ({ rows } = await pool.query(
+        `SELECT order_id FROM ${business}.campaign_orders
+          WHERE optimus_transaction_ref = $1
+            AND payment_method = 'optimus_pay'
+            AND status = 'pending'
+          LIMIT 1`,
+        [transactionRef],
+      ));
+    } catch (err) {
+      logger.debug(
+        `[optimus] campaign lookup skipped for ${business}: ${err.message}`,
       );
-      logger.info(
-        `[optimus] campaign order confirmed: ref=${transactionRef} [${order.business}]`,
-      );
-      return;
+      continue;
     }
-  } catch (err) {
-    logger.error(
-      `[optimus] campaign order confirmation failed ref=${transactionRef}: ${err.message}`,
-    );
+
+    if (rows.length) {
+      try {
+        await storefrontService.handleOptimusConfirmation(
+          business,
+          rows[0].order_id,
+        );
+        logger.info(
+          `[optimus] campaign order confirmed: ref=${transactionRef} [${business}]`,
+        );
+        return;
+      } catch (err) {
+        logger.error(
+          `[optimus] campaign confirmation failed ref=${transactionRef} [${business}]: ${err.message}`,
+        );
+      }
+    }
   }
 
   // ── Path 3: Storefront (diffusers web store) order ───────────────────────

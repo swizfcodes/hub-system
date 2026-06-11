@@ -76,6 +76,13 @@ const config = {
   optimusPay: {
     apiKey: process.env.OPTIMUS_PAY_API_KEY,
     clientSecret: process.env.OPTIMUS_PAY_CLIENT_SECRET,
+    // Name registered on provisioned virtual accounts (what a payer sees on
+    // name-enquiry before transferring). Defaults to the customer's name
+    // per-order when unset; set a business name to brand the account.
+    accountName: process.env.OPTIMUS_PAY_ACCOUNT_NAME,
+    // Open Account transaction mode. "Live" processes real transactions;
+    // your Optimus account may also expose a sandbox/test value.
+    mockMode: process.env.OPTIMUS_PAY_MOCK_MODE || "Live",
     // Swap to https://api.onepipe.io for production
     baseUrl:
       process.env.NODE_ENV === "production"
@@ -84,7 +91,7 @@ const config = {
           "https://409a9dcf-73e5-41bb-aa2e-ba6c286173a3.mock.pstmn.io",
     notificationUrl:
       process.env.OPTIMUS_PAY_NOTIFICATION_URL ||
-      `${process.env.HUB_BASE_URL || "http://localhost:3000"}/api/webhooks/optimus`,
+      `${process.env.HUB_BASE_URL || "http://localhost:7000"}/api/webhooks/optimus`,
   },
 
   flutterwave: {
@@ -169,12 +176,20 @@ const config = {
     // missing or empty.
     brands: {
       jewelry: {
-        fromName:  process.env.SMTP_FROM_NAME_JEWELRY  || process.env.SMTP_FROM_NAME || "Orika Living",
-        fromEmail: process.env.SMTP_FROM_EMAIL_JEWELRY || process.env.SMTP_FROM_EMAIL,
+        fromName:
+          process.env.SMTP_FROM_NAME_JEWELRY ||
+          process.env.SMTP_FROM_NAME ||
+          "Orika Living",
+        fromEmail:
+          process.env.SMTP_FROM_EMAIL_JEWELRY || process.env.SMTP_FROM_EMAIL,
       },
       diffusers: {
-        fromName:  process.env.SMTP_FROM_NAME_DIFFUSERS  || process.env.SMTP_FROM_NAME || "Bejewelled",
-        fromEmail: process.env.SMTP_FROM_EMAIL_DIFFUSERS || process.env.SMTP_FROM_EMAIL,
+        fromName:
+          process.env.SMTP_FROM_NAME_DIFFUSERS ||
+          process.env.SMTP_FROM_NAME ||
+          "Bejewelled",
+        fromEmail:
+          process.env.SMTP_FROM_EMAIL_DIFFUSERS || process.env.SMTP_FROM_EMAIL,
       },
     },
   },

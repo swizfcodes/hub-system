@@ -617,9 +617,33 @@ async function verifyAndFulfil(reference) {
 }
 
 /**
+ * Read-only status check for an Optimus Pay order, used by the client
+ * verify poll (GET /store/optimus/verify). This NEVER fulfils: a
+ * bank-transfer order can only be marked paid by the server-to-server
+ * Transaction Notification webhook, which confirms the money actually
+ * landed. The client cannot self-confirm — it only reports current status.
+ */
+async function getOptimusOrderStatus(transactionRef) {
+  return withBusinessContext(STORE_BUSINESS, async (client) => {
+    const order = await repo.findOrderByOptimusRef(client, transactionRef);
+    if (!order) {
+      throw Object.assign(
+        new Error(`No store order found for Optimus ref: ${transactionRef}`),
+        { status: 404 },
+      );
+    }
+    const paid = ["paid", "processing", "shipped", "delivered"].includes(
+      order.status,
+    );
+    return { ok: paid, status: order.status, order_id: order.id };
+  });
+}
+
+/**
  * Fulfil a store order that was paid via Optimus Pay virtual account.
- * Called by the Optimus Pay webhook handler — no external verification
- * needed since the webhook already validated the event before calling here.
+ * Called ONLY by the Optimus Pay webhook handler — NEVER from the client
+ * verify path — because it trusts that payment has landed. The webhook
+ * validates the actual inflow (Transaction Notification) before calling here.
  *
  * Steps mirror verifyAndFulfil exactly (stock → revenue journal → COGS
  * journal → mark paid → ERP sales order → confirmation email) except we
@@ -1202,6 +1226,7 @@ module.exports = {
   getOrder,
   verifyAndFulfil,
   fulfillOptimusOrder,
+  getOptimusOrderStatus,
   verifyWebhookSignature,
   // newsletter + enquiries
   subscribeNewsletter,
