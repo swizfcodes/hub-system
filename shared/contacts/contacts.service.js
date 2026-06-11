@@ -1,6 +1,7 @@
 "use strict";
 
 const { withSharedContext } = require("../../config/db");
+const { getActiveBusinesses } = require("../../config/businesses");
 const auditService = require("../audit/audit.service");
 const repo = require("./contacts.repository");
 
@@ -74,6 +75,45 @@ async function create(data, user) {
   });
 }
 
+/**
+ * Which stakeholder records hang off this contact? Used to (a) stop the
+ * type tags drifting out of sync on edit and (b) protect deletes.
+ */
+async function getLinkedRecords(client, contactId) {
+  const links = { staff: false, supplier: [], retail_partner: [], login: false };
+  const {
+    rows: [profile],
+  } = await client.query(
+    `SELECT sp.profile_id, u.user_id
+     FROM shared.staff_profiles sp
+     LEFT JOIN shared.users u ON u.staff_profile_id = sp.profile_id
+     WHERE sp.contact_id = $1 AND sp.is_deleted = false
+     LIMIT 1`,
+    [contactId],
+  );
+  if (profile) {
+    links.staff = true;
+    links.login = !!profile.user_id;
+  }
+  for (const biz of getActiveBusinesses()) {
+    try {
+      const { rows: sup } = await client.query(
+        `SELECT 1 FROM ${biz}.suppliers WHERE contact_id = $1 AND is_active = true LIMIT 1`,
+        [contactId],
+      );
+      if (sup.length) links.supplier.push(biz);
+    } catch { /* schema may lack table */ }
+    try {
+      const { rows: rp } = await client.query(
+        `SELECT 1 FROM ${biz}.retail_partners WHERE contact_id = $1 AND is_active = true LIMIT 1`,
+        [contactId],
+      );
+      if (rp.length) links.retail_partner.push(biz);
+    } catch { /* schema may lack table */ }
+  }
+  return links;
+}
+
 async function update(contactId, data, user) {
   return withSharedContext(async (client) => {
     const before = await repo.findForUpdate(client, contactId);
@@ -99,6 +139,19 @@ async function update(contactId, data, user) {
       "birthday_month",
       "birthday_day",
     ];
+    // The type tags must never drift from reality: if an employee
+    // profile / supplier / partner record exists, its tag survives any
+    // edit — the UI can't accidentally untag a linked stakeholder.
+    if (data.contact_type !== undefined) {
+      const links = await getLinkedRecords(client, contactId);
+      const required = [
+        ...(links.staff ? ["staff"] : []),
+        ...(links.supplier.length ? ["supplier"] : []),
+        ...(links.retail_partner.length ? ["retail_partner"] : []),
+      ];
+      data.contact_type = [...new Set([...(data.contact_type || []), ...required])];
+    }
+
     const sets = [],
       values = [];
     for (const field of fields) {
@@ -129,6 +182,30 @@ async function update(contactId, data, user) {
 
 async function softDelete(contactId, user) {
   return withSharedContext(async (client) => {
+    // Refuse to delete a contact with live stakeholder records — that
+    // would orphan an employee profile/login, supplier or partner file.
+    const links = await getLinkedRecords(client, contactId);
+    const blockers = [];
+    if (links.staff)
+      blockers.push(
+        links.login
+          ? "an employee profile and a login account"
+          : "an employee profile",
+      );
+    if (links.supplier.length)
+      blockers.push(`a supplier record (${links.supplier.join(", ")})`);
+    if (links.retail_partner.length)
+      blockers.push(
+        `a retail partner record (${links.retail_partner.join(", ")})`,
+      );
+    if (blockers.length) {
+      throw Object.assign(
+        new Error(
+          `This contact has ${blockers.join(" and ")}. End the employment / deactivate the record first, then archive the contact.`,
+        ),
+        { status: 409 },
+      );
+    }
     const before = await repo.softDelete(client, contactId);
     await auditService.log(client, {
       userId: user.user_id,

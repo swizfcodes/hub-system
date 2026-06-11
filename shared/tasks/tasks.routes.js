@@ -13,6 +13,8 @@ router.get(
   "/board",
   query("business").optional().isString(),
   query("assigned_to").optional().isUUID(),
+  query("reference_type").optional().isString(),
+  query("reference_id").optional().isUUID(),
   validate,
   can("tasks", "view"),
   async (req, res, next) => {
@@ -32,6 +34,8 @@ router.get(
   query("status").optional().isString(),
   query("assigned_to").optional().isUUID(),
   query("created_by").optional().isUUID(),
+  query("reference_type").optional().isString(),
+  query("reference_id").optional().isUUID(),
   query("page").optional().isInt({ min: 1 }),
   query("limit").optional().isInt({ min: 1, max: 200 }),
   validate,

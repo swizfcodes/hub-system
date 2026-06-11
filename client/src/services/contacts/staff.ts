@@ -12,6 +12,7 @@ export interface StaffListParams {
   search?: string;
   business?: string;
   department?: string;
+  contact_id?: string;
   is_active?: boolean;
   page?: number;
   limit?: number;

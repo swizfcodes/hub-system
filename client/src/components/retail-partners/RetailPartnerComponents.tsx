@@ -123,6 +123,8 @@ interface PartnerFormModalProps {
   onClose: () => void;
   onSaved: (partner: RetailPartner) => void;
   existing?: RetailPartner;
+  /** Pre-select the contact (e.g. opened from their profile). */
+  defaultContact?: Contact | null;
 }
 
 export function PartnerFormModal({
@@ -130,15 +132,16 @@ export function PartnerFormModal({
   onClose,
   onSaved,
   existing,
+  defaultContact = null,
 }: PartnerFormModalProps) {
   const qc = useQueryClient();
-  const [contact, setContact] = useState<Contact | null>(null);
+  const [contact, setContact] = useState<Contact | null>(defaultContact);
   const isEdit = !!existing;
 
   const form = useForm<CreatePartnerValues>({
     resolver: zodResolver(createPartnerSchema),
     defaultValues: {
-      contact_id: existing?.contact_id ?? "",
+      contact_id: existing?.contact_id ?? defaultContact?.contact_id ?? "",
       partner_code: existing?.partner_code ?? "",
       arrangement_type: existing?.arrangement_type ?? "consignment",
       consignment_margin_pct: existing?.consignment_margin_pct ?? 0,

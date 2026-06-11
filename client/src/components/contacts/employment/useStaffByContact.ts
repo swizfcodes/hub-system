@@ -3,24 +3,18 @@ import { listStaff } from "@services/contacts/staff";
 import type { StaffProfile } from "@typedefs/staff";
 
 /**
- * Resolve the staff_profile linked to a given contact_id by searching
- * the staff list. The backend doesn't expose a "by contact_id" lookup,
- * but the directory list joins contacts, so we can find the row.
- *
- * Trade-off: lists 200 at a time. For ≤200 staff this is fine; if the
- * org grows beyond that we'll need a backend endpoint
- * `GET /staff?contact_id=…`.
+ * Resolve the staff_profile linked to a contact via the backend's
+ * contact_id filter — one indexed lookup instead of the old
+ * fetch-200-and-search-in-the-browser pattern.
  */
 export function useStaffByContact(contactId: string | undefined): {
   staff: StaffProfile | null;
   isLoading: boolean;
 } {
   const { data, isLoading } = useQuery({
-    queryKey: ["staff", "all-200"],
-    queryFn: () => listStaff({ limit: 200 }),
+    queryKey: ["staff", "by-contact", contactId],
+    queryFn: () => listStaff({ contact_id: contactId, limit: 1 }),
+    enabled: !!contactId,
   });
-  const staff = contactId
-    ? ((data?.data ?? []).find((s) => s.contact_id === contactId) ?? null)
-    : null;
-  return { staff, isLoading };
+  return { staff: data?.data?.[0] ?? null, isLoading };
 }

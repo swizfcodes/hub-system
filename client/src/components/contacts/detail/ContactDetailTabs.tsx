@@ -22,6 +22,13 @@ import { listDeals } from "@services/crm/deals";
 import { listInvoices } from "@services/invoicing/invoices";
 import { listSuppliers } from "@services/purchasing/suppliers";
 import { listPOs } from "@services/purchasing/purchaseOrders";
+import {
+  listPartners,
+  listConsignmentStock,
+  listSettlements,
+} from "@services/retail-partners/retailPartnersService";
+import { PartnerFormModal } from "@components/retail-partners/RetailPartnerComponents";
+import { Handshake } from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { Skeleton } from "@components/ui/Skeleton";
 import { Badge } from "@components/ui/Badge";
@@ -67,6 +74,7 @@ export function ContactDetailTabs({
   const types = contact.contact_type ?? [];
   const isCustomer = types.includes("customer");
   const isSupplier = types.includes("supplier");
+  const isPartner = types.includes("retail_partner");
 
   const tabs: Tab[] = [
     { key: "overview", label: "Overview" },
@@ -80,6 +88,7 @@ export function ContactDetailTabs({
       { key: 'concierge', label: 'Concierge' },
     ] : []),
     ...(isSupplier ? [{ key: 'purchasing', label: 'Purchasing' }] : []),
+    ...(isPartner ? [{ key: 'partner', label: 'Partnership' }] : []),
     { key: 'notes',      label: 'Notes' },
     { key: 'documents',  label: 'Documents' },
     { key: 'properties', label: 'Addresses & tags' },
@@ -132,6 +141,9 @@ export function ContactDetailTabs({
             contactId={contact.contact_id}
             contactName={contact.display_name}
           />
+        )}
+        {active === "partner" && isPartner && (
+          <RetailPartnerTab contact={contact} />
         )}
         {active === "notes" && <NotesTab contact={contact} />}
         {active === "documents" && (
@@ -360,10 +372,10 @@ function SupplierPurchasingTab({
   contactName: string;
 }) {
   const { data: sups, isLoading: loadingSup } = useQuery({
-    queryKey: ["purchasing", "suppliers", "lookup"],
-    queryFn: () => listSuppliers({ limit: 200 }),
+    queryKey: ["purchasing", "suppliers", "by-contact", contactId],
+    queryFn: () => listSuppliers({ contact_id: contactId, limit: 1 }),
   });
-  const supplier = (sups?.data ?? []).find((s) => s.contact_id === contactId);
+  const supplier = sups?.data?.[0] ?? null;
 
   const { data: poResp, isLoading: loadingPO } = useQuery({
     queryKey: ["purchasing", "pos", "by-supplier", supplier?.supplier_id],
@@ -612,6 +624,167 @@ function ContactDocumentsTab({ contactId, contactName }: { contactId: string; co
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Retail partner tab — terms, consignment position, settlements ───────────
+
+function RetailPartnerTab({ contact }: { contact: Contact }) {
+  const [setupOpen, setSetupOpen] = useState(false);
+  const qc = useQueryClient();
+
+  const { data: partners, isLoading } = useQuery({
+    queryKey: ["retail-partners", "by-contact", contact.contact_id],
+    queryFn: () => listPartners({ contact_id: contact.contact_id, limit: 1 }),
+  });
+  const partner = partners?.data?.[0] ?? null;
+
+  const { data: stock } = useQuery({
+    queryKey: ["retail-partners", partner?.partner_id, "stock"],
+    queryFn: () => listConsignmentStock({ partner_id: partner!.partner_id }),
+    enabled: !!partner,
+  });
+  const { data: settlements = [] } = useQuery({
+    queryKey: ["retail-partners", partner?.partner_id, "settlements"],
+    queryFn: () => listSettlements({ partner_id: partner!.partner_id }),
+    enabled: !!partner,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[0, 1].map((i) => (
+          <Skeleton key={i} className="h-16" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return (
+      <>
+        <EmptyState
+          icon={<Handshake className="w-6 h-6" />}
+          title="No partner record yet"
+          description={`${contact.display_name} is tagged as a retail partner but the partnership terms haven't been set up.`}
+          action={
+            <Button variant="gold" size="sm" onClick={() => setSetupOpen(true)}>
+              Set up partnership
+            </Button>
+          }
+        />
+        <PartnerFormModal
+          open={setupOpen}
+          onClose={() => setSetupOpen(false)}
+          defaultContact={contact}
+          onSaved={() => {
+            setSetupOpen(false);
+            qc.invalidateQueries({ queryKey: ["retail-partners"] });
+          }}
+        />
+      </>
+    );
+  }
+
+  const onConsignment = (stock?.data ?? []).reduce(
+    (s, row) => s + Number(row.quantity_outstanding ?? 0),
+    0,
+  );
+  const unpaidSettlements = settlements.filter((st) => st.status !== "paid");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+          <Handshake className="w-3.5 h-3.5" /> Partnership · {partner.partner_code}
+        </h3>
+        <Link to="/retail-partners">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<ArrowUpRight className="w-3.5 h-3.5" />}
+          >
+            Open Retail Partners
+          </Button>
+        </Link>
+      </div>
+
+      {/* Terms */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            Arrangement
+          </div>
+          <div className="text-sm text-orika-cream mt-1 capitalize">
+            {partner.arrangement_type}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            {partner.arrangement_type === "wholesale"
+              ? "Wholesale discount"
+              : "Our margin"}
+          </div>
+          <div className="text-sm text-orika-cream mt-1">
+            {partner.arrangement_type === "wholesale"
+              ? `${partner.wholesale_discount_pct ?? 0}%`
+              : `${partner.consignment_margin_pct ?? 0}%`}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            Units on consignment
+          </div>
+          <div className="text-sm text-orika-cream mt-1 tabular-nums">
+            {onConsignment}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            Balance owed to us
+          </div>
+          <div
+            className={`text-sm mt-1 tabular-nums ${Number(partner.current_balance) > 0 ? "text-state-warn" : "text-living-sage"}`}
+          >
+            {fmtMoney(partner.current_balance ?? 0, "NGN")}
+          </div>
+        </Card>
+      </div>
+
+      {/* Outstanding settlements */}
+      <div>
+        <h4 className="text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2">
+          Settlements · {unpaidSettlements.length} open
+        </h4>
+        {settlements.length === 0 ? (
+          <p className="text-xs text-orika-smoke">No settlements yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {settlements.slice(0, 8).map((st) => (
+              <Card key={st.settlement_id} className="p-3.5">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-orika-smoke">
+                      {st.settlement_number}
+                    </span>
+                    <Badge
+                      tone={st.status === "paid" ? "sage" : "gold"}
+                      size="xs"
+                      dot
+                    >
+                      {st.status}
+                    </Badge>
+                  </div>
+                  <span className="font-mono text-sm text-orika-gold">
+                    {fmtMoney(st.net_payable ?? st.amount ?? 0, "NGN")}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

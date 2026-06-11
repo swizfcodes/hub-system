@@ -24,6 +24,8 @@ async function listTasks(
     status,
     assignedTo,
     createdBy,
+    referenceType,
+    referenceId,
     search,
     includeDeleted,
     limit,
@@ -50,6 +52,16 @@ async function listTasks(
   if (createdBy) {
     params.push(createdBy);
     conditions.push(`t.created_by = $${params.length}`);
+  }
+  // Scope to a linked record (e.g. a contact's profile) — without this,
+  // every contact's Tasks tab showed every task in the company.
+  if (referenceType) {
+    params.push(referenceType);
+    conditions.push(`t.reference_type = $${params.length}`);
+  }
+  if (referenceId) {
+    params.push(referenceId);
+    conditions.push(`t.reference_id = $${params.length}`);
   }
   if (search) {
     params.push(`%${search}%`);
@@ -139,7 +151,7 @@ async function findById(client, taskId) {
  * Tasks grouped by status — returns an object keyed by status name
  * with arrays of tasks. Used by the kanban board view.
  */
-async function getBoard(client, { business, assignedTo }) {
+async function getBoard(client, { business, assignedTo, referenceType, referenceId }) {
   const { rows } = await client.query(
     `SELECT t.task_id, t.title, t.status, t.priority, t.due_at,
             t.assigned_to, t.reference_type, t.reference_id,
@@ -158,13 +170,15 @@ async function getBoard(client, { business, assignedTo }) {
      WHERE t.is_deleted = false
        AND ($1::TEXT IS NULL OR t.business = $1)
        AND ($2::UUID IS NULL OR t.assigned_to = $2)
+       AND ($3::TEXT IS NULL OR t.reference_type = $3)
+       AND ($4::UUID IS NULL OR t.reference_id = $4)
      ORDER BY
        CASE t.priority
          WHEN 'urgent' THEN 1 WHEN 'high' THEN 2
          WHEN 'normal' THEN 3 WHEN 'low'  THEN 4
        END,
        t.due_at ASC NULLS LAST`,
-    [business || null, assignedTo || null],
+    [business || null, assignedTo || null, referenceType || null, referenceId || null],
   );
 
   // Group by status. Initialise all columns so the UI shows empty
