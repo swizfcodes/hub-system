@@ -15,7 +15,7 @@
 
 async function listProfiles(
   client,
-  { search, business, department, isActive, limit, offset },
+  { search, business, department, isActive, contactId, limit, offset },
 ) {
   const { rows } = await client.query(
     `SELECT sp.profile_id, sp.contact_id, sp.employee_number, sp.business,
@@ -36,13 +36,15 @@ async function listProfiles(
        AND ($2::TEXT IS NULL OR sp.business = $2)
        AND ($3::TEXT IS NULL OR sp.department = $3)
        AND ($4::BOOLEAN IS NULL OR (sp.end_date IS NULL) = $4)
+       AND ($5::UUID IS NULL OR sp.contact_id = $5)
      ORDER BY c.display_name ASC
-     LIMIT $5 OFFSET $6`,
+     LIMIT $6 OFFSET $7`,
     [
       search ? `%${search}%` : null,
       business || null,
       department || null,
       isActive,
+      contactId || null,
       limit,
       offset,
     ],

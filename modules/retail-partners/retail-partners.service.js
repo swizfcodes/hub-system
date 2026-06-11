@@ -9,6 +9,7 @@ const auditService = require("../../shared/audit/audit.service");
 const notifService = require("../../shared/notifications/notifications.service");
 const { emitToBusiness } = require("../../config/sockets");
 const repo = require("./retail-partners.repository");
+const contactsRepo = require("../../shared/contacts/contacts.repository");
 
 // ─────────────────────────────────────────────────────────────
 // PARTNER CRUD
@@ -148,6 +149,7 @@ async function listPartners(business, query) {
     const filters = {
       search: query.search,
       arrangementType: query.arrangement_type,
+      contactId: query.contact_id,
       isActive:
         query.is_active === "true"
           ? true
@@ -188,6 +190,8 @@ async function createPartner(business, data, user) {
         status: 409,
       });
     }
+    // Keep the directory truthful — tag the contact as a retail partner.
+    await contactsRepo.ensureContactType(client, data.contact_id, "retail_partner");
     const partner = await repo.insertPartner(client, data);
     await auditService.log(client, {
       userId: user.user_id,

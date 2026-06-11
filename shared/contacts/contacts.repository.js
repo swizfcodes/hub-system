@@ -2,6 +2,21 @@
 
 const { getActiveBusinesses } = require("../../config/businesses");
 
+/**
+ * Idempotently add a stakeholder tag ('staff' / 'supplier' /
+ * 'retail_partner' / 'customer') to a contact's contact_type array.
+ * Every module that creates a linked record calls this so the directory
+ * always knows who's who.
+ */
+async function ensureContactType(client, contactId, type) {
+  await client.query(
+    `UPDATE shared.contacts
+     SET contact_type = array_append(contact_type, $2), updated_at = now()
+     WHERE contact_id = $1 AND NOT ($2 = ANY(contact_type))`,
+    [contactId, type],
+  );
+}
+
 async function list(client, { business, search, type, limit, offset }) {
   const { rows } = await client.query(
     `SELECT contact_id, contact_type, display_name, first_name, last_name,
@@ -219,6 +234,7 @@ async function insertAddress(
 }
 
 module.exports = {
+  ensureContactType,
   list,
   count,
   countFiltered,

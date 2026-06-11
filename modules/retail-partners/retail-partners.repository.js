@@ -18,7 +18,7 @@
 
 async function listPartners(
   client,
-  { search, arrangementType, isActive, limit, offset },
+  { search, arrangementType, isActive, contactId, limit, offset },
 ) {
   const { rows } = await client.query(
     `SELECT rp.partner_id, rp.partner_code, rp.arrangement_type,
@@ -33,12 +33,14 @@ async function listPartners(
      WHERE ($1::TEXT IS NULL OR rp.partner_code ILIKE $1 OR c.display_name ILIKE $1 OR c.company_name ILIKE $1)
        AND ($2::TEXT IS NULL OR rp.arrangement_type = $2)
        AND ($3::BOOLEAN IS NULL OR rp.is_active = $3)
+       AND ($4::UUID IS NULL OR rp.contact_id = $4)
      ORDER BY c.display_name ASC
-     LIMIT $4 OFFSET $5`,
+     LIMIT $5 OFFSET $6`,
     [
       search ? `%${search}%` : null,
       arrangementType || null,
       isActive,
+      contactId || null,
       limit,
       offset,
     ],

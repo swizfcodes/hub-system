@@ -7,6 +7,7 @@ const contactsService = require("../contacts/contacts.service");
 const auditService = require("../audit/audit.service");
 const notifService = require("../notifications/notifications.service");
 const repo = require("./staff.repository");
+const contactsRepo = require("../contacts/contacts.repository");
 const { getActiveBusinesses } = require("../../config/businesses");
 
 // ─────────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ async function listStaff(query) {
       search: query.search,
       business: query.business,
       department: query.department,
+      contactId: query.contact_id,
       isActive:
         query.is_active === "true"
           ? true
@@ -149,6 +151,11 @@ async function createStaff(data, user) {
         user,
       );
       contactId = contact.contact_id;
+    } else {
+      // Existing contact being onboarded as an employee — make sure the
+      // directory knows. Without this, converted customers never showed
+      // under the Employees tab.
+      await contactsRepo.ensureContactType(client, contactId, "staff");
     }
 
     // Auto-generate employee_number: HUB-EMP-XXXX
