@@ -6,6 +6,145 @@ const { body, param } = require("express-validator");
 const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service = require("./crm.service");
+const clientsService = require("./clients.service");
+
+// ─── CLIENTS WORKSPACE ───────────────────────────────────────
+// The clients-first CRM: segmented client list, the Today work
+// feed, client 360 profiles, purchases, notes and thresholds.
+// Literal paths (/clients/today, /clients/settings) registered
+// before /clients/:contactId so they aren't captured as params.
+
+// GET /api/crm/clients — segmented, searchable client list
+router.get("/clients", can("crm", "view"), async (req, res, next) => {
+  try {
+    res.json(await clientsService.listClients(req.business, req.query));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/crm/clients/today — the daily work feed
+router.get("/clients/today", can("crm", "view"), async (req, res, next) => {
+  try {
+    res.json(await clientsService.getToday(req.business));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/crm/clients/settings — segment thresholds
+router.get("/clients/settings", can("crm", "view"), async (req, res, next) => {
+  try {
+    res.json(await clientsService.getSettings(req.business));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/crm/clients/settings
+router.patch(
+  "/clients/settings",
+  body("lapsed_days").optional().isInt({ min: 7, max: 730 }),
+  body("new_customer_days").optional().isInt({ min: 1, max: 365 }),
+  body("big_spender_threshold").optional().isFloat({ min: 0 }),
+  body("birthday_window_days").optional().isInt({ min: 1, max: 60 }),
+  body("stale_deal_days").optional().isInt({ min: 1, max: 180 }),
+  validate,
+  can("crm", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await clientsService.updateSettings(req.business, req.body, req.user),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/crm/clients/:contactId — client 360 profile
+router.get(
+  "/clients/:contactId",
+  param("contactId").isUUID(),
+  validate,
+  can("crm", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await clientsService.getClient(req.business, req.params.contactId),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/crm/clients/:contactId/purchases — unified history
+router.get(
+  "/clients/:contactId/purchases",
+  param("contactId").isUUID(),
+  validate,
+  can("crm", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await clientsService.listPurchases(
+          req.business,
+          req.params.contactId,
+          req.query,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/crm/clients/:contactId/notes — contact-level notes
+router.get(
+  "/clients/:contactId/notes",
+  param("contactId").isUUID(),
+  validate,
+  can("crm", "view"),
+  async (req, res, next) => {
+    try {
+      res.json({
+        data: await clientsService.listNotes(
+          req.business,
+          req.params.contactId,
+        ),
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/crm/clients/:contactId/notes
+router.post(
+  "/clients/:contactId/notes",
+  param("contactId").isUUID(),
+  body("content").isString().notEmpty(),
+  body("is_pinned").optional().isBoolean(),
+  validate,
+  can("crm", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await clientsService.addNote(
+            req.business,
+            req.params.contactId,
+            req.body,
+            req.user,
+          ),
+        );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /api/crm/deals
 router.get("/deals", can("crm", "view"), async (req, res, next) => {

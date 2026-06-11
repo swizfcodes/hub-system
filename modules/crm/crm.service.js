@@ -100,10 +100,28 @@ async function updateDeal(business, dealId, data, user) {
   });
 }
 
-async function moveDealStage(business, dealId, newStage, user) {
-  return withBusinessContext(business, async (client) => {
+/**
+ * Move a deal to a new stage. Pass newStage = null to auto-win:
+ * the business's positive terminal stage (jewelry: completed,
+ * diffusers: delivered) is resolved from pipeline_stage_defs.
+ * Used by sales when a quotation linked to a deal is confirmed,
+ * which also passes its open transaction via existingClient.
+ */
+async function moveDealStage(business, dealId, newStage, user, existingClient) {
+  const run = async (client) => {
+    let target = newStage;
+    if (!target) {
+      target = await repo.getPositiveTerminalStage(client, business);
+      if (!target) {
+        throw Object.assign(
+          new Error(`No winning stage configured for ${business} pipeline`),
+          { status: 500 },
+        );
+      }
+    }
+
     const old = await repo.getDealStage(client, dealId);
-    const deal = await repo.moveDealStage(client, dealId, newStage);
+    const deal = await repo.moveDealStage(client, dealId, target);
     if (!deal)
       throw Object.assign(new Error("Deal not found"), { status: 404 });
 
@@ -112,7 +130,7 @@ async function moveDealStage(business, dealId, newStage, user) {
       dealId,
       {
         activity_type: "stage_change",
-        summary: `Stage moved from "${old?.stage}" to "${newStage}"`,
+        summary: `Stage moved from "${old?.stage}" to "${target}"`,
         is_auto: true,
       },
       user,
@@ -122,10 +140,13 @@ async function moveDealStage(business, dealId, newStage, user) {
     emitToBusiness(business, "crm:stage_moved", {
       dealId,
       from: old?.stage,
-      to: newStage,
+      to: target,
     });
     return deal;
-  });
+  };
+
+  if (existingClient) return run(existingClient);
+  return withBusinessContext(business, run);
 }
 
 async function logActivity(business, dealId, data, user, existingClient) {

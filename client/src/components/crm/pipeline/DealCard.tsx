@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Star, Calendar } from "lucide-react";
 import { fmtMoney, fmtDate, fmtRelative } from "@lib/format";
-import { ProbabilityBar } from "../shared/ProbabilityBar";
 import type { PipelineStageWithDeals } from "@typedefs/crm";
 import { cn } from "@lib/cn";
 
@@ -64,14 +63,7 @@ export function DealCard({
             <span className="font-mono text-sm text-orika-gold">
               {fmtMoney(deal.expected_value, "NGN")}
             </span>
-            <span className="text-[0.6rem] text-orika-smoke">
-              {deal.probability}%
-            </span>
           </div>
-          <ProbabilityBar
-            probability={deal.probability ?? 50}
-            className="mt-1.5"
-          />
 
           <div className="mt-2 flex items-center gap-2 text-[0.6rem] text-orika-smoke">
             {deal.expected_close_date && (
