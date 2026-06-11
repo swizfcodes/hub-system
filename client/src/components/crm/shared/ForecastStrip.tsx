@@ -35,17 +35,8 @@ export function ForecastStrip({ pipeline, loading, currency = "NGN" }: Props) {
     0,
   );
 
-  const weighted = openStages.reduce((sum, s) => {
-    return (
-      sum +
-      s.deals.reduce((subtotal, d) => {
-        return (
-          subtotal +
-          Number(d.expected_value || 0) * (Number(d.probability ?? 50) / 100)
-        );
-      }, 0)
-    );
-  }, 0);
+  const openCount = openStages.reduce((n, s) => n + s.deals.length, 0);
+  const avgDealSize = openCount ? openValue / openCount : 0;
 
   // Find "won" terminal stages.
   const wonStage = pipeline.find(
@@ -73,14 +64,14 @@ export function ForecastStrip({ pipeline, loading, currency = "NGN" }: Props) {
         icon={<TrendingUp className="w-4 h-4" />}
         label="Open pipeline"
         value={fmtMoney(openValue, currency)}
-        hint={`${openStages.reduce((n, s) => n + s.deals.length, 0)} deals`}
+        hint={`${openCount} deals`}
         tone="gold"
       />
       <Kpi
         icon={<Target className="w-4 h-4" />}
-        label="Weighted forecast"
-        value={fmtMoney(weighted, currency)}
-        hint="probability × value"
+        label="Avg deal size"
+        value={fmtMoney(avgDealSize, currency)}
+        hint="open deals"
         tone="rose"
       />
       <Kpi

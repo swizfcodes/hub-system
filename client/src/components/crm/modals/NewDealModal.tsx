@@ -171,21 +171,6 @@ export function NewDealModal({
               />
             )}
           />
-          <Controller
-            control={control}
-            name="probability"
-            render={({ field, fieldState }) => (
-              <NumberField
-                surface="light"
-                label="Probability (%)"
-                placeholder="50"
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                error={fieldState.error?.message}
-              />
-            )}
-          />
           <Input
             {...register("expected_close_date")}
             type="date"

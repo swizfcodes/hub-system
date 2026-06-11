@@ -16,7 +16,6 @@ import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
 import { Input } from "@components/ui/Input";
-import { ProbabilityBar } from "../shared/ProbabilityBar";
 import { StagePill } from "../shared/StagePill";
 import { fmtMoney, fmtDate } from "@lib/format";
 import { updateDeal, moveDealStage } from "@services/crm/deals";
@@ -139,11 +138,6 @@ export function DealSidebar({ deal }: Props) {
         <div className="text-2xl font-display text-orika-gold tabular-nums">
           {fmtMoney(deal.expected_value, "NGN")}
         </div>
-        <ProbabilityBar
-          probability={deal.probability ?? 50}
-          showLabel
-          className="mt-3"
-        />
       </Card>
 
       {/* Key fields */}
@@ -241,7 +235,6 @@ function EditValueModal({
 }) {
   const qc = useQueryClient();
   const [value, setValue] = useState<number | "">(deal.expected_value ?? "");
-  const [probability, setProb] = useState(deal.probability ?? 50);
   const [closeDate, setClose] = useState(
     deal.expected_close_date?.slice(0, 10) ?? "",
   );
@@ -250,7 +243,6 @@ function EditValueModal({
     mutationFn: () =>
       updateDeal(deal.deal_id, {
         expected_value: value === "" ? undefined : Number(value),
-        probability,
         expected_close_date: closeDate || undefined,
       }),
     onSuccess: () => {
@@ -291,13 +283,6 @@ function EditValueModal({
           placeholder="0.00"
           value={value === "" ? undefined : value}
           onValueChange={(v) => setValue(v ?? "")}
-        />
-        <NumberField
-          surface="light"
-          label="Probability (%)"
-          placeholder="50"
-          value={probability}
-          onValueChange={(v) => setProb(v ?? 0)}
         />
         <Input
           type="date"
