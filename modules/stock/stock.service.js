@@ -54,6 +54,27 @@ async function getMovements(
   });
 }
 
+// Global movements list (all products) with filters + pagination.
+async function listMovements(business, query = {}) {
+  return withBusinessContext(business, async (client) => {
+    const page = parseInt(query.page || 1);
+    const limit = parseInt(query.limit || 50);
+    const offset = (page - 1) * limit;
+    const { rows, total } = await repo.listMovements(client, {
+      productId: query.product_id,
+      locationId: query.location_id,
+      movementType: query.movement_type,
+      referenceType: query.reference_type,
+      referenceId: query.reference_id,
+      fromDate: query.from,
+      toDate: query.to,
+      limit,
+      offset,
+    });
+    return { data: rows, pagination: { page, limit, total } };
+  });
+}
+
 async function createAdjustment(business, data, user) {
   return withBusinessContext(business, async (client) => {
     const currentQty = await repo.getCurrentQty(client, data.product_id);
@@ -87,6 +108,115 @@ async function createAdjustment(business, data, user) {
     });
 
     return adj;
+  });
+}
+
+// List adjustments (history), newest first, with product/location/user names.
+async function listAdjustments(business, query = {}) {
+  return withBusinessContext(business, async (client) => {
+    const rows = await repo.listAdjustments(client, {
+      productId: query.product_id,
+      locationId: query.location_id,
+      fromDate: query.from,
+      toDate: query.to,
+    });
+    return { data: rows };
+  });
+}
+
+// Batch adjustments — used by the count-session flow. Each row is created
+// PENDING (approved_by NULL); the stock movement is posted on approval.
+async function createBatchAdjustments(business, { adjustments }, user) {
+  if (!Array.isArray(adjustments) || adjustments.length === 0) {
+    throw Object.assign(new Error("adjustments array is required"), {
+      status: 400,
+    });
+  }
+  return withBusinessContext(business, async (client) => {
+    const created = [];
+    for (const a of adjustments) {
+      const before =
+        a.quantity_before != null
+          ? a.quantity_before
+          : await repo.getCurrentQty(client, a.product_id);
+      const row = await repo.insertAdjustmentPending(client, {
+        product_id: a.product_id,
+        location_id: a.location_id,
+        adjustment_type: a.adjustment_type,
+        quantity_before: before,
+        quantity_after: a.quantity_after,
+        reason: a.reason,
+        created_by: user.user_id,
+      });
+      created.push(row);
+    }
+    return { created: created.length, adjustments: created };
+  });
+}
+
+// Approve a pending adjustment: stamp approved_by and post the stock
+// movement for the recorded delta. Idempotent — re-approving a
+// already-approved adjustment is a no-op (avoids double-posting).
+async function approveAdjustment(business, adjustmentId, user) {
+  return withBusinessContext(business, async (client) => {
+    const adj = await repo.findAdjustmentById(client, adjustmentId);
+    if (!adj) {
+      throw Object.assign(new Error("Adjustment not found"), { status: 404 });
+    }
+    if (adj.approved_by) return adj; // already approved + posted
+
+    const updated = await repo.setAdjustmentApproved(
+      client,
+      adjustmentId,
+      user.user_id,
+    );
+
+    const diff = adj.quantity_after - adj.quantity_before;
+    if (diff !== 0) {
+      const direction = diff >= 0 ? 1 : -1;
+      await movements.recordMovement(client, {
+        business,
+        productId: adj.product_id,
+        movementType: "adjustment",
+        quantity: Math.abs(diff),
+        direction,
+        toLocationId: direction === 1 ? adj.location_id : null,
+        fromLocationId: direction === -1 ? adj.location_id : null,
+        referenceType: "adjustment",
+        referenceId: adj.adjustment_id,
+        notes: adj.reason,
+        performedBy: user.user_id,
+      });
+    }
+    return updated;
+  });
+}
+
+// ── Batches / lots ──────────────────────────────────────────
+async function createBatch(business, data, user) {
+  return withBusinessContext(business, async (client) => {
+    return repo.insertBatch(client, {
+      product_id: data.product_id,
+      batch_number: data.batch_number,
+      manufactured_date: data.manufactured_date,
+      expiry_date: data.expiry_date,
+      initial_quantity: data.initial_quantity,
+      location_id: data.location_id,
+      notes: data.notes,
+      created_by: user.user_id,
+    });
+  });
+}
+
+async function listBatches(business, query = {}) {
+  return withBusinessContext(business, async (client) => {
+    const rows = await repo.listBatches(client, {
+      productId: query.product_id,
+      expiringWithinDays: query.expiring_within_days
+        ? parseInt(query.expiring_within_days, 10)
+        : null,
+    });
+    return { data: rows };
   });
 }
 
@@ -401,6 +531,7 @@ async function getLocations(business) {
 module.exports = {
   getCurrentStock,
   getMovements,
+  listMovements,
   // ── Movements (re-exported from movements.service) ──────────
   // POS, sales, purchasing, logistics already import these via
   // stock.service so the import paths stay stable across modules.
@@ -431,6 +562,11 @@ module.exports = {
   getValuationByProductForBusiness: valuation.getValuationByProductForBusiness,
   // ── Local operations ────────────────────────────────────────
   createAdjustment,
+  listAdjustments,
+  createBatchAdjustments,
+  approveAdjustment,
+  createBatch,
+  listBatches,
   createTransfer,
   listTransfers,
   getTransfer,

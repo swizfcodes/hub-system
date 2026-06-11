@@ -122,6 +122,12 @@ async function init(httpServer) {
     });
   });
 
+  io = new Server(httpServer, {
+    cors: { origin: config.app.allowedOrigins, credentials: true },
+    adapter: createAdapter(pubClient, subClient),
+    transports: ["polling"], // disable websocket upgrade
+  });
+
   logger.info("Socket.io initialised with Redis adapter");
 }
 

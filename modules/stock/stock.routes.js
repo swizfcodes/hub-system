@@ -297,7 +297,16 @@ router.get("/locations", can("stock", "view"), async (req, res, next) => {
   }
 });
 
-// ── ADJUSTMENTS (existing) ──────────────────────────────────────────────────
+// ── ADJUSTMENTS ─────────────────────────────────────────────────────────────
+
+// List adjustment history.
+router.get("/adjustment", can("stock", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.listAdjustments(req.business, req.query));
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.post(
   "/adjustment",
@@ -317,6 +326,95 @@ router.post(
     }
   },
 );
+
+// Batch adjustments (count session) — literal "/adjustment/batch" before the
+// parametric "/adjustment/:id/approve" below.
+router.post(
+  "/adjustment/batch",
+  body("adjustments").isArray({ min: 1 }),
+  body("adjustments.*.product_id").isUUID(),
+  body("adjustments.*.location_id").isUUID(),
+  body("adjustments.*.quantity_after").isInt(),
+  body("adjustments.*.reason").notEmpty(),
+  validate,
+  can("stock", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(
+          await service.createBatchAdjustments(
+            req.business,
+            req.body,
+            req.user,
+          ),
+        );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/adjustment/:id/approve",
+  param("id").isUUID(),
+  validate,
+  can("stock", "approve"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.approveAdjustment(req.business, req.params.id, req.user),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── BATCHES / LOTS ──────────────────────────────────────────────────────────
+
+router.get("/batches", can("stock", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.listBatches(req.business, req.query));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  "/batches",
+  body("product_id").isUUID(),
+  body("batch_number").isString().notEmpty(),
+  body("initial_quantity").isInt({ min: 1 }),
+  body("manufactured_date").optional({ nullable: true }).isISO8601(),
+  body("expiry_date").optional({ nullable: true }).isISO8601(),
+  body("location_id").optional({ nullable: true }).isUUID(),
+  body("notes").optional().isString(),
+  validate,
+  can("stock", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.createBatch(req.business, req.body, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── MOVEMENTS ───────────────────────────────────────────────────────────────
+
+// Global movements list (all products). Literal "/movements" MUST come
+// before the parametric "/:productId/movements" below, otherwise Express
+// matches "movements" as a productId and the UUID validator throws.
+router.get("/movements", can("stock", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.listMovements(req.business, req.query));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── MOVEMENTS (parametric catch-all — MUST be last) ─────────────────────────
 

@@ -34,7 +34,7 @@ export function connectSocket(): Socket | null {
   const token = getToken();
   if (!token) return null;
 
-  socket = io({ auth: { token }, transports: ["websocket", "polling"] });
+  socket = io({ auth: { token }, transports: ["polling"] });
 
   for (const event of FORWARDED_EVENTS) {
     socket.on(event, (detail: unknown) => dispatchSocketEvent(event, detail));

@@ -9,17 +9,8 @@
 -- Uses DO $$ blocks so the migration is safely re-runnable.
 -- ============================================================
 
-DO $$
-BEGIN
-  ALTER TABLE shared.contacts ADD COLUMN address_city TEXT;
-  EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
-
-DO $$
-BEGIN
-  ALTER TABLE shared.contacts ADD COLUMN address_state TEXT;
-  EXCEPTION WHEN duplicate_column THEN NULL;
-END $$;
+ALTER TABLE shared.contacts ADD COLUMN IF NOT EXISTS address_city  TEXT;
+ALTER TABLE shared.contacts ADD COLUMN IF NOT EXISTS address_state TEXT;
 
 COMMENT ON COLUMN shared.contacts.address_city IS
   'City of residence — collected via walk-in QR registration or manual CRM entry.';

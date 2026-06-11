@@ -7,6 +7,15 @@ const validate = require("../../middleware/validateBody");
 const { can } = require("../../middleware/permissions");
 const service = require("./accounting.service");
 
+// Accounting dashboard — MTD P&L, cash position, unreconciled count, open period.
+router.get("/dashboard", can("accounting", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.getDashboard(req.business));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.get("/accounts", can("accounting", "view"), async (req, res, next) => {
   try {
     res.json(await service.listAccounts(req.business, req.query));
@@ -14,6 +23,25 @@ router.get("/accounts", can("accounting", "view"), async (req, res, next) => {
     next(e);
   }
 });
+
+// Per-account general ledger (transactions + running balance).
+router.get(
+  "/accounts/:id/ledger",
+  param("id").isUUID(),
+  query("start_date").optional().isISO8601(),
+  query("end_date").optional().isISO8601(),
+  validate,
+  can("accounting", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.getAccountLedger(req.business, req.params.id, req.query),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 // ── Chart of accounts CRUD ───────────────────────────────────
 // Add an account when the business expands its books (e.g. opens a
@@ -119,6 +147,24 @@ router.post(
   },
 );
 
+// Reverse a journal entry — posts a sign-swapped counter-entry and
+// flags the original as reversed (both remain in the books and cancel).
+router.post(
+  "/journals/:id/reverse",
+  param("id").isUUID(),
+  validate,
+  can("accounting", "create"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.reverseJournal(req.business, req.params.id, req.user),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.get("/pl", can("accounting", "view"), async (req, res, next) => {
   try {
     res.json(await service.getProfitAndLoss(req.business, req.query));
@@ -148,6 +194,55 @@ router.get(
     }
   },
 );
+
+// ── /reports/* aliases ───────────────────────────────────────
+// The client calls these RESTy paths; they map to the same services
+// as /pl, /balance-sheet and /trial-balance above.
+router.get(
+  "/reports/profit-and-loss",
+  can("accounting", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getProfitAndLoss(req.business, req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get(
+  "/reports/balance-sheet",
+  can("accounting", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getBalanceSheet(req.business, req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get(
+  "/reports/trial-balance",
+  can("accounting", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getTrialBalance(req.business, req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get(
+  "/reports/cash-flow",
+  can("accounting", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getCashFlow(req.business, req.query));
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 router.get(
   "/bank-statements",
   can("accounting", "view"),

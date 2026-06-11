@@ -460,10 +460,32 @@ async function reorderTiers(business, tiers, user) {
   });
 }
 
+async function getStats(business) {
+  return withBusinessContext(business, async (client) => {
+    const { totals, tierDistribution } = await repo.getStats(client);
+    const config = await repo.getLoyaltyConfig(client, business);
+    return {
+      total_issued: totals.total_issued || 0,
+      total_redeemed: totals.total_redeemed || 0,
+      active_contacts: totals.active_contacts || 0,
+      tier_distribution: tierDistribution,
+      config: config || {},
+    };
+  });
+}
+
+async function getLeaderboard(business, limit = 20) {
+  return withBusinessContext(business, async (client) => {
+    return repo.getLeaderboard(client, limit);
+  });
+}
+
 module.exports = {
   getTiers,
   getBalance,
   getHistory,
+  getStats,
+  getLeaderboard,
   awardPoints,
   redeemPoints,
   manualAward,
