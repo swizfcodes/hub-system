@@ -22,7 +22,10 @@ router.post(
   "/",
   body("campaign_name").notEmpty(),
   body("campaign_type").isIn(["email", "whatsapp"]),
-  body("html_content").notEmpty(),
+  // html_content is OPTIONAL at creation — the wizard saves a draft after
+  // the Details step, before content exists. Content presence is enforced
+  // at send time (scheduler.service.js schedule/sendNow guards).
+  body("html_content").optional().isString(),
   validate,
   can("campaigns", "create"),
   async (req, res, next) => {

@@ -40,7 +40,9 @@ async function insert(
       campaign_type,
       subject_line || null,
       from_name || null,
-      html_content,
+      // Column is NOT NULL — drafts created before the Content step
+      // store an empty string. Send-time guards reject empty content.
+      html_content || "",
       JSON.stringify(audience_filter || {}),
       userId,
     ],
@@ -71,7 +73,8 @@ async function findStatusById(client, campaignId) {
   const {
     rows: [c],
   } = await client.query(
-    `SELECT status, recipient_count FROM campaigns WHERE campaign_id=$1`,
+    `SELECT status, recipient_count, campaign_type, subject_line, html_content
+     FROM campaigns WHERE campaign_id=$1`,
     [campaignId],
   );
   return c || null;

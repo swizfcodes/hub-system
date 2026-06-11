@@ -92,8 +92,12 @@ export default function CampaignBuilder() {
   const campaignType = form.watch("campaign_type");
   const audienceFilter = form.watch("audience_filter") as AudienceFilter;
 
-  // Save draft on each step transition
-  async function saveProgress(values: Partial<CreateCampaignValues>) {
+  // Save draft on each step transition. Returns true on success so the
+  // wizard NEVER advances past a failed save (which previously left
+  // campaignId null and dead-ended the Audience step).
+  async function saveProgress(
+    values: Partial<CreateCampaignValues>,
+  ): Promise<boolean> {
     setSaving(true);
     try {
       if (!campaignId) {
@@ -102,8 +106,10 @@ export default function CampaignBuilder() {
       } else {
         await updateCampaign(campaignId, values);
       }
+      return true;
     } catch (err) {
       showToast.error(errMsg(err));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -114,27 +120,47 @@ export default function CampaignBuilder() {
     if (step === "details") {
       const valid = await form.trigger(["campaign_name", "campaign_type"]);
       if (!valid) return;
-      await saveProgress({
+      const saved = await saveProgress({
         campaign_name: values.campaign_name,
         campaign_type: values.campaign_type,
         subject_line: values.subject_line,
         from_name: values.from_name,
       });
+      if (!saved) return;
       setStep("audience");
     } else if (step === "audience") {
-      if (!campaignId) return;
-      await saveProgress({ audience_filter: values.audience_filter });
-      const result = await buildAudience(campaignId);
-      setAudienceCount(result.recipient_count);
+      if (!campaignId) {
+        // Defensive — should be unreachable now that Details can't be
+        // passed without a successful save.
+        showToast.error("Complete the Details step first");
+        setStep("details");
+        return;
+      }
+      const saved = await saveProgress({
+        audience_filter: values.audience_filter,
+      });
+      if (!saved) return;
+      try {
+        const result = await buildAudience(campaignId);
+        setAudienceCount(result.recipient_count);
+      } catch (err) {
+        showToast.error(errMsg(err));
+        return;
+      }
       setStep("content");
     } else if (step === "content") {
       if (!values.html_content.trim()) {
         form.setError("html_content", { message: "Content required" });
         return;
       }
-      await saveProgress({ html_content: values.html_content });
+      const saved = await saveProgress({ html_content: values.html_content });
+      if (!saved) return;
       setStep("schedule");
     } else if (step === "schedule") {
+      if (scheduleMode === "later" && !scheduledAt) {
+        showToast.error("Pick a send date and time, or choose Send Now");
+        return;
+      }
       setStep("review");
     }
   }
@@ -246,19 +272,42 @@ export default function CampaignBuilder() {
               />
               {campaignType === "email" && (
                 <>
-                  <Controller
-                    name="subject_line"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="Email Subject Line"
-                        placeholder="e.g. ✨ New Arrivals — Just for You, {{customer_name}}"
-                        surface="dark"
-                        hint="Use {{customer_name}} for personalisation"
-                      />
-                    )}
-                  />
+                  <div>
+                    <Controller
+                      name="subject_line"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          label="Email Subject Line"
+                          placeholder="e.g. ✨ New Arrivals — Just for You, {{customer_name}}"
+                          surface="dark"
+                          hint='Click a variable below to insert it. Contacts without a name get "Valued Customer".'
+                        />
+                      )}
+                    />
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {TEMPLATE_VARIABLES.map((v) => (
+                        <button
+                          key={v.token}
+                          type="button"
+                          title={`${v.label} — e.g. ${v.example}`}
+                          onClick={() => {
+                            const current =
+                              form.getValues("subject_line") ?? "";
+                            const sep =
+                              current && !current.endsWith(" ") ? " " : "";
+                            form.setValue("subject_line", current + sep + v.token, {
+                              shouldDirty: true,
+                            });
+                          }}
+                          className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-orika-smoke hover:text-orika-gold hover:border-orika-gold/30 transition-colors font-mono"
+                        >
+                          {v.token}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Controller
                     name="from_name"
                     control={form.control}
