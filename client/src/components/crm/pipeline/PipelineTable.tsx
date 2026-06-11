@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { StagePill } from "../shared/StagePill";
-import { ProbabilityBar } from "../shared/ProbabilityBar";
 import { fmtMoney, fmtDate, fmtRelative } from "@lib/format";
 import { Skeleton } from "@components/ui/Skeleton";
 import { EmptyState } from "@components/ui/EmptyState";
@@ -19,7 +18,6 @@ type SortKey =
   | "updated_at"
   | "expected_close_date"
   | "expected_value"
-  | "probability"
   | "title"
   | "stage";
 
@@ -112,12 +110,6 @@ export function PipelineTable({ pipeline, loading }: Props) {
                 Value
               </Th>
               <Th
-                onClick={() => toggle("probability")}
-                sort={sortIcon("probability")}
-              >
-                Probability
-              </Th>
-              <Th
                 onClick={() => toggle("expected_close_date")}
                 sort={sortIcon("expected_close_date")}
               >
@@ -168,9 +160,6 @@ export function PipelineTable({ pipeline, loading }: Props) {
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-orika-gold">
                     {fmtMoney(r.expected_value, "NGN")}
-                  </td>
-                  <td className="px-4 py-3 w-[160px]">
-                    <ProbabilityBar probability={r.probability ?? 50} />
                   </td>
                   <td
                     className={cn(

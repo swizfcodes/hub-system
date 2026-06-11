@@ -101,6 +101,19 @@ async function getDealStage(client, dealId) {
   return old || null;
 }
 
+async function getPositiveTerminalStage(client, business) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT stage_key FROM shared.pipeline_stage_defs
+     WHERE business = $1 AND pipeline_type = 'crm'
+       AND is_positive_terminal = true
+     ORDER BY display_order LIMIT 1`,
+    [business],
+  );
+  return row?.stage_key || null;
+}
+
 async function moveDealStage(client, dealId, newStage) {
   const {
     rows: [deal],
@@ -439,6 +452,7 @@ module.exports = {
   findDealById,
   updateDeal,
   getDealStage,
+  getPositiveTerminalStage,
   moveDealStage,
   insertActivity,
   getPipelineStages,

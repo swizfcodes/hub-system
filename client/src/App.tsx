@@ -47,6 +47,7 @@ const StaffOnboard = lazy(() => import("@pages/contacts/StaffOnboard"));
 // CRM module
 const CrmHome = lazy(() => import("@pages/crm/CrmHome"));
 const DealDetail = lazy(() => import("@pages/crm/DealDetail"));
+const ClientProfile = lazy(() => import("@pages/crm/ClientProfile"));
 
 // Catalogue module
 const CatalogueHome = lazy(() => import("@pages/catalogue/CatalogueHome"));
@@ -356,6 +357,7 @@ export default function App() {
 
           {/* CRM */}
           <Route path="/crm" element={<CrmHome />} />
+          <Route path="/crm/clients/:contactId" element={<ClientProfile />} />
           <Route path="/crm/:id" element={<DealDetail />} />
 
           {/* Catalogue */}
