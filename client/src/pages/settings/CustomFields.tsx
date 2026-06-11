@@ -340,13 +340,13 @@ function AddFieldModal({
               key={t}
               type="button"
               onClick={() => setType(t)}
-              className={`p-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all ${type === t ? "bg-orika-black text-orika-cream border-orika-black" : "bg-white border-orika-cloud/40 text-orika-black/70 hover:border-orika-black/40"}`}
+              className={`p-3 rounded-xl border text-xs font-semibold uppercase tracking-wide transition-all ${type === t ? "bg-brand-black text-brand-cream border-brand-black" : "bg-white border-brand-cloud/40 text-brand-black/70 hover:border-brand-black/40"}`}
             >
               {t.replace("_", " ")}
             </button>
           ))}
         </div>
-        <div className="p-3 rounded-xl bg-orika-cream/50 border border-orika-cloud/40">
+        <div className="p-3 rounded-xl bg-brand-cream/50 border border-brand-cloud/40">
           <Switch
             surface="light"
             checked={required}

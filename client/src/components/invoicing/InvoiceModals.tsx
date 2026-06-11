@@ -106,9 +106,9 @@ export function RecordPaymentModal({
     >
       <div className="space-y-4">
         {/* Outstanding balance */}
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 flex justify-between items-center">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 flex justify-between items-center">
           <span className="text-sm text-text-on-light-muted">Outstanding</span>
-          <span className="font-display text-xl font-light text-orika-black">
+          <span className="font-display text-xl font-light text-brand-black">
             {fmtMoney(invoice.amount_outstanding, currency)}
           </span>
         </div>
@@ -252,16 +252,16 @@ export function SendInvoiceModal({ open, onClose, invoice }: SendInvoiceProps) {
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm space-y-1">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 text-sm space-y-1">
           <div className="flex justify-between">
             <span className="text-text-on-light-muted">To</span>
-            <span className="font-medium text-orika-black">
+            <span className="font-medium text-brand-black">
               {invoice.contact_name}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-text-on-light-muted">Invoice</span>
-            <span className="font-medium text-orika-black">
+            <span className="font-medium text-brand-black">
               {invoice.invoice_number}
             </span>
           </div>
@@ -411,7 +411,7 @@ export function CreditNoteModal({
           {form.watch("lines").map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border border-orika-cloud/30 bg-orika-cloud/10 p-3 space-y-2"
+              className="rounded-xl border border-brand-cloud/30 bg-brand-cloud/10 p-3 space-y-2"
             >
               <Controller
                 name={`lines.${i}.description`}
@@ -462,7 +462,7 @@ export function CreditNoteModal({
           ))}
         </div>
 
-        <div className="flex justify-end text-sm font-semibold text-orika-black">
+        <div className="flex justify-end text-sm font-semibold text-brand-black">
           Credit Total: {fmtMoney(creditTotal, currency)}
         </div>
       </div>

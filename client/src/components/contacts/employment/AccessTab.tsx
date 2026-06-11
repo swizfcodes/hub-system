@@ -108,22 +108,22 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
       {/* Login card */}
       <Card className="p-5 sm:p-6">
         <div className="flex items-start gap-3 flex-wrap">
-          <div className="shrink-0 w-12 h-12 rounded-xl bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+          <div className="shrink-0 w-12 h-12 rounded-xl bg-brand-accent/15 text-brand-accent flex items-center justify-center">
             <KeyRound className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-xl text-orika-cream">
+            <h3 className="font-display text-xl text-brand-cream">
               Login account
             </h3>
             {!hasUser ? (
-              <p className="text-sm text-orika-smoke mt-1">
+              <p className="text-sm text-brand-smoke mt-1">
                 No login provisioned. This person can't sign into the Hub.
               </p>
             ) : (
               <>
-                <p className="text-sm text-orika-cloud mt-1">
+                <p className="text-sm text-brand-cloud mt-1">
                   <span className="font-mono">{staff.email}</span>
-                  <span className="text-orika-smoke"> · </span>
+                  <span className="text-brand-smoke"> · </span>
                   {staff.user_is_active ? (
                     <Badge tone="sage" size="xs" dot>
                       Active
@@ -134,7 +134,7 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
                     </Badge>
                   )}
                 </p>
-                <p className="text-[0.65rem] text-orika-smoke mt-1">
+                <p className="text-[0.65rem] text-brand-smoke mt-1">
                   Last login:{" "}
                   {staff.last_login_at
                     ? fmtRelative(staff.last_login_at)
@@ -192,7 +192,7 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
       {hasUser && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-orika-gold">
+            <h3 className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-brand-accent">
               <ShieldCheck className="w-3.5 h-3.5" /> Role assignments
             </h3>
             <Button
@@ -234,12 +234,12 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
                   key={`${r.role_id}-${r.business}`}
                   className="p-4 flex items-center gap-3"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-brand-accent/15 text-brand-accent flex items-center justify-center">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-orika-cream capitalize">
+                      <span className="text-sm font-medium text-brand-cream capitalize">
                         {r.role_name}
                       </span>
                       <Badge tone="gold" size="xs">
@@ -251,7 +251,7 @@ export function AccessTab({ staff }: { staff: StaffProfile }) {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-[0.65rem] text-orika-smoke mt-1">
+                    <div className="text-[0.65rem] text-brand-smoke mt-1">
                       Granted {fmtRelative(r.granted_at)}
                       {r.granted_by_name && ` by ${r.granted_by_name}`}
                     </div>
@@ -466,7 +466,7 @@ function ProvisionLoginModal({
                     }}
                   />
                   <span
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${checked ? "bg-orika-black text-orika-cream border-orika-black" : "bg-white border-orika-cloud/40 text-orika-black/70"}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${checked ? "bg-brand-black text-brand-cream border-brand-black" : "bg-white border-brand-cloud/40 text-brand-black/70"}`}
                   >
                     {b.display_name}
                   </span>
@@ -599,7 +599,7 @@ function CredentialsModal({
       size="md"
       title={
         <span className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-full bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+          <span className="w-9 h-9 rounded-full bg-brand-accent/15 text-brand-accent flex items-center justify-center">
             <Check className="w-4 h-4" />
           </span>
           Temporary password
@@ -615,7 +615,7 @@ function CredentialsModal({
       <div className="space-y-4">
         <div className="p-4 rounded-xl bg-state-warn/[0.08] border border-state-warn/30 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-state-warn mt-0.5 shrink-0" />
-          <p className="text-xs text-orika-black/80">
+          <p className="text-xs text-brand-black/80">
             This password will not be displayed again. Copy it now and share it
             securely (in person, secure messenger).
           </p>
@@ -624,7 +624,7 @@ function CredentialsModal({
           <div className="text-[0.65rem] tracking-widest uppercase text-text-on-light-muted ml-1 mb-2">
             Email
           </div>
-          <code className="block w-full px-3 py-2.5 bg-white border border-orika-cloud/40 rounded-xl text-sm text-orika-black">
+          <code className="block w-full px-3 py-2.5 bg-white border border-brand-cloud/40 rounded-xl text-sm text-brand-black">
             {credentials.email}
           </code>
         </div>
@@ -633,12 +633,12 @@ function CredentialsModal({
             Temporary password
           </div>
           <div className="relative">
-            <code className="block w-full px-3 py-2.5 bg-white border border-orika-cloud/40 rounded-xl text-sm font-mono text-orika-black tracking-wider pr-12">
+            <code className="block w-full px-3 py-2.5 bg-white border border-brand-cloud/40 rounded-xl text-sm font-mono text-brand-black tracking-wider pr-12">
               {credentials.temp_password}
             </code>
             <button
               onClick={copy}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-orika-smoke hover:text-orika-black hover:bg-orika-cloud/30 rounded-lg transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-brand-smoke hover:text-brand-black hover:bg-brand-cloud/30 rounded-lg transition-colors"
               aria-label="Copy"
             >
               <Copy className="w-4 h-4" />

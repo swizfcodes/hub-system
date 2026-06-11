@@ -431,8 +431,8 @@ export function MessageThread({
     >
       {/* Drag overlay */}
       {dragOver && (
-        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-orika-gold/60 bg-orika-black/70">
-          <p className="text-sm font-medium text-orika-gold">
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-brand-accent/60 bg-brand-black/70">
+          <p className="text-sm font-medium text-brand-accent">
             Drop to send file
           </p>
         </div>
@@ -443,7 +443,7 @@ export function MessageThread({
         {onBack && (
           <button
             onClick={onBack}
-            className="lg:hidden text-orika-smoke hover:text-orika-cream"
+            className="lg:hidden text-brand-smoke hover:text-brand-cream"
             title="Back"
           >
             <X className="h-4 w-4" />
@@ -457,15 +457,15 @@ export function MessageThread({
             {getInitials(displayName)}
           </div>
           {!isGroup && peerOnline && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-orika-black bg-green-400" />
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-brand-black bg-green-400" />
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-orika-cream">{displayName}</p>
+          <p className="truncate font-medium text-brand-cream">{displayName}</p>
           <p
             className={cn(
               "truncate text-xs",
-              typingNames.length ? "text-orika-gold" : "text-orika-smoke",
+              typingNames.length ? "text-brand-accent" : "text-brand-smoke",
             )}
           >
             {subtitle}
@@ -479,8 +479,8 @@ export function MessageThread({
           className={cn(
             "rounded-lg p-1.5 transition-colors",
             searchOpen
-              ? "bg-orika-gold/15 text-orika-gold"
-              : "text-orika-smoke hover:text-orika-cream",
+              ? "bg-brand-accent/15 text-brand-accent"
+              : "text-brand-smoke hover:text-brand-cream",
           )}
           title="Search in conversation"
         >
@@ -495,7 +495,7 @@ export function MessageThread({
             <button
               onClick={() => resolveMutation.mutate()}
               disabled={resolveMutation.isPending}
-              className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-orika-smoke transition-all hover:border-green-400/30 hover:text-green-400"
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-brand-smoke transition-all hover:border-green-400/30 hover:text-green-400"
               title="Mark as resolved"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -507,19 +507,19 @@ export function MessageThread({
 
       {/* In-chat search */}
       {searchOpen && (
-        <div className="border-b border-white/5 bg-orika-charcoal/40 px-4 py-2">
+        <div className="border-b border-white/5 bg-brand-charcoal/40 px-4 py-2">
           <input
             autoFocus
             type="text"
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
             placeholder="Search this conversation…"
-            className="w-full rounded-xl border border-white/5 bg-orika-charcoal py-2 px-3 text-xs text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/30 focus:outline-none"
+            className="w-full rounded-xl border border-white/5 bg-brand-charcoal py-2 px-3 text-xs text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/30 focus:outline-none"
           />
           {searchQ.trim().length >= 2 && (
             <div className="mt-1 max-h-44 overflow-y-auto">
               {searchResults.length === 0 ? (
-                <p className="py-2 text-center text-[11px] text-orika-smoke">
+                <p className="py-2 text-center text-[11px] text-brand-smoke">
                   No matches
                 </p>
               ) : (
@@ -528,12 +528,12 @@ export function MessageThread({
                     key={r.message_id}
                     className="rounded-lg px-2 py-1.5 text-xs hover:bg-white/5"
                   >
-                    <span className="text-orika-gold">{r.sender_name}</span>
-                    <span className="text-orika-smoke/60">
+                    <span className="text-brand-accent">{r.sender_name}</span>
+                    <span className="text-brand-smoke/60">
                       {" "}
                       · {fmtClockTime(r.created_at)}
                     </span>
-                    <p className="truncate text-orika-cream">{r.content}</p>
+                    <p className="truncate text-brand-cream">{r.content}</p>
                   </div>
                 ))
               )}
@@ -558,7 +558,7 @@ export function MessageThread({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-orika-smoke">
+            <p className="text-sm text-brand-smoke">
               No messages yet — say hello 👋
             </p>
           </div>
@@ -578,7 +578,7 @@ export function MessageThread({
               <div key={msg.message_id}>
                 {newDay && (
                   <div className="flex justify-center py-2">
-                    <span className="rounded-full bg-orika-charcoal px-3 py-1 text-[10px] font-medium text-orika-smoke/70">
+                    <span className="rounded-full bg-brand-charcoal px-3 py-1 text-[10px] font-medium text-brand-smoke/70">
                       {fmtDayLabel(msg.created_at)}
                     </span>
                   </div>
@@ -607,13 +607,13 @@ export function MessageThread({
 
       {/* Reply / edit banner */}
       {(replyTo || editing) && (
-        <div className="mx-4 mb-1 flex items-center gap-2 rounded-xl border border-orika-gold/20 bg-orika-gold/5 px-3 py-2">
+        <div className="mx-4 mb-1 flex items-center gap-2 rounded-xl border border-brand-accent/20 bg-brand-accent/5 px-3 py-2">
           {editing ? (
-            <Pencil className="h-3.5 w-3.5 shrink-0 text-orika-gold" />
+            <Pencil className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
           ) : (
-            <Reply className="h-3.5 w-3.5 shrink-0 text-orika-gold" />
+            <Reply className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
           )}
-          <p className="flex-1 truncate text-xs text-orika-cloud">
+          <p className="flex-1 truncate text-xs text-brand-cloud">
             {editing
               ? "Editing message"
               : `${replyTo?.sender_name}: ${replyTo?.content ?? ""}`}
@@ -624,7 +624,7 @@ export function MessageThread({
               setEditing(null);
               if (editing) setContent("");
             }}
-            className="text-orika-smoke hover:text-orika-cream"
+            className="text-brand-smoke hover:text-brand-cream"
           >
             ×
           </button>
@@ -635,7 +635,7 @@ export function MessageThread({
       {!isResolved && (
         <div className="border-t border-white/5 px-4 py-3">
           <div className="flex items-end gap-2">
-            <div className="relative flex-1 rounded-2xl border border-white/10 bg-orika-charcoal">
+            <div className="relative flex-1 rounded-2xl border border-white/10 bg-brand-charcoal">
               <EmojiPicker
                 open={emojiOpen}
                 onClose={() => setEmojiOpen(false)}
@@ -658,14 +658,14 @@ export function MessageThread({
                 }
                 rows={1}
                 disabled={recording}
-                className="w-full resize-none bg-transparent px-4 py-3 text-sm text-orika-cream placeholder-orika-smoke/40 focus:outline-none"
+                className="w-full resize-none bg-transparent px-4 py-3 text-sm text-brand-cream placeholder-brand-smoke/40 focus:outline-none"
                 style={{ maxHeight: 120 }}
               />
               <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1.5">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="p-1 text-orika-smoke/60 transition-colors hover:text-orika-smoke disabled:opacity-40"
+                  className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke disabled:opacity-40"
                   title="Attach a file"
                 >
                   <Paperclip
@@ -674,12 +674,12 @@ export function MessageThread({
                 </button>
                 <button
                   onClick={() => setEmojiOpen((v) => !v)}
-                  className="p-1 text-orika-smoke/60 transition-colors hover:text-orika-smoke"
+                  className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke"
                   title="Emoji"
                 >
                   <Smile className="h-4 w-4" />
                 </button>
-                <span className="ml-1 text-[10px] text-orika-smoke/30">
+                <span className="ml-1 text-[10px] text-brand-smoke/30">
                   Use @ to mention someone
                 </span>
                 <input
@@ -702,7 +702,7 @@ export function MessageThread({
                   sendMutation.isPending ||
                   editMutation.isPending
                 }
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orika-gold text-orika-black transition-all hover:bg-orika-gold-glow disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-accent text-brand-black transition-all hover:bg-brand-accent-glow disabled:opacity-40"
                 title={editing ? "Save edit" : "Send"}
               >
                 <Send className="h-4 w-4" />
@@ -715,7 +715,7 @@ export function MessageThread({
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all disabled:opacity-40",
                   recording
                     ? "animate-pulse bg-red-500 text-white"
-                    : "bg-orika-gold text-orika-black hover:bg-orika-gold-glow",
+                    : "bg-brand-accent text-brand-black hover:bg-brand-accent-glow",
                 )}
                 title={recording ? "Stop and send" : "Record voice note"}
               >

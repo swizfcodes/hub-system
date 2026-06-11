@@ -161,7 +161,7 @@ export default function ReportViewer() {
   if (!familyDef || !reportDef) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Report not found.</p>
+        <p className="text-brand-smoke">Report not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -193,8 +193,8 @@ export default function ReportViewer() {
               className={cn(
                 "flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition-all",
                 isConsolidated
-                  ? "border-orika-gold/40 bg-orika-gold/10 text-orika-gold"
-                  : "border-white/10 text-orika-smoke hover:border-white/20",
+                  ? "border-brand-accent/40 bg-brand-accent/10 text-brand-accent"
+                  : "border-white/10 text-brand-smoke hover:border-white/20",
               )}
               title="Combine both brands"
             >
@@ -205,7 +205,7 @@ export default function ReportViewer() {
             {report && (
               <>
                 {/* View toggle */}
-                <div className="flex rounded-xl border border-white/5 bg-orika-charcoal p-0.5">
+                <div className="flex rounded-xl border border-white/5 bg-brand-charcoal p-0.5">
                   {(["table", "chart"] as const).map((m) => (
                     <button
                       key={m}
@@ -213,8 +213,8 @@ export default function ReportViewer() {
                       className={cn(
                         "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                         viewMode === m
-                          ? "bg-orika-gold text-orika-black"
-                          : "text-orika-smoke hover:text-orika-cream",
+                          ? "bg-brand-accent text-brand-black"
+                          : "text-brand-smoke hover:text-brand-cream",
                       )}
                     >
                       {m === "table" ? (
@@ -287,7 +287,7 @@ export default function ReportViewer() {
       ) : report ? (
         <div className="space-y-4">
           {/* Generated timestamp */}
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             Generated{" "}
             {new Date(report.meta.generatedAt).toLocaleString("en-NG")}
             {isConsolidated && " · Consolidated view (both brands)"}
@@ -306,10 +306,10 @@ export default function ReportViewer() {
           )}
         </div>
       ) : (
-        <div className="flex h-48 items-center justify-center rounded-2xl border border-white/5 bg-orika-charcoal">
+        <div className="flex h-48 items-center justify-center rounded-2xl border border-white/5 bg-brand-charcoal">
           <div className="text-center">
-            <BarChart2 className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">
+            <BarChart2 className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">
               Set your filters and click Run Report
             </p>
           </div>

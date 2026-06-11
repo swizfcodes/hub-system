@@ -79,24 +79,24 @@ export default function ProcurementHome() {
           {/* Quick Purchase */}
           <button
             onClick={() => navigate("/procurement/purchase-orders/new?mode=quick")}
-            className="group relative text-left rounded-2xl border border-orika-gold/30 bg-orika-gold/5 p-5 hover:border-orika-gold/60 hover:bg-orika-gold/10 transition-all"
+            className="group relative text-left rounded-2xl border border-brand-accent/30 bg-brand-accent/5 p-5 hover:border-brand-accent/60 hover:bg-brand-accent/10 transition-all"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orika-gold/20 text-orika-gold">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-accent/20 text-brand-accent">
                 <Zap className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-gold font-semibold mb-1">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-accent font-semibold mb-1">
                   Quick purchase
                 </div>
-                <h3 className="font-display text-xl text-orika-cream leading-tight">
+                <h3 className="font-display text-xl text-brand-cream leading-tight">
                   PO + Receive
                 </h3>
-                <p className="mt-1.5 text-xs text-orika-smoke leading-relaxed">
+                <p className="mt-1.5 text-xs text-brand-smoke leading-relaxed">
                   You know the supplier, product, and price. Create a PO and
                   receive goods in two steps — no RFQ needed.
                 </p>
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-orika-gold font-medium">
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-brand-accent font-medium">
                   Start quick purchase{" "}
                   <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
@@ -107,24 +107,24 @@ export default function ProcurementHome() {
           {/* Full Cycle */}
           <button
             onClick={() => navigate("/procurement/rfqs/new")}
-            className="group relative text-left rounded-2xl border border-living-sage/30 bg-living-sage/5 p-5 hover:border-living-sage/60 hover:bg-living-sage/10 transition-all"
+            className="group relative text-left rounded-2xl border border-accent2/30 bg-accent2/5 p-5 hover:border-accent2/60 hover:bg-accent2/10 transition-all"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-living-sage/20 text-living-sage">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent2/20 text-accent2">
                 <GitMerge className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[0.6rem] uppercase tracking-widest text-living-sage font-semibold mb-1">
+                <div className="text-[0.6rem] uppercase tracking-widest text-accent2 font-semibold mb-1">
                   Full cycle
                 </div>
-                <h3 className="font-display text-xl text-orika-cream leading-tight">
+                <h3 className="font-display text-xl text-brand-cream leading-tight">
                   RFQ → Quotes → PO → GRN → Bill
                 </h3>
-                <p className="mt-1.5 text-xs text-orika-smoke leading-relaxed">
+                <p className="mt-1.5 text-xs text-brand-smoke leading-relaxed">
                   Need competitive quotes first? Send an RFQ to multiple
                   suppliers, pick the best price, then convert to a PO.
                 </p>
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-living-sage font-medium">
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-accent2 font-medium">
                   Start with an RFQ{" "}
                   <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
@@ -249,7 +249,7 @@ export default function ProcurementHome() {
         {/* Recent PO activity — derived from the POs already loaded above */}
         {(pos?.data ?? []).length > 0 && (
           <div className="mt-8 space-y-3">
-            <p className="text-[0.65rem] tracking-widest uppercase text-orika-gold font-semibold">
+            <p className="text-[0.65rem] tracking-widest uppercase text-brand-accent font-semibold">
               Recent Activity
             </p>
             <div className="space-y-2">
@@ -265,24 +265,24 @@ export default function ProcurementHome() {
                   <Link
                     key={po.po_id}
                     to={`/procurement/purchase-orders/${po.po_id}`}
-                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-orika-charcoal/40 px-4 py-3 hover:border-white/10 transition-colors"
+                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-brand-charcoal/40 px-4 py-3 hover:border-white/10 transition-colors"
                   >
-                    <FileText className="h-4 w-4 text-orika-smoke shrink-0" />
+                    <FileText className="h-4 w-4 text-brand-smoke shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-orika-cream truncate">
-                        <span className="font-mono text-xs text-orika-gold mr-2">
+                      <p className="text-sm text-brand-cream truncate">
+                        <span className="font-mono text-xs text-brand-accent mr-2">
                           {po.po_number}
                         </span>
                         {po.supplier_name ?? "Unknown supplier"}
                       </p>
-                      <p className="text-xs text-orika-smoke">
+                      <p className="text-xs text-brand-smoke">
                         {fmtMoney(po.total_amount ?? 0, po.currency ?? "NGN")}
                       </p>
                     </div>
                     <Badge tone="neutral" size="xs">
                       {po.status}
                     </Badge>
-                    <span className="text-[10px] text-orika-smoke/50 shrink-0">
+                    <span className="text-[10px] text-brand-smoke/50 shrink-0">
                       {fmtRelative(po.updated_at ?? po.created_at)}
                     </span>
                   </Link>
@@ -311,14 +311,14 @@ function Kpi({
   hint?: string;
 }) {
   const toneCls = {
-    gold: "bg-orika-gold/15 text-orika-gold",
-    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
-    sage: "bg-living-sage/15 text-living-sage",
-    neutral: "bg-orika-graphite text-orika-cloud",
+    gold: "bg-brand-accent/15 text-brand-accent",
+    rose: "bg-accent3/15 text-accent3",
+    sage: "bg-accent2/15 text-accent2",
+    neutral: "bg-brand-graphite text-brand-cloud",
   }[tone];
   return (
     <Link to={to} className="block">
-      <div className="p-4 rounded-2xl border border-orika-graphite bg-orika-charcoal/60 hover:border-orika-gold/40 hover:-translate-y-0.5 transition-all">
+      <div className="p-4 rounded-2xl border border-brand-graphite bg-brand-charcoal/60 hover:border-brand-accent/40 hover:-translate-y-0.5 transition-all">
         <div
           className={cn(
             "inline-flex items-center justify-center w-8 h-8 rounded-lg",
@@ -327,14 +327,14 @@ function Kpi({
         >
           {icon}
         </div>
-        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mt-2">
+        <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mt-2">
           {label}
         </div>
-        <div className="text-xl font-display text-orika-cream mt-0.5 tabular-nums truncate">
+        <div className="text-xl font-display text-brand-cream mt-0.5 tabular-nums truncate">
           {value}
         </div>
         {hint && (
-          <div className="text-[0.65rem] text-orika-smoke mt-1">{hint}</div>
+          <div className="text-[0.65rem] text-brand-smoke mt-1">{hint}</div>
         )}
       </div>
     </Link>
@@ -367,10 +367,10 @@ function Lane({
   items: LaneItem[];
 }) {
   const toneCls = {
-    gold: "bg-orika-gold/15 text-orika-gold",
-    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
-    sage: "bg-living-sage/15 text-living-sage",
-    neutral: "bg-orika-graphite text-orika-cloud",
+    gold: "bg-brand-accent/15 text-brand-accent",
+    rose: "bg-accent3/15 text-accent3",
+    sage: "bg-accent2/15 text-accent2",
+    neutral: "bg-brand-graphite text-brand-cloud",
   }[tone];
   return (
     <Card className="p-5">
@@ -384,25 +384,25 @@ function Lane({
           {icon}
         </div>
         <div>
-          <h3 className="font-display text-xl text-orika-cream leading-tight">
+          <h3 className="font-display text-xl text-brand-cream leading-tight">
             {title}
           </h3>
-          <p className="text-xs text-orika-smoke mt-0.5">{description}</p>
+          <p className="text-xs text-brand-smoke mt-0.5">{description}</p>
         </div>
       </div>
       {items.length === 0 ? (
-        <p className="text-xs text-orika-smoke italic">{empty}</p>
+        <p className="text-xs text-brand-smoke italic">{empty}</p>
       ) : (
         <div className="space-y-1.5">
           {items.map((it) => (
             <Link key={it.id} to={it.to} className="group block">
-              <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-orika-charcoal/60 transition-colors">
+              <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-brand-charcoal/60 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-orika-cream truncate">
+                  <div className="text-sm text-brand-cream truncate">
                     {it.primary}
                   </div>
                   {it.secondary && (
-                    <div className="text-[0.65rem] text-orika-smoke truncate">
+                    <div className="text-[0.65rem] text-brand-smoke truncate">
                       {it.secondary}
                     </div>
                   )}
@@ -413,11 +413,11 @@ function Lane({
                   </Badge>
                 )}
                 {it.hint && (
-                  <span className="text-[0.65rem] text-orika-smoke whitespace-nowrap">
+                  <span className="text-[0.65rem] text-brand-smoke whitespace-nowrap">
                     {it.hint}
                   </span>
                 )}
-                <ArrowRight className="w-3.5 h-3.5 text-orika-smoke group-hover:text-orika-gold group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="w-3.5 h-3.5 text-brand-smoke group-hover:text-brand-accent group-hover:translate-x-0.5 transition-all" />
               </div>
             </Link>
           ))}

@@ -20,10 +20,10 @@ export function Card({
       className={cn(
         "relative rounded-2xl border overflow-hidden transition-all",
         surface === "dark"
-          ? "bg-orika-charcoal border-orika-graphite shadow-card"
-          : "bg-surface-light border-orika-cloud/40 shadow-sm surface-light",
+          ? "bg-brand-charcoal border-brand-graphite shadow-card"
+          : "bg-surface-light border-brand-cloud/40 shadow-sm surface-light",
         interactive &&
-          "cursor-pointer hover:-translate-y-1 hover:shadow-card-lg hover:border-orika-gold/40",
+          "cursor-pointer hover:-translate-y-1 hover:shadow-card-lg hover:border-brand-accent/40",
         className,
       )}
       {...rest}

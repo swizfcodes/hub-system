@@ -191,7 +191,7 @@ export function PostComposer({
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
                   mode === key
-                    ? "bg-orika-gold text-orika-black"
+                    ? "bg-brand-accent text-brand-black"
                     : "text-gray-500 hover:bg-gray-50",
                 )}
               >
@@ -300,7 +300,7 @@ export function PostComposer({
                   }
                 }}
                 placeholder="Paste image URL or CDN path…"
-                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-orika-gold/60 focus:outline-none"
+                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-accent/60 focus:outline-none"
               />
               <Button
                 size="sm"
@@ -357,7 +357,7 @@ export function PostComposer({
               <div className="relative group">
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:border-orika-gold/40 hover:text-orika-gold transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:border-brand-accent/40 hover:text-brand-accent transition-colors"
                 >
                   <BookOpen className="h-3.5 w-3.5" />
                   Templates
@@ -381,7 +381,7 @@ export function PostComposer({
               <div className="relative group">
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:border-orika-gold/40 hover:text-orika-gold transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:border-brand-accent/40 hover:text-brand-accent transition-colors"
                 >
                   <Hash className="h-3.5 w-3.5" />
                   Hashtags
@@ -416,7 +416,7 @@ export function PostComposer({
               <textarea
                 {...field}
                 placeholder="Write your caption… use the template and hashtag buttons above to speed things up."
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:border-orika-gold/60 focus:outline-none resize-none"
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-accent/60 focus:outline-none resize-none"
                 rows={5}
               />
             )}
@@ -437,7 +437,7 @@ export function PostComposer({
                   {...field}
                   label="Video Title (max 150 chars)"
                   surface="light"
-                  placeholder="Bejewelled Gold Collection 2025"
+                  placeholder="e.g. Gold Collection 2025"
                 />
               )}
             />

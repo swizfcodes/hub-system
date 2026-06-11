@@ -46,22 +46,22 @@ export function LineItemsTable({
       <div className="overflow-x-auto rounded-lg border border-white/5">
         <table className="w-full min-w-[520px] text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-orika-graphite/40">
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke">
+            <tr className="border-b border-white/5 bg-brand-graphite/40">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-brand-smoke">
                 Description
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-orika-smoke">
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-brand-smoke">
                 Qty
               </th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-orika-smoke">
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-brand-smoke">
                 Unit Price
               </th>
               {showDiscount && (
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-orika-smoke">
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-brand-smoke">
                   Discount
                 </th>
               )}
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-orika-smoke">
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-widest text-brand-smoke">
                 Total
               </th>
             </tr>
@@ -70,11 +70,11 @@ export function LineItemsTable({
             {lines.map((line, i) => (
               <tr
                 key={"line_id" in line ? line.line_id : i}
-                className="bg-orika-charcoal transition-colors hover:bg-orika-graphite/20"
+                className="bg-brand-charcoal transition-colors hover:bg-brand-graphite/20"
               >
                 <td
                   className={cn(
-                    "px-4 text-orika-cream",
+                    "px-4 text-brand-cream",
                     compact ? "py-2.5" : "py-3",
                   )}
                 >
@@ -82,7 +82,7 @@ export function LineItemsTable({
                 </td>
                 <td
                   className={cn(
-                    "px-4 text-right tabular-nums text-orika-cloud",
+                    "px-4 text-right tabular-nums text-brand-cloud",
                     compact ? "py-2.5" : "py-3",
                   )}
                 >
@@ -90,7 +90,7 @@ export function LineItemsTable({
                 </td>
                 <td
                   className={cn(
-                    "px-4 text-right tabular-nums text-orika-cloud",
+                    "px-4 text-right tabular-nums text-brand-cloud",
                     compact ? "py-2.5" : "py-3",
                   )}
                 >
@@ -99,7 +99,7 @@ export function LineItemsTable({
                 {showDiscount && (
                   <td
                     className={cn(
-                      "px-4 text-right tabular-nums text-orika-smoke",
+                      "px-4 text-right tabular-nums text-brand-smoke",
                       compact ? "py-2.5" : "py-3",
                     )}
                   >
@@ -110,7 +110,7 @@ export function LineItemsTable({
                 )}
                 <td
                   className={cn(
-                    "px-4 text-right tabular-nums font-medium text-orika-cream",
+                    "px-4 text-right tabular-nums font-medium text-brand-cream",
                     compact ? "py-2.5" : "py-3",
                   )}
                 >
@@ -124,7 +124,7 @@ export function LineItemsTable({
 
       {/* Totals block */}
       <div className="mt-3 flex justify-end">
-        <div className="w-full max-w-xs space-y-2 rounded-lg border border-white/5 bg-orika-graphite/30 px-4 py-3">
+        <div className="w-full max-w-xs space-y-2 rounded-lg border border-white/5 bg-brand-graphite/30 px-4 py-3">
           <TotalsRow
             label="Subtotal"
             value={fmtMoney(totals.subtotal, currency)}
@@ -177,7 +177,7 @@ function TotalsRow({
       <span
         className={cn(
           "text-xs",
-          muted ? "text-orika-smoke" : "text-orika-cloud",
+          muted ? "text-brand-smoke" : "text-brand-cloud",
         )}
       >
         {label}
@@ -186,10 +186,10 @@ function TotalsRow({
         className={cn(
           "tabular-nums",
           bold
-            ? "text-sm font-semibold text-orika-cream"
+            ? "text-sm font-semibold text-brand-cream"
             : muted
-              ? "text-xs text-orika-smoke"
-              : "text-sm text-orika-cream",
+              ? "text-xs text-brand-smoke"
+              : "text-sm text-brand-cream",
         )}
       >
         {value}

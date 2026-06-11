@@ -73,7 +73,7 @@ function NotifIcon({ type }: { type: string }) {
     return <Package className={cn(cls, "text-orange-400")} />;
   if (type.includes("success") || type.includes("complete"))
     return <CheckCircle className={cn(cls, "text-emerald-400")} />;
-  return <Info className={cn(cls, "text-orika-gold")} />;
+  return <Info className={cn(cls, "text-brand-accent")} />;
 }
 
 // ── Relative time ─────────────────────────────────────────────────────────────
@@ -170,17 +170,17 @@ export function NotificationsPanel({ open, onClose }: Props) {
   return (
     <div
       ref={panelRef}
-      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-white/10 bg-orika-black shadow-2xl z-50 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-white/10 bg-brand-black shadow-2xl z-50 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-orika-gold" />
-          <span className="text-sm font-semibold text-orika-cream">
+          <Bell className="h-4 w-4 text-brand-accent" />
+          <span className="text-sm font-semibold text-brand-cream">
             Notifications
           </span>
           {unreadCount > 0 && (
-            <span className="rounded-full bg-orika-gold/20 px-2 py-0.5 text-[10px] font-bold text-orika-gold">
+            <span className="rounded-full bg-brand-accent/20 px-2 py-0.5 text-[10px] font-bold text-brand-accent">
               {unreadCount}
             </span>
           )}
@@ -190,14 +190,14 @@ export function NotificationsPanel({ open, onClose }: Props) {
             <button
               onClick={() => readAll.mutate()}
               disabled={readAll.isPending}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite transition-colors"
+              className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite transition-colors"
             >
               <CheckCheck className="h-3.5 w-3.5" /> All read
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite transition-colors"
+            className="p-1.5 rounded-lg text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -210,21 +210,21 @@ export function NotificationsPanel({ open, onClose }: Props) {
           <div className="space-y-3 p-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex gap-3 animate-pulse">
-                <div className="h-8 w-8 rounded-full bg-orika-graphite shrink-0" />
+                <div className="h-8 w-8 rounded-full bg-brand-graphite shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-orika-graphite rounded w-3/4" />
-                  <div className="h-2 bg-orika-graphite rounded w-1/2" />
+                  <div className="h-3 bg-brand-graphite rounded w-3/4" />
+                  <div className="h-2 bg-brand-graphite rounded w-1/2" />
                 </div>
               </div>
             ))}
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-            <Bell className="h-8 w-8 text-orika-smoke/30 mb-3" />
-            <p className="text-sm font-medium text-orika-smoke">
+            <Bell className="h-8 w-8 text-brand-smoke/30 mb-3" />
+            <p className="text-sm font-medium text-brand-smoke">
               You're all caught up
             </p>
-            <p className="text-xs text-orika-smoke/40 mt-1">
+            <p className="text-xs text-brand-smoke/40 mt-1">
               No notifications right now
             </p>
           </div>
@@ -236,15 +236,15 @@ export function NotificationsPanel({ open, onClose }: Props) {
               className={cn(
                 "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
                 n.is_read
-                  ? "hover:bg-orika-graphite/20"
-                  : "bg-orika-gold/[0.04] hover:bg-orika-gold/[0.07]",
+                  ? "hover:bg-brand-graphite/20"
+                  : "bg-brand-accent/[0.04] hover:bg-brand-accent/[0.07]",
               )}
             >
               {/* Unread indicator */}
               <span
                 className={cn(
                   "mt-1.5 h-2 w-2 rounded-full shrink-0 transition-colors",
-                  n.is_read ? "bg-transparent" : "bg-orika-gold",
+                  n.is_read ? "bg-transparent" : "bg-brand-accent",
                 )}
               />
 
@@ -255,18 +255,18 @@ export function NotificationsPanel({ open, onClose }: Props) {
                   className={cn(
                     "text-xs leading-snug line-clamp-2",
                     n.is_read
-                      ? "text-orika-smoke"
-                      : "font-semibold text-orika-cream",
+                      ? "text-brand-smoke"
+                      : "font-semibold text-brand-cream",
                   )}
                 >
                   {n.title}
                 </p>
                 {n.body && (
-                  <p className="text-[11px] text-orika-smoke/60 mt-0.5 line-clamp-2 leading-relaxed">
+                  <p className="text-[11px] text-brand-smoke/60 mt-0.5 line-clamp-2 leading-relaxed">
                     {n.body}
                   </p>
                 )}
-                <p className="text-[10px] text-orika-smoke/35 mt-1">
+                <p className="text-[10px] text-brand-smoke/35 mt-1">
                   {relTime(n.created_at)}
                 </p>
               </div>
@@ -277,7 +277,7 @@ export function NotificationsPanel({ open, onClose }: Props) {
 
       {notifications.length > 0 && (
         <div className="border-t border-white/5 px-4 py-2 text-center">
-          <p className="text-[10px] text-orika-smoke/35">
+          <p className="text-[10px] text-brand-smoke/35">
             Showing {notifications.length} most recent
           </p>
         </div>

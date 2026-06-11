@@ -13,6 +13,7 @@
  *
  * Install: npm install signature_pad
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import SignaturePad from "signature_pad";
@@ -37,6 +38,7 @@ type Step =
   | "expired";
 
 export default function DeliverySignPage() {
+  const { platform } = useBranding();
   const { token } = useParams<{ token: string }>();
 
   const [step, setStep] = useState<Step>("loading");
@@ -212,7 +214,7 @@ export default function DeliverySignPage() {
               <p className="font-semibold text-gray-800">
                 {info?.delivery_number}
               </p>
-              <p className="text-xs text-gray-500">From Orika Hub</p>
+              <p className="text-xs text-gray-500">From {platform.product_name}</p>
             </div>
             <StepPill current={1} total={2} className="ml-auto" />
           </div>

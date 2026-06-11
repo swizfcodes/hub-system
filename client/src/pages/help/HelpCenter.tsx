@@ -90,7 +90,7 @@ export default function HelpCenter() {
         {/* Search bar */}
         <div className="mb-8">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/50" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-smoke/50" />
             <input
               type="text"
               value={search}
@@ -99,7 +99,7 @@ export default function HelpCenter() {
                 if (activeModule) setSearchParams({});
               }}
               placeholder="Search guides and FAQs…"
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-orika-graphite/60 bg-orika-charcoal text-orika-cream placeholder-orika-smoke/40 text-sm focus:outline-none focus:ring-2 focus:ring-orika-gold/40 transition-all"
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-brand-graphite/60 bg-brand-charcoal text-brand-cream placeholder-brand-smoke/40 text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/40 transition-all"
             />
           </div>
         </div>
@@ -115,12 +115,12 @@ export default function HelpCenter() {
           <div>
             <button
               onClick={() => setSearchParams({})}
-              className="inline-flex items-center gap-2 text-sm text-orika-gold hover:text-orika-cream transition-colors mb-6"
+              className="inline-flex items-center gap-2 text-sm text-brand-accent hover:text-brand-cream transition-colors mb-6"
             >
               <ArrowLeft className="w-4 h-4" /> Back to all modules
             </button>
 
-            <h2 className="font-display text-3xl text-orika-cream mb-2">
+            <h2 className="font-display text-3xl text-brand-cream mb-2">
               {MODULE_LABELS[activeModule] || activeModule}
             </h2>
 
@@ -128,14 +128,14 @@ export default function HelpCenter() {
             {moduleGuides.map((g) => (
               <article
                 key={g.article_id}
-                className="mt-6 p-6 sm:p-8 rounded-2xl bg-orika-charcoal border border-orika-graphite"
+                className="mt-6 p-6 sm:p-8 rounded-2xl bg-brand-charcoal border border-brand-graphite"
               >
-                <h3 className="font-display text-xl text-orika-cream mb-4 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-orika-gold shrink-0" />
+                <h3 className="font-display text-xl text-brand-cream mb-4 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-brand-accent shrink-0" />
                   {g.title}
                 </h3>
                 <div
-                  className="prose-help text-sm text-orika-cloud leading-relaxed"
+                  className="prose-help text-sm text-brand-cloud leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: g.content }}
                 />
               </article>
@@ -144,7 +144,7 @@ export default function HelpCenter() {
             {/* FAQs */}
             {moduleFaqs.length > 0 && (
               <div className="mt-8">
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-4">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-4">
                   Frequently asked questions
                 </h3>
                 <div className="space-y-2">
@@ -171,7 +171,7 @@ export default function HelpCenter() {
         ) : search ? (
           /* ── Search results ──────────────────────────────── */
           <div>
-            <p className="text-sm text-orika-smoke mb-4">
+            <p className="text-sm text-brand-smoke mb-4">
               {filtered.length} result{filtered.length !== 1 ? "s" : ""} for "
               {search}"
             </p>
@@ -190,17 +190,17 @@ export default function HelpCenter() {
                       setSearch("");
                       setSearchParams({ module: a.module });
                     }}
-                    className="w-full text-left p-4 rounded-xl bg-orika-charcoal border border-orika-graphite hover:border-orika-gold/40 transition-colors"
+                    className="w-full text-left p-4 rounded-xl bg-brand-charcoal border border-brand-graphite hover:border-brand-accent/40 transition-colors"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[0.6rem] tracking-widest uppercase text-orika-gold">
+                      <span className="text-[0.6rem] tracking-widest uppercase text-brand-accent">
                         {MODULE_LABELS[a.module] || a.module}
                       </span>
-                      <span className="text-[0.6rem] text-orika-smoke">
+                      <span className="text-[0.6rem] text-brand-smoke">
                         · {a.article_type}
                       </span>
                     </div>
-                    <p className="text-sm font-medium text-orika-cream">
+                    <p className="text-sm font-medium text-brand-cream">
                       {a.title}
                     </p>
                   </button>
@@ -215,17 +215,17 @@ export default function HelpCenter() {
             {grouped.has("general") && (
               <button
                 onClick={() => setSearchParams({ module: "general" })}
-                className="w-full text-left mb-6 p-6 rounded-2xl bg-gradient-to-br from-orika-gold/15 to-orika-gold/5 border border-orika-gold/30 hover:border-orika-gold/60 transition-all"
+                className="w-full text-left mb-6 p-6 rounded-2xl bg-gradient-to-br from-brand-accent/15 to-brand-accent/5 border border-brand-accent/30 hover:border-brand-accent/60 transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-orika-gold/20 flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-orika-gold" />
+                  <div className="w-12 h-12 rounded-xl bg-brand-accent/20 flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-brand-accent" />
                   </div>
                   <div>
-                    <h3 className="font-display text-xl text-orika-cream">
+                    <h3 className="font-display text-xl text-brand-cream">
                       Getting Started
                     </h3>
-                    <p className="text-sm text-orika-smoke mt-0.5">
+                    <p className="text-sm text-brand-smoke mt-0.5">
                       New to the Hub? Start here.
                     </p>
                   </div>
@@ -234,7 +234,7 @@ export default function HelpCenter() {
             )}
 
             {/* Module cards */}
-            <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-4">
+            <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-4">
               Browse by module
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -252,20 +252,20 @@ export default function HelpCenter() {
                     <button
                       key={mod}
                       onClick={() => setSearchParams({ module: mod })}
-                      className="flex items-center gap-3 p-4 rounded-xl bg-orika-charcoal border border-orika-graphite hover:border-orika-gold/40 transition-all text-left"
+                      className="flex items-center gap-3 p-4 rounded-xl bg-brand-charcoal border border-brand-graphite hover:border-brand-accent/40 transition-all text-left"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-orika-gold/10 flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 text-orika-gold" />
+                      <div className="w-10 h-10 rounded-lg bg-brand-accent/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4 text-brand-accent" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-orika-cream truncate">
+                        <p className="text-sm font-medium text-brand-cream truncate">
                           {MODULE_LABELS[mod] || mod}
                         </p>
-                        <p className="text-xs text-orika-smoke">
+                        <p className="text-xs text-brand-smoke">
                           {count} article{count !== 1 ? "s" : ""}
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-orika-smoke/40 shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-brand-smoke/40 shrink-0" />
                     </button>
                   );
                 })}
@@ -291,21 +291,21 @@ function FaqItem({
       className={cn(
         "rounded-xl border transition-colors",
         expanded
-          ? "border-orika-gold/30 bg-orika-charcoal"
-          : "border-orika-graphite bg-orika-charcoal/50",
+          ? "border-brand-accent/30 bg-brand-charcoal"
+          : "border-brand-graphite bg-brand-charcoal/50",
       )}
     >
       <button
         onClick={onToggle}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
       >
-        <HelpCircle className="w-4 h-4 text-orika-gold shrink-0" />
-        <span className="flex-1 text-sm font-medium text-orika-cream">
+        <HelpCircle className="w-4 h-4 text-brand-accent shrink-0" />
+        <span className="flex-1 text-sm font-medium text-brand-cream">
           {article.title}
         </span>
         <ChevronDown
           className={cn(
-            "w-4 h-4 text-orika-smoke/40 transition-transform shrink-0",
+            "w-4 h-4 text-brand-smoke/40 transition-transform shrink-0",
             expanded && "rotate-180",
           )}
         />
@@ -313,7 +313,7 @@ function FaqItem({
       {expanded && (
         <div className="px-4 pb-4 pl-11">
           <div
-            className="prose-help text-sm text-orika-cloud leading-relaxed"
+            className="prose-help text-sm text-brand-cloud leading-relaxed"
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
         </div>

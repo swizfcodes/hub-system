@@ -737,7 +737,95 @@ async function updateDocumentSequence(seqId, fields, user) {
   });
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// PLATFORM SETTINGS (white-label / appearance)
+// ─────────────────────────────────────────────────────────────
+
+// Design tokens the theme JSONB may carry. Anything else is
+// rejected so a typo can't inject arbitrary CSS variable names.
+const THEME_TOKEN_KEYS = [
+  "brand-black", "brand-charcoal", "brand-graphite", "brand-ink",
+  "brand-cream", "brand-cloud", "brand-smoke", "brand-stone",
+  "brand-accent", "brand-accent-dim", "brand-accent-glow",
+  "accent2", "accent2-dim", "accent2-glow",
+  "accent3", "accent3-dim", "accent3-glow",
+  "surface-light", "surface-light-soft", "surface-light-deep",
+  "state-success", "state-warn", "state-danger", "state-info",
+];
+const RGB_TRIPLET = /^\d{1,3} \d{1,3} \d{1,3}$/;
+
+async function getPlatformSettings() {
+  return withSharedContext((client) => repo.getPlatformSettings(client));
+}
+
+async function updatePlatformSettings(fields, user) {
+  if (fields.theme !== undefined) {
+    if (typeof fields.theme !== "object" || Array.isArray(fields.theme)) {
+      throw Object.assign(new Error("theme must be an object"), {
+        status: 400,
+      });
+    }
+    for (const [key, value] of Object.entries(fields.theme)) {
+      if (!THEME_TOKEN_KEYS.includes(key)) {
+        throw Object.assign(new Error(`Unknown theme token: ${key}`), {
+          status: 400,
+        });
+      }
+      if (typeof value !== "string" || !RGB_TRIPLET.test(value)) {
+        throw Object.assign(
+          new Error(`Theme token ${key} must be an "R G B" triplet`),
+          { status: 400 },
+        );
+      }
+    }
+  }
+
+  return withSharedContext(async (client) => {
+    const before = await repo.getPlatformSettings(client);
+    const after = await repo.updatePlatformSettings(
+      client,
+      fields,
+      user.user_id,
+    );
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name,
+      business: "*", // platform-level, not tied to one business
+      module: "settings",
+      action: "update",
+      table: "shared.platform_settings",
+      recordId: null,
+      before,
+      after,
+    });
+    return after;
+  });
+}
+
+/**
+ * Public branding payload — everything the frontend needs to render
+ * the login page and shell before authentication. Display-level
+ * data only: platform identity + per-business accents/names.
+ */
+async function getPublicBranding() {
+  return withSharedContext(async (client) => {
+    const platform = await repo.getPlatformSettings(client);
+    const { rows: bizRows } = await client.query(
+      `SELECT business_key, display_name, accent_colour,
+              secondary_colour, logo_path
+       FROM shared.business_config
+       WHERE is_active = true
+       ORDER BY business_key`,
+    );
+    return { platform, businesses: bizRows };
+  });
+}
+
 module.exports = {
+  getPlatformSettings,
+  updatePlatformSettings,
+  getPublicBranding,
   // business config
   listBusinesses,
   getBusiness,

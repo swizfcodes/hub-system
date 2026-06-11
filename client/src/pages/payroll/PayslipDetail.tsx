@@ -57,7 +57,7 @@ export default function PayslipDetail() {
   if (!payslip) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Payslip not found.</p>
+        <p className="text-brand-smoke">Payslip not found.</p>
         <Button variant="ghost" className="mt-4" onClick={() => navigate(-1)}>
           Back
         </Button>
@@ -104,21 +104,21 @@ export default function PayslipDetail() {
       />
 
       {/* Payslip card */}
-      <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden">
+      <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden">
         {/* Header */}
-        <div className="bg-orika-graphite/40 px-6 py-4 border-b border-white/5">
+        <div className="bg-brand-graphite/40 px-6 py-4 border-b border-white/5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-display text-xl font-light text-orika-cream">
+              <p className="font-display text-xl font-light text-brand-cream">
                 {payslip.display_name}
               </p>
-              <p className="text-sm text-orika-smoke">{payslip.job_title}</p>
+              <p className="text-sm text-brand-smoke">{payslip.job_title}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs uppercase tracking-widest text-orika-smoke">
+              <p className="text-xs uppercase tracking-widest text-brand-smoke">
                 Period
               </p>
-              <p className="font-semibold text-orika-cream">{period}</p>
+              <p className="font-semibold text-brand-cream">{period}</p>
             </div>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function PayslipDetail() {
         <div className="p-6 space-y-6">
           {/* Earnings */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
               Earnings
             </p>
             <div className="space-y-2">
@@ -172,7 +172,7 @@ export default function PayslipDetail() {
           {/* Deductions — only in full PAYE mode */}
           {isFull && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
                 Deductions
               </p>
               <div className="space-y-2">
@@ -220,13 +220,13 @@ export default function PayslipDetail() {
 
           {/* Employer contributions (shown separately — not deducted from staff) */}
           {isFull && payslip.pension_employer > 0 && (
-            <div className="rounded-xl border border-white/5 bg-orika-graphite/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-2">
+            <div className="rounded-xl border border-white/5 bg-brand-graphite/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-2">
                 Employer Contributions (not deducted from you)
               </p>
               <div className="flex justify-between text-sm">
-                <span className="text-orika-smoke">Pension (Employer 10%)</span>
-                <span className="tabular-nums text-orika-cloud">
+                <span className="text-brand-smoke">Pension (Employer 10%)</span>
+                <span className="tabular-nums text-brand-cloud">
                   {fmtMoney(payslip.pension_employer, currency)}
                 </span>
               </div>
@@ -246,19 +246,19 @@ export default function PayslipDetail() {
           {/* Bank details */}
           {(payslip.bank_name || payslip.bank_account_number) && (
             <div className="text-sm space-y-1 border-t border-white/10 pt-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-2">
                 Payment To
               </p>
               {payslip.bank_name && (
                 <div className="flex justify-between">
-                  <span className="text-orika-smoke">Bank</span>
-                  <span className="text-orika-cloud">{payslip.bank_name}</span>
+                  <span className="text-brand-smoke">Bank</span>
+                  <span className="text-brand-cloud">{payslip.bank_name}</span>
                 </div>
               )}
               {payslip.bank_account_number && (
                 <div className="flex justify-between">
-                  <span className="text-orika-smoke">Account</span>
-                  <span className="font-mono text-orika-cloud">
+                  <span className="text-brand-smoke">Account</span>
+                  <span className="font-mono text-brand-cloud">
                     {payslip.bank_account_number}
                   </span>
                 </div>

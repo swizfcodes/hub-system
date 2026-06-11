@@ -124,13 +124,13 @@ export function SubtaskChecklist({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Subtasks {subtasks.length > 0 && `(${doneCount}/${subtasks.length})`}
         </p>
         {subtasks.length > 0 && (
-          <div className="h-1.5 w-24 rounded-full bg-orika-graphite overflow-hidden">
+          <div className="h-1.5 w-24 rounded-full bg-brand-graphite overflow-hidden">
             <div
-              className="h-full rounded-full bg-orika-gold transition-all"
+              className="h-full rounded-full bg-brand-accent transition-all"
               style={{
                 width: `${Math.round((doneCount / subtasks.length) * 100)}%`,
               }}
@@ -147,10 +147,10 @@ export function SubtaskChecklist({
               onClick={() =>
                 doneMut.mutate({ id: sub.subtask_id, done: !sub.is_done })
               }
-              className="shrink-0 text-orika-smoke hover:text-orika-gold transition-colors"
+              className="shrink-0 text-brand-smoke hover:text-brand-accent transition-colors"
             >
               {sub.is_done ? (
-                <CheckSquare className="h-4 w-4 text-orika-gold" />
+                <CheckSquare className="h-4 w-4 text-brand-accent" />
               ) : (
                 <Square className="h-4 w-4" />
               )}
@@ -158,7 +158,7 @@ export function SubtaskChecklist({
             <span
               className={cn(
                 "flex-1 text-sm",
-                sub.is_done && "line-through text-orika-smoke",
+                sub.is_done && "line-through text-brand-smoke",
               )}
             >
               {sub.title}
@@ -167,7 +167,7 @@ export function SubtaskChecklist({
               <button
                 type="button"
                 onClick={() => delMut.mutate(sub.subtask_id)}
-                className="opacity-0 group-hover:opacity-100 text-orika-smoke hover:text-state-danger transition-all"
+                className="opacity-0 group-hover:opacity-100 text-brand-smoke hover:text-state-danger transition-all"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -189,7 +189,7 @@ export function SubtaskChecklist({
               }
             }}
             placeholder="Add a subtask…"
-            className="flex-1 rounded-lg border border-white/10 bg-orika-graphite/30 px-3 py-1.5 text-sm text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none"
+            className="flex-1 rounded-lg border border-white/10 bg-brand-graphite/30 px-3 py-1.5 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none"
           />
           <button
             type="button"
@@ -197,7 +197,7 @@ export function SubtaskChecklist({
               if (newTitle.trim()) addMut.mutate(newTitle.trim());
             }}
             disabled={!newTitle.trim() || addMut.isPending}
-            className="text-orika-smoke hover:text-orika-gold transition-colors disabled:opacity-40"
+            className="text-brand-smoke hover:text-brand-accent transition-colors disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -225,14 +225,14 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
       draggable
       onDragStart={(e) => onDragStart(e, task.task_id)}
       onClick={() => onClick(task)}
-      className="cursor-pointer rounded-xl border border-white/5 bg-orika-charcoal p-3 space-y-2
-                 hover:border-white/15 hover:bg-orika-graphite/20 transition-all
+      className="cursor-pointer rounded-xl border border-white/5 bg-brand-charcoal p-3 space-y-2
+                 hover:border-white/15 hover:bg-brand-graphite/20 transition-all
                  active:opacity-80 select-none"
       style={{ borderLeft: `3px solid ${meta.color}` }}
     >
-      <p className="text-sm font-medium text-orika-cream leading-snug line-clamp-2">
+      <p className="text-sm font-medium text-brand-cream leading-snug line-clamp-2">
         {task.is_personal && (
-          <Lock className="inline h-3 w-3 mr-1 text-orika-smoke" />
+          <Lock className="inline h-3 w-3 mr-1 text-brand-smoke" />
         )}
         {task.title}
       </p>
@@ -240,7 +240,7 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
       <div className="flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={task.priority} />
         {task.reference_type && (
-          <span className="text-[10px] text-orika-smoke flex items-center gap-0.5">
+          <span className="text-[10px] text-brand-smoke flex items-center gap-0.5">
             <Link2 className="h-3 w-3" />
             {REF_TYPE_LABEL[task.reference_type] ?? task.reference_type}
           </span>
@@ -252,7 +252,7 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
           <span
             className={cn(
               "flex items-center gap-1 text-[10px]",
-              isOverdue ? "text-red-400" : "text-orika-smoke",
+              isOverdue ? "text-red-400" : "text-brand-smoke",
             )}
           >
             <Calendar className="h-3 w-3" />
@@ -260,7 +260,7 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
           </span>
         )}
         {task.assigned_to_name && (
-          <span className="flex items-center gap-1 text-[10px] text-orika-smoke ml-auto">
+          <span className="flex items-center gap-1 text-[10px] text-brand-smoke ml-auto">
             <User className="h-3 w-3" />
             {task.assigned_to_name.split(" ")[0]}
           </span>
@@ -269,15 +269,15 @@ export function TaskCard({ task, onClick, onDragStart }: TaskCardProps) {
 
       {(task.subtask_count ?? 0) > 0 && (
         <div className="flex items-center gap-2">
-          <div className="h-1 flex-1 rounded-full bg-orika-graphite overflow-hidden">
+          <div className="h-1 flex-1 rounded-full bg-brand-graphite overflow-hidden">
             <div
-              className="h-full rounded-full bg-orika-gold"
+              className="h-full rounded-full bg-brand-accent"
               style={{
                 width: `${Math.round(((task.subtask_done_count ?? 0) / (task.subtask_count ?? 1)) * 100)}%`,
               }}
             />
           </div>
-          <span className="text-[10px] text-orika-smoke whitespace-nowrap">
+          <span className="text-[10px] text-brand-smoke whitespace-nowrap">
             {task.subtask_done_count}/{task.subtask_count}
           </span>
         </div>
@@ -552,7 +552,7 @@ export function TaskDetailPanel({
     <div className="space-y-4">
       <div className="flex items-start gap-2">
         <div>
-          <p className="font-semibold text-orika-cream text-lg leading-tight">
+          <p className="font-semibold text-brand-cream text-lg leading-tight">
             {task.title}
           </p>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -563,15 +563,15 @@ export function TaskDetailPanel({
       </div>
 
       {task.description && (
-        <p className="text-sm text-orika-smoke whitespace-pre-wrap">
+        <p className="text-sm text-brand-smoke whitespace-pre-wrap">
           {task.description}
         </p>
       )}
 
       <div className="space-y-2 text-sm">
         {task.assigned_to_name && (
-          <div className="flex items-center gap-2 text-orika-cloud">
-            <User className="h-4 w-4 text-orika-smoke" />
+          <div className="flex items-center gap-2 text-brand-cloud">
+            <User className="h-4 w-4 text-brand-smoke" />
             {task.assigned_to_name}
           </div>
         )}
@@ -579,7 +579,7 @@ export function TaskDetailPanel({
           <div
             className={cn(
               "flex items-center gap-2",
-              isOverdue ? "text-red-400" : "text-orika-cloud",
+              isOverdue ? "text-red-400" : "text-brand-cloud",
             )}
           >
             <Calendar className="h-4 w-4" />
@@ -590,7 +590,7 @@ export function TaskDetailPanel({
           </div>
         )}
         {task.reference_type && (
-          <div className="flex items-center gap-2 text-orika-smoke text-xs">
+          <div className="flex items-center gap-2 text-brand-smoke text-xs">
             <Link2 className="h-3.5 w-3.5" />
             {REF_TYPE_LABEL[task.reference_type] ?? task.reference_type}
           </div>

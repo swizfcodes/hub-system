@@ -7,7 +7,7 @@ export function AdvancedTab({ business }: { business: Business }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-display text-2xl text-orika-black mb-1">
+        <h3 className="font-display text-2xl text-brand-black mb-1">
           Advanced
         </h3>
         <p className="text-sm text-text-on-light-muted">
@@ -21,7 +21,7 @@ export function AdvancedTab({ business }: { business: Business }) {
           icon={<Hash className="w-3.5 h-3.5" />}
           label="Business key"
           value={
-            <code className="font-mono text-orika-black">
+            <code className="font-mono text-brand-black">
               {business.business_key}
             </code>
           }
@@ -31,7 +31,7 @@ export function AdvancedTab({ business }: { business: Business }) {
           icon={<Database className="w-3.5 h-3.5" />}
           label="Postgres schema"
           value={
-            <code className="font-mono text-orika-black">
+            <code className="font-mono text-brand-black">
               {business.business_key}
             </code>
           }
@@ -63,14 +63,14 @@ export function AdvancedTab({ business }: { business: Business }) {
         />
       </div>
 
-      <div className="rounded-2xl border border-orika-cloud/40 bg-white/40 p-5 mt-8">
-        <h4 className="font-display text-lg text-orika-black mb-2">
+      <div className="rounded-2xl border border-brand-cloud/40 bg-white/40 p-5 mt-8">
+        <h4 className="font-display text-lg text-brand-black mb-2">
           Permissions & access
         </h4>
         <p className="text-sm text-text-on-light-muted mb-3">
           Manage who can access this business — and what they can do once inside
           — from the
-          <span className="text-orika-black font-medium">
+          <span className="text-brand-black font-medium">
             {" "}
             Permissions &amp; Roles
           </span>{" "}
@@ -78,7 +78,7 @@ export function AdvancedTab({ business }: { business: Business }) {
         </p>
         <a
           href="/settings/permissions"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-orika-black hover:text-orika-gold transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-brand-black hover:text-brand-accent transition-colors"
         >
           Open Permissions →
         </a>
@@ -99,12 +99,12 @@ function Info({
   hint?: string;
 }) {
   return (
-    <div className="p-4 rounded-xl border border-orika-cloud/40 bg-white/40">
+    <div className="p-4 rounded-xl border border-brand-cloud/40 bg-white/40">
       <div className="text-[0.6rem] uppercase tracking-widest text-text-on-light-muted flex items-center gap-1.5">
         {icon}
         {label}
       </div>
-      <div className="text-sm font-medium text-orika-black mt-1">{value}</div>
+      <div className="text-sm font-medium text-brand-black mt-1">{value}</div>
       {hint && (
         <div className="text-xs text-text-on-light-muted mt-1.5">{hint}</div>
       )}

@@ -128,7 +128,7 @@ export default function InvoicesHome() {
           </div>
         ) : invoices.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-orika-smoke">
+            <p className="text-sm text-brand-smoke">
               No invoices in this filter.
             </p>
             <Button
@@ -143,7 +143,7 @@ export default function InvoicesHome() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[700px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Invoice",
                     "Customer",
@@ -156,7 +156,7 @@ export default function InvoicesHome() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -167,23 +167,23 @@ export default function InvoicesHome() {
                 {invoices.map((inv) => (
                   <tr
                     key={inv.invoice_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/30 transition-colors"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/30 transition-colors"
                   >
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => navigate(`/invoices/${inv.invoice_id}`)}
-                        className="font-mono text-xs font-semibold text-orika-gold hover:underline"
+                        className="font-mono text-xs font-semibold text-brand-accent hover:underline"
                       >
                         {inv.invoice_number}
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-orika-cream">
+                      <p className="font-medium text-brand-cream">
                         {inv.contact_name}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke">
+                    <td className="px-4 py-3 text-brand-smoke">
                       {fmtDate(inv.issue_date)}
                     </td>
                     <td
@@ -191,12 +191,12 @@ export default function InvoicesHome() {
                         "px-4 py-3",
                         inv.status === "overdue"
                           ? "font-medium text-red-400"
-                          : "text-orika-smoke",
+                          : "text-brand-smoke",
                       )}
                     >
                       {fmtDate(inv.due_date)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums text-brand-cream">
                       {fmtMoney(inv.total_amount, currency)}
                     </td>
                     <td className="px-4 py-3 tabular-nums">
@@ -204,7 +204,7 @@ export default function InvoicesHome() {
                         className={cn(
                           inv.amount_outstanding > 0
                             ? "text-amber-400"
-                            : "text-orika-smoke",
+                            : "text-brand-smoke",
                         )}
                       >
                         {fmtMoney(inv.amount_outstanding, currency)}
@@ -220,7 +220,7 @@ export default function InvoicesHome() {
                           onClick={() =>
                             navigate(`/invoices/${inv.invoice_id}`)
                           }
-                          className="text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke hover:text-brand-accent transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -229,7 +229,7 @@ export default function InvoicesHome() {
                             <button
                               title="Record Payment"
                               onClick={() => setPaymentInv(inv)}
-                              className="text-orika-smoke hover:text-green-400 transition-colors"
+                              className="text-brand-smoke hover:text-green-400 transition-colors"
                             >
                               <DollarSign className="h-4 w-4" />
                             </button>
@@ -238,7 +238,7 @@ export default function InvoicesHome() {
                           <button
                             title="Send Invoice"
                             onClick={() => setSendInv(inv)}
-                            className="text-orika-smoke hover:text-orika-gold transition-colors"
+                            className="text-brand-smoke hover:text-brand-accent transition-colors"
                           >
                             <Send className="h-4 w-4" />
                           </button>
@@ -255,21 +255,21 @@ export default function InvoicesHome() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               {total} invoices · page {page} of {totalPages}
             </p>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-brand-charcoal px-3 py-1.5 text-xs text-brand-smoke hover:border-white/20 disabled:opacity-40"
               >
                 <ChevronLeft className="h-3.5 w-3.5" /> Prev
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-brand-charcoal px-3 py-1.5 text-xs text-brand-smoke hover:border-white/20 disabled:opacity-40"
               >
                 Next <ChevronRight className="h-3.5 w-3.5" />
               </button>

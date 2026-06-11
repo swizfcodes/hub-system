@@ -94,15 +94,15 @@ function Kpi({
   hint?: string;
 }) {
   const toneCls = {
-    gold: "bg-orika-gold/15 text-orika-gold",
-    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
-    sage: "bg-living-sage/15 text-living-sage",
+    gold: "bg-brand-accent/15 text-brand-accent",
+    rose: "bg-accent3/15 text-accent3",
+    sage: "bg-accent2/15 text-accent2",
     warn: "bg-state-warn/15 text-state-warn",
     info: "bg-state-info/15 text-state-info",
     danger: "bg-state-danger/15 text-state-danger",
   }[tone];
   return (
-    <div className="p-4 rounded-2xl border border-orika-graphite bg-orika-charcoal/60">
+    <div className="p-4 rounded-2xl border border-brand-graphite bg-brand-charcoal/60">
       <div
         className={cn(
           "inline-flex items-center justify-center w-8 h-8 rounded-lg",
@@ -111,14 +111,14 @@ function Kpi({
       >
         {icon}
       </div>
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mt-2">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mt-2">
         {label}
       </div>
-      <div className="text-xl font-display text-orika-cream mt-0.5 tabular-nums truncate">
+      <div className="text-xl font-display text-brand-cream mt-0.5 tabular-nums truncate">
         {value}
       </div>
       {hint && (
-        <div className="text-[0.65rem] text-orika-smoke mt-1">{hint}</div>
+        <div className="text-[0.65rem] text-brand-smoke mt-1">{hint}</div>
       )}
     </div>
   );

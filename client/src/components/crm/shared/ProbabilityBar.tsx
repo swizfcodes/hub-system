@@ -10,8 +10,8 @@ interface Props {
 const TONES = [
   { max: 25, bg: "bg-state-danger", text: "text-state-danger", label: "Cold" },
   { max: 50, bg: "bg-state-warn", text: "text-state-warn", label: "Warm" },
-  { max: 75, bg: "bg-living-sage", text: "text-living-sage", label: "Hot" },
-  { max: 100, bg: "bg-orika-gold", text: "text-orika-gold", label: "Likely" },
+  { max: 75, bg: "bg-accent2", text: "text-accent2", label: "Hot" },
+  { max: 100, bg: "bg-brand-accent", text: "text-brand-accent", label: "Likely" },
 ];
 
 export function ProbabilityBar({
@@ -26,7 +26,7 @@ export function ProbabilityBar({
     <div className={cn("w-full", className)}>
       {showLabel && (
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <span className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             Probability
           </span>
           <span className={cn("text-[0.65rem] font-semibold", tone.text)}>
@@ -36,7 +36,7 @@ export function ProbabilityBar({
       )}
       <div
         className={cn(
-          "w-full rounded-full bg-orika-graphite overflow-hidden",
+          "w-full rounded-full bg-brand-graphite overflow-hidden",
           size === "sm" ? "h-1" : "h-1.5",
         )}
       >

@@ -134,7 +134,7 @@ export function ClashWarningModal({
             key={c.event_id}
             className="rounded-xl border border-state-danger/20 bg-state-danger/5 px-4 py-3"
           >
-            <p className="font-medium text-orika-black text-sm">{c.title}</p>
+            <p className="font-medium text-brand-black text-sm">{c.title}</p>
             <p className="text-xs text-text-on-light-muted">
               {fmtDate(c.start_at)} ·{" "}
               {new Date(c.start_at).toLocaleTimeString("en-NG", {
@@ -424,8 +424,8 @@ export function EventDetailPanel({
           style={{ backgroundColor: meta.color }}
         />
         <div className="flex-1">
-          <p className="font-semibold text-orika-cream">{event.title}</p>
-          <p className="text-xs text-orika-smoke mt-0.5">
+          <p className="font-semibold text-brand-cream">{event.title}</p>
+          <p className="text-xs text-brand-smoke mt-0.5">
             {fmtEventRange(event.start_at, event.end_at, event.all_day)}
           </p>
         </div>
@@ -433,20 +433,20 @@ export function EventDetailPanel({
       </div>
 
       {event.location && (
-        <div className="flex items-start gap-2 text-sm text-orika-cloud">
-          <MapPin className="h-4 w-4 shrink-0 text-orika-smoke mt-px" />
+        <div className="flex items-start gap-2 text-sm text-brand-cloud">
+          <MapPin className="h-4 w-4 shrink-0 text-brand-smoke mt-px" />
           {event.location}
         </div>
       )}
 
       {event.description && (
-        <p className="text-sm text-orika-smoke whitespace-pre-wrap">
+        <p className="text-sm text-brand-smoke whitespace-pre-wrap">
           {event.description}
         </p>
       )}
 
       {event.reference_type && (
-        <div className="flex items-center gap-2 text-xs text-orika-smoke">
+        <div className="flex items-center gap-2 text-xs text-brand-smoke">
           <Link2 className="h-3.5 w-3.5" />
           {REF_TYPE_LABEL[event.reference_type] ?? event.reference_type}
         </div>
@@ -454,7 +454,7 @@ export function EventDetailPanel({
 
       {participants.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Participants
           </p>
           {participants.map((p) => (
@@ -462,7 +462,7 @@ export function EventDetailPanel({
               key={p.participant_id}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-orika-cloud">
+              <span className="text-brand-cloud">
                 {p.display_name ?? "Unknown"}
               </span>
               <Badge

@@ -124,12 +124,12 @@ export default function POSTerminals() {
             ))}
           </div>
         ) : terminals.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-orika-charcoal/40 py-20 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orika-graphite">
-              <Monitor className="h-7 w-7 text-orika-gold" />
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-brand-charcoal/40 py-20 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-graphite">
+              <Monitor className="h-7 w-7 text-brand-accent" />
             </div>
-            <p className="font-semibold text-orika-cream">No terminals yet</p>
-            <p className="mt-1 text-sm text-orika-smoke">
+            <p className="font-semibold text-brand-cream">No terminals yet</p>
+            <p className="mt-1 text-sm text-brand-smoke">
               Create your first terminal to start taking sales.
             </p>
             <Button className="mt-6" onClick={() => setShowCreate(true)}>
@@ -153,13 +153,13 @@ export default function POSTerminals() {
                   className={cn(
                     "flex flex-col items-start gap-3 rounded-xl border p-5 text-left transition-all",
                     hasSession
-                      ? "border-orika-gold/40 bg-orika-gold/5 hover:border-orika-gold/60"
-                      : "border-white/5 bg-orika-charcoal hover:border-white/15",
+                      ? "border-brand-accent/40 bg-brand-accent/5 hover:border-brand-accent/60"
+                      : "border-white/5 bg-brand-charcoal hover:border-white/15",
                   )}
                 >
                   <div className="flex w-full items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orika-graphite">
-                      <Monitor className="h-5 w-5 text-orika-gold" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-graphite">
+                      <Monitor className="h-5 w-5 text-brand-accent" />
                     </div>
                     {hasSession && (
                       <span
@@ -175,10 +175,10 @@ export default function POSTerminals() {
                   </div>
 
                   <div>
-                    <p className="font-semibold text-orika-cream">
+                    <p className="font-semibold text-brand-cream">
                       {terminal.name}
                     </p>
-                    <p className="flex items-center gap-1 text-xs text-orika-smoke">
+                    <p className="flex items-center gap-1 text-xs text-brand-smoke">
                       <MapPin className="h-3 w-3" />
                       {terminal.location_name}
                     </p>
@@ -186,18 +186,18 @@ export default function POSTerminals() {
 
                   {hasSession && terminal.total_revenue !== null && (
                     <div className="flex w-full items-center justify-between text-xs">
-                      <span className="text-orika-smoke">Revenue</span>
-                      <span className="font-medium text-orika-gold tabular-nums">
+                      <span className="text-brand-smoke">Revenue</span>
+                      <span className="font-medium text-brand-accent tabular-nums">
                         {fmtMoney(terminal.total_revenue ?? 0, currency)}
                       </span>
                     </div>
                   )}
 
                   <div className="mt-auto flex w-full items-center justify-between">
-                    <span className="text-xs text-orika-smoke">
+                    <span className="text-xs text-brand-smoke">
                       {hasSession ? "Resume session" : "Open new session"}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-orika-smoke" />
+                    <ChevronRight className="h-4 w-4 text-brand-smoke" />
                   </div>
                 </button>
               );
@@ -238,7 +238,7 @@ export default function POSTerminals() {
           }
         >
           <div className="space-y-4">
-            <p className="text-sm text-orika-smoke/80">
+            <p className="text-sm text-brand-smoke/80">
               Count the opening float before starting your shift.
             </p>
             <NumberField
@@ -280,7 +280,7 @@ export default function POSTerminals() {
         >
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Terminal Name <span className="text-red-400">*</span>
               </label>
               <Input
@@ -292,7 +292,7 @@ export default function POSTerminals() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Location <span className="text-red-400">*</span>
               </label>
               {locations.length === 0 ? (
@@ -304,7 +304,7 @@ export default function POSTerminals() {
                 <select
                   value={locationId}
                   onChange={(e) => setLocationId(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-brand-charcoal px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
                 >
                   <option value="">Select a location…</option>
                   {locations.map((l) => (

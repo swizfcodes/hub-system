@@ -82,7 +82,7 @@ export default function PostDetail() {
   if (!post) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Post not found.</p>
+        <p className="text-brand-smoke">Post not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -163,7 +163,7 @@ export default function PostDetail() {
             {/* Media preview */}
             {post.media_paths?.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                   Media
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -182,10 +182,10 @@ export default function PostDetail() {
             {/* Caption */}
             {post.caption && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                   Caption
                 </p>
-                <p className="text-sm text-orika-cream whitespace-pre-wrap leading-relaxed">
+                <p className="text-sm text-brand-cream whitespace-pre-wrap leading-relaxed">
                   {post.caption}
                 </p>
               </div>
@@ -198,12 +198,12 @@ export default function PostDetail() {
                   🎵 TikTok
                 </p>
                 {post.title && (
-                  <p className="text-sm font-medium text-orika-cream">
+                  <p className="text-sm font-medium text-brand-cream">
                     {post.title}
                   </p>
                 )}
                 {post.description && (
-                  <p className="text-xs text-orika-smoke">{post.description}</p>
+                  <p className="text-xs text-brand-smoke">{post.description}</p>
                 )}
               </div>
             )}
@@ -225,7 +225,7 @@ export default function PostDetail() {
             {/* Per-channel results */}
             {Object.keys(post.external_ids || {}).length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                   Channel Results
                 </p>
                 {Object.entries(post.external_ids).map(([channel, result]) => {
@@ -243,11 +243,11 @@ export default function PostDetail() {
                     >
                       <span className="text-base">{meta.icon}</span>
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-orika-cream">
+                        <p className="text-xs font-medium text-brand-cream">
                           {meta.label}
                         </p>
                         {result.postId && (
-                          <p className="text-[10px] text-orika-smoke font-mono">
+                          <p className="text-[10px] text-brand-smoke font-mono">
                             {result.postId}
                           </p>
                         )}
@@ -270,7 +270,7 @@ export default function PostDetail() {
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke hover:text-brand-accent transition-colors"
                           title="View on platform"
                         >
                           <ExternalLink className="h-4 w-4" />
@@ -294,9 +294,9 @@ export default function PostDetail() {
       {/* Analytics tab */}
       {activeTab === "metrics" &&
         (!isPublished ? (
-          <div className="py-12 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-            <BarChart2 className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">
+          <div className="py-12 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+            <BarChart2 className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">
               Analytics appear after the post is published.
             </p>
           </div>
@@ -307,9 +307,9 @@ export default function PostDetail() {
       {/* Comments tab */}
       {activeTab === "comments" &&
         (!isPublished ? (
-          <div className="py-12 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-            <MessageCircle className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">
+          <div className="py-12 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+            <MessageCircle className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">
               Comments appear after the post is published.
             </p>
           </div>
@@ -331,11 +331,11 @@ export default function PostDetail() {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3">
-      <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+    <div className="rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3">
+      <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
         {label}
       </p>
-      <p className="text-sm font-medium text-orika-cream">{value}</p>
+      <p className="text-sm font-medium text-brand-cream">{value}</p>
     </div>
   );
 }

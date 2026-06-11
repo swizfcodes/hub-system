@@ -183,9 +183,9 @@ export function EditStaffModal({ staff, open, onClose }: Props) {
               className="sm:col-span-2"
             />
           </div>
-          <div className="mt-3 p-3 rounded-lg bg-white/30 border border-orika-cloud/30">
+          <div className="mt-3 p-3 rounded-lg bg-white/30 border border-brand-cloud/30">
             <div className="text-[0.6rem] uppercase tracking-widest text-text-on-light-muted">Employee code</div>
-            <div className="text-sm font-mono font-medium text-orika-black/70 mt-0.5">{staff.employee_number}</div>
+            <div className="text-sm font-mono font-medium text-brand-black/70 mt-0.5">{staff.employee_number}</div>
             <div className="text-[0.6rem] text-text-on-light-muted mt-0.5">System-generated · cannot be changed</div>
           </div>
         </Section>

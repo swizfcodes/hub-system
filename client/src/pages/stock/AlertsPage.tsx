@@ -80,7 +80,7 @@ export default function AlertsPage() {
             {alerts.map((a) => (
               <Card
                 key={a.notification_id}
-                className={`p-4 ${!a.is_read ? "border-orika-gold/40" : ""}`}
+                className={`p-4 ${!a.is_read ? "border-brand-accent/40" : ""}`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-state-warn/15 text-state-warn flex items-center justify-center">
@@ -93,7 +93,7 @@ export default function AlertsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-orika-cream truncate">
+                      <span className="text-sm font-medium text-brand-cream truncate">
                         {a.product_name}
                       </span>
                       <Badge
@@ -113,20 +113,20 @@ export default function AlertsPage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                    <div className="text-[0.65rem] text-brand-smoke mt-0.5">
                       {a.product_sku}
                       {a.location_name && ` · ${a.location_name}`} ·{" "}
                       {fmtRelative(a.created_at)}
                     </div>
                     {(a.type === "low_stock" || a.type === "out_of_stock") && (
-                      <div className="text-xs text-orika-cloud mt-1">
+                      <div className="text-xs text-brand-cloud mt-1">
                         {a.on_hand} on hand · reorder at {a.reorder_level}
                       </div>
                     )}
                   </div>
                   <Link
                     to={`/catalogue/${a.product_id}`}
-                    className="inline-flex items-center gap-1 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-brand-smoke hover:text-brand-accent transition-colors"
                     onClick={() =>
                       !a.is_read && markRead.mutate(a.notification_id)
                     }

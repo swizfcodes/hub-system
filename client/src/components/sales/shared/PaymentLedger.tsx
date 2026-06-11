@@ -29,7 +29,7 @@ export function PaymentLedger({
 
   if (!payments.length) {
     return (
-      <p className="py-4 text-center text-sm text-orika-smoke">
+      <p className="py-4 text-center text-sm text-brand-smoke">
         No payments recorded yet.
       </p>
     );
@@ -51,17 +51,17 @@ export function PaymentLedger({
         return (
           <div
             key={payment.payment_id}
-            className="flex items-center justify-between gap-4 bg-orika-charcoal px-4 py-3"
+            className="flex items-center justify-between gap-4 bg-brand-charcoal px-4 py-3"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orika-graphite">
-                <Icon className="h-4 w-4 text-orika-gold" />
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-graphite">
+                <Icon className="h-4 w-4 text-brand-accent" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-orika-cream">
+                <p className="truncate text-sm font-medium text-brand-cream">
                   {meta?.label ?? payment.payment_method}
                 </p>
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {fmtDate(payment.payment_date)}
                   {payment.reference ? ` · ${payment.reference}` : ""}
                   {!payment.is_confirmed && (
@@ -74,13 +74,13 @@ export function PaymentLedger({
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-              <span className="font-display text-sm font-semibold text-orika-gold tabular-nums">
+              <span className="font-display text-sm font-semibold text-brand-accent tabular-nums">
                 {fmtMoney(payment.amount, currency)}
               </span>
               {receipt && (
                 <button
                   onClick={() => openReceiptPdf(receipt.receipt_id)}
-                  className="flex items-center gap-1 text-xs text-orika-smoke transition-colors hover:text-orika-gold"
+                  className="flex items-center gap-1 text-xs text-brand-smoke transition-colors hover:text-brand-accent"
                   title={`Receipt ${receipt.receipt_number}`}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />

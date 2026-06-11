@@ -83,7 +83,7 @@ export const TEMPLATE_VARIABLES = [
     label: "Delivery date",
     example: "15 Jan 2026",
   },
-  { token: "{{business_name}}", label: "Business name", example: "Bejewelled" },
+  { token: "{{business_name}}", label: "Business name", example: "Your brand" },
   { token: "{{staff_name}}", label: "Staff / sender name", example: "Tola" },
 ];
 

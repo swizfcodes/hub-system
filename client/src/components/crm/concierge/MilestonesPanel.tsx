@@ -98,7 +98,7 @@ export function MilestonesPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <Calendar className="w-3.5 h-3.5" /> Important dates
         </h3>
         <Button
@@ -148,19 +148,19 @@ export function MilestonesPanel({
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                     meta.tone === "gold"
-                      ? "bg-orika-gold/15 text-orika-gold"
+                      ? "bg-brand-accent/15 text-brand-accent"
                       : meta.tone === "rose"
-                        ? "bg-bejewelled-rose/15 text-bejewelled-rose"
+                        ? "bg-accent3/15 text-accent3"
                         : meta.tone === "sage"
-                          ? "bg-living-sage/15 text-living-sage"
-                          : "bg-orika-graphite text-orika-cloud"
+                          ? "bg-accent2/15 text-accent2"
+                          : "bg-brand-graphite text-brand-cloud"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-orika-cream">
+                    <span className="text-sm font-medium text-brand-cream">
                       {meta.label}
                     </span>
                     {isUpcoming && (
@@ -173,18 +173,18 @@ export function MilestonesPanel({
                       </Badge>
                     )}
                   </div>
-                  <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                  <div className="text-[0.65rem] text-brand-smoke mt-0.5">
                     {fmtDate(m.milestone_date, "d MMMM")}
                   </div>
                   {m.notes && (
-                    <p className="text-[0.65rem] text-orika-cloud mt-1 italic">
+                    <p className="text-[0.65rem] text-brand-cloud mt-1 italic">
                       "{m.notes}"
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => remove.mutate(m.milestone_id)}
-                  className="p-1.5 text-orika-smoke hover:text-state-danger"
+                  className="p-1.5 text-brand-smoke hover:text-state-danger"
                   aria-label="Remove"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

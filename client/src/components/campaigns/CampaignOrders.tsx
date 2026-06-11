@@ -164,8 +164,8 @@ export default function CampaignOrders({ campaignId, business: _business }: Prop
             className={cn(
               "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
               statusFilter === f
-                ? "bg-orika-gold/10 text-orika-gold border-orika-gold/30"
-                : "text-orika-smoke border-white/10 hover:border-white/20",
+                ? "bg-brand-accent/10 text-brand-accent border-brand-accent/30"
+                : "text-brand-smoke border-white/10 hover:border-white/20",
             )}
           >
             {f === "all"
@@ -177,10 +177,10 @@ export default function CampaignOrders({ campaignId, business: _business }: Prop
 
       {/* Empty state */}
       {!orders.length && (
-        <div className="rounded-2xl border border-white/8 bg-orika-graphite p-10 text-center space-y-3">
-          <ShoppingBag className="h-10 w-10 text-orika-smoke mx-auto opacity-40" />
-          <p className="text-sm text-orika-cloud font-medium">No orders yet</p>
-          <p className="text-xs text-orika-smoke">
+        <div className="rounded-2xl border border-white/8 bg-brand-graphite p-10 text-center space-y-3">
+          <ShoppingBag className="h-10 w-10 text-brand-smoke mx-auto opacity-40" />
+          <p className="text-sm text-brand-cloud font-medium">No orders yet</p>
+          <p className="text-xs text-brand-smoke">
             Orders will appear here as customers check out.
           </p>
         </div>
@@ -196,13 +196,13 @@ export default function CampaignOrders({ campaignId, business: _business }: Prop
         return (
           <div
             key={id}
-            className="rounded-2xl border border-white/8 bg-orika-graphite p-4 space-y-3"
+            className="rounded-2xl border border-white/8 bg-brand-graphite p-4 space-y-3"
           >
             {/* Header row */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-orika-cream">
+                  <span className="text-sm font-semibold text-brand-cream">
                     {(order.order_number as string) || id.slice(0, 8)}
                   </span>
                   <span
@@ -215,28 +215,28 @@ export default function CampaignOrders({ campaignId, business: _business }: Prop
                     {meta.label}
                   </span>
                 </div>
-                <p className="text-xs text-orika-smoke mt-0.5">
+                <p className="text-xs text-brand-smoke mt-0.5">
                   {fmtDateTime(order.created_at as string)}
                 </p>
               </div>
-              <span className="text-sm font-bold text-orika-gold tabular-nums shrink-0">
+              <span className="text-sm font-bold text-brand-accent tabular-nums shrink-0">
                 {fmtMoney(Number(order.total_amount ?? 0))}
               </span>
             </div>
 
             {/* Customer info */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-orika-cloud">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-brand-cloud">
               <span className="font-medium">
                 {order.customer_name as string}
               </span>
               {order.customer_phone && (
-                <span className="inline-flex items-center gap-1 text-orika-smoke">
+                <span className="inline-flex items-center gap-1 text-brand-smoke">
                   <Phone className="h-3 w-3" />
                   {order.customer_phone as string}
                 </span>
               )}
               {order.customer_email && (
-                <span className="inline-flex items-center gap-1 text-orika-smoke">
+                <span className="inline-flex items-center gap-1 text-brand-smoke">
                   <Mail className="h-3 w-3" />
                   {order.customer_email as string}
                 </span>
@@ -358,7 +358,7 @@ export default function CampaignOrders({ campaignId, business: _business }: Prop
         }
       >
         <div className="space-y-3">
-          <p className="text-sm text-orika-cloud">
+          <p className="text-sm text-brand-cloud">
             Why are you cancelling this order? The customer will be notified.
           </p>
           <Input

@@ -12,8 +12,8 @@ export const BRAND_SWATCHES: SwatchColor[] = [
   { name: "Antique Gold", hex: "#C9A86C", category: "gold" },
   { name: "Dim Gold", hex: "#8A6A30", category: "gold" },
   { name: "Champagne", hex: "#D9BC87", category: "gold" },
-  // Roses (Bejewelled family)
-  { name: "Bejewelled Rose", hex: "#B76E79", category: "rose" },
+  // Roses
+  { name: "Rose", hex: "#B76E79", category: "rose" },
   { name: "Dusty Rose", hex: "#C49B96", category: "rose" },
   { name: "Garnet", hex: "#7C3340", category: "rose" },
   // Sages (Living family)

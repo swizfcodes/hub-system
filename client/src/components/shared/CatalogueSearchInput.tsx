@@ -123,36 +123,36 @@ export function CatalogueSearchInput({
 
   // ── Theme tokens ────────────────────────────────────────────────────────────
   const inputCls = isDark
-    ? "w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
-    : "w-full rounded-xl border border-orika-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-orika-black shadow-sm focus:border-orika-black focus:outline-none focus:ring-1 focus:ring-orika-black";
+    ? "w-full rounded-lg border border-white/10 bg-brand-graphite py-2 pl-8 pr-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none"
+    : "w-full rounded-xl border border-brand-cloud/40 bg-white py-3 pl-10 pr-4 text-sm text-brand-black shadow-sm focus:border-brand-black focus:outline-none focus:ring-1 focus:ring-brand-black";
 
   const iconCls = isDark
-    ? "absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke pointer-events-none"
-    : "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke pointer-events-none";
+    ? "absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke pointer-events-none"
+    : "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-smoke pointer-events-none";
 
   const dropCls = isDark
-    ? "rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto"
-    : "rounded-xl border border-orika-cloud/30 bg-white shadow-lg max-h-56 overflow-y-auto";
+    ? "rounded-lg border border-white/10 bg-brand-charcoal shadow-xl max-h-56 overflow-y-auto"
+    : "rounded-xl border border-brand-cloud/30 bg-white shadow-lg max-h-56 overflow-y-auto";
 
   const rowCls = isDark
-    ? "flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
-    : "flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-orika-cloud/20 transition-colors";
+    ? "flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-brand-graphite/40 transition-colors"
+    : "flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-brand-cloud/20 transition-colors";
 
   const nameCls = isDark
-    ? "text-xs font-medium text-orika-cream"
-    : "text-sm font-medium text-orika-black";
+    ? "text-xs font-medium text-brand-cream"
+    : "text-sm font-medium text-brand-black";
   const skuCls = isDark
-    ? "text-[10px] text-orika-smoke"
+    ? "text-[10px] text-brand-smoke"
     : "text-xs text-text-on-light-muted";
   const priceCls = isDark
-    ? "text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0"
-    : "text-sm font-semibold text-orika-black tabular-nums ml-4 shrink-0";
+    ? "text-xs font-semibold text-brand-accent tabular-nums ml-3 shrink-0"
+    : "text-sm font-semibold text-brand-black tabular-nums ml-4 shrink-0";
   const msgCls = isDark
-    ? "px-3 py-3 text-xs text-orika-smoke"
+    ? "px-3 py-3 text-xs text-brand-smoke"
     : "px-3 py-3 text-sm text-text-on-light-muted";
 
   const labelCls = isDark
-    ? "mb-1 block text-xs text-orika-smoke"
+    ? "mb-1 block text-xs text-brand-smoke"
     : "mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted";
 
   // ── Portaled dropdown ───────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ export function CatalogueSearchInput({
                   onQuickAdd?.(query.trim());
                   setIsOpen(false);
                 }}
-                className={`${rowCls} border-t ${isDark ? "border-white/10 text-orika-gold" : "border-orika-cloud/30 text-orika-black"}`}
+                className={`${rowCls} border-t ${isDark ? "border-white/10 text-brand-accent" : "border-brand-cloud/30 text-brand-black"}`}
               >
                 <span className="flex items-center gap-2 text-xs font-medium">
                   <Plus className="h-3.5 w-3.5" />
@@ -294,17 +294,17 @@ export function ProductSelectField({
   }
 
   const labelCls = isDark
-    ? "mb-1 block text-xs text-orika-smoke"
+    ? "mb-1 block text-xs text-brand-smoke"
     : "mb-1 block text-[0.7rem] font-medium uppercase tracking-widest text-text-on-light-muted";
 
   if (value) {
     // Selected state — show chip
     const chipCls = isDark
-      ? "flex items-center gap-2 rounded-lg border border-orika-gold/40 bg-orika-gold/10 px-3 py-2"
-      : "flex items-center gap-2 rounded-xl border border-orika-black/20 bg-orika-cloud/20 px-3 py-2.5";
+      ? "flex items-center gap-2 rounded-lg border border-brand-accent/40 bg-brand-accent/10 px-3 py-2"
+      : "flex items-center gap-2 rounded-xl border border-brand-black/20 bg-brand-cloud/20 px-3 py-2.5";
     const nameCls2 = isDark
-      ? "text-xs font-medium text-orika-cream flex-1 truncate"
-      : "text-sm font-medium text-orika-black flex-1 truncate";
+      ? "text-xs font-medium text-brand-cream flex-1 truncate"
+      : "text-sm font-medium text-brand-black flex-1 truncate";
 
     return (
       <div>
@@ -317,7 +317,7 @@ export function ProductSelectField({
             className={cn(
               "transition-colors",
               isDark
-                ? "text-orika-smoke hover:text-red-400"
+                ? "text-brand-smoke hover:text-red-400"
                 : "text-text-on-light-muted hover:text-state-danger",
             )}
             aria-label="Remove product"

@@ -128,7 +128,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-orika-charcoal/95 backdrop-blur-md border-t border-orika-graphite pb-safe"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-brand-charcoal/95 backdrop-blur-md border-t border-brand-graphite pb-safe"
       aria-label="Bottom navigation"
     >
       <div className="grid grid-cols-5">
@@ -143,8 +143,8 @@ export function MobileBottomNav() {
               className={cn(
                 "flex flex-col items-center gap-1 py-2.5 transition-colors",
                 active
-                  ? "text-orika-gold"
-                  : "text-orika-smoke hover:text-orika-cream",
+                  ? "text-brand-accent"
+                  : "text-brand-smoke hover:text-brand-cream",
               )}
             >
               <Icon className="w-5 h-5" />

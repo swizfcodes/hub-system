@@ -82,7 +82,7 @@ export function ForwardModal({ message, onClose, userId }: Props) {
     >
       <div className="max-h-72 space-y-1 overflow-y-auto">
         {channels.length === 0 ? (
-          <p className="py-6 text-center text-xs text-orika-smoke">
+          <p className="py-6 text-center text-xs text-brand-smoke">
             No other conversations
           </p>
         ) : (
@@ -96,7 +96,7 @@ export function ForwardModal({ message, onClose, userId }: Props) {
                 onClick={() => toggle(ch.channel_id)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors",
-                  isSelected ? "bg-orika-gold/15" : "hover:bg-black/5",
+                  isSelected ? "bg-brand-accent/15" : "hover:bg-black/5",
                 )}
               >
                 <div
@@ -105,11 +105,11 @@ export function ForwardModal({ message, onClose, userId }: Props) {
                 >
                   {getInitials(name)}
                 </div>
-                <span className="flex-1 truncate text-sm text-orika-black">
+                <span className="flex-1 truncate text-sm text-brand-black">
                   {name}
                 </span>
                 {isSelected && (
-                  <Check className="h-4 w-4 shrink-0 text-orika-gold" />
+                  <Check className="h-4 w-4 shrink-0 text-brand-accent" />
                 )}
               </button>
             );

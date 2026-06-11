@@ -99,9 +99,9 @@ export function InvoiceKpiStrip({ currency = "NGN" }: InvoiceKpiStripProps) {
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4"
+          className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4"
         >
-          <p className="text-xs uppercase tracking-widest text-orika-smoke">
+          <p className="text-xs uppercase tracking-widest text-brand-smoke">
             {card.label}
           </p>
           <p
@@ -145,8 +145,8 @@ export function InvoiceAgingBuckets({
     : 1;
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5">
+      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
         Receivables Aging
       </p>
       <div className="grid grid-cols-5 gap-3">
@@ -166,11 +166,11 @@ export function InvoiceAgingBuckets({
               className={cnAging(
                 "flex flex-col items-center gap-2 rounded-xl border border-white/5 px-2 py-3 transition-colors",
                 onBucketClick &&
-                  "hover:border-orika-gold/30 hover:bg-orika-graphite/30",
+                  "hover:border-brand-accent/30 hover:bg-brand-graphite/30",
               )}
             >
               {/* Bar */}
-              <div className="relative h-16 w-full rounded-full bg-orika-graphite overflow-hidden">
+              <div className="relative h-16 w-full rounded-full bg-brand-graphite overflow-hidden">
                 <div
                   className="absolute bottom-0 left-0 right-0 rounded-full transition-all duration-500"
                   style={{
@@ -188,7 +188,7 @@ export function InvoiceAgingBuckets({
                 {fmtMoneyAging(amount, currency)}
               </p>
               {/* Label */}
-              <p className="text-center text-[10px] leading-tight text-orika-smoke">
+              <p className="text-center text-[10px] leading-tight text-brand-smoke">
                 {bucket.label}
               </p>
             </button>

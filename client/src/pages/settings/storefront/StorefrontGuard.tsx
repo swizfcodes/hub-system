@@ -21,18 +21,18 @@ export function StorefrontGuard({ children }: { children: ReactNode }) {
   if (!STOREFRONT_BUSINESSES.includes(active)) {
     return (
       <div className="px-4 sm:px-8 py-16 max-w-2xl mx-auto text-center animate-app-in">
-        <Store className="w-10 h-10 mx-auto text-orika-gold/60 mb-4" />
-        <h1 className="font-display font-light text-2xl sm:text-3xl text-orika-cream mb-3">
-          No storefront for this business <span className="italic text-orika-gold">yet</span>
+        <Store className="w-10 h-10 mx-auto text-brand-accent/60 mb-4" />
+        <h1 className="font-display font-light text-2xl sm:text-3xl text-brand-cream mb-3">
+          No storefront for this business <span className="italic text-brand-accent">yet</span>
         </h1>
-        <p className="text-sm text-orika-cloud mb-6">
+        <p className="text-sm text-brand-cloud mb-6">
           The online storefront is currently exclusive to Orika Living. Switch
           to that business to manage its homepage content, formats and scents.
           A storefront for this business is coming soon.
         </p>
         <Link
           to="/settings"
-          className="inline-flex items-center gap-2 text-xs text-orika-gold hover:text-orika-cream transition-colors"
+          className="inline-flex items-center gap-2 text-xs text-brand-accent hover:text-brand-cream transition-colors"
         >
           ← Back to Settings
         </Link>

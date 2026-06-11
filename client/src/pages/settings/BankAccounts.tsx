@@ -114,12 +114,12 @@ export default function BankAccounts() {
                 key={acc.account_id}
                 className="p-5 flex items-center gap-4"
               >
-                <div className="w-12 h-12 rounded-xl bg-orika-graphite text-orika-gold flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-brand-graphite text-brand-accent flex items-center justify-center shrink-0">
                   <Wallet className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-orika-cream">
+                    <span className="font-medium text-brand-cream">
                       {acc.bank_name}
                     </span>
                     {acc.is_primary && (
@@ -136,10 +136,10 @@ export default function BankAccounts() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-orika-cloud mt-1">
+                  <div className="text-xs text-brand-cloud mt-1">
                     {acc.account_name}
                   </div>
-                  <div className="text-xs font-mono text-orika-smoke mt-0.5">
+                  <div className="text-xs font-mono text-brand-smoke mt-0.5">
                     {maskAccountNumber(acc.account_number)}
                   </div>
                 </div>
@@ -348,7 +348,7 @@ function BankAccountFormModal({
             hint="Optional"
           />
         </div>
-        <div className="p-3 rounded-xl bg-orika-cream/50 border border-orika-cloud/40">
+        <div className="p-3 rounded-xl bg-brand-cream/50 border border-brand-cloud/40">
           <Switch
             surface="light"
             checked={!!isPrimary}

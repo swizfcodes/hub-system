@@ -32,7 +32,7 @@ export function FieldPreview({ fields, entityLabel }: Props) {
         <div className="text-[0.7rem] tracking-widest uppercase text-text-on-light-muted">
           Live preview
         </div>
-        <h3 className="font-display text-2xl text-orika-black mt-1">
+        <h3 className="font-display text-2xl text-brand-black mt-1">
           {entityLabel} form
         </h3>
       </div>
@@ -43,7 +43,7 @@ export function FieldPreview({ fields, entityLabel }: Props) {
           return (
             <div
               key={f.field_id}
-              className="p-3 rounded-xl bg-white/60 border border-orika-cloud/40"
+              className="p-3 rounded-xl bg-white/60 border border-brand-cloud/40"
             >
               <Switch
                 surface="light"

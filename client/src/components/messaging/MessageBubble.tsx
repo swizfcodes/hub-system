@@ -60,7 +60,7 @@ export function MessageBubble({
   if (message.sender_kind === "system") {
     return (
       <div className="flex justify-center py-1">
-        <p className="rounded-full bg-orika-graphite/40 px-3 py-1 text-[10px] italic text-orika-smoke/60">
+        <p className="rounded-full bg-brand-graphite/40 px-3 py-1 text-[10px] italic text-brand-smoke/60">
           {message.content}
         </p>
       </div>
@@ -107,8 +107,8 @@ export function MessageBubble({
             className={cn(
               "rounded-2xl px-3 py-2 text-sm",
               isOwn
-                ? "rounded-tr-sm bg-orika-gold text-orika-black"
-                : "rounded-tl-sm border border-white/5 bg-orika-charcoal text-orika-cream",
+                ? "rounded-tr-sm bg-brand-accent text-brand-black"
+                : "rounded-tl-sm border border-white/5 bg-brand-charcoal text-brand-cream",
             )}
           >
             {/* Forwarded label */}
@@ -116,7 +116,7 @@ export function MessageBubble({
               <p
                 className={cn(
                   "mb-1 flex items-center gap-1 text-[10px] italic",
-                  isOwn ? "text-orika-black/50" : "text-orika-smoke/60",
+                  isOwn ? "text-brand-black/50" : "text-brand-smoke/60",
                 )}
               >
                 <Forward className="h-2.5 w-2.5" />
@@ -130,14 +130,14 @@ export function MessageBubble({
                 className={cn(
                   "mb-1.5 rounded-lg border-l-2 px-2 py-1 text-xs",
                   isOwn
-                    ? "border-orika-black/30 bg-orika-black/10"
-                    : "border-orika-gold/50 bg-white/5",
+                    ? "border-brand-black/30 bg-brand-black/10"
+                    : "border-brand-accent/50 bg-white/5",
                 )}
               >
                 <p
                   className={cn(
                     "text-[10px] font-semibold",
-                    isOwn ? "text-orika-black/70" : "text-orika-gold",
+                    isOwn ? "text-brand-black/70" : "text-brand-accent",
                   )}
                 >
                   {message.reply_to.sender_name}
@@ -145,7 +145,7 @@ export function MessageBubble({
                 <p
                   className={cn(
                     "truncate",
-                    isOwn ? "text-orika-black/60" : "text-orika-smoke",
+                    isOwn ? "text-brand-black/60" : "text-brand-smoke",
                   )}
                 >
                   {message.reply_to.is_deleted
@@ -161,7 +161,7 @@ export function MessageBubble({
               <p
                 className={cn(
                   "flex items-center gap-1.5 text-xs italic",
-                  isOwn ? "text-orika-black/50" : "text-orika-smoke/60",
+                  isOwn ? "text-brand-black/50" : "text-brand-smoke/60",
                 )}
               >
                 <Ban className="h-3 w-3" />
@@ -245,7 +245,7 @@ export function MessageBubble({
           {showReactionBar && (
             <div
               className={cn(
-                "absolute -top-10 z-10 flex items-center gap-1 rounded-2xl border border-white/10 bg-orika-charcoal px-2 py-1.5 shadow-xl",
+                "absolute -top-10 z-10 flex items-center gap-1 rounded-2xl border border-white/10 bg-brand-charcoal px-2 py-1.5 shadow-xl",
                 isOwn ? "right-0" : "left-0",
               )}
             >
@@ -276,11 +276,11 @@ export function MessageBubble({
                 type="button"
                 title={r.names.join(", ")}
                 onClick={() => actions.onReact(message, r.emoji)}
-                className="flex items-center gap-0.5 rounded-full border border-white/10 bg-orika-charcoal px-1.5 py-px text-[11px] shadow"
+                className="flex items-center gap-0.5 rounded-full border border-white/10 bg-brand-charcoal px-1.5 py-px text-[11px] shadow"
               >
                 {r.emoji}
                 {r.count > 1 && (
-                  <span className="text-[9px] text-orika-smoke">{r.count}</span>
+                  <span className="text-[9px] text-brand-smoke">{r.count}</span>
                 )}
               </button>
             ))}
@@ -288,7 +288,7 @@ export function MessageBubble({
         )}
 
         {/* Time + edited + ticks */}
-        <p className="mt-0.5 flex items-center gap-1 px-1 text-[9px] text-orika-smoke/40">
+        <p className="mt-0.5 flex items-center gap-1 px-1 text-[9px] text-brand-smoke/40">
           {message.edited_at && !deleted && <span>edited ·</span>}
           {fmtClockTime(message.created_at)}
           {isOwn && !deleted && <Ticks message={message} />}
@@ -326,7 +326,7 @@ function HoverAction({
   return (
     <button
       onClick={onClick}
-      className="rounded-lg border border-white/10 bg-orika-charcoal p-1.5 text-orika-smoke transition-colors hover:text-orika-gold"
+      className="rounded-lg border border-white/10 bg-brand-charcoal p-1.5 text-brand-smoke transition-colors hover:text-brand-accent"
       title={title}
     >
       {children}

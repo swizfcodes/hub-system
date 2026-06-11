@@ -84,17 +84,17 @@ export default function AccountingDashboard() {
         {/* Status alerts */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Open period */}
-          <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4">
-            <p className="text-xs uppercase tracking-widest text-orika-smoke mb-2">
+          <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4">
+            <p className="text-xs uppercase tracking-widest text-brand-smoke mb-2">
               Current Fiscal Period
             </p>
             {dash?.open_period ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-orika-cream">
+                  <p className="font-medium text-brand-cream">
                     {dash.open_period.name}
                   </p>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     {fmtDate(dash.open_period.start_date)} —{" "}
                     {fmtDate(dash.open_period.end_date)}
                   </p>
@@ -114,16 +114,16 @@ export default function AccountingDashboard() {
           </div>
 
           {/* Unreconciled items */}
-          <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4">
-            <p className="text-xs uppercase tracking-widest text-orika-smoke mb-2">
+          <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4">
+            <p className="text-xs uppercase tracking-widest text-brand-smoke mb-2">
               Bank Reconciliation
             </p>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-display text-2xl font-light text-orika-cream">
+                <p className="font-display text-2xl font-light text-brand-cream">
                   {dash?.unreconciled_count ?? 0}
                 </p>
-                <p className="text-xs text-orika-smoke">unreconciled items</p>
+                <p className="text-xs text-brand-smoke">unreconciled items</p>
               </div>
               {(dash?.unreconciled_count ?? 0) > 0 && (
                 <Button
@@ -140,7 +140,7 @@ export default function AccountingDashboard() {
 
         {/* Quick navigation */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-4">
             Accounting Modules
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -176,10 +176,10 @@ export default function AccountingDashboard() {
                 <button
                   key={item.to}
                   onClick={() => navigate(item.to)}
-                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-orika-charcoal p-5 hover:border-orika-gold/30 hover:bg-orika-gold/5 transition-all text-center group"
+                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-brand-charcoal p-5 hover:border-brand-accent/30 hover:bg-brand-accent/5 transition-all text-center group"
                 >
-                  <Icon className="h-6 w-6 text-orika-smoke group-hover:text-orika-gold transition-colors" />
-                  <p className="text-xs text-orika-cloud group-hover:text-orika-cream transition-colors">
+                  <Icon className="h-6 w-6 text-brand-smoke group-hover:text-brand-accent transition-colors" />
+                  <p className="text-xs text-brand-cloud group-hover:text-brand-cream transition-colors">
                     {item.label}
                   </p>
                 </button>
@@ -206,10 +206,10 @@ function KpiCard({
   color: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="h-3.5 w-3.5" style={{ color }} />
-        <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+        <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
           {label}
         </p>
       </div>

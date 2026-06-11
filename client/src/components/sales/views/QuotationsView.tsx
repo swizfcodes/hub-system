@@ -54,8 +54,8 @@ export function QuotationsView() {
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 status === opt.value
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80",
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/80",
               )}
             >
               {opt.label}
@@ -65,7 +65,7 @@ export function QuotationsView() {
 
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke" />
             <Input
               placeholder="Search quotes..."
               value={search}
@@ -109,7 +109,7 @@ export function QuotationsView() {
         <div className="overflow-x-auto rounded-xl border border-white/5">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-graphite/40">
+              <tr className="border-b border-white/5 bg-brand-graphite/40">
                 {[
                   "Number",
                   "Customer",
@@ -120,7 +120,7 @@ export function QuotationsView() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -134,18 +134,18 @@ export function QuotationsView() {
                   onClick={() =>
                     navigate(`/sales/quotations/${q.quotation_id}`)
                   }
-                  className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
+                  className="cursor-pointer bg-brand-charcoal transition-colors hover:bg-brand-graphite/30"
                 >
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
+                  <td className="px-4 py-3 font-mono text-xs font-medium text-brand-accent">
                     {q.quotation_number}
                   </td>
-                  <td className="px-4 py-3 font-medium text-orika-cream">
+                  <td className="px-4 py-3 font-medium text-brand-cream">
                     {q.contact_name ?? "—"}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums text-brand-cream">
                     {fmtMoney(q.total_amount, q.currency ?? currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud">
+                  <td className="px-4 py-3 text-brand-cloud">
                     {fmtDate(q.valid_until)}
                   </td>
                   <td className="px-4 py-3">
@@ -155,7 +155,7 @@ export function QuotationsView() {
                       size="sm"
                     />
                   </td>
-                  <td className="px-4 py-3 text-right text-xs text-orika-smoke">
+                  <td className="px-4 py-3 text-right text-xs text-brand-smoke">
                     {fmtDate(q.created_at)}
                   </td>
                 </tr>
@@ -176,7 +176,7 @@ export function QuotationsView() {
           >
             Previous
           </Button>
-          <span className="flex items-center text-xs text-orika-smoke">
+          <span className="flex items-center text-xs text-brand-smoke">
             Page {page}
           </span>
           <Button

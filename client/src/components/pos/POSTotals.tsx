@@ -58,7 +58,7 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
                 value: v ?? 0,
               })
             }
-            className="bg-orika-graphite px-2 py-1.5 text-right tabular-nums"
+            className="bg-brand-graphite px-2 py-1.5 text-right tabular-nums"
           />
         </div>
       </div>
@@ -106,7 +106,7 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
       <button
         onClick={() => !hasApproval && onCheckout(totals)}
         disabled={!lines.length || hasApproval}
-        className="w-full rounded-lg bg-orika-gold py-3 font-semibold text-orika-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+        className="w-full rounded-lg bg-brand-accent py-3 font-semibold text-brand-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
       >
         {hasApproval
           ? "Awaiting Approval"
@@ -129,16 +129,16 @@ function Row({
 }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className={muted ? "text-orika-smoke" : "text-orika-cloud"}>
+      <span className={muted ? "text-brand-smoke" : "text-brand-cloud"}>
         {label}
       </span>
       <span
         className={
           bold
-            ? "font-semibold text-orika-cream"
+            ? "font-semibold text-brand-cream"
             : muted
-              ? "text-orika-smoke"
-              : "text-orika-cream"
+              ? "text-brand-smoke"
+              : "text-brand-cream"
         }
       >
         {value}

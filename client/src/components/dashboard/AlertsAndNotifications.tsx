@@ -130,11 +130,11 @@ export function NotificationsPanel() {
       {/* Header toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-orika-cream">
+          <h2 className="text-base font-semibold text-brand-cream">
             Notifications
           </h2>
           {unreadCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orika-gold text-[10px] font-bold text-orika-black px-1">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-accent text-[10px] font-bold text-brand-black px-1">
               {unreadCount}
             </span>
           )}
@@ -145,8 +145,8 @@ export function NotificationsPanel() {
             className={cn(
               "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               unreadOnly
-                ? "bg-orika-gold text-orika-black"
-                : "bg-orika-graphite/30 text-orika-smoke hover:text-orika-cream",
+                ? "bg-brand-accent text-brand-black"
+                : "bg-brand-graphite/30 text-brand-smoke hover:text-brand-cream",
             )}
           >
             Unread only
@@ -164,7 +164,7 @@ export function NotificationsPanel() {
           )}
           <button
             onClick={() => navigate("/settings/notifications")}
-            className="text-orika-smoke hover:text-orika-gold transition-colors"
+            className="text-brand-smoke hover:text-brand-accent transition-colors"
             title="Notification preferences"
           >
             <Settings className="h-4 w-4" />
@@ -181,8 +181,8 @@ export function NotificationsPanel() {
         </div>
       ) : groups.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <Bell className="h-10 w-10 text-orika-smoke/30" />
-          <p className="text-sm text-orika-smoke">
+          <Bell className="h-10 w-10 text-brand-smoke/30" />
+          <p className="text-sm text-brand-smoke">
             {unreadOnly ? "No unread notifications" : "No notifications yet"}
           </p>
         </div>
@@ -190,7 +190,7 @@ export function NotificationsPanel() {
         <div className="space-y-5">
           {groups.map(({ label, items }) => (
             <div key={label} className="space-y-1.5">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke/60 px-1">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke/60 px-1">
                 {label}
               </p>
               {items.map((n) => (
@@ -230,8 +230,8 @@ function NotificationRow({
       className={cn(
         "group flex items-start gap-3 rounded-xl border px-4 py-3 transition-all",
         n.is_read
-          ? "border-white/5 bg-orika-charcoal/50"
-          : "border-white/10 bg-orika-charcoal",
+          ? "border-white/5 bg-brand-charcoal/50"
+          : "border-white/10 bg-brand-charcoal",
       )}
     >
       {/* Icon */}
@@ -247,17 +247,17 @@ function NotificationRow({
         <p
           className={cn(
             "text-sm font-medium",
-            n.is_read ? "text-orika-smoke" : "text-orika-cream",
+            n.is_read ? "text-brand-smoke" : "text-brand-cream",
           )}
         >
           {n.title}
         </p>
         {n.body && (
-          <p className="text-xs text-orika-smoke/70 mt-0.5 line-clamp-2">
+          <p className="text-xs text-brand-smoke/70 mt-0.5 line-clamp-2">
             {n.body}
           </p>
         )}
-        <p className="text-[10px] text-orika-smoke/50 mt-1">
+        <p className="text-[10px] text-brand-smoke/50 mt-1">
           {fmtDate(n.created_at)}
         </p>
       </div>
@@ -267,7 +267,7 @@ function NotificationRow({
         {n.action_url && (
           <button
             onClick={onNavigate}
-            className="opacity-0 group-hover:opacity-100 text-orika-smoke hover:text-orika-gold transition-all"
+            className="opacity-0 group-hover:opacity-100 text-brand-smoke hover:text-brand-accent transition-all"
             title="Go to"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -276,13 +276,13 @@ function NotificationRow({
         {!n.is_read && (
           <button
             onClick={onRead}
-            className="opacity-0 group-hover:opacity-100 text-orika-smoke hover:text-orika-gold transition-all"
+            className="opacity-0 group-hover:opacity-100 text-brand-smoke hover:text-brand-accent transition-all"
             title="Mark as read"
           >
             <CheckCheck className="h-3.5 w-3.5" />
           </button>
         )}
-        {!n.is_read && <div className="h-2 w-2 rounded-full bg-orika-gold" />}
+        {!n.is_read && <div className="h-2 w-2 rounded-full bg-brand-accent" />}
       </div>
     </div>
   );

@@ -143,9 +143,9 @@ export default function SocialHome() {
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+              className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
             >
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
                 {kpi.label}
               </p>
               <p
@@ -161,7 +161,7 @@ export default function SocialHome() {
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Status filter */}
-          <div className="flex gap-1 rounded-xl border border-white/5 bg-orika-charcoal p-1">
+          <div className="flex gap-1 rounded-xl border border-white/5 bg-brand-charcoal p-1">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.key}
@@ -169,8 +169,8 @@ export default function SocialHome() {
                 className={cn(
                   "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                   statusFilter === f.key
-                    ? "bg-orika-gold text-orika-black"
-                    : "text-orika-smoke hover:text-orika-cream",
+                    ? "bg-brand-accent text-brand-black"
+                    : "text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 {f.label}
@@ -185,8 +185,8 @@ export default function SocialHome() {
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium border transition-all",
                 channelFilter === "all"
-                  ? "border-white/30 text-orika-cream bg-orika-graphite"
-                  : "border-white/10 text-orika-smoke hover:border-white/20",
+                  ? "border-white/30 text-brand-cream bg-brand-graphite"
+                  : "border-white/10 text-brand-smoke hover:border-white/20",
               )}
             >
               All
@@ -201,7 +201,7 @@ export default function SocialHome() {
                     "rounded-full px-3 py-1 text-xs font-medium border transition-all",
                     channelFilter === ch
                       ? "border-2"
-                      : "border border-white/10 text-orika-smoke hover:border-white/20",
+                      : "border border-white/10 text-brand-smoke hover:border-white/20",
                   )}
                   style={
                     channelFilter === ch
@@ -220,7 +220,7 @@ export default function SocialHome() {
           </div>
 
           {/* View toggle */}
-          <div className="ml-auto flex items-center gap-1 rounded-xl border border-white/5 bg-orika-charcoal p-1">
+          <div className="ml-auto flex items-center gap-1 rounded-xl border border-white/5 bg-brand-charcoal p-1">
             {(
               [
                 { key: "calendar", icon: Calendar },
@@ -233,8 +233,8 @@ export default function SocialHome() {
                 className={cn(
                   "rounded-lg p-1.5 transition-colors",
                   view === key
-                    ? "bg-orika-gold text-orika-black"
-                    : "text-orika-smoke hover:text-orika-cream",
+                    ? "bg-brand-accent text-brand-black"
+                    : "text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -258,34 +258,34 @@ export default function SocialHome() {
               <div className="flex items-center gap-3 mb-3">
                 <button
                   onClick={() => navigate2(-1)}
-                  className="rounded-lg p-2 text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+                  className="rounded-lg p-2 text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <h3 className="text-base font-semibold text-orika-cream">
+                <h3 className="text-base font-semibold text-brand-cream">
                   {MONTH_NAMES[currentDate.getMonth()]}{" "}
                   {currentDate.getFullYear()}
                 </h3>
                 <button
                   onClick={() => navigate2(1)}
-                  className="rounded-lg p-2 text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+                  className="rounded-lg p-2 text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setCurrentDate(new Date())}
-                  className="ml-1 rounded-lg px-2.5 py-1 text-xs text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+                  className="ml-1 rounded-lg px-2.5 py-1 text-xs text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
                 >
                   Today
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden">
                 <div className="grid grid-cols-7 border-b border-white/5">
                   {DAY_NAMES.map((d) => (
                     <div
                       key={d}
-                      className="py-2 text-center text-[0.6rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="py-2 text-center text-[0.6rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {d}
                     </div>
@@ -318,21 +318,21 @@ export default function SocialHome() {
                               "p-1.5 cursor-pointer transition-colors",
                               inMonth
                                 ? "bg-transparent"
-                                : "bg-orika-graphite/10",
+                                : "bg-brand-graphite/10",
                               isSelected
-                                ? "bg-orika-gold/5"
-                                : "hover:bg-orika-graphite/20",
+                                ? "bg-brand-accent/5"
+                                : "hover:bg-brand-graphite/20",
                             )}
                           >
                             <div
                               className={cn(
                                 "mb-1 h-6 w-6 flex items-center justify-center rounded-full text-xs font-medium",
                                 _isToday
-                                  ? "bg-orika-gold text-orika-black font-bold"
+                                  ? "bg-brand-accent text-brand-black font-bold"
                                   : "",
                                 !inMonth
-                                  ? "text-orika-smoke/30"
-                                  : "text-orika-cloud",
+                                  ? "text-brand-smoke/30"
+                                  : "text-brand-cloud",
                               )}
                             >
                               {day.getDate()}
@@ -364,7 +364,7 @@ export default function SocialHome() {
                                 );
                               })}
                               {dayPosts.length > 3 && (
-                                <p className="text-[9px] text-orika-smoke pl-1">
+                                <p className="text-[9px] text-brand-smoke pl-1">
                                   +{dayPosts.length - 3} more
                                 </p>
                               )}
@@ -381,8 +381,8 @@ export default function SocialHome() {
             {/* Day detail panel */}
             {selectedDay && (
               <div className="w-full lg:w-64 shrink-0">
-                <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4 sticky top-6 space-y-3">
-                  <p className="text-sm font-semibold text-orika-cream">
+                <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4 sticky top-6 space-y-3">
+                  <p className="text-sm font-semibold text-brand-cream">
                     {selectedDay.toLocaleDateString("en-NG", {
                       weekday: "long",
                       month: "long",
@@ -390,20 +390,20 @@ export default function SocialHome() {
                     })}
                   </p>
                   {selectedDayPosts.length === 0 ? (
-                    <p className="text-xs text-orika-smoke">No posts</p>
+                    <p className="text-xs text-brand-smoke">No posts</p>
                   ) : (
                     selectedDayPosts.map((p) => (
                       <button
                         key={p.post_id}
                         onClick={() => navigate(`/social/${p.post_id}`)}
-                        className="w-full text-left rounded-lg border border-white/5 bg-orika-graphite/30 px-3 py-2 hover:border-white/15 transition-colors"
+                        className="w-full text-left rounded-lg border border-white/5 bg-brand-graphite/30 px-3 py-2 hover:border-white/15 transition-colors"
                       >
                         <div className="flex gap-1 mb-1">
                           {p.channels.map((c) => (
                             <ChannelChip key={c} channel={c} size="xs" />
                           ))}
                         </div>
-                        <p className="text-xs text-orika-cream truncate">
+                        <p className="text-xs text-brand-cream truncate">
                           {p.caption?.slice(0, 40) ?? "—"}
                         </p>
                         <PostStatusBadge status={p.status} size="xs" />
@@ -428,12 +428,12 @@ export default function SocialHome() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {["Preview", "Channels", "Caption", "Status", "Date", ""].map(
                     (h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                       >
                         {h}
                       </th>
@@ -446,7 +446,7 @@ export default function SocialHome() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-12 text-center text-sm text-orika-smoke"
+                      className="px-4 py-12 text-center text-sm text-brand-smoke"
                     >
                       No posts match your filters.
                     </td>
@@ -455,7 +455,7 @@ export default function SocialHome() {
                 {posts.map((post) => (
                   <tr
                     key={post.post_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                   >
                     <td className="px-4 py-3">
                       {post.media_paths?.[0] ? (
@@ -465,8 +465,8 @@ export default function SocialHome() {
                           className="h-10 w-10 rounded-lg object-cover border border-white/5"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-lg bg-orika-graphite flex items-center justify-center">
-                          <ImageIcon className="h-4 w-4 text-orika-smoke/40" />
+                        <div className="h-10 w-10 rounded-lg bg-brand-graphite flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-brand-smoke/40" />
                         </div>
                       )}
                     </td>
@@ -478,14 +478,14 @@ export default function SocialHome() {
                       </div>
                     </td>
                     <td className="px-4 py-3 max-w-xs">
-                      <p className="text-orika-cream truncate">
+                      <p className="text-brand-cream truncate">
                         {post.caption?.slice(0, 60) ?? "—"}
                       </p>
                     </td>
                     <td className="px-4 py-3">
                       <PostStatusBadge status={post.status} size="xs" />
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {fmtDate(
                         post.published_at ??
                           post.scheduled_at ??
@@ -495,7 +495,7 @@ export default function SocialHome() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => navigate(`/social/${post.post_id}`)}
-                        className="text-xs text-orika-gold hover:underline"
+                        className="text-xs text-brand-accent hover:underline"
                       >
                         View
                       </button>

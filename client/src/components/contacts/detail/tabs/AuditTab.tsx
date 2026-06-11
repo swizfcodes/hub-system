@@ -35,20 +35,20 @@ export function AuditTab({ contactId }: { contactId: string }) {
   }
 
   return (
-    <ol className="relative pl-5 border-l border-orika-graphite space-y-3">
+    <ol className="relative pl-5 border-l border-brand-graphite space-y-3">
       {data.map((entry) => (
         <li key={entry.log_id} className="relative">
-          <span className="absolute -left-[7px] top-3 w-3 h-3 rounded-full bg-orika-gold border-2 border-orika-charcoal" />
-          <div className="rounded-xl border border-orika-graphite bg-orika-charcoal/40 p-3.5">
+          <span className="absolute -left-[7px] top-3 w-3 h-3 rounded-full bg-brand-accent border-2 border-brand-charcoal" />
+          <div className="rounded-xl border border-brand-graphite bg-brand-charcoal/40 p-3.5">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-sm text-orika-cream">
+              <span className="text-sm text-brand-cream">
                 {entry.user_name}
               </span>
-              <span className="text-[0.6rem] uppercase tracking-widest font-semibold text-orika-gold">
+              <span className="text-[0.6rem] uppercase tracking-widest font-semibold text-brand-accent">
                 {entry.action}
               </span>
             </div>
-            <div className="text-[0.65rem] text-orika-smoke mt-1">
+            <div className="text-[0.65rem] text-brand-smoke mt-1">
               {fmtDateTime(entry.occurred_at)} ·{" "}
               {fmtRelative(entry.occurred_at)}
             </div>

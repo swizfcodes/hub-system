@@ -70,11 +70,11 @@ export function AccountMenu({ collapsed }: Props) {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-3 px-2 py-2 rounded-lg w-full hover:bg-orika-graphite/40 transition-colors",
+          "flex items-center gap-3 px-2 py-2 rounded-lg w-full hover:bg-brand-graphite/40 transition-colors",
           collapsed && "justify-center",
         )}
       >
-        <div className="w-9 h-9 rounded-full bg-orika-gold text-orika-black font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden">
+        <div className="w-9 h-9 rounded-full bg-brand-accent text-brand-black font-bold flex items-center justify-center text-xs shrink-0 overflow-hidden">
           {user?.avatar_url ? (
             <img
               src={user.avatar_url}
@@ -88,16 +88,16 @@ export function AccountMenu({ collapsed }: Props) {
         {!collapsed && (
           <>
             <div className="flex-1 min-w-0 text-left leading-tight">
-              <div className="text-sm font-medium text-orika-cream truncate">
+              <div className="text-sm font-medium text-brand-cream truncate">
                 {user?.display_name || user?.email || "Account"}
               </div>
-              <div className="text-[0.65rem] text-orika-smoke">
+              <div className="text-[0.65rem] text-brand-smoke">
                 {user?.email || "Signed in"}
               </div>
             </div>
             <ChevronUp
               className={cn(
-                "w-3.5 h-3.5 text-orika-smoke transition-transform shrink-0",
+                "w-3.5 h-3.5 text-brand-smoke transition-transform shrink-0",
                 !open && "rotate-180",
               )}
             />
@@ -109,14 +109,14 @@ export function AccountMenu({ collapsed }: Props) {
       {open && (
         <div
           className={cn(
-            "absolute bottom-full mb-2 rounded-xl border border-orika-graphite bg-orika-black shadow-2xl overflow-hidden z-50",
+            "absolute bottom-full mb-2 rounded-xl border border-brand-graphite bg-brand-black shadow-2xl overflow-hidden z-50",
             collapsed ? "left-0 w-56" : "left-0 right-0",
           )}
         >
           {/* Header */}
-          <div className="px-4 py-3 border-b border-orika-graphite/50">
+          <div className="px-4 py-3 border-b border-brand-graphite/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orika-gold text-orika-black font-bold flex items-center justify-center text-sm overflow-hidden shrink-0">
+              <div className="w-10 h-10 rounded-full bg-brand-accent text-brand-black font-bold flex items-center justify-center text-sm overflow-hidden shrink-0">
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -128,10 +128,10 @@ export function AccountMenu({ collapsed }: Props) {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-orika-cream truncate">
+                <p className="text-sm font-medium text-brand-cream truncate">
                   {user?.display_name || "Account"}
                 </p>
-                <p className="text-[0.6rem] text-orika-smoke truncate">
+                <p className="text-[0.6rem] text-brand-smoke truncate">
                   {user?.email}
                 </p>
               </div>
@@ -161,7 +161,7 @@ export function AccountMenu({ collapsed }: Props) {
                 navigate("/contacts?tab=staff");
               }}
             />
-            <div className="border-t border-orika-graphite/50 my-1" />
+            <div className="border-t border-brand-graphite/50 my-1" />
             <MenuItem
               icon={<LogOut className="w-3.5 h-3.5" />}
               label="Sign out"
@@ -207,7 +207,7 @@ function MenuItem({
         "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors",
         danger
           ? "text-state-danger hover:bg-state-danger/10"
-          : "text-orika-cream hover:bg-orika-graphite/40",
+          : "text-brand-cream hover:bg-brand-graphite/40",
       )}
     >
       {icon}
@@ -244,19 +244,19 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-orika-black/70 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-brand-black/70 backdrop-blur-sm animate-fade-in">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md mx-4 bg-orika-charcoal border border-orika-graphite rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-md mx-4 bg-brand-charcoal border border-brand-graphite rounded-2xl shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-orika-graphite/50">
-          <h2 className="font-display text-xl text-orika-cream">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-graphite/50">
+          <h2 className="font-display text-xl text-brand-cream">
             Change password
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-orika-smoke hover:text-orika-cream transition-colors rounded-lg"
+            className="p-1.5 text-brand-smoke hover:text-brand-cream transition-colors rounded-lg"
           >
             <X className="w-4 h-4" />
           </button>
@@ -265,7 +265,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <div className="px-5 py-5 space-y-4">
           {/* Current password */}
           <div>
-            <label className="block text-[0.7rem] tracking-widest uppercase text-orika-smoke mb-1.5 ml-0.5">
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
               Current password
             </label>
             <div className="relative">
@@ -273,14 +273,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 type={showCurrent ? "text" : "password"}
                 value={current}
                 onChange={(e) => setCurrent(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-orika-graphite bg-orika-black text-orika-cream text-sm placeholder-orika-smoke/40 focus:outline-none focus:ring-2 focus:ring-orika-gold/40 pr-10"
+                className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 pr-10"
                 placeholder="Enter current password"
                 autoFocus
               />
               <button
                 type="button"
                 onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-orika-smoke hover:text-orika-cream"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-smoke hover:text-brand-cream"
               >
                 {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -289,7 +289,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
           {/* New password */}
           <div>
-            <label className="block text-[0.7rem] tracking-widest uppercase text-orika-smoke mb-1.5 ml-0.5">
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
               New password
             </label>
             <div className="relative">
@@ -297,13 +297,13 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 type={showNew ? "text" : "password"}
                 value={newPw}
                 onChange={(e) => setNewPw(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-orika-graphite bg-orika-black text-orika-cream text-sm placeholder-orika-smoke/40 focus:outline-none focus:ring-2 focus:ring-orika-gold/40 pr-10"
+                className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 pr-10"
                 placeholder="Minimum 12 characters"
               />
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-orika-smoke hover:text-orika-cream"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-smoke hover:text-brand-cream"
               >
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -317,14 +317,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
           {/* Confirm */}
           <div>
-            <label className="block text-[0.7rem] tracking-widest uppercase text-orika-smoke mb-1.5 ml-0.5">
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
               Confirm new password
             </label>
             <input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-orika-graphite bg-orika-black text-orika-cream text-sm placeholder-orika-smoke/40 focus:outline-none focus:ring-2 focus:ring-orika-gold/40"
+              className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
               placeholder="Re-enter new password"
             />
             {mismatch && (
@@ -335,11 +335,11 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 px-5 py-4 border-t border-orika-graphite/50">
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-brand-graphite/50">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-orika-smoke hover:text-orika-cream transition-colors"
+            className="px-4 py-2 text-sm text-brand-smoke hover:text-brand-cream transition-colors"
           >
             Cancel
           </button>
@@ -349,8 +349,8 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             className={cn(
               "px-5 py-2 rounded-xl text-sm font-semibold transition-all",
               canSubmit
-                ? "bg-orika-gold text-orika-black hover:brightness-110"
-                : "bg-orika-graphite text-orika-smoke cursor-not-allowed",
+                ? "bg-brand-accent text-brand-black hover:brightness-110"
+                : "bg-brand-graphite text-brand-smoke cursor-not-allowed",
             )}
           >
             {loading ? "Changing…" : "Change password"}

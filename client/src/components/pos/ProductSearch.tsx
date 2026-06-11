@@ -102,12 +102,12 @@ export function ProductSearch({
     <div className="flex flex-col gap-3 h-full">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name, SKU, or scan barcode..."
-          className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
+          className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 pl-8 pr-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none"
         />
       </div>
 
@@ -119,8 +119,8 @@ export function ProductSearch({
             className={cn(
               "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
               !categoryId
-                ? "bg-orika-gold text-orika-black"
-                : "bg-orika-graphite text-orika-cloud",
+                ? "bg-brand-accent text-brand-black"
+                : "bg-brand-graphite text-brand-cloud",
             )}
           >
             All
@@ -132,8 +132,8 @@ export function ProductSearch({
               className={cn(
                 "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 categoryId === cat.category_id
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-graphite text-orika-cloud",
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-graphite text-brand-cloud",
               )}
             >
               {cat.name}
@@ -157,14 +157,14 @@ export function ProductSearch({
                 className={cn(
                   "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
                   isOut
-                    ? "cursor-not-allowed border-white/5 bg-orika-graphite/20 opacity-50"
-                    : "border-white/5 bg-orika-charcoal hover:border-orika-gold/30 hover:bg-orika-graphite/30",
+                    ? "cursor-not-allowed border-white/5 bg-brand-graphite/20 opacity-50"
+                    : "border-white/5 bg-brand-charcoal hover:border-brand-accent/30 hover:bg-brand-graphite/30",
                 )}
               >
-                <p className="line-clamp-2 text-xs font-medium text-orika-cream">
+                <p className="line-clamp-2 text-xs font-medium text-brand-cream">
                   {product.name}
                 </p>
-                <p className="text-xs font-semibold text-orika-gold">
+                <p className="text-xs font-semibold text-brand-accent">
                   {fmtMoney(product.selling_price, currency)}
                 </p>
                 <div className="flex items-center gap-1">
@@ -178,13 +178,13 @@ export function ProductSearch({
                       {qty} left
                     </span>
                   ) : (
-                    <span className="text-[10px] text-orika-smoke">
+                    <span className="text-[10px] text-brand-smoke">
                       {qty} in stock
                     </span>
                   )}
                 </div>
                 {!isOut && (
-                  <Plus className="ml-auto h-3.5 w-3.5 text-orika-smoke" />
+                  <Plus className="ml-auto h-3.5 w-3.5 text-brand-smoke" />
                 )}
               </button>
             );
@@ -192,12 +192,12 @@ export function ProductSearch({
         </div>
 
         {filtered.length === 0 && (
-          <div className="py-8 text-center text-sm text-orika-smoke">
+          <div className="py-8 text-center text-sm text-brand-smoke">
             {query ? (
               `No products found for "${query}"`
             ) : products.length === 0 ? (
               <>
-                <p className="text-orika-cloud">No products loaded yet.</p>
+                <p className="text-brand-cloud">No products loaded yet.</p>
                 <p className="mt-1 text-xs">
                   They may still be syncing, or your account may not have
                   catalogue access. Make sure products are active, then reopen

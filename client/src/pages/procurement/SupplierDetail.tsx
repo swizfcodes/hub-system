@@ -25,7 +25,7 @@ const STARS = (n: number) => (
     {[1, 2, 3, 4, 5].map((i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${i <= n ? "fill-orika-gold text-orika-gold" : "text-orika-graphite"}`}
+        className={`w-4 h-4 ${i <= n ? "fill-brand-accent text-brand-accent" : "text-brand-graphite"}`}
       />
     ))}
   </div>
@@ -88,12 +88,12 @@ export default function SupplierDetail() {
           <>
             <Card className="p-5 sm:p-6 mb-6">
               <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-                <div className="w-16 h-16 rounded-2xl bg-living-sage/15 text-living-sage flex items-center justify-center shrink-0">
+                <div className="w-16 h-16 rounded-2xl bg-accent2/15 text-accent2 flex items-center justify-center shrink-0">
                   <Building2 className="w-7 h-7" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="font-display text-3xl text-orika-cream">
+                    <h1 className="font-display text-3xl text-brand-cream">
                       {supplier.display_name}
                     </h1>
                     {!supplier.is_active && (
@@ -102,7 +102,7 @@ export default function SupplierDetail() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-xs text-orika-smoke mt-1 font-mono">
+                  <div className="text-xs text-brand-smoke mt-1 font-mono">
                     {supplier.supplier_code}
                   </div>
                   <div className="mt-3 flex items-center gap-3 flex-wrap">
@@ -131,7 +131,7 @@ export default function SupplierDetail() {
                       value={
                         <Link
                           to={`/contacts/${supplier.contact_id}`}
-                          className="text-orika-gold hover:text-orika-cream inline-flex items-center gap-1"
+                          className="text-brand-accent hover:text-brand-cream inline-flex items-center gap-1"
                         >
                           View in Directory <ArrowUpRight className="w-3 h-3" />
                         </Link>
@@ -144,7 +144,7 @@ export default function SupplierDetail() {
 
             <div className="grid gap-6 lg:grid-cols-2">
               <section>
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3 inline-flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5" /> Purchase orders
                 </h3>
                 {pos.length === 0 ? (
@@ -160,10 +160,10 @@ export default function SupplierDetail() {
                         key={po.po_id}
                         to={`/procurement/purchase-orders/${po.po_id}`}
                       >
-                        <Card className="p-3.5 hover:border-orika-gold/40 transition-all">
+                        <Card className="p-3.5 hover:border-brand-accent/40 transition-all">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="font-mono text-sm text-orika-cream truncate">
+                              <span className="font-mono text-sm text-brand-cream truncate">
                                 {po.po_number}
                               </span>
                               <Badge
@@ -179,11 +179,11 @@ export default function SupplierDetail() {
                                 {po.status.replace("_", " ")}
                               </Badge>
                             </div>
-                            <span className="font-mono text-sm text-orika-gold">
+                            <span className="font-mono text-sm text-brand-accent">
                               {fmtMoney(po.total_amount, po.currency)}
                             </span>
                           </div>
-                          <div className="text-[0.6rem] text-orika-smoke mt-1">
+                          <div className="text-[0.6rem] text-brand-smoke mt-1">
                             {fmtDate(po.order_date)}
                             {po.expected_delivery &&
                               ` → ETA ${fmtDate(po.expected_delivery)}`}
@@ -196,7 +196,7 @@ export default function SupplierDetail() {
               </section>
 
               <section>
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3 inline-flex items-center gap-2">
                   <Receipt className="w-3.5 h-3.5" /> Supplier bills
                 </h3>
                 {(bills ?? []).length === 0 ? (
@@ -210,10 +210,10 @@ export default function SupplierDetail() {
                     {(bills ?? []).map((b) => (
                       <Card key={b.sup_invoice_id} className="p-3.5">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-sm text-orika-cream">
+                          <span className="font-mono text-sm text-brand-cream">
                             {b.supplier_invoice_number}
                           </span>
-                          <span className="font-mono text-sm text-orika-gold">
+                          <span className="font-mono text-sm text-brand-accent">
                             {fmtMoney(b.amount, b.currency)}
                           </span>
                         </div>
@@ -233,10 +233,10 @@ export default function SupplierDetail() {
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
-      <div className="text-sm text-orika-cream mt-0.5 truncate">{value}</div>
+      <div className="text-sm text-brand-cream mt-0.5 truncate">{value}</div>
     </div>
   );
 }

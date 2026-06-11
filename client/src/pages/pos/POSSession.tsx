@@ -265,7 +265,7 @@ export default function POSSession() {
   // ── Layout ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-orika-black">
+    <div className="flex h-screen flex-col overflow-hidden bg-brand-black">
       {/* Offline banner */}
       <OfflineBanner />
 
@@ -298,7 +298,7 @@ export default function POSSession() {
         <div className="hidden lg:flex w-[45%] flex-col gap-3 overflow-hidden p-4">
           {/* Park + parked count */}
           <div className="flex items-center justify-between gap-2 shrink-0">
-            <span className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            <span className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Cart
             </span>
             <div className="flex items-center gap-2">

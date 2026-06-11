@@ -79,7 +79,7 @@ export function SupplierSearchInput({
       <div ref={wrapRef}>
         {label && (
           <label
-            className={`mb-1.5 block text-xs font-medium ${isDark ? "text-orika-smoke" : "text-text-on-light-muted"}`}
+            className={`mb-1.5 block text-xs font-medium ${isDark ? "text-brand-smoke" : "text-text-on-light-muted"}`}
           >
             {label}
             {required && <span className="text-red-400 ml-0.5">*</span>}
@@ -89,18 +89,18 @@ export function SupplierSearchInput({
           className={cn(
             "flex items-center gap-3 rounded-xl border px-3 py-2.5",
             isDark
-              ? "border-orika-gold/40 bg-orika-gold/5"
-              : "border-orika-gold/40 bg-orika-gold/5",
+              ? "border-brand-accent/40 bg-brand-accent/5"
+              : "border-brand-accent/40 bg-brand-accent/5",
           )}
         >
-          <Building2 className="h-4 w-4 shrink-0 text-orika-gold" />
+          <Building2 className="h-4 w-4 shrink-0 text-brand-accent" />
           <div className="min-w-0 flex-1">
             <p
-              className={`truncate text-sm font-medium ${isDark ? "text-orika-cream" : "text-orika-black"}`}
+              className={`truncate text-sm font-medium ${isDark ? "text-brand-cream" : "text-brand-black"}`}
             >
               {value.display_name}
             </p>
-            <p className="text-xs text-orika-smoke">{value.supplier_code}</p>
+            <p className="text-xs text-brand-smoke">{value.supplier_code}</p>
           </div>
           <button
             type="button"
@@ -108,7 +108,7 @@ export function SupplierSearchInput({
               onChange(null);
               setQuery("");
             }}
-            className="text-orika-smoke hover:text-orika-cream"
+            className="text-brand-smoke hover:text-brand-cream"
           >
             <X className="h-4 w-4" />
           </button>
@@ -121,7 +121,7 @@ export function SupplierSearchInput({
     <div ref={wrapRef} className="relative">
       {label && (
         <label
-          className={`mb-1.5 block text-xs font-medium ${isDark ? "text-orika-smoke" : "text-text-on-light-muted"}`}
+          className={`mb-1.5 block text-xs font-medium ${isDark ? "text-brand-smoke" : "text-text-on-light-muted"}`}
         >
           {label}
           {required && <span className="text-red-400 ml-0.5">*</span>}
@@ -129,9 +129,9 @@ export function SupplierSearchInput({
       )}
       <div className="relative">
         {loading ? (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-orika-smoke/30 border-t-orika-gold" />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-brand-smoke/30 border-t-brand-accent" />
         ) : (
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-smoke" />
         )}
         <input
           type="text"
@@ -141,14 +141,14 @@ export function SupplierSearchInput({
           className={cn(
             "w-full rounded-xl border py-2.5 pl-9 pr-3 text-sm focus:outline-none",
             isDark
-              ? "border-white/10 bg-orika-graphite text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50"
-              : "border-orika-cloud/40 bg-white text-orika-black shadow-sm focus:border-orika-black focus:ring-1 focus:ring-orika-black",
+              ? "border-white/10 bg-brand-graphite text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50"
+              : "border-brand-cloud/40 bg-white text-brand-black shadow-sm focus:border-brand-black focus:ring-1 focus:ring-brand-black",
           )}
         />
       </div>
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
       {open && results.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-orika-black shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-brand-black shadow-xl overflow-hidden">
           {results.map((s) => (
             <button
               key={s.supplier_id}
@@ -158,14 +158,14 @@ export function SupplierSearchInput({
                 setQuery("");
                 setOpen(false);
               }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-brand-graphite/40 transition-colors"
             >
-              <Building2 className="h-4 w-4 shrink-0 text-orika-smoke" />
+              <Building2 className="h-4 w-4 shrink-0 text-brand-smoke" />
               <div>
-                <p className="text-sm font-medium text-orika-cream">
+                <p className="text-sm font-medium text-brand-cream">
                   {s.display_name}
                 </p>
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {s.supplier_code}
                   {s.preferred_currency ? ` · ${s.preferred_currency}` : ""}
                 </p>
@@ -175,8 +175,8 @@ export function SupplierSearchInput({
         </div>
       )}
       {open && query.trim() && results.length === 0 && !loading && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-orika-black shadow-xl px-4 py-3">
-          <p className="text-sm text-orika-smoke">
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-white/10 bg-brand-black shadow-xl px-4 py-3">
+          <p className="text-sm text-brand-smoke">
             No suppliers found for &ldquo;{query}&rdquo;
           </p>
         </div>

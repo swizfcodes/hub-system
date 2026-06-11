@@ -23,13 +23,55 @@ input[type="number"] {
   appearance: textfield;
 }
 html,
+
+/* ═══ DESIGN TOKEN DEFAULTS ═══
+   "R G B" triplets consumed by tailwind.config.ts as
+   rgb(var(--token) / alpha). These defaults render the app fully
+   branded before JS runs; providers/ThemeProvider.tsx overwrites
+   them at runtime from GET /api/branding (platform_settings), and
+   sets the --biz-* set from the active business's config. */
+:root {
+  --brand-black: 10 9 8;
+  --brand-charcoal: 26 24 20;
+  --brand-graphite: 42 37 32;
+  --brand-ink: 58 52 46;
+  --brand-cream: 240 234 224;
+  --brand-cloud: 200 194 184;
+  --brand-smoke: 106 101 96;
+  --brand-stone: 158 152 145;
+  --brand-accent: 201 168 108;
+  --brand-accent-dim: 138 106 48;
+  --brand-accent-glow: 217 188 135;
+  --accent2: 139 157 119;
+  --accent2-dim: 111 126 94;
+  --accent2-glow: 168 184 148;
+  --accent3: 183 110 121;
+  --accent3-dim: 149 88 98;
+  --accent3-glow: 208 142 151;
+  --surface-light: 240 234 224;
+  --surface-light-soft: 230 223 211;
+  --surface-light-deep: 217 208 194;
+  --state-success: 139 157 119;
+  --state-warn: 217 167 65;
+  --state-danger: 199 91 91;
+  --state-info: 122 143 168;
+  /* Active business accent (layer-2) — defaults to the platform
+     accent until the ThemeProvider knows the active business. */
+  --biz-accent: 201 168 108;
+  --biz-accent-dim: 138 106 48;
+  --biz-accent-glow: 217 188 135;
+  --font-display: "Cormorant Garamond";
+  --font-body: "Montserrat";
+  --font-mono: "JetBrains Mono";
+}
+
 body {
-  background: #0a0908;
-  color: #f0eae0;
+  background: rgb(var(--brand-black));
+  color: rgb(var(--brand-cream));
 }
 body {
   font-family:
-    "Montserrat",
+    var(--font-body),
     -apple-system,
     sans-serif;
   margin: 0;
@@ -39,8 +81,9 @@ body {
 }
 
 /* CRITICAL BRAND RULE:
-   Gold (#C9A86C) is used SPARINGLY as accent — never as fill.
-   Never use white (#FFFFFF) as a background — use cream (#F0EAE0). */
+   The accent colour is used SPARINGLY — never as fill.
+   Never use pure white (#FFFFFF) as a background — use the light
+   surface token (cream by default). */
 
 /* ═══ SCROLLBAR ═══ */
 ::-webkit-scrollbar {
@@ -48,41 +91,41 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #1a1814;
+  background: rgb(var(--brand-charcoal));
 }
 ::-webkit-scrollbar-thumb {
-  background: #6a6560;
+  background: rgb(var(--brand-smoke));
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9e9891;
+  background: rgb(var(--brand-stone));
 }
 
 /* Cream-surface scrollbars */
 .surface-light ::-webkit-scrollbar-track {
-  background: #e6dfd3;
+  background: rgb(var(--surface-light-soft));
 }
 .surface-light ::-webkit-scrollbar-thumb {
-  background: #c8c2b8;
+  background: rgb(var(--brand-cloud));
 }
 
 /* ═══ SELECTION & FOCUS ═══ */
 ::selection {
-  background: rgba(201, 168, 108, 0.25);
-  color: #f0eae0;
+  background: rgb(var(--brand-accent) / 0.25);
+  color: rgb(var(--brand-cream));
 }
 :focus-visible {
-  outline: 2px solid #c9a86c;
+  outline: 2px solid rgb(var(--brand-accent));
   outline-offset: 2px;
   border-radius: 2px;
 }
 
 /* ═══ HELP CENTER PROSE ═══ */
 .prose-help h3 {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--font-display), Georgia, serif;
   font-size: 1.15rem;
   font-weight: 500;
-  color: #f0eae0;
+  color: rgb(var(--brand-cream));
   margin: 1.25rem 0 0.5rem;
 }
 .prose-help h3:first-child {
@@ -106,11 +149,11 @@ body {
   margin: 0.25rem 0;
 }
 .prose-help strong {
-  color: #f0eae0;
+  color: rgb(var(--brand-cream));
   font-weight: 600;
 }
 .prose-help a {
-  color: #c9a86c;
+  color: rgb(var(--brand-accent));
   text-decoration: none;
 }
 .prose-help a:hover {
@@ -122,11 +165,11 @@ body {
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 60px rgba(201, 168, 108, 0.15);
+    box-shadow: 0 0 60px rgb(var(--brand-accent) / 0.15);
   }
   50% {
     transform: scale(1.04);
-    box-shadow: 0 0 80px rgba(201, 168, 108, 0.3);
+    box-shadow: 0 0 80px rgb(var(--brand-accent) / 0.3);
   }
 }
 @keyframes splash-text-in {
@@ -275,37 +318,37 @@ body {
   background:
     radial-gradient(
       ellipse at 20% 0%,
-      rgba(201, 168, 108, 0.04) 0%,
+      rgb(var(--brand-accent) / 0.04) 0%,
       transparent 60%
     ),
     radial-gradient(
       ellipse at 80% 100%,
-      rgba(201, 168, 108, 0.03) 0%,
+      rgb(var(--brand-accent) / 0.03) 0%,
       transparent 50%
     ),
-    #0a0908;
+    rgb(var(--brand-black));
 }
 
 .bg-grid-noise {
   background-image:
     radial-gradient(
       ellipse at 10% 0%,
-      rgba(201, 168, 108, 0.05) 0%,
+      rgb(var(--brand-accent) / 0.05) 0%,
       transparent 50%
     ),
     radial-gradient(
       ellipse at 90% 100%,
-      rgba(201, 168, 108, 0.03) 0%,
+      rgb(var(--brand-accent) / 0.03) 0%,
       transparent 50%
     ),
-    linear-gradient(180deg, #0a0908 0%, #1a1814 100%);
+    linear-gradient(180deg, rgb(var(--brand-black)) 0%, rgb(var(--brand-charcoal)) 100%);
 }
 
 /* Animated gold border (used sparingly on premium CTAs) */
 .gold-border {
   background:
-    linear-gradient(#0a0908, #0a0908) padding-box,
-    linear-gradient(120deg, #8a6a30, #c9a86c, #d9bc87, #c9a86c, #8a6a30)
+    linear-gradient(rgb(var(--brand-black)), rgb(var(--brand-black))) padding-box,
+    linear-gradient(120deg, rgb(var(--brand-accent-dim)), rgb(var(--brand-accent)), rgb(var(--brand-accent-glow)), rgb(var(--brand-accent)), rgb(var(--brand-accent-dim)))
       border-box;
   background-size: 200% 100%;
   border: 1px solid transparent;

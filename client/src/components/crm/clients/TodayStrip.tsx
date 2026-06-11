@@ -45,7 +45,7 @@ export function TodayStrip({
       key: "celebrate",
       label: "To celebrate",
       icon: <Cake className="w-4 h-4" />,
-      tone: "text-bejewelled-rose bg-bejewelled-rose/15",
+      tone: "text-accent3 bg-accent3/15",
       count: celebrationCount,
       hint: "Birthdays & anniversaries",
       items: [
@@ -106,7 +106,7 @@ export function TodayStrip({
       key: "top",
       label: "Top this month",
       icon: <Trophy className="w-4 h-4" />,
-      tone: "text-orika-gold bg-orika-gold/15",
+      tone: "text-brand-accent bg-brand-accent/15",
       count: feed.top_this_month.length,
       hint: "Deserve extra attention",
       items: feed.top_this_month.map((c) => ({
@@ -144,8 +144,8 @@ export function TodayStrip({
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-3">
-        <HeartHandshake className="w-4 h-4 text-orika-gold" />
-        <h2 className="text-[0.7rem] tracking-widest uppercase text-orika-smoke">
+        <HeartHandshake className="w-4 h-4 text-brand-accent" />
+        <h2 className="text-[0.7rem] tracking-widest uppercase text-brand-smoke">
           Today — who to reach out to
         </h2>
       </div>
@@ -184,7 +184,7 @@ function TodayCard({ section }: { section: TodaySection }) {
   const visible = expanded ? section.items.slice(0, 8) : section.items.slice(0, 3);
 
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 p-3.5 flex flex-col">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 p-3.5 flex flex-col">
       <button
         className="flex items-center justify-between w-full text-left"
         onClick={() => setExpanded((v) => !v)}
@@ -200,21 +200,21 @@ function TodayCard({ section }: { section: TodaySection }) {
             {section.icon}
           </span>
           <span>
-            <span className="block text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+            <span className="block text-[0.65rem] uppercase tracking-widest text-brand-smoke">
               {section.label}
             </span>
-            <span className="block text-[0.6rem] text-orika-smoke/70">
+            <span className="block text-[0.6rem] text-brand-smoke/70">
               {section.hint}
             </span>
           </span>
         </span>
-        <span className="text-lg font-display text-orika-cream tabular-nums">
+        <span className="text-lg font-display text-brand-cream tabular-nums">
           {section.count}
         </span>
       </button>
 
       {section.count === 0 ? (
-        <p className="text-[0.65rem] text-orika-smoke/60 mt-3 italic">
+        <p className="text-[0.65rem] text-brand-smoke/60 mt-3 italic">
           Nothing waiting — all caught up.
         </p>
       ) : (
@@ -233,10 +233,10 @@ function TodayCard({ section }: { section: TodaySection }) {
             >
               <ClientAvatar name={item.name} size="sm" />
               <span className="flex-1 min-w-0">
-                <span className="flex items-center gap-1 text-xs text-orika-cream truncate">
+                <span className="flex items-center gap-1 text-xs text-brand-cream truncate">
                   {item.name} <VipStar isVip={item.vip} />
                 </span>
-                <span className="block text-[0.6rem] text-orika-smoke truncate">
+                <span className="block text-[0.6rem] text-brand-smoke truncate">
                   {item.detail}
                 </span>
               </span>
@@ -248,7 +248,7 @@ function TodayCard({ section }: { section: TodaySection }) {
       {section.items.length > 3 && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-[0.6rem] uppercase tracking-wide text-orika-gold hover:text-orika-gold-glow self-start"
+          className="mt-2 text-[0.6rem] uppercase tracking-wide text-brand-accent hover:text-brand-accent-glow self-start"
         >
           {expanded ? "Show less" : `Show all ${section.items.length}`}
         </button>

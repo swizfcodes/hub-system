@@ -20,10 +20,10 @@ export interface BadgeProps {
 }
 
 const tones: Record<Tone, string> = {
-  gold: "bg-orika-gold/15 text-orika-gold border-orika-gold/30",
-  rose: "bg-bejewelled-rose/15 text-bejewelled-rose border-bejewelled-rose/30",
-  sage: "bg-living-sage/15 text-living-sage border-living-sage/30",
-  neutral: "bg-orika-graphite/40 text-orika-cloud border-orika-graphite",
+  gold: "bg-brand-accent/15 text-brand-accent border-brand-accent/30",
+  rose: "bg-accent3/15 text-accent3 border-accent3/30",
+  sage: "bg-accent2/15 text-accent2 border-accent2/30",
+  neutral: "bg-brand-graphite/40 text-brand-cloud border-brand-graphite",
   danger: "bg-state-danger/15 text-state-danger border-state-danger/30",
   warn: "bg-state-warn/15 text-state-warn border-state-warn/30",
   info: "bg-state-info/15 text-state-info border-state-info/30",
@@ -31,10 +31,10 @@ const tones: Record<Tone, string> = {
 };
 
 const dotColors: Record<Tone, string> = {
-  gold: "bg-orika-gold",
-  rose: "bg-bejewelled-rose",
-  sage: "bg-living-sage",
-  neutral: "bg-orika-cloud",
+  gold: "bg-brand-accent",
+  rose: "bg-accent3",
+  sage: "bg-accent2",
+  neutral: "bg-brand-cloud",
   danger: "bg-state-danger",
   warn: "bg-state-warn",
   info: "bg-state-info",

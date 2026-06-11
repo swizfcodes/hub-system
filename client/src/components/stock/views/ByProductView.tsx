@@ -37,10 +37,10 @@ export function ByProductView({ rows, loading, onAdjust }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 overflow-hidden">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-orika-charcoal border-b border-orika-graphite">
+          <thead className="bg-brand-charcoal border-b border-brand-graphite">
             <tr>
               <Th>Product</Th>
               <Th>Category</Th>
@@ -59,7 +59,7 @@ export function ByProductView({ rows, loading, onAdjust }: Props) {
               return (
                 <tr
                   key={r.product_id}
-                  className="border-b border-orika-graphite/40 hover:bg-orika-charcoal cursor-pointer"
+                  className="border-b border-brand-graphite/40 hover:bg-brand-charcoal cursor-pointer"
                   onClick={() => navigate(`/catalogue/${r.product_id}`)}
                 >
                   <td className="px-4 py-2.5">
@@ -72,16 +72,16 @@ export function ByProductView({ rows, loading, onAdjust }: Props) {
                         size="sm"
                       />
                       <div className="min-w-0">
-                        <div className="text-orika-cream truncate">
+                        <div className="text-brand-cream truncate">
                           {r.product_name}
                         </div>
-                        <div className="text-[0.6rem] font-mono text-orika-smoke">
+                        <div className="text-[0.6rem] font-mono text-brand-smoke">
                           {r.product_sku}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-orika-cloud">
+                  <td className="px-4 py-2.5 text-xs text-brand-cloud">
                     {r.category_name ?? "—"}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -91,7 +91,7 @@ export function ByProductView({ rows, loading, onAdjust }: Props) {
                       compact
                     />
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-orika-smoke">
+                  <td className="px-4 py-2.5 text-right font-mono text-brand-smoke">
                     {r.reserved}
                   </td>
                   <td
@@ -99,18 +99,18 @@ export function ByProductView({ rows, loading, onAdjust }: Props) {
                       "px-4 py-2.5 text-right font-mono",
                       r.available <= 0
                         ? "text-state-danger"
-                        : "text-orika-cream",
+                        : "text-brand-cream",
                     )}
                   >
                     {r.available}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-xs text-orika-smoke">
+                  <td className="px-4 py-2.5 text-right text-xs text-brand-smoke">
                     {r.reorder_level}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-xs text-orika-cream">
+                  <td className="px-4 py-2.5 text-right font-mono text-xs text-brand-cream">
                     {fmtMoney(r.cost_price, r.currency)}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-orika-gold">
+                  <td className="px-4 py-2.5 text-right font-mono text-brand-accent">
                     {fmtMoney(totalValue, r.currency)}
                   </td>
                   <td
@@ -147,7 +147,7 @@ function Th({
   return (
     <th
       className={cn(
-        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-orika-smoke font-semibold",
+        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-brand-smoke font-semibold",
         className,
       )}
     >

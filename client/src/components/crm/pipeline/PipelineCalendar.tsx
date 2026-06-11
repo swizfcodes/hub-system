@@ -72,9 +72,9 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 overflow-hidden">
-      <div className="px-4 py-3 flex items-center justify-between border-b border-orika-graphite">
-        <h3 className="font-display text-xl text-orika-cream">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 overflow-hidden">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-brand-graphite">
+        <h3 className="font-display text-xl text-brand-cream">
           {format(cursor, "MMMM yyyy")}
         </h3>
         <div className="inline-flex items-center gap-1">
@@ -102,11 +102,11 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-orika-graphite">
+      <div className="grid grid-cols-7 border-b border-brand-graphite">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
           <div
             key={d}
-            className="px-2 py-2 text-[0.6rem] uppercase tracking-widest text-orika-smoke font-semibold text-center"
+            className="px-2 py-2 text-[0.6rem] uppercase tracking-widest text-brand-smoke font-semibold text-center"
           >
             {d}
           </div>
@@ -123,7 +123,7 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
             <div
               key={i}
               className={cn(
-                "min-h-[96px] p-1.5 border-r border-b border-orika-graphite/60",
+                "min-h-[96px] p-1.5 border-r border-b border-brand-graphite/60",
                 otherMonth && "opacity-30",
               )}
             >
@@ -131,8 +131,8 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
                 className={cn(
                   "inline-flex items-center justify-center w-6 h-6 rounded-full text-[0.7rem]",
                   isToday
-                    ? "bg-orika-gold text-orika-black font-bold"
-                    : "text-orika-smoke",
+                    ? "bg-brand-accent text-brand-black font-bold"
+                    : "text-brand-smoke",
                 )}
               >
                 {format(day, "d")}
@@ -142,7 +142,7 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
                   <button
                     key={d.deal_id}
                     onClick={() => navigate(`/crm/${d.deal_id}`)}
-                    className="w-full block text-left px-1.5 py-1 rounded text-[0.6rem] truncate hover:bg-orika-charcoal transition-colors"
+                    className="w-full block text-left px-1.5 py-1 rounded text-[0.6rem] truncate hover:bg-brand-charcoal transition-colors"
                     style={{
                       borderLeft: `3px solid ${d.stage_colour}`,
                       color: "#F0EAE0",
@@ -153,7 +153,7 @@ export function PipelineCalendar({ pipeline, loading }: Props) {
                   </button>
                 ))}
                 {list.length > 3 && (
-                  <div className="text-[0.55rem] text-orika-smoke px-1.5">
+                  <div className="text-[0.55rem] text-brand-smoke px-1.5">
                     +{list.length - 3} more
                   </div>
                 )}

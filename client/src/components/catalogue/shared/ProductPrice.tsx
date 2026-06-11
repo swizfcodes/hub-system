@@ -29,7 +29,7 @@ export function ProductPrice({
     >
       <span
         className={cn(
-          "font-mono text-orika-gold tabular-nums",
+          "font-mono text-brand-accent tabular-nums",
           size === "md" ? "text-lg" : "text-sm",
         )}
       >
@@ -38,7 +38,7 @@ export function ProductPrice({
       {!hideCost && cost != null && (
         <span
           className={cn(
-            "font-mono text-orika-smoke",
+            "font-mono text-brand-smoke",
             size === "md" ? "text-xs" : "text-[0.65rem]",
           )}
         >
@@ -48,7 +48,7 @@ export function ProductPrice({
               className={cn(
                 "ml-1",
                 margin > 30
-                  ? "text-living-sage"
+                  ? "text-accent2"
                   : margin > 10
                     ? "text-state-warn"
                     : "text-state-danger",

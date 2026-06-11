@@ -94,23 +94,23 @@ export default function DocumentNumbering() {
             {seqs.map((s) => (
               <Card key={s.seq_id} className="p-5">
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-xs uppercase tracking-widest text-orika-smoke font-mono">
+                  <span className="text-xs uppercase tracking-widest text-brand-smoke font-mono">
                     {s.document_type}
                   </span>
                   <button
                     onClick={() => setResetting(s)}
-                    className="text-orika-smoke hover:text-state-warn transition-colors"
+                    className="text-brand-smoke hover:text-state-warn transition-colors"
                     aria-label="Reset sequence"
                   >
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="font-display text-3xl text-orika-cream mb-1 tabular-nums">
+                <div className="font-display text-3xl text-brand-cream mb-1 tabular-nums">
                   {previewSeq(s.prefix, s.next_number, s.padding)}
                 </div>
-                <div className="text-xs text-orika-smoke mb-4">
+                <div className="text-xs text-brand-smoke mb-4">
                   Next number:{" "}
-                  <span className="text-orika-cream font-mono">
+                  <span className="text-brand-cream font-mono">
                     {s.next_number}
                   </span>
                 </div>
@@ -177,9 +177,9 @@ function SeqEditor({ seq }: { seq: DocumentSequence }) {
           label="Padding"
         />
       </div>
-      <div className="text-[0.65rem] text-orika-smoke font-mono">
+      <div className="text-[0.65rem] text-brand-smoke font-mono">
         Preview:{" "}
-        <span className="text-orika-gold">
+        <span className="text-brand-accent">
           {previewSeq(prefix, seq.next_number, padding)}
         </span>
       </div>
@@ -383,7 +383,7 @@ function ResetSequenceModal({
         </>
       }
     >
-      <div className="space-y-4 text-sm text-orika-black/80">
+      <div className="space-y-4 text-sm text-brand-black/80">
         <p>
           This will set the next number to the value you provide. This is a
           sensitive action — the reason will be recorded in the audit log.

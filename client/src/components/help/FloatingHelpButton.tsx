@@ -21,7 +21,7 @@ export function FloatingHelpButton() {
       onClick={() =>
         navigate(moduleKey ? `/help?module=${moduleKey}` : "/help")
       }
-      className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-orika-gold text-orika-black shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center group"
+      className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-brand-accent text-brand-black shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center group"
       aria-label="Help"
       title={
         moduleKey

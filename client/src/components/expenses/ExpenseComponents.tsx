@@ -143,11 +143,11 @@ export function ExpenseKpiStrip({ currency = "NGN" }: { currency?: string }) {
         return (
           <div
             key={card.label}
-            className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4"
+            className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4"
           >
             <div className="flex items-center gap-2 mb-1.5">
               <Icon className="h-3.5 w-3.5" style={{ color: card.color }} />
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
                 {card.label}
               </p>
             </div>
@@ -158,7 +158,7 @@ export function ExpenseKpiStrip({ currency = "NGN" }: { currency?: string }) {
               {card.value}
             </p>
             {card.sub && (
-              <p className="text-xs text-orika-smoke mt-0.5 tabular-nums">
+              <p className="text-xs text-brand-smoke mt-0.5 tabular-nums">
                 {card.sub}
               </p>
             )}
@@ -185,8 +185,8 @@ export function SpendingInsightsChart({
   const max = Math.max(...categories.map((c) => c.total), 1);
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5">
+      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
         Spending by Category — This Month
       </p>
       <div className="space-y-3">
@@ -198,14 +198,14 @@ export function SpendingInsightsChart({
           return (
             <div key={cat.category} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-orika-cloud">{label}</span>
-                <span className="tabular-nums text-orika-smoke">
+                <span className="text-brand-cloud">{label}</span>
+                <span className="tabular-nums text-brand-smoke">
                   {fmtMoney(cat.total, currency)}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-orika-graphite overflow-hidden">
+              <div className="h-2 rounded-full bg-brand-graphite overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-orika-gold transition-all duration-500"
+                  className="h-full rounded-full bg-brand-accent transition-all duration-500"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -379,9 +379,9 @@ export function RecordPaymentModal({
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm flex justify-between">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 text-sm flex justify-between">
           <span className="text-text-on-light-muted">Outstanding balance</span>
-          <span className="font-semibold text-orika-black tabular-nums">
+          <span className="font-semibold text-brand-black tabular-nums">
             {fmtMoney(balance, currency)}
           </span>
         </div>
@@ -631,9 +631,9 @@ export function ApproveAdvanceModal({
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm flex justify-between">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 text-sm flex justify-between">
           <span className="text-text-on-light-muted">Requested</span>
-          <span className="font-semibold text-orika-black">
+          <span className="font-semibold text-brand-black">
             {fmtMoney(requested, currency)}
           </span>
         </div>

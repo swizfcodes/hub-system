@@ -2,6 +2,7 @@
  * InviteModal     — admin sends an invite (email → role → business → send)
  * SessionsPanel   — shows active sessions for a user with force-logout
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,6 @@ import {
   revokeAllSessions,
 } from "@services/security";
 import type { StaffUser } from "@typedefs/security";
-import { BUSINESS_LABELS } from "@typedefs/security";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { fmtDate } from "@lib/format";
@@ -57,11 +57,12 @@ interface InviteModalProps {
   onClose: () => void;
 }
 
-const AVAILABLE_BUSINESSES = Object.entries(BUSINESS_LABELS).map(
-  ([value, label]) => ({ value, label }),
-);
-
 export function InviteModal({ open, onClose }: InviteModalProps) {
+  const { businesses: brandedBusinesses, businessLabel } = useBranding();
+  const AVAILABLE_BUSINESSES = brandedBusinesses.map((b) => ({
+    value: b.business_key,
+    label: b.display_name,
+  }));
   const qc = useQueryClient();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [staffSearch, setStaffSearch] = useState("");
@@ -149,7 +150,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                 key={s}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  step === s ? "w-6 bg-orika-gold" : "w-1.5 bg-gray-200",
+                  step === s ? "w-6 bg-brand-accent" : "w-1.5 bg-gray-200",
                 )}
               />
             ))}
@@ -379,7 +380,7 @@ export function InviteModal({ open, onClose }: InviteModalProps) {
                 label: "Access",
                 value:
                   watchedValues.businesses
-                    ?.map((b) => BUSINESS_LABELS[b] ?? b)
+                    ?.map((b) => businessLabel(b) || b)
                     .join(", ") || "—",
               },
             ].map(({ label, value }) => (

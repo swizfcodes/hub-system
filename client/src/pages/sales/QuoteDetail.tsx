@@ -91,7 +91,7 @@ export default function QuoteDetail() {
   if (!quote) {
     return (
       <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto text-center">
-        <p className="text-orika-smoke">Quotation not found.</p>
+        <p className="text-brand-smoke">Quotation not found.</p>
       </div>
     );
   }
@@ -124,8 +124,8 @@ export default function QuoteDetail() {
         {/* Left — main content */}
         <div className="space-y-6">
           {/* Contact + meta */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Customer
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
@@ -142,8 +142,8 @@ export default function QuoteDetail() {
           </div>
 
           {/* Lines */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Line Items
             </h2>
             {quote.lines && quote.lines.length > 0 ? (
@@ -158,29 +158,29 @@ export default function QuoteDetail() {
                 currency={quote.currency ?? currency}
               />
             ) : (
-              <p className="text-sm text-orika-smoke">No line items.</p>
+              <p className="text-sm text-brand-smoke">No line items.</p>
             )}
           </div>
 
           {/* Notes + T&C */}
           {(quote.notes || quote.terms_conditions) && (
-            <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5 space-y-4">
+            <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5 space-y-4">
               {quote.notes && (
                 <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                     Notes
                   </h3>
-                  <p className="text-sm text-orika-cloud leading-relaxed">
+                  <p className="text-sm text-brand-cloud leading-relaxed">
                     {quote.notes}
                   </p>
                 </div>
               )}
               {quote.terms_conditions && (
                 <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                     Terms & Conditions
                   </h3>
-                  <p className="text-sm text-orika-cloud leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-brand-cloud leading-relaxed whitespace-pre-line">
                     {quote.terms_conditions}
                   </p>
                 </div>
@@ -192,8 +192,8 @@ export default function QuoteDetail() {
         {/* Right — sticky actions rail */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Status timeline */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Status
             </h3>
             <div className="space-y-2">
@@ -210,10 +210,10 @@ export default function QuoteDetail() {
                     className={cn(
                       "flex items-center gap-2.5 text-sm",
                       isActive
-                        ? "text-orika-cream"
+                        ? "text-brand-cream"
                         : isPast
-                          ? "text-orika-smoke"
-                          : "text-orika-graphite",
+                          ? "text-brand-smoke"
+                          : "text-brand-graphite",
                     )}
                   >
                     <Icon
@@ -228,7 +228,7 @@ export default function QuoteDetail() {
                     />
                     <span>{meta.label}</span>
                     {isActive && (
-                      <span className="ml-auto text-xs text-orika-smoke">
+                      <span className="ml-auto text-xs text-brand-smoke">
                         {s === "sent" && quote.sent_at
                           ? fmtDateTime(quote.sent_at)
                           : s === "confirmed" && quote.confirmed_at
@@ -243,8 +243,8 @@ export default function QuoteDetail() {
           </div>
 
           {/* Actions */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Actions
             </h3>
 
@@ -272,7 +272,7 @@ export default function QuoteDetail() {
             <button
               onClick={handlePdfPreview}
               disabled={pdfLoading}
-              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud transition-colors hover:border-orika-gold/30 hover:text-orika-gold disabled:opacity-50"
+              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-brand-cloud transition-colors hover:border-brand-accent/30 hover:text-brand-accent disabled:opacity-50"
             >
               <FileDown className="h-4 w-4" />
               {pdfLoading ? "Loading…" : "Preview PDF"}
@@ -281,7 +281,7 @@ export default function QuoteDetail() {
             {quote.deal_id && (
               <a
                 href={`/crm/${quote.deal_id}`}
-                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud transition-colors hover:border-orika-gold/30 hover:text-orika-gold"
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-brand-cloud transition-colors hover:border-brand-accent/30 hover:text-brand-accent"
               >
                 <ExternalLink className="h-4 w-4" />
                 View CRM Deal
@@ -291,7 +291,7 @@ export default function QuoteDetail() {
             {canCancel && (
               <button
                 onClick={handleCancel}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-orika-smoke transition-colors hover:text-red-400"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-brand-smoke transition-colors hover:text-red-400"
               >
                 <XCircle className="h-4 w-4" />
                 Cancel Quote
@@ -299,7 +299,7 @@ export default function QuoteDetail() {
             )}
 
             {isConfirmed && (
-              <div className="rounded-lg bg-orika-graphite/30 px-3 py-2 text-xs text-orika-smoke flex items-center gap-2">
+              <div className="rounded-lg bg-brand-graphite/30 px-3 py-2 text-xs text-brand-smoke flex items-center gap-2">
                 <Clock className="h-3.5 w-3.5" />
                 Confirmed {fmtDate(quote.confirmed_at)}
               </div>
@@ -307,10 +307,10 @@ export default function QuoteDetail() {
           </div>
 
           {/* Total */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-orika-smoke">Total</span>
-              <span className="font-display text-xl font-extrabold text-orika-gold">
+              <span className="text-xs text-brand-smoke">Total</span>
+              <span className="font-display text-xl font-extrabold text-brand-accent">
                 {fmtMoney(quote.total_amount, quote.currency ?? currency)}
               </span>
             </div>
@@ -349,8 +349,8 @@ export default function QuoteDetail() {
 function MetaField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs text-orika-smoke">{label}</dt>
-      <dd className="mt-0.5 font-medium text-orika-cream truncate">{value}</dd>
+      <dt className="text-xs text-brand-smoke">{label}</dt>
+      <dd className="mt-0.5 font-medium text-brand-cream truncate">{value}</dd>
     </div>
   );
 }

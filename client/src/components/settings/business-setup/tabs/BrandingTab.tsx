@@ -213,7 +213,7 @@ export function BrandingTab({ business }: { business: Business }) {
             {...register("email_footer_text")}
             label="Email footer text"
             hint="Legal / compliance line shown at the bottom of every transactional email. Up to 500 characters."
-            placeholder="e.g. Orika Living is a registered trademark of XYZ Ltd. RC 1234567. 12 Example Road, Lagos, Nigeria."
+            placeholder="e.g. Brand Name is a registered trademark of XYZ Ltd. RC 1234567. 12 Example Road, Lagos, Nigeria."
             error={errors.email_footer_text?.message}
           />
         </div>
@@ -242,7 +242,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-4">
-      <h3 className="font-display text-lg text-orika-black">{title}</h3>
+      <h3 className="font-display text-lg text-brand-black">{title}</h3>
       {hint && (
         <p className="text-xs text-text-on-light-muted mt-0.5">{hint}</p>
       )}

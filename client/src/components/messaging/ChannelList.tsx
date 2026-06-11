@@ -71,20 +71,20 @@ export function ChannelList({
   );
 
   return (
-    <div className="flex h-full flex-col border-r border-white/5 bg-orika-black">
+    <div className="flex h-full flex-col border-r border-white/5 bg-brand-black">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-orika-cream">Messages</h2>
+          <h2 className="text-sm font-semibold text-brand-cream">Messages</h2>
           {totalUnread > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orika-gold px-1 text-[10px] font-bold text-orika-black">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-bold text-brand-black">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
         </div>
         <button
           onClick={onNewChannel}
-          className="text-orika-smoke transition-colors hover:text-orika-gold"
+          className="text-brand-smoke transition-colors hover:text-brand-accent"
           title="New conversation"
         >
           <Plus className="h-4 w-4" />
@@ -94,13 +94,13 @@ export function ChannelList({
       {/* Search */}
       <div className="px-3 py-2.5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke/50" />
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke/50" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search conversations…"
-            className="w-full rounded-xl border border-white/5 bg-orika-charcoal py-2 pl-8 pr-3 text-xs text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/30 focus:outline-none"
+            className="w-full rounded-xl border border-white/5 bg-brand-charcoal py-2 pl-8 pr-3 text-xs text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/30 focus:outline-none"
           />
         </div>
       </div>
@@ -114,8 +114,8 @@ export function ChannelList({
             className={cn(
               "flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-[0.65rem] font-medium transition-all",
               activeTab === t.key
-                ? "bg-orika-gold text-orika-black"
-                : "text-orika-smoke hover:bg-orika-charcoal hover:text-orika-cream",
+                ? "bg-brand-accent text-brand-black"
+                : "text-brand-smoke hover:bg-brand-charcoal hover:text-brand-cream",
             )}
           >
             {t.label}
@@ -124,8 +124,8 @@ export function ChannelList({
                 className={cn(
                   "rounded-full px-1 text-[9px] font-bold",
                   activeTab === t.key
-                    ? "bg-orika-black/20 text-orika-black"
-                    : "bg-orika-gold/20 text-orika-gold",
+                    ? "bg-brand-black/20 text-brand-black"
+                    : "bg-brand-accent/20 text-brand-accent",
                 )}
               >
                 {totalUnread}
@@ -139,7 +139,7 @@ export function ChannelList({
       <div className="flex-1 overflow-y-auto">
         {activeTab === "emails" ? (
           <div className="py-12 px-4 text-center">
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               Outbound emails are shown in the panel →
             </p>
           </div>
@@ -151,7 +151,7 @@ export function ChannelList({
           </div>
         ) : channels.length === 0 ? (
           <div className="py-12 text-center">
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               {activeTab === "unread"
                 ? "You're all caught up 🎉"
                 : "No conversations yet"}
@@ -214,8 +214,8 @@ function ChannelRow({
       className={cn(
         "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
         isActive
-          ? "border border-white/10 bg-orika-charcoal"
-          : "hover:bg-orika-charcoal/50",
+          ? "border border-white/10 bg-brand-charcoal"
+          : "hover:bg-brand-charcoal/50",
       )}
     >
       {/* Avatar + online dot */}
@@ -227,7 +227,7 @@ function ChannelRow({
           {getInitials(name)}
         </div>
         {online && (
-          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-orika-black bg-green-400" />
+          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-brand-black bg-green-400" />
         )}
       </div>
 
@@ -237,22 +237,22 @@ function ChannelRow({
           <p
             className={cn(
               "flex items-center gap-1 truncate text-xs font-medium",
-              hasUnread ? "text-orika-cream" : "text-orika-cloud",
+              hasUnread ? "text-brand-cream" : "text-brand-cloud",
             )}
           >
             <span className="truncate">{name}</span>
             {channel.is_pinned && (
-              <Pin className="h-2.5 w-2.5 shrink-0 text-orika-gold/70" />
+              <Pin className="h-2.5 w-2.5 shrink-0 text-brand-accent/70" />
             )}
             {channel.is_muted && (
-              <BellOff className="h-2.5 w-2.5 shrink-0 text-orika-smoke/50" />
+              <BellOff className="h-2.5 w-2.5 shrink-0 text-brand-smoke/50" />
             )}
           </p>
           {last?.created_at && (
             <span
               className={cn(
                 "shrink-0 text-[10px]",
-                hasUnread ? "font-semibold text-orika-gold" : "text-orika-smoke/60",
+                hasUnread ? "font-semibold text-brand-accent" : "text-brand-smoke/60",
               )}
             >
               {fmtRelativeTime(last.created_at)}
@@ -263,11 +263,11 @@ function ChannelRow({
           <p
             className={cn(
               "flex min-w-0 items-center gap-1 truncate text-[11px]",
-              hasUnread ? "text-orika-cloud" : "text-orika-smoke/70",
+              hasUnread ? "text-brand-cloud" : "text-brand-smoke/70",
             )}
           >
             {lastIsOwn && !last?.is_deleted && (
-              <CheckCheck className="h-3 w-3 shrink-0 text-orika-smoke/40" />
+              <CheckCheck className="h-3 w-3 shrink-0 text-brand-smoke/40" />
             )}
             {channel.channel_type === "group" &&
               last &&
@@ -284,14 +284,14 @@ function ChannelRow({
               className={cn(
                 "flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[9px] font-bold",
                 channel.is_muted
-                  ? "bg-orika-smoke/30 text-orika-black"
-                  : "bg-orika-gold text-orika-black",
+                  ? "bg-brand-smoke/30 text-brand-black"
+                  : "bg-brand-accent text-brand-black",
               )}
             >
               {channel.unread_count}
             </span>
           ) : last && lastIsOwn ? (
-            <Check className="h-3 w-3 shrink-0 text-orika-smoke/30" />
+            <Check className="h-3 w-3 shrink-0 text-brand-smoke/30" />
           ) : null}
         </div>
       </div>

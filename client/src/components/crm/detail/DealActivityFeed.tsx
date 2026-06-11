@@ -32,7 +32,7 @@ export function DealActivityFeed({ activities }: Props) {
   }
 
   return (
-    <ol className="relative pl-7 border-l border-orika-graphite space-y-4">
+    <ol className="relative pl-7 border-l border-brand-graphite space-y-4">
       {sorted.map((a) => {
         const meta =
           CRM_ACTIVITY_TYPES[a.activity_type] ?? CRM_ACTIVITY_TYPES.note;
@@ -45,9 +45,9 @@ export function DealActivityFeed({ activities }: Props) {
                 size="sm"
               />
             </span>
-            <div className="rounded-xl border border-orika-graphite bg-orika-charcoal/50 p-3.5">
+            <div className="rounded-xl border border-brand-graphite bg-brand-charcoal/50 p-3.5">
               <div className="flex items-start justify-between gap-2 flex-wrap">
-                <span className="text-sm text-orika-cream">{a.summary}</span>
+                <span className="text-sm text-brand-cream">{a.summary}</span>
                 <span
                   className={`text-[0.6rem] uppercase tracking-widest font-semibold ${meta.textClass}`}
                 >
@@ -55,7 +55,7 @@ export function DealActivityFeed({ activities }: Props) {
                   {a.is_auto && " · auto"}
                 </span>
               </div>
-              <div className="text-[0.65rem] text-orika-smoke mt-1.5">
+              <div className="text-[0.65rem] text-brand-smoke mt-1.5">
                 {fmtDateTime(a.performed_at)} · {fmtRelative(a.performed_at)}
               </div>
             </div>

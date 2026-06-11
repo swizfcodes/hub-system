@@ -158,13 +158,13 @@ export default function MessagingPage() {
 
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 bg-orika-black">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orika-charcoal">
-        <MessageSquare className="h-8 w-8 text-orika-smoke/40" />
+    <div className="flex h-full flex-col items-center justify-center gap-4 bg-brand-black">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-charcoal">
+        <MessageSquare className="h-8 w-8 text-brand-smoke/40" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium text-orika-cream">SmartComm</p>
-        <p className="mt-1 text-xs text-orika-smoke">
+        <p className="text-sm font-medium text-brand-cream">SmartComm</p>
+        <p className="mt-1 text-xs text-brand-smoke">
           Select a conversation or start a new one
         </p>
       </div>
@@ -298,7 +298,7 @@ function NewChannelModal({
         )}
 
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-orika-black/70">
+          <label className="mb-1.5 block text-xs font-medium text-brand-black/70">
             {channelType === "direct" ? "Message" : "Add members"}
             <span className="ml-0.5 text-red-500">*</span>
           </label>
@@ -313,7 +313,7 @@ function NewChannelModal({
             }
             surface="light"
           />
-          <p className="mt-1.5 text-[11px] text-orika-smoke/60">
+          <p className="mt-1.5 text-[11px] text-brand-smoke/60">
             Only active staff with a login account can receive internal
             messages.
           </p>

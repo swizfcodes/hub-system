@@ -12,7 +12,7 @@ export function StepIdentity({ register, errors }: Props) {
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="font-display font-light text-3xl text-orika-black">
+        <h2 className="font-display font-light text-3xl text-brand-black">
           Identity
         </h2>
         <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -32,13 +32,13 @@ export function StepIdentity({ register, errors }: Props) {
         <Input
           {...register("display_name")}
           label="Display name"
-          placeholder="Orika Bejewelled"
+          placeholder="e.g. My Brand"
           error={errors.display_name?.message as string | undefined}
         />
         <Input
           {...register("legal_name")}
           label="Legal name"
-          placeholder="Orika Bejewelled Ltd"
+          placeholder="e.g. My Brand Ltd"
           className="sm:col-span-2"
           error={errors.legal_name?.message as string | undefined}
         />

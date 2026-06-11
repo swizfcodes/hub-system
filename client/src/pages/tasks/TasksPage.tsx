@@ -134,13 +134,13 @@ export default function TasksPage() {
 
           {/* Search */}
           <div className="mt-4 relative max-w-xs">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-smoke" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tasks…"
-              className="w-full rounded-xl border border-white/10 bg-orika-charcoal py-2 pl-9 pr-4 text-sm text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-brand-charcoal py-2 pl-9 pr-4 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none"
             />
           </div>
         </div>
@@ -173,8 +173,8 @@ export default function TasksPage() {
                       "flex flex-col rounded-2xl border transition-all",
                       "w-64 shrink-0",
                       isDragTarget
-                        ? "border-orika-gold/40 bg-orika-gold/5"
-                        : "border-white/5 bg-orika-charcoal",
+                        ? "border-brand-accent/40 bg-brand-accent/5"
+                        : "border-white/5 bg-brand-charcoal",
                     )}
                   >
                     {/* Column header */}
@@ -184,12 +184,12 @@ export default function TasksPage() {
                           className="h-2 w-2 rounded-full"
                           style={{ backgroundColor: meta.color }}
                         />
-                        <span className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                        <span className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                           {meta.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-orika-smoke/60">
+                        <span className="text-xs text-brand-smoke/60">
                           {tasks.length}
                         </span>
                         <button
@@ -197,7 +197,7 @@ export default function TasksPage() {
                             setDefaultStatus(col);
                             setShowCreate(true);
                           }}
-                          className="text-orika-smoke/40 hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke/40 hover:text-brand-accent transition-colors"
                           title={`Add to ${meta.label}`}
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -219,7 +219,7 @@ export default function TasksPage() {
                         />
                       ))}
                       {tasks.length === 0 && (
-                        <p className="text-center text-xs text-orika-smoke/30 py-4">
+                        <p className="text-center text-xs text-brand-smoke/30 py-4">
                           {search ? "No matches" : "Drop tasks here"}
                         </p>
                       )}
@@ -233,7 +233,7 @@ export default function TasksPage() {
 
         {/* Task detail side panel */}
         {detailTask && (
-          <div className="fixed inset-y-0 right-0 w-80 border-l border-white/5 bg-orika-black shadow-2xl overflow-y-auto z-30">
+          <div className="fixed inset-y-0 right-0 w-80 border-l border-white/5 bg-brand-black shadow-2xl overflow-y-auto z-30">
             <div className="p-5">
               <TaskDetailPanel
                 task={detailTask}

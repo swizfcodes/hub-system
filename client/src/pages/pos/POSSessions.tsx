@@ -84,7 +84,7 @@ export default function POSSessions() {
         <div className="overflow-x-auto rounded-xl border border-white/5">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-graphite/40">
+              <tr className="border-b border-white/5 bg-brand-graphite/40">
                 {[
                   "Terminal",
                   "Cashier",
@@ -96,7 +96,7 @@ export default function POSSessions() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -127,18 +127,18 @@ export default function POSSessions() {
                 return (
                   <tr
                     key={session.session_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium text-orika-cream">
+                    <td className="px-4 py-3 font-medium text-brand-cream">
                       {session.terminal_name}
                     </td>
-                    <td className="px-4 py-3 text-orika-cloud text-xs">
+                    <td className="px-4 py-3 text-brand-cloud text-xs">
                       {session.opened_by_email}
                     </td>
-                    <td className="px-4 py-3 text-orika-cloud">
+                    <td className="px-4 py-3 text-brand-cloud">
                       {fmtDateTime(session.opened_at)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums text-brand-cream">
                       {fmtMoney(session.total_revenue ?? 0, currency)}
                     </td>
                     <td className="px-4 py-3">
@@ -154,7 +154,7 @@ export default function POSSessions() {
                             ` (${fmtMoney(Math.abs(variance), currency)})`}
                         </span>
                       ) : (
-                        <span className="text-xs text-orika-smoke">—</span>
+                        <span className="text-xs text-brand-smoke">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -174,7 +174,7 @@ export default function POSSessions() {
                         {session.status === "closed" && (
                           <button
                             onClick={() => viewReport(session)}
-                            className="text-xs text-orika-smoke hover:text-orika-gold transition-colors flex items-center gap-1"
+                            className="text-xs text-brand-smoke hover:text-brand-accent transition-colors flex items-center gap-1"
                           >
                             <BarChart2 className="h-3.5 w-3.5" />Z Report
                           </button>
@@ -196,7 +196,7 @@ export default function POSSessions() {
           </table>
 
           {sessions.length === 0 && (
-            <p className="py-12 text-center text-sm text-orika-smoke">
+            <p className="py-12 text-center text-sm text-brand-smoke">
               No sessions in the last 30 days.
             </p>
           )}
@@ -222,7 +222,7 @@ export default function POSSessions() {
         ) : zReport ? (
           <XZReportView report={zReport} currency={currency} />
         ) : (
-          <p className="text-sm text-orika-smoke">
+          <p className="text-sm text-brand-smoke">
             Report not available for this session.
           </p>
         )}

@@ -209,11 +209,11 @@ export default function PONew() {
 
         {/* Quick mode banner */}
         {isQuickMode && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-orika-gold/30 bg-orika-gold/[0.06] px-4 py-3">
-            <Zap className="h-4 w-4 text-orika-gold mt-0.5 shrink-0" />
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-brand-accent/30 bg-brand-accent/[0.06] px-4 py-3">
+            <Zap className="h-4 w-4 text-brand-accent mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-orika-gold">Quick purchase mode</p>
-              <p className="text-xs text-orika-smoke mt-0.5">
+              <p className="text-sm font-medium text-brand-accent">Quick purchase mode</p>
+              <p className="text-xs text-brand-smoke mt-0.5">
                 After creating the PO you'll be taken straight to receive the goods — no extra steps.
               </p>
             </div>
@@ -221,11 +221,11 @@ export default function PONew() {
         )}
 
         <header className="mb-6">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             New purchase order
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            Issue a <span className="italic text-orika-gold">PO</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            Issue a <span className="italic text-brand-accent">PO</span>
           </h1>
         </header>
 
@@ -258,10 +258,10 @@ export default function PONew() {
           {/* Lines */}
           <Card className="p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+              <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
                 Line items
               </h3>
-              <span className="text-[0.6rem] text-orika-smoke">
+              <span className="text-[0.6rem] text-brand-smoke">
                 {fields.length} {fields.length === 1 ? "line" : "lines"}
               </span>
             </div>
@@ -269,10 +269,10 @@ export default function PONew() {
               {fields.map((f, i) => (
                 <div
                   key={f.id}
-                  className="rounded-xl border border-orika-graphite bg-orika-black/30 p-3.5"
+                  className="rounded-xl border border-brand-graphite bg-brand-black/30 p-3.5"
                 >
                   <div className="flex items-start gap-2">
-                    <span className="text-[0.6rem] text-orika-smoke font-mono uppercase tracking-widest mt-3 w-7">
+                    <span className="text-[0.6rem] text-brand-smoke font-mono uppercase tracking-widest mt-3 w-7">
                       L{i + 1}
                     </span>
                     <div className="flex-1 space-y-3">
@@ -293,18 +293,18 @@ export default function PONew() {
                       />
                       {/* Selected-product confirmation / required hint */}
                       {linesWatch?.[i]?.product_id ? (
-                        <p className="text-[0.65rem] text-living-sage">
+                        <p className="text-[0.65rem] text-accent2">
                           ✓ {lineDescriptions[i] || "Product linked"}
                         </p>
                       ) : (
-                        <p className="text-[0.65rem] text-orika-smoke/70">
+                        <p className="text-[0.65rem] text-brand-smoke/70">
                           Pick a product, or use “Add new product” if it isn’t
                           in the catalogue yet.
                         </p>
                       )}
                       <div className="grid gap-3 sm:grid-cols-[2fr_auto_auto] items-end">
                         <div>
-                          <label className="mb-1 block text-[0.65rem] uppercase tracking-widest text-orika-smoke font-medium">
+                          <label className="mb-1 block text-[0.65rem] uppercase tracking-widest text-brand-smoke font-medium">
                             Description / note (optional)
                           </label>
                           <input
@@ -317,7 +317,7 @@ export default function PONew() {
                               }))
                             }
                             placeholder="Spec or note for this line"
-                            className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
+                            className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 px-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none"
                           />
                         </div>
                         <Controller
@@ -362,7 +362,7 @@ export default function PONew() {
                       <button
                         type="button"
                         onClick={() => removeLine(i)}
-                        className="p-2 mt-7 text-orika-smoke hover:text-state-danger"
+                        className="p-2 mt-7 text-brand-smoke hover:text-state-danger"
                         aria-label="Remove"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -371,9 +371,9 @@ export default function PONew() {
                   </div>
                   {(linesWatch?.[i]?.quantity_ordered ?? 0) > 0 &&
                     (linesWatch?.[i]?.unit_price ?? 0) > 0 && (
-                      <div className="mt-2 ml-7 text-[0.65rem] text-orika-smoke text-right">
+                      <div className="mt-2 ml-7 text-[0.65rem] text-brand-smoke text-right">
                         Line total ·{" "}
-                        <span className="font-mono text-orika-cream">
+                        <span className="font-mono text-brand-cream">
                           {fmtMoney(
                             linesWatch[i].quantity_ordered *
                               linesWatch[i].unit_price,
@@ -391,7 +391,7 @@ export default function PONew() {
             <button
               type="button"
               onClick={addLine}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orika-graphite py-3 text-xs font-medium text-orika-smoke transition-colors hover:border-orika-gold/50 hover:text-orika-gold"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand-graphite py-3 text-xs font-medium text-brand-smoke transition-colors hover:border-brand-accent/50 hover:text-brand-accent"
             >
               <Plus className="w-3.5 h-3.5" />
               Add line
@@ -400,7 +400,7 @@ export default function PONew() {
 
           {/* Charges + FX + totals */}
           <Card className="p-5 sm:p-6">
-            <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-4">
+            <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-4">
               Charges & currency
             </h3>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -474,12 +474,12 @@ export default function PONew() {
                 />
               )}
             </div>
-            <div className="mt-5 rounded-xl bg-orika-black/40 border border-orika-graphite p-4">
+            <div className="mt-5 rounded-xl bg-brand-black/40 border border-brand-graphite p-4">
               <Total label="Subtotal" value={fmtMoney(subtotal, currency)} />
               <Total label="Shipping" value={fmtMoney(shipping, currency)} />
               <Total label="Import duty" value={fmtMoney(duty, currency)} />
               <Total label="Other" value={fmtMoney(other, currency)} />
-              <div className="border-t border-orika-graphite mt-2 pt-2">
+              <div className="border-t border-brand-graphite mt-2 pt-2">
                 <Total label="Total" value={fmtMoney(total, currency)} bold />
                 {ngnEquivalent != null && currency !== "NGN" && (
                   <Total
@@ -499,18 +499,18 @@ export default function PONew() {
           </Card>
 
           {/* Email option — available on both quick and full modes */}
-          <label className="flex items-center gap-2.5 rounded-xl border border-orika-graphite bg-orika-black/30 px-4 py-3 cursor-pointer">
+          <label className="flex items-center gap-2.5 rounded-xl border border-brand-graphite bg-brand-black/30 px-4 py-3 cursor-pointer">
             <input
               type="checkbox"
               checked={emailOnCreate}
               onChange={(e) => setEmailOnCreate(e.target.checked)}
-              className="h-4 w-4 accent-orika-gold"
+              className="h-4 w-4 accent-brand-accent"
             />
-            <Mail className="h-4 w-4 text-orika-gold" />
-            <span className="text-sm text-orika-cream">
+            <Mail className="h-4 w-4 text-brand-accent" />
+            <span className="text-sm text-brand-cream">
               Email this PO to the supplier now
             </span>
-            <span className="ml-auto text-[0.65rem] text-orika-smoke">
+            <span className="ml-auto text-[0.65rem] text-brand-smoke">
               Requires an email on the supplier’s contact
             </span>
           </label>
@@ -558,12 +558,12 @@ function Total({
     <div
       className={`flex items-baseline justify-between text-xs py-0.5 ${bold ? "font-bold" : ""}`}
     >
-      <span className="text-orika-smoke">
+      <span className="text-brand-smoke">
         {label}
         {hint && <span className="ml-1 text-[0.6rem]">{hint}</span>}
       </span>
       <span
-        className={`font-mono ${bold ? "text-orika-gold text-base" : "text-orika-cream"}`}
+        className={`font-mono ${bold ? "text-brand-accent text-base" : "text-brand-cream"}`}
       >
         {value}
       </span>

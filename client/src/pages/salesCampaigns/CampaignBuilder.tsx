@@ -351,20 +351,20 @@ export default function CampaignBuilder() {
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all flex-1",
                 step === s.id
-                  ? "bg-orika-gold/10 text-orika-gold border border-orika-gold/30"
+                  ? "bg-brand-accent/10 text-brand-accent border border-brand-accent/30"
                   : s.id < step || campaignId
-                    ? "text-orika-cloud hover:bg-white/5 cursor-pointer"
-                    : "text-orika-smoke/40 cursor-not-allowed",
+                    ? "text-brand-cloud hover:bg-white/5 cursor-pointer"
+                    : "text-brand-smoke/40 cursor-not-allowed",
               )}
             >
               <span
                 className={cn(
                   "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
                   step === s.id
-                    ? "bg-orika-gold text-orika-black"
+                    ? "bg-brand-accent text-brand-black"
                     : s.id < step
                       ? "bg-green-500/20 text-green-400"
-                      : "bg-white/10 text-orika-smoke/50",
+                      : "bg-white/10 text-brand-smoke/50",
                 )}
               >
                 {s.id === 5 ? (
@@ -391,7 +391,7 @@ export default function CampaignBuilder() {
         <form onSubmit={handleSubmit(saveDetails)} className="space-y-6">
           {/* Template picker */}
           <div>
-            <p className="text-sm font-medium text-orika-cream mb-3">
+            <p className="text-sm font-medium text-brand-cream mb-3">
               Template
             </p>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -407,23 +407,23 @@ export default function CampaignBuilder() {
                       className={cn(
                         "rounded-2xl border p-4 text-left transition-all",
                         field.value === key
-                          ? "border-orika-gold bg-orika-gold/5"
-                          : "border-white/10 bg-orika-graphite hover:border-white/20",
+                          ? "border-brand-accent bg-brand-accent/5"
+                          : "border-white/10 bg-brand-graphite hover:border-white/20",
                       )}
                     >
                       <div
                         className={cn("h-12 rounded-lg mb-3", {
                           "bg-white/90": key === "minimal",
-                          "bg-gradient-to-br from-orika-charcoal to-black":
+                          "bg-gradient-to-br from-brand-charcoal to-black":
                             key === "editorial",
-                          "bg-gradient-to-br from-purple-900 to-orika-charcoal":
+                          "bg-gradient-to-br from-purple-900 to-brand-charcoal":
                             key === "bold",
                         })}
                       />
-                      <p className="text-sm font-semibold text-orika-cream">
+                      <p className="text-sm font-semibold text-brand-cream">
                         {meta.label}
                       </p>
-                      <p className="text-xs text-orika-smoke mt-0.5">
+                      <p className="text-xs text-brand-smoke mt-0.5">
                         {meta.desc}
                       </p>
                     </button>
@@ -435,7 +435,7 @@ export default function CampaignBuilder() {
 
           {/* Accent colour */}
           <div>
-            <p className="text-sm font-medium text-orika-cream mb-3">
+            <p className="text-sm font-medium text-brand-cream mb-3">
               Accent colour
             </p>
             <Controller
@@ -452,13 +452,13 @@ export default function CampaignBuilder() {
                       className={cn(
                         "h-9 w-9 rounded-full border-2 transition-all",
                         (field.value ?? DEFAULT_ACCENT) === c.value
-                          ? "border-orika-cream scale-110"
+                          ? "border-brand-cream scale-110"
                           : "border-transparent hover:scale-105",
                       )}
                       style={{ backgroundColor: c.value }}
                     />
                   ))}
-                  <span className="text-xs text-orika-smoke ml-1">
+                  <span className="text-xs text-brand-smoke ml-1">
                     {CAMPAIGN_ACCENTS.find(
                       (c) => c.value === (field.value ?? DEFAULT_ACCENT),
                     )?.label ?? "Custom"}
@@ -466,14 +466,14 @@ export default function CampaignBuilder() {
                 </div>
               )}
             />
-            <p className="text-[11px] text-orika-smoke/60 mt-2">
+            <p className="text-[11px] text-brand-smoke/60 mt-2">
               Used for buttons, prices and highlights on your campaign page.
             </p>
           </div>
 
           {/* Campaign type */}
           <div>
-            <p className="text-sm font-medium text-orika-cream mb-3">
+            <p className="text-sm font-medium text-brand-cream mb-3">
               Campaign type
             </p>
             <Controller
@@ -504,15 +504,15 @@ export default function CampaignBuilder() {
                       className={cn(
                         "rounded-2xl border p-4 text-left transition-all",
                         field.value === opt.value
-                          ? "border-orika-gold bg-orika-gold/5"
-                          : "border-white/10 bg-orika-graphite hover:border-white/20",
+                          ? "border-brand-accent bg-brand-accent/5"
+                          : "border-white/10 bg-brand-graphite hover:border-white/20",
                       )}
                     >
                       <span className="text-2xl">{opt.icon}</span>
-                      <p className="text-sm font-semibold text-orika-cream mt-2">
+                      <p className="text-sm font-semibold text-brand-cream mt-2">
                         {opt.label}
                       </p>
-                      <p className="text-xs text-orika-smoke mt-0.5">
+                      <p className="text-xs text-brand-smoke mt-0.5">
                         {opt.desc}
                       </p>
                     </button>
@@ -535,7 +535,7 @@ export default function CampaignBuilder() {
               error={errors.slug?.message}
               surface="dark"
               leftIcon={
-                <span className="text-xs text-orika-smoke">/c/{business}/</span>
+                <span className="text-xs text-brand-smoke">/c/{business}/</span>
               }
               {...register("slug")}
               placeholder="easter-jewellery-2026"
@@ -546,7 +546,7 @@ export default function CampaignBuilder() {
           <div className="grid sm:grid-cols-2 gap-4">
             {/* Hero image — upload or paste URL */}
             <div>
-              <label className="block text-sm font-medium text-orika-cream mb-1.5">
+              <label className="block text-sm font-medium text-brand-cream mb-1.5">
                 Hero image
               </label>
               <input
@@ -579,7 +579,7 @@ export default function CampaignBuilder() {
                   type="button"
                   onClick={() => heroInputRef.current?.click()}
                   disabled={heroUploading}
-                  className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-orika-gold/40 flex flex-col items-center justify-center gap-2 text-orika-smoke hover:text-orika-cloud transition-colors"
+                  className="w-full h-32 rounded-xl border-2 border-dashed border-white/10 hover:border-brand-accent/40 flex flex-col items-center justify-center gap-2 text-brand-smoke hover:text-brand-cloud transition-colors"
                 >
                   <ImagePlus className="h-6 w-6" />
                   <span className="text-xs">
@@ -619,12 +619,12 @@ export default function CampaignBuilder() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-orika-cream mb-1.5">
+            <label className="block text-sm font-medium text-brand-cream mb-1.5">
               Body copy
             </label>
             <textarea
               rows={3}
-              className="w-full rounded-xl border border-white/10 bg-orika-charcoal px-4 py-3 text-sm text-orika-cream placeholder-orika-smoke/40 focus:outline-none focus:border-orika-gold/40 resize-none"
+              className="w-full rounded-xl border border-white/10 bg-brand-charcoal px-4 py-3 text-sm text-brand-cream placeholder-brand-smoke/40 focus:outline-none focus:border-brand-accent/40 resize-none"
               placeholder="Write a short compelling description of your campaign..."
               {...register("body_copy")}
             />
@@ -696,7 +696,7 @@ export default function CampaignBuilder() {
               className="rounded"
               {...register("is_evergreen")}
             />
-            <span className="text-orika-cloud">
+            <span className="text-brand-cloud">
               Evergreen — no expiry date (for permanent showcases)
             </span>
           </label>
@@ -718,7 +718,7 @@ export default function CampaignBuilder() {
       {step === 2 && campaignId && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-orika-smoke">
+            <p className="text-sm text-brand-smoke">
               Select products from your catalogue to feature on this campaign
               page.
             </p>
@@ -734,9 +734,9 @@ export default function CampaignBuilder() {
 
           {!existing?.products || existing.products.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center">
-              <ShoppingBag className="h-8 w-8 text-orika-smoke/30 mx-auto mb-3" />
-              <p className="text-sm text-orika-smoke">No products added yet</p>
-              <p className="text-xs text-orika-smoke/60 mt-1">
+              <ShoppingBag className="h-8 w-8 text-brand-smoke/30 mx-auto mb-3" />
+              <p className="text-sm text-brand-smoke">No products added yet</p>
+              <p className="text-xs text-brand-smoke/60 mt-1">
                 Add at least one product before publishing
               </p>
             </div>
@@ -794,8 +794,8 @@ export default function CampaignBuilder() {
       {/* ── STEP 3: PAYMENT / BANK ACCOUNTS ──────────────────────────────────── */}
       {step === 3 && campaignId && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-orika-gold/20 bg-orika-gold/5 px-4 py-3 text-sm text-orika-cloud">
-            <p className="font-semibold text-orika-gold mb-1">
+          <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 px-4 py-3 text-sm text-brand-cloud">
+            <p className="font-semibold text-brand-accent mb-1">
               Payment methods on this campaign
             </p>
             <p>
@@ -807,8 +807,8 @@ export default function CampaignBuilder() {
 
           {!existing?.bank_accounts || existing.bank_accounts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
-              <p className="text-sm text-orika-smoke">No bank accounts added</p>
-              <p className="text-xs text-orika-smoke/60 mt-1">
+              <p className="text-sm text-brand-smoke">No bank accounts added</p>
+              <p className="text-xs text-brand-smoke/60 mt-1">
                 Optional — Paystack is always available
               </p>
             </div>
@@ -817,13 +817,13 @@ export default function CampaignBuilder() {
               {existing.bank_accounts.map((acct) => (
                 <div
                   key={acct.id}
-                  className="flex items-center justify-between rounded-xl border border-white/8 bg-orika-graphite px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-white/8 bg-brand-graphite px-4 py-3"
                 >
                   <div>
-                    <p className="text-sm font-medium text-orika-cream">
+                    <p className="text-sm font-medium text-brand-cream">
                       {acct.account_name}
                     </p>
-                    <p className="text-xs text-orika-smoke">
+                    <p className="text-xs text-brand-smoke">
                       {acct.bank_name} · {acct.account_number}
                     </p>
                   </div>
@@ -840,7 +840,7 @@ export default function CampaignBuilder() {
                           queryKey: ["sales-campaign", campaignId],
                         });
                       }}
-                      className="text-orika-smoke/40 hover:text-rose-400 transition-colors"
+                      className="text-brand-smoke/40 hover:text-rose-400 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -927,7 +927,7 @@ export default function CampaignBuilder() {
                     setBankForm((f) => ({ ...f, is_primary: e.target.checked }))
                   }
                 />
-                <span className="text-orika-cloud">Set as primary account</span>
+                <span className="text-brand-cloud">Set as primary account</span>
               </label>
             </div>
           </Modal>
@@ -939,7 +939,7 @@ export default function CampaignBuilder() {
         <div className="space-y-6">
           {/* Sections toggles */}
           <div>
-            <p className="text-sm font-semibold text-orika-cream mb-3">
+            <p className="text-sm font-semibold text-brand-cream mb-3">
               Page sections
             </p>
             <div className="grid sm:grid-cols-2 gap-2">
@@ -963,7 +963,7 @@ export default function CampaignBuilder() {
 
           {/* Contact settings */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-orika-cream">
+            <p className="text-sm font-semibold text-brand-cream">
               Contact & CTA
             </p>
             <Input
@@ -1005,9 +1005,9 @@ export default function CampaignBuilder() {
 
           {/* Share section */}
           {publicUrl && (
-            <div className="rounded-2xl border border-white/8 bg-orika-graphite p-5 space-y-4">
-              <p className="text-sm font-semibold text-orika-cream flex items-center gap-2">
-                <Share2 className="h-4 w-4 text-orika-gold" /> Share your
+            <div className="rounded-2xl border border-white/8 bg-brand-graphite p-5 space-y-4">
+              <p className="text-sm font-semibold text-brand-cream flex items-center gap-2">
+                <Share2 className="h-4 w-4 text-brand-accent" /> Share your
                 campaign
               </p>
               {existing.status !== "live" && (
@@ -1021,9 +1021,9 @@ export default function CampaignBuilder() {
                   .
                 </div>
               )}
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2">
-                <Link className="h-3.5 w-3.5 text-orika-smoke shrink-0" />
-                <p className="text-xs text-orika-cloud flex-1 truncate">
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-brand-charcoal px-3 py-2">
+                <Link className="h-3.5 w-3.5 text-brand-smoke shrink-0" />
+                <p className="text-xs text-brand-cloud flex-1 truncate">
                   {publicUrl}
                 </p>
                 <button
@@ -1032,7 +1032,7 @@ export default function CampaignBuilder() {
                       .writeText(publicUrl)
                       .then(() => showToast.success("Copied!"))
                   }
-                  className="text-xs text-orika-gold hover:underline shrink-0"
+                  className="text-xs text-brand-accent hover:underline shrink-0"
                 >
                   Copy
                 </button>
@@ -1069,9 +1069,9 @@ export default function CampaignBuilder() {
                 </Button>
               </a>
               {/* QR code panel */}
-              <div className="rounded-xl border border-white/8 bg-orika-charcoal p-4 space-y-3">
-                <p className="text-xs font-semibold text-orika-cream flex items-center gap-2">
-                  <QrCode className="h-3.5 w-3.5 text-orika-gold" />
+              <div className="rounded-xl border border-white/8 bg-brand-charcoal p-4 space-y-3">
+                <p className="text-xs font-semibold text-brand-cream flex items-center gap-2">
+                  <QrCode className="h-3.5 w-3.5 text-brand-accent" />
                   QR Code — Popup / Walk-in Capture
                 </p>
                 {existing.qr_code_url ? (
@@ -1081,7 +1081,7 @@ export default function CampaignBuilder() {
                       alt="QR code"
                       className="h-36 w-36 rounded-xl bg-white p-2"
                     />
-                    <p className="text-xs text-orika-smoke text-center">
+                    <p className="text-xs text-brand-smoke text-center">
                       Print this on banners, table cards, or receipts. Visitors
                       scan it and fill in their details in under 10 seconds.
                     </p>
@@ -1113,7 +1113,7 @@ export default function CampaignBuilder() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-xs text-orika-smoke">
+                    <p className="text-xs text-brand-smoke">
                       Generate a QR code that visitors can scan at your event
                       to register in seconds.
                     </p>
@@ -1177,10 +1177,10 @@ export default function CampaignBuilder() {
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Captured leads
               </p>
-              <p className="text-xs text-orika-smoke mt-0.5">
+              <p className="text-xs text-brand-smoke mt-0.5">
                 Everyone who scanned your QR code or submitted the inquiry form.
               </p>
             </div>
@@ -1210,10 +1210,10 @@ export default function CampaignBuilder() {
         <div className="space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Campaign orders
               </p>
-              <p className="text-xs text-orika-smoke mt-0.5">
+              <p className="text-xs text-brand-smoke mt-0.5">
                 View, confirm, or cancel orders. Proof-submitted orders need your
                 verification before fulfilment.
               </p>
@@ -1255,7 +1255,7 @@ function CampaignProductRow({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-orika-graphite px-4 py-3">
+    <div className="flex items-center gap-3 rounded-xl border border-white/8 bg-brand-graphite px-4 py-3">
       {product.image_url && (
         <img
           src={product.image_url}
@@ -1264,17 +1264,17 @@ function CampaignProductRow({
         />
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-orika-cream truncate">
+        <p className="text-sm font-medium text-brand-cream truncate">
           {product.product_name}
         </p>
         <div className="flex items-center gap-3 mt-0.5">
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             {product.campaign_price ? (
               <>
                 <span className="line-through opacity-50">
                   {fmtMoney(product.selling_price)}
                 </span>{" "}
-                <span className="text-orika-gold">
+                <span className="text-brand-accent">
                   {fmtMoney(product.campaign_price)}
                 </span>
               </>
@@ -1282,7 +1282,7 @@ function CampaignProductRow({
               fmtMoney(product.selling_price)
             )}
           </p>
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             {product.quantity_available} available
           </p>
           {product.campaign_label && (
@@ -1294,7 +1294,7 @@ function CampaignProductRow({
       </div>
       <button
         onClick={onRemove}
-        className="text-orika-smoke/40 hover:text-rose-400 transition-colors p-1"
+        className="text-brand-smoke/40 hover:text-rose-400 transition-colors p-1"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -1349,7 +1349,7 @@ function ProductPickerModal({
           onChange={(e) => setSearch(e.target.value)}
         />
         {products.length === 0 && data && (
-          <p className="text-xs text-orika-smoke text-center py-4">
+          <p className="text-xs text-brand-smoke text-center py-4">
             {search
               ? "No matching products found."
               : "All catalogue products have already been added."}
@@ -1361,7 +1361,7 @@ function ProductPickerModal({
             return (
               <div
                 key={p.product_id}
-                className="flex items-center gap-3 rounded-xl border border-white/8 bg-orika-graphite px-4 py-3"
+                className="flex items-center gap-3 rounded-xl border border-white/8 bg-brand-graphite px-4 py-3"
               >
                 {p.primary_image_url && (
                   <img
@@ -1371,10 +1371,10 @@ function ProductPickerModal({
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-orika-cream truncate">
+                  <p className="text-sm font-medium text-brand-cream truncate">
                     {p.name}
                   </p>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     {fmtMoney(p.selling_price)}
                   </p>
                 </div>
@@ -1393,7 +1393,7 @@ function ProductPickerModal({
                       className="w-16 rounded-lg px-2 py-1.5 text-xs text-center"
                     />
                   </div>
-                  <span className="text-[10px] text-orika-smoke">units</span>
+                  <span className="text-[10px] text-brand-smoke">units</span>
                 </div>
                 <Button
                   size="sm"
@@ -1453,15 +1453,15 @@ function SectionToggle({
     stock_indicator: "Stock indicator",
   };
   return (
-    <label className="flex items-center justify-between rounded-xl border border-white/8 bg-orika-graphite px-4 py-3 cursor-pointer">
-      <span className="text-sm text-orika-cloud">
+    <label className="flex items-center justify-between rounded-xl border border-white/8 bg-brand-graphite px-4 py-3 cursor-pointer">
+      <span className="text-sm text-brand-cloud">
         {labels[sectionKey] ?? sectionKey}
       </span>
       <div
         onClick={() => onToggle(!enabled)}
         className={cn(
           "relative h-5 w-9 rounded-full transition-colors",
-          enabled ? "bg-orika-gold" : "bg-white/10",
+          enabled ? "bg-brand-accent" : "bg-white/10",
         )}
       >
         <div

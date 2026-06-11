@@ -37,7 +37,7 @@ export function ContactAvatar({
     <div
       className={cn(
         "relative shrink-0 rounded-full flex items-center justify-center font-semibold tracking-wide",
-        "bg-orika-graphite text-orika-cream",
+        "bg-brand-graphite text-brand-cream",
         dims.box,
         dims.text,
         className,
@@ -50,7 +50,7 @@ export function ContactAvatar({
       {/* Multi-type indicator dot (when contact has more than one type) */}
       {contact.contact_type && contact.contact_type.length > 1 && (
         <span
-          className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-orika-charcoal"
+          className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-brand-charcoal"
           style={{
             background: CONTACT_TYPE_META[contact.contact_type[1]].ringColor,
           }}

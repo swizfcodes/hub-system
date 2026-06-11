@@ -57,7 +57,7 @@ export default function StorefrontScents() {
         />
 
         {isLoading ? (
-          <p className="text-sm text-orika-smoke py-12 text-center">Loading…</p>
+          <p className="text-sm text-brand-smoke py-12 text-center">Loading…</p>
         ) : !scents?.length ? (
           <EmptyState
             title="No scents to manage yet"
@@ -126,13 +126,13 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
   const preview = resolveImg(form.image);
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-display text-lg text-orika-cream">
+          <h3 className="font-display text-lg text-brand-cream">
             {scent.family}
           </h3>
-          <p className="text-[0.7rem] uppercase tracking-widest text-orika-smoke">
+          <p className="text-[0.7rem] uppercase tracking-widest text-brand-smoke">
             {scent.has_override ? "Customised" : "Using defaults"}
           </p>
         </div>
@@ -145,14 +145,14 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs text-orika-smoke">Display name</span>
+          <span className="text-xs text-brand-smoke">Display name</span>
           <Input
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
           />
         </label>
         <label className="block">
-          <span className="text-xs text-orika-smoke">Tagline</span>
+          <span className="text-xs text-brand-smoke">Tagline</span>
           <Input
             value={form.tagline}
             onChange={(e) => set("tagline", e.target.value)}
@@ -161,18 +161,18 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
       </div>
 
       <label className="block mt-4">
-        <span className="text-xs text-orika-smoke">Description</span>
+        <span className="text-xs text-brand-smoke">Description</span>
         <textarea
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={3}
-          className="w-full mt-1 rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+          className="w-full mt-1 rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
         />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-3 mt-4">
         <label className="block">
-          <span className="text-xs text-orika-smoke">Swatch colour</span>
+          <span className="text-xs text-brand-smoke">Swatch colour</span>
           <div className="flex items-center gap-2 mt-1">
             <input
               type="color"
@@ -187,7 +187,7 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
           </div>
         </label>
         <label className="block">
-          <span className="text-xs text-orika-smoke">Ink (text) colour</span>
+          <span className="text-xs text-brand-smoke">Ink (text) colour</span>
           <div className="flex items-center gap-2 mt-1">
             <input
               type="color"
@@ -202,13 +202,13 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
           </div>
         </label>
         <label className="block">
-          <span className="text-xs text-orika-smoke">Display order</span>
+          <span className="text-xs text-brand-smoke">Display order</span>
           <NumberField
             placeholder="0"
             value={form.display_order}
             onValueChange={(v) => set("display_order", v ?? 0)}
           />
-          <span className="text-[0.65rem] text-orika-smoke/70">
+          <span className="text-[0.65rem] text-brand-smoke/70">
             Lower numbers appear first.
           </span>
         </label>
@@ -216,7 +216,7 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
 
       {/* Hero image — upload OR paste a URL */}
       <div className="mt-4">
-        <span className="text-xs text-orika-smoke">Hero image</span>
+        <span className="text-xs text-brand-smoke">Hero image</span>
         <div className="flex flex-col gap-2 mt-1 sm:flex-row sm:items-center">
           {preview && (
             <img
@@ -232,7 +232,7 @@ function ScentEditor({ scent }: { scent: EditableScent }) {
             className="flex-1"
           />
           <label className="cursor-pointer">
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold transition-all">
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent transition-all">
               <Upload className="h-3.5 w-3.5" />
               {uploading ? "Uploading…" : "Upload"}
             </span>

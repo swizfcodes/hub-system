@@ -21,6 +21,11 @@ router.use("/auth", require("../shared/auth/auth.routes"));
 // (catalogue + the store admin views), so there is no separate
 // store-admin route surface — web sales flow through the ERP's
 // own accounting + stock path.
+// ── Branding (public) ─────────────────────────────────────
+// The login page needs product name, fonts and theme before any
+// token exists. Display-level data only.
+router.use("/branding", require("../modules/settings/branding.public.routes"));
+
 router.use("/store", require("../modules/store/store.public.routes"));
 router.use(
   "/store-admin",

@@ -237,7 +237,7 @@ export default function DocumentsVault() {
           <Input
             placeholder="Search by title or document number…"
             surface="dark"
-            leftIcon={<Search className="h-4 w-4 text-orika-smoke" />}
+            leftIcon={<Search className="h-4 w-4 text-brand-smoke" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -297,7 +297,7 @@ export default function DocumentsVault() {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/8">
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     {pagination?.total} documents
                   </p>
                   <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function DocumentsVault() {
                     >
                       Prev
                     </Button>
-                    <span className="text-xs text-orika-smoke px-1">
+                    <span className="text-xs text-brand-smoke px-1">
                       {page} / {totalPages}
                     </span>
                     <Button
@@ -380,7 +380,7 @@ function DocumentRow({
       onClick={onClick}
       className={cn(
         "cursor-pointer transition-colors hover:bg-white/3",
-        isSelected && "bg-orika-gold/5 border-l-2 border-l-orika-gold",
+        isSelected && "bg-brand-accent/5 border-l-2 border-l-brand-accent",
       )}
     >
       {/* Document title + number */}
@@ -388,13 +388,13 @@ function DocumentRow({
         <div className="flex items-center gap-3">
           <MimeIcon
             mime={doc.mime_type}
-            className="h-4 w-4 text-orika-smoke/60"
+            className="h-4 w-4 text-brand-smoke/60"
           />
           <div className="min-w-0">
-            <p className="text-sm text-orika-cream font-medium truncate max-w-[200px]">
+            <p className="text-sm text-brand-cream font-medium truncate max-w-[200px]">
               {doc.title}
             </p>
-            <p className="text-xs text-orika-smoke font-mono mt-0.5">
+            <p className="text-xs text-brand-smoke font-mono mt-0.5">
               {doc.document_number}
             </p>
           </div>
@@ -413,21 +413,21 @@ function DocumentRow({
 
       {/* File size */}
       <td className="py-3 pr-4 hidden lg:table-cell">
-        <span className="text-xs text-orika-smoke">
+        <span className="text-xs text-brand-smoke">
           {fmtFileSize(doc.file_size_bytes)}
         </span>
       </td>
 
       {/* Uploaded by */}
       <td className="py-3 pr-4 hidden xl:table-cell">
-        <span className="text-xs text-orika-smoke truncate max-w-[120px] block">
+        <span className="text-xs text-brand-smoke truncate max-w-[120px] block">
           {doc.uploaded_by_name ?? "—"}
         </span>
       </td>
 
       {/* Date */}
       <td className="py-3 pr-2">
-        <span className="text-xs text-orika-smoke whitespace-nowrap">
+        <span className="text-xs text-brand-smoke whitespace-nowrap">
           {fmtDate(doc.created_at)}
         </span>
       </td>
@@ -439,7 +439,7 @@ function DocumentRow({
             e.stopPropagation();
             onDownload();
           }}
-          className="p-1.5 rounded-lg text-orika-smoke/40 hover:text-orika-cream hover:bg-white/5 transition-colors"
+          className="p-1.5 rounded-lg text-brand-smoke/40 hover:text-brand-cream hover:bg-white/5 transition-colors"
           title="Download"
         >
           <Download className="h-3.5 w-3.5" />
@@ -482,7 +482,7 @@ function DocumentDrawer({
     return (
       <DrawerShell onClose={onClose}>
         <div className="flex items-center justify-center h-full">
-          <p className="text-orika-smoke text-sm">Loading…</p>
+          <p className="text-brand-smoke text-sm">Loading…</p>
         </div>
       </DrawerShell>
     );
@@ -578,15 +578,15 @@ function DocumentDrawer({
         <div className="flex items-start gap-3">
           <MimeIcon
             mime={d.mime_type}
-            className="h-5 w-5 text-orika-gold mt-0.5 shrink-0"
+            className="h-5 w-5 text-brand-accent mt-0.5 shrink-0"
           />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-orika-cream leading-snug">
+            <p className="font-semibold text-brand-cream leading-snug">
               {d.title}
             </p>
             <button
               onClick={copyDocNumber}
-              className="flex items-center gap-1 mt-1 text-xs text-orika-smoke font-mono hover:text-orika-cream transition-colors group"
+              className="flex items-center gap-1 mt-1 text-xs text-brand-smoke font-mono hover:text-brand-cream transition-colors group"
             >
               {d.document_number}
               {copied ? (
@@ -612,25 +612,25 @@ function DocumentDrawer({
             </Badge>
           </MetaRow>
           <MetaRow label="Business">
-            <span className="text-sm text-orika-cream capitalize">
+            <span className="text-sm text-brand-cream capitalize">
               {d.business}
             </span>
           </MetaRow>
           <MetaRow label="Size">
-            <span className="text-sm text-orika-cream">
+            <span className="text-sm text-brand-cream">
               {fmtFileSize(d.file_size_bytes)}
             </span>
           </MetaRow>
           <MetaRow label="Format">
-            <span className="text-sm text-orika-cream">{d.mime_type}</span>
+            <span className="text-sm text-brand-cream">{d.mime_type}</span>
           </MetaRow>
           <MetaRow label="Uploaded by">
-            <span className="text-sm text-orika-cream">
+            <span className="text-sm text-brand-cream">
               {d.uploaded_by_name ?? "—"}
             </span>
           </MetaRow>
           <MetaRow label="Date">
-            <span className="text-sm text-orika-cream">
+            <span className="text-sm text-brand-cream">
               {fmtDate(d.created_at)}
             </span>
           </MetaRow>
@@ -638,7 +638,7 @@ function DocumentDrawer({
 
         {/* Integrity verification */}
         <section>
-          <p className="text-xs font-medium text-orika-smoke uppercase tracking-wide mb-2">
+          <p className="text-xs font-medium text-brand-smoke uppercase tracking-wide mb-2">
             Integrity
           </p>
           {verifyResult ? (
@@ -666,7 +666,7 @@ function DocumentDrawer({
                     ? "Integrity verified"
                     : "Integrity check failed"}
                 </p>
-                <p className="text-xs text-orika-smoke mt-0.5">
+                <p className="text-xs text-brand-smoke mt-0.5">
                   {verifyResult.verified
                     ? "SHA-256 hash matches stored fingerprint."
                     : "Hash mismatch — file may have been altered outside the system."}
@@ -688,7 +688,7 @@ function DocumentDrawer({
 
         {/* Tags */}
         <section>
-          <p className="text-xs font-medium text-orika-smoke uppercase tracking-wide mb-2">
+          <p className="text-xs font-medium text-brand-smoke uppercase tracking-wide mb-2">
             Tags
           </p>
           <div className="flex flex-wrap gap-1.5 mb-2">
@@ -717,12 +717,12 @@ function DocumentDrawer({
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
               placeholder="Add tag…"
-              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-orika-cream placeholder-orika-smoke/40 focus:outline-none focus:border-orika-gold/40"
+              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-brand-cream placeholder-brand-smoke/40 focus:outline-none focus:border-brand-accent/40"
             />
             <button
               onClick={handleAddTag}
               disabled={!newTag.trim() || addingTag}
-              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-orika-smoke hover:text-orika-cream hover:border-white/20 disabled:opacity-40 transition-colors"
+              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-brand-smoke hover:text-brand-cream hover:border-white/20 disabled:opacity-40 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -732,12 +732,12 @@ function DocumentDrawer({
         {/* Linked record */}
         {referenceUrl && (
           <section>
-            <p className="text-xs font-medium text-orika-smoke uppercase tracking-wide mb-2">
+            <p className="text-xs font-medium text-brand-smoke uppercase tracking-wide mb-2">
               Linked Record
             </p>
             <a
               href={referenceUrl}
-              className="inline-flex items-center gap-1.5 text-sm text-orika-gold hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm text-brand-accent hover:underline"
             >
               <span className="capitalize">
                 {REFERENCE_TYPE_OPTIONS.find(
@@ -923,7 +923,7 @@ function UploadModal({
           className={cn(
             "rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-colors",
             isDragging
-              ? "border-orika-gold bg-orika-gold/5"
+              ? "border-brand-accent bg-brand-accent/5"
               : "border-white/15 hover:border-white/30",
           )}
         >
@@ -931,25 +931,25 @@ function UploadModal({
             <div className="flex items-center justify-center gap-3">
               <MimeIcon
                 mime={file.type || "application/pdf"}
-                className="h-6 w-6 text-orika-gold"
+                className="h-6 w-6 text-brand-accent"
               />
               <div className="text-left">
-                <p className="text-sm font-medium text-orika-cream">
+                <p className="text-sm font-medium text-brand-cream">
                   {file.name}
                 </p>
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {fmtFileSize(file.size)}
                 </p>
               </div>
             </div>
           ) : (
             <>
-              <Upload className="h-8 w-8 text-orika-smoke/40 mx-auto mb-2" />
-              <p className="text-sm text-orika-smoke">
+              <Upload className="h-8 w-8 text-brand-smoke/40 mx-auto mb-2" />
+              <p className="text-sm text-brand-smoke">
                 Drag & drop a file here, or{" "}
-                <span className="text-orika-gold">click to browse</span>
+                <span className="text-brand-accent">click to browse</span>
               </p>
-              <p className="text-xs text-orika-smoke/50 mt-1">
+              <p className="text-xs text-brand-smoke/50 mt-1">
                 Max 25 MB · PDF, images, or any file type
               </p>
             </>
@@ -986,9 +986,9 @@ function UploadModal({
 
         {/* Link to record */}
         <div>
-          <p className="text-xs font-medium text-orika-smoke mb-2">
+          <p className="text-xs font-medium text-brand-smoke mb-2">
             Link to record{" "}
-            <span className="text-orika-smoke/50">(optional)</span>
+            <span className="text-brand-smoke/50">(optional)</span>
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <Select
@@ -1039,15 +1039,15 @@ function DrawerShell({
   onClose: () => void;
 }) {
   return (
-    <div className="flex flex-col w-full sm:w-[380px] shrink-0 border-l border-white/8 bg-orika-graphite">
+    <div className="flex flex-col w-full sm:w-[380px] shrink-0 border-l border-white/8 bg-brand-graphite">
       {/* Drawer header bar */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-white/8">
-        <p className="text-xs font-medium text-orika-smoke uppercase tracking-widest">
+        <p className="text-xs font-medium text-brand-smoke uppercase tracking-widest">
           Document Details
         </p>
         <button
           onClick={onClose}
-          className="p-1 rounded-lg text-orika-smoke/40 hover:text-orika-cream hover:bg-white/5 transition-colors"
+          className="p-1 rounded-lg text-brand-smoke/40 hover:text-brand-cream hover:bg-white/5 transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -1067,7 +1067,7 @@ function Th({
   return (
     <th
       className={cn(
-        "pb-3 text-xs font-medium text-orika-smoke/60 uppercase tracking-wide",
+        "pb-3 text-xs font-medium text-brand-smoke/60 uppercase tracking-wide",
         className,
       )}
     >
@@ -1085,7 +1085,7 @@ function MetaRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-xs text-orika-smoke/60 shrink-0">{label}</span>
+      <span className="text-xs text-brand-smoke/60 shrink-0">{label}</span>
       {children}
     </div>
   );
@@ -1110,13 +1110,13 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="h-14 w-14 rounded-2xl bg-orika-graphite border border-white/8 flex items-center justify-center mb-4">
-        <FileText className="h-6 w-6 text-orika-smoke/30" />
+      <div className="h-14 w-14 rounded-2xl bg-brand-graphite border border-white/8 flex items-center justify-center mb-4">
+        <FileText className="h-6 w-6 text-brand-smoke/30" />
       </div>
-      <p className="font-semibold text-orika-cream mb-1">
+      <p className="font-semibold text-brand-cream mb-1">
         {hasSearch ? "No documents found" : "Vault is empty"}
       </p>
-      <p className="text-sm text-orika-smoke max-w-xs mb-6">
+      <p className="text-sm text-brand-smoke max-w-xs mb-6">
         {hasSearch
           ? "Try a different search or clear filters."
           : "Documents are auto-archived when generated by other modules. You can also upload manually."}

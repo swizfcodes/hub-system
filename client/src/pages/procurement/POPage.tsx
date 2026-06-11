@@ -86,8 +86,8 @@ export default function POPage() {
               onClick={() => setStatusFilter(s.key)}
               className={`px-3 py-1.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-widest transition-all ${
                 statusFilter === s.key
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-charcoal border border-orika-graphite text-orika-smoke hover:text-orika-cream"
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-charcoal border border-brand-graphite text-brand-smoke hover:text-brand-cream"
               }`}
             >
               {s.label}
@@ -119,7 +119,7 @@ export default function POPage() {
             {pos.map((po) => (
               <Card
                 key={po.po_id}
-                className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer"
+                className="p-4 hover:border-brand-accent/40 transition-all cursor-pointer"
                 onClick={() =>
                   navigate(`/procurement/purchase-orders/${po.po_id}`)
                 }
@@ -127,21 +127,21 @@ export default function POPage() {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs text-orika-smoke">
+                      <span className="font-mono text-xs text-brand-smoke">
                         {po.po_number}
                       </span>
-                      <span className="text-sm text-orika-cream truncate">
+                      <span className="text-sm text-brand-cream truncate">
                         {po.supplier_name}
                       </span>
                     </div>
-                    <div className="text-[0.65rem] text-orika-smoke mt-1">
+                    <div className="text-[0.65rem] text-brand-smoke mt-1">
                       Ordered {fmtDate(po.order_date)}
                       {po.expected_delivery &&
                         ` · ETA ${fmtDate(po.expected_delivery)}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-orika-gold">
+                    <span className="font-mono text-brand-accent">
                       {fmtMoney(po.total_amount, po.currency)}
                     </span>
                     <Badge tone={STATUS_TONE[po.status]} size="sm" dot>

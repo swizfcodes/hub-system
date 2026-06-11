@@ -188,12 +188,12 @@ export default function WorkspacePage() {
           {/* Left — Today's schedule */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Today's Schedule
               </p>
               <button
                 onClick={() => navigate("/calendar")}
-                className="flex items-center gap-1 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                className="flex items-center gap-1 text-xs text-brand-smoke hover:text-brand-accent transition-colors"
               >
                 Full calendar <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -206,9 +206,9 @@ export default function WorkspacePage() {
                 ))}
               </div>
             ) : todayEvents.length === 0 ? (
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-10 text-center">
-                <Calendar className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-                <p className="text-sm text-orika-smoke">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-10 text-center">
+                <Calendar className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+                <p className="text-sm text-brand-smoke">
                   Nothing scheduled for today
                 </p>
                 <Button
@@ -232,22 +232,22 @@ export default function WorkspacePage() {
                     <button
                       key={event.event_id}
                       onClick={() => setDetailEvent(event)}
-                      className="w-full flex items-center gap-4 rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3 text-left hover:border-white/15 hover:bg-orika-graphite/20 transition-all"
+                      className="w-full flex items-center gap-4 rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3 text-left hover:border-white/15 hover:bg-brand-graphite/20 transition-all"
                     >
                       <div className="text-center w-12 shrink-0">
-                        <p className="text-sm font-semibold text-orika-cream">
+                        <p className="text-sm font-semibold text-brand-cream">
                           {fmtTime(event.start_at)}
                         </p>
-                        <p className="text-[10px] text-orika-smoke">
+                        <p className="text-[10px] text-brand-smoke">
                           {fmtTime(event.end_at)}
                         </p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-orika-cream truncate">
+                        <p className="font-medium text-brand-cream truncate">
                           {event.title}
                         </p>
                         {event.location && (
-                          <p className="text-xs text-orika-smoke truncate">
+                          <p className="text-xs text-brand-smoke truncate">
                             {event.location}
                           </p>
                         )}
@@ -262,7 +262,7 @@ export default function WorkspacePage() {
             {weekEvents.filter((e) => !isToday(new Date(e.start_at))).length >
               0 && (
               <>
-                <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mt-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mt-2">
                   Coming Up
                 </p>
                 <div className="space-y-1.5">
@@ -275,13 +275,13 @@ export default function WorkspacePage() {
                         className="flex items-center gap-3 text-sm px-3 py-2 rounded-xl border border-white/5 hover:border-white/10 cursor-pointer"
                         onClick={() => setDetailEvent(e)}
                       >
-                        <span className="text-xs text-orika-smoke w-16 shrink-0">
+                        <span className="text-xs text-brand-smoke w-16 shrink-0">
                           {new Date(e.start_at).toLocaleDateString("en-NG", {
                             weekday: "short",
                             day: "numeric",
                           })}
                         </span>
-                        <span className="text-orika-cloud truncate">
+                        <span className="text-brand-cloud truncate">
                           {e.title}
                         </span>
                       </div>
@@ -294,12 +294,12 @@ export default function WorkspacePage() {
           {/* Right — Team task overview */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Team Task Health
               </p>
               <button
                 onClick={() => navigate("/tasks")}
-                className="flex items-center gap-1 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                className="flex items-center gap-1 text-xs text-brand-smoke hover:text-brand-accent transition-colors"
               >
                 Kanban board <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -312,9 +312,9 @@ export default function WorkspacePage() {
                 ))}
               </div>
             ) : teamMembers.length === 0 ? (
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-10 text-center">
-                <Users className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-                <p className="text-sm text-orika-smoke">No active tasks</p>
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-10 text-center">
+                <Users className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+                <p className="text-sm text-brand-smoke">No active tasks</p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -329,11 +329,11 @@ export default function WorkspacePage() {
                 {teamMembers.map(([name, stats]) => (
                   <div
                     key={name}
-                    className="flex items-center gap-4 rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+                    className="flex items-center gap-4 rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
                   >
                     {/* Initials avatar */}
-                    <div className="h-8 w-8 rounded-full bg-orika-graphite flex items-center justify-center shrink-0">
-                      <span className="text-xs font-semibold text-orika-cream">
+                    <div className="h-8 w-8 rounded-full bg-brand-graphite flex items-center justify-center shrink-0">
+                      <span className="text-xs font-semibold text-brand-cream">
                         {name
                           .split(" ")
                           .map((n) => n[0])
@@ -343,10 +343,10 @@ export default function WorkspacePage() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-orika-cream">
+                      <p className="text-sm font-medium text-brand-cream">
                         {name}
                       </p>
-                      <p className="text-xs text-orika-smoke">
+                      <p className="text-xs text-brand-smoke">
                         {stats.total} task{stats.total !== 1 ? "s" : ""}
                       </p>
                     </div>
@@ -385,7 +385,7 @@ export default function WorkspacePage() {
                       className="flex items-center gap-3 rounded-xl border border-state-danger/20 bg-state-danger/5 px-3 py-2 text-sm"
                     >
                       <PriorityBadge priority={task.priority} />
-                      <span className="flex-1 text-orika-cream truncate">
+                      <span className="flex-1 text-brand-cream truncate">
                         {task.title}
                       </span>
                       <span className="text-xs text-red-400 shrink-0">
@@ -396,7 +396,7 @@ export default function WorkspacePage() {
                   {overdueTasks.length > 5 && (
                     <button
                       onClick={() => navigate("/tasks")}
-                      className="text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-xs text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       +{overdueTasks.length - 5} more — see all
                     </button>
@@ -414,7 +414,7 @@ export default function WorkspacePage() {
             onClick={() => setDetailEvent(null)}
           >
             <div
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-orika-charcoal p-5"
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-brand-charcoal p-5"
               onClick={(e) => e.stopPropagation()}
             >
               <EventDetailPanel
@@ -466,13 +466,13 @@ function StatCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border px-4 py-4 bg-orika-charcoal",
+        "rounded-2xl border px-4 py-4 bg-brand-charcoal",
         highlight ? "border-red-500/20" : "border-white/5",
       )}
     >
       <div className="flex items-center gap-2 mb-1">
         <Icon className="h-3.5 w-3.5" style={{ color }} />
-        <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+        <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
           {label}
         </p>
       </div>

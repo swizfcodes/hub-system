@@ -33,24 +33,24 @@ export function DealCard({
       {...draggableProps}
       onClick={() => navigate(`/crm/${deal.deal_id}`)}
       className={cn(
-        "group cursor-pointer rounded-xl border bg-orika-charcoal border-orika-graphite p-3 transition-all",
-        "hover:border-orika-gold/40 hover:shadow-card",
-        dragging && "opacity-50 ring-2 ring-orika-gold rotate-1",
+        "group cursor-pointer rounded-xl border bg-brand-charcoal border-brand-graphite p-3 transition-all",
+        "hover:border-brand-accent/40 hover:shadow-card",
+        dragging && "opacity-50 ring-2 ring-brand-accent rotate-1",
         className,
       )}
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h4 className="text-sm font-medium text-orika-cream truncate">
+            <h4 className="text-sm font-medium text-brand-cream truncate">
               {deal.title}
             </h4>
             {deal.priority_level === "vip" && (
-              <Star className="w-3 h-3 fill-orika-gold text-orika-gold shrink-0" />
+              <Star className="w-3 h-3 fill-brand-accent text-brand-accent shrink-0" />
             )}
           </div>
           {deal.contact_name && (
-            <p className="text-[0.65rem] text-orika-smoke truncate mt-0.5">
+            <p className="text-[0.65rem] text-brand-smoke truncate mt-0.5">
               {deal.contact_name}
             </p>
           )}
@@ -60,12 +60,12 @@ export function DealCard({
       {!compact && (
         <>
           <div className="mt-2.5 flex items-baseline justify-between gap-2">
-            <span className="font-mono text-sm text-orika-gold">
+            <span className="font-mono text-sm text-brand-accent">
               {fmtMoney(deal.expected_value, "NGN")}
             </span>
           </div>
 
-          <div className="mt-2 flex items-center gap-2 text-[0.6rem] text-orika-smoke">
+          <div className="mt-2 flex items-center gap-2 text-[0.6rem] text-brand-smoke">
             {deal.expected_close_date && (
               <span
                 className={cn(

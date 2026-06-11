@@ -18,11 +18,11 @@ export function DealValueCell({
   return (
     <div className={compact ? "flex items-center gap-2" : "space-y-1"}>
       <div>
-        <div className="font-mono text-sm text-orika-cream">
+        <div className="font-mono text-sm text-brand-cream">
           {fmtMoney(value, currency)}
         </div>
         {weighted != null && (
-          <div className="text-[0.6rem] text-orika-smoke">
+          <div className="text-[0.6rem] text-brand-smoke">
             weighted {fmtMoney(weighted, currency)}
           </div>
         )}

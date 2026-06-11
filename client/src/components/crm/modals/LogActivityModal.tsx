@@ -132,8 +132,8 @@ export function LogActivityModal({
                   className={cn(
                     "flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border transition-all",
                     active
-                      ? "border-orika-black bg-orika-black text-orika-cream shadow-card"
-                      : "bg-white border-orika-cloud/40 text-orika-black/70 hover:border-orika-black/40",
+                      ? "border-brand-black bg-brand-black text-brand-cream shadow-card"
+                      : "bg-white border-brand-cloud/40 text-brand-black/70 hover:border-brand-black/40",
                   )}
                 >
                   <Icon
@@ -144,7 +144,7 @@ export function LogActivityModal({
                     {m.label}
                   </span>
                   {m.shortcut && (
-                    <kbd className="text-[0.55rem] px-1 py-0.5 rounded bg-orika-cloud/40 text-orika-black/60">
+                    <kbd className="text-[0.55rem] px-1 py-0.5 rounded bg-brand-cloud/40 text-brand-black/60">
                       {m.shortcut}
                     </kbd>
                   )}
@@ -160,7 +160,7 @@ export function LogActivityModal({
             <div className="text-[0.7rem] tracking-widest uppercase font-medium text-text-on-light-muted mb-2 ml-1">
               Direction
             </div>
-            <div className="inline-flex p-0.5 rounded-lg bg-orika-cream/50 border border-orika-cloud/40">
+            <div className="inline-flex p-0.5 rounded-lg bg-brand-cream/50 border border-brand-cloud/40">
               {(["outbound", "inbound"] as const).map((d) => (
                 <button
                   key={d}
@@ -169,8 +169,8 @@ export function LogActivityModal({
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                     direction === d
-                      ? "bg-white shadow-sm text-orika-black"
-                      : "text-text-on-light-muted hover:text-orika-black",
+                      ? "bg-white shadow-sm text-brand-black"
+                      : "text-text-on-light-muted hover:text-brand-black",
                   )}
                 >
                   {d === "inbound" ? (

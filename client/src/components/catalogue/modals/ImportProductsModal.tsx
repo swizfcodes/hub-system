@@ -103,9 +103,9 @@ export function ImportProductsModal({ open, onClose }: Props) {
     >
       {!result ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border border-orika-cloud/40 bg-white/50 p-3">
-            <div className="flex items-center gap-2 text-sm text-orika-charcoal">
-              <FileSpreadsheet className="w-4 h-4 text-orika-gold" />
+          <div className="flex items-center justify-between rounded-xl border border-brand-cloud/40 bg-white/50 p-3">
+            <div className="flex items-center gap-2 text-sm text-brand-charcoal">
+              <FileSpreadsheet className="w-4 h-4 text-brand-accent" />
               Don’t have the template yet?
             </div>
             <Button
@@ -126,12 +126,12 @@ export function ImportProductsModal({ open, onClose }: Props) {
               e.preventDefault();
               pickFile(e.dataTransfer.files?.[0]);
             }}
-            className="w-full rounded-2xl border-2 border-dashed border-orika-cloud/50 bg-white/40 hover:bg-orika-cloud/10 transition-colors p-8 flex flex-col items-center justify-center gap-2 text-center"
+            className="w-full rounded-2xl border-2 border-dashed border-brand-cloud/50 bg-white/40 hover:bg-brand-cloud/10 transition-colors p-8 flex flex-col items-center justify-center gap-2 text-center"
           >
-            <UploadCloud className="w-8 h-8 text-orika-smoke" />
+            <UploadCloud className="w-8 h-8 text-brand-smoke" />
             {file ? (
-              <div className="flex items-center gap-2 text-sm font-medium text-orika-charcoal">
-                <FileSpreadsheet className="w-4 h-4 text-orika-gold" />{" "}
+              <div className="flex items-center gap-2 text-sm font-medium text-brand-charcoal">
+                <FileSpreadsheet className="w-4 h-4 text-brand-accent" />{" "}
                 {file.name}
                 <span
                   role="button"
@@ -140,17 +140,17 @@ export function ImportProductsModal({ open, onClose }: Props) {
                     e.stopPropagation();
                     reset();
                   }}
-                  className="text-orika-smoke hover:text-orika-black"
+                  className="text-brand-smoke hover:text-brand-black"
                 >
                   <X className="w-3.5 h-3.5" />
                 </span>
               </div>
             ) : (
               <>
-                <div className="text-sm font-medium text-orika-charcoal">
+                <div className="text-sm font-medium text-brand-charcoal">
                   Click to choose, or drag your .xlsx here
                 </div>
-                <div className="text-xs text-orika-smoke">
+                <div className="text-xs text-brand-smoke">
                   Existing SKUs are skipped, never overwritten.
                 </div>
               </>
@@ -288,7 +288,7 @@ function Section({
 }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-orika-smoke mb-1.5">
+      <div className="text-xs font-semibold uppercase tracking-wide text-brand-smoke mb-1.5">
         {title}
       </div>
       <div className="space-y-1 max-h-48 overflow-y-auto pr-1">{children}</div>
@@ -309,10 +309,10 @@ function Row({
 }) {
   const color = tone === "err" ? "text-red-700" : "text-amber-700";
   return (
-    <div className="flex items-start gap-2 text-xs text-orika-charcoal">
-      <span className="font-mono text-orika-smoke shrink-0">Row {row}</span>
+    <div className="flex items-start gap-2 text-xs text-brand-charcoal">
+      <span className="font-mono text-brand-smoke shrink-0">Row {row}</span>
       {sku && (
-        <span className="font-mono text-orika-charcoal shrink-0">{sku}</span>
+        <span className="font-mono text-brand-charcoal shrink-0">{sku}</span>
       )}
       <span className={color}>{text}</span>
     </div>

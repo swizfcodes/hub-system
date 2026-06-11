@@ -71,7 +71,7 @@ export function PipelineForecast({
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-display text-xl text-orika-cream mb-4">By stage</h3>
+        <h3 className="font-display text-xl text-brand-cream mb-4">By stage</h3>
         <div className="space-y-3">
           {rows.map((r) => {
             const bar = (r.totalValue / maxValue) * 100;
@@ -83,25 +83,25 @@ export function PipelineForecast({
                       className="w-2 h-2 rounded-full"
                       style={{ background: r.colour }}
                     />
-                    <span className="font-semibold text-orika-cream truncate">
+                    <span className="font-semibold text-brand-cream truncate">
                       {r.stage_label}
                     </span>
-                    <span className="text-orika-smoke">·</span>
-                    <span className="text-orika-smoke">
+                    <span className="text-brand-smoke">·</span>
+                    <span className="text-brand-smoke">
                       {r.count} deal{r.count === 1 ? "" : "s"}
                     </span>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-orika-cream">
+                    <div className="font-mono text-brand-cream">
                       {fmtMoney(r.totalValue, currency)}
                     </div>
-                    <div className="text-[0.6rem] text-orika-smoke">
+                    <div className="text-[0.6rem] text-brand-smoke">
                       weighted {fmtMoney(r.weighted, currency)} · avg{" "}
                       {Math.round(r.avgProb)}%
                     </div>
                   </div>
                 </div>
-                <div className="h-2 rounded-full bg-orika-graphite overflow-hidden">
+                <div className="h-2 rounded-full bg-brand-graphite overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${bar}%`, background: r.colour }}
@@ -129,16 +129,16 @@ function Big({
 }) {
   return (
     <div>
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
       <div
-        className={`text-3xl font-display mt-1 tabular-nums ${tone === "gold" ? "text-orika-gold" : "text-orika-cream"}`}
+        className={`text-3xl font-display mt-1 tabular-nums ${tone === "gold" ? "text-brand-accent" : "text-brand-cream"}`}
       >
         {value}
       </div>
       {hint && (
-        <div className="text-[0.65rem] text-orika-smoke mt-1">{hint}</div>
+        <div className="text-[0.65rem] text-brand-smoke mt-1">{hint}</div>
       )}
     </div>
   );

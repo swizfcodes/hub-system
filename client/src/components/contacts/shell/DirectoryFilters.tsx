@@ -48,7 +48,7 @@ export function DirectoryFilters({ value, onChange }: Props) {
               value.search ? (
                 <button
                   onClick={() => update({ search: "" })}
-                  className="text-orika-smoke hover:text-orika-cream"
+                  className="text-brand-smoke hover:text-brand-cream"
                   aria-label="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -66,7 +66,7 @@ export function DirectoryFilters({ value, onChange }: Props) {
         >
           Filters{" "}
           {hasAdvanced && (
-            <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-orika-black/20 text-[0.55rem]">
+            <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand-black/20 text-[0.55rem]">
               ●
             </span>
           )}

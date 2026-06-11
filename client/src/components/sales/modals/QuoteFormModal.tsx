@@ -184,10 +184,10 @@ function ProductSearchRow({
               width: dropRect.width,
               zIndex: 9999,
             }}
-            className="rounded-lg border border-white/10 bg-orika-charcoal shadow-xl max-h-56 overflow-y-auto"
+            className="rounded-lg border border-white/10 bg-brand-charcoal shadow-xl max-h-56 overflow-y-auto"
           >
             {isFetching && results.length === 0 ? (
-              <div className="px-3 py-3 text-xs text-orika-smoke">Loading…</div>
+              <div className="px-3 py-3 text-xs text-brand-smoke">Loading…</div>
             ) : results.length > 0 ? (
               results.map(
                 (p: {
@@ -203,17 +203,17 @@ function ProductSearchRow({
                       e.preventDefault();
                       handleSelect(p);
                     }}
-                    className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+                    className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-brand-graphite/40 transition-colors"
                   >
                     <div>
-                      <p className="text-xs font-medium text-orika-cream">
+                      <p className="text-xs font-medium text-brand-cream">
                         {p.name}
                       </p>
                       {p.sku && (
-                        <p className="text-[10px] text-orika-smoke">{p.sku}</p>
+                        <p className="text-[10px] text-brand-smoke">{p.sku}</p>
                       )}
                     </div>
-                    <span className="text-xs font-semibold text-orika-gold tabular-nums ml-3 shrink-0">
+                    <span className="text-xs font-semibold text-brand-accent tabular-nums ml-3 shrink-0">
                       {fmtMoney(p.selling_price, currency)}
                     </span>
                   </button>
@@ -221,7 +221,7 @@ function ProductSearchRow({
               )
             ) : (
               <div className="px-3 py-3">
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {query
                     ? `No products found for "${query}"`
                     : "No active products found"}
@@ -235,18 +235,18 @@ function ProductSearchRow({
 
   return (
     <div ref={wrapRef} className="relative sm:col-span-2">
-      <label className="mb-1 block text-xs text-orika-smoke">
+      <label className="mb-1 block text-xs text-brand-smoke">
         Search Catalogue
       </label>
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke" />
         <input
           type="text"
           value={query}
           onChange={handleChange}
           onFocus={handleFocus}
           placeholder="Click to browse or type to filter…"
-          className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
+          className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 pl-8 pr-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none"
         />
       </div>
       {dropdown}
@@ -308,7 +308,7 @@ function StepCustomer({
         control={form.control}
         render={({ field }) => (
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-cloud">
+            <label className="mb-1.5 block text-xs font-medium text-brand-cloud">
               CRM Deal (optional)
             </label>
             <Input {...field} placeholder="Link to a CRM deal" />
@@ -323,7 +323,7 @@ function StepCustomer({
         render={({ field, fieldState }) => (
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-              <label className="text-xs font-medium text-orika-cloud">
+              <label className="text-xs font-medium text-brand-cloud">
                 Valid Until *
               </label>
               <div className="flex gap-1">
@@ -335,8 +335,8 @@ function StepCustomer({
                     className={cn(
                       "px-2 py-0.5 rounded-md text-[0.65rem] font-medium border transition-colors",
                       field.value === addDays(days)
-                        ? "bg-orika-gold/20 border-orika-gold text-orika-gold"
-                        : "border-white/10 text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold",
+                        ? "bg-brand-accent/20 border-brand-accent text-brand-accent"
+                        : "border-white/10 text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent",
                     )}
                   >
                     {label}
@@ -355,7 +355,7 @@ function StepCustomer({
         control={form.control}
         render={({ field }) => (
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-cloud">
+            <label className="mb-1.5 block text-xs font-medium text-brand-cloud">
               Payment Terms
             </label>
             <div className="flex flex-wrap gap-1 mb-2">
@@ -367,8 +367,8 @@ function StepCustomer({
                   className={cn(
                     "px-2 py-0.5 rounded-md text-[0.65rem] font-medium border transition-colors",
                     field.value === value
-                      ? "bg-orika-gold/20 border-orika-gold text-orika-gold"
-                      : "border-white/10 text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold",
+                      ? "bg-brand-accent/20 border-brand-accent text-brand-accent"
+                      : "border-white/10 text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent",
                   )}
                 >
                   {label}
@@ -410,17 +410,17 @@ function StepProducts({
       {fields.map((field, i) => (
         <div
           key={field.id}
-          className="rounded-lg border border-white/5 bg-orika-graphite/20 p-3"
+          className="rounded-lg border border-white/5 bg-brand-graphite/20 p-3"
         >
           <div className="flex items-start justify-between gap-2 mb-3">
-            <span className="text-xs font-medium text-orika-smoke">
+            <span className="text-xs font-medium text-brand-smoke">
               Line {i + 1}
             </span>
             {fields.length > 1 && (
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="text-orika-smoke hover:text-red-400 transition-colors"
+                className="text-brand-smoke hover:text-red-400 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -448,7 +448,7 @@ function StepProducts({
               control={form.control}
               render={({ field: f, fieldState }) => (
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-xs text-orika-smoke">
+                  <label className="mb-1 block text-xs text-brand-smoke">
                     Description *
                   </label>
                   <Input
@@ -507,9 +507,9 @@ function StepProducts({
               )}
             />
             <div className="flex items-end">
-              <p className="text-xs text-orika-smoke">
+              <p className="text-xs text-brand-smoke">
                 Line total:{" "}
-                <span className="font-medium text-orika-cream">
+                <span className="font-medium text-brand-cream">
                   {fmtMoney(
                     (() => {
                       const q = lines[i]?.quantity ?? 0;
@@ -530,7 +530,7 @@ function StepProducts({
       <button
         type="button"
         onClick={() => append(DEFAULT_LINE)}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 py-3 text-sm text-orika-smoke transition-colors hover:border-orika-gold/40 hover:text-orika-gold"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 py-3 text-sm text-brand-smoke transition-colors hover:border-brand-accent/40 hover:text-brand-accent"
       >
         <Plus className="h-4 w-4" /> Add line item
       </button>
@@ -554,7 +554,7 @@ function StepPricing({
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-2 block text-xs font-medium text-orika-cloud">
+        <label className="mb-2 block text-xs font-medium text-brand-cloud">
           Order-Level Discount
         </label>
         <div className="flex gap-2">
@@ -600,8 +600,8 @@ function StepPricing({
               className={cn(
                 "relative w-9 h-5 rounded-full transition-colors flex-shrink-0",
                 f.value !== false
-                  ? "bg-orika-gold"
-                  : "bg-orika-graphite border border-white/10",
+                  ? "bg-brand-accent"
+                  : "bg-brand-graphite border border-white/10",
               )}
             >
               <span
@@ -612,10 +612,10 @@ function StepPricing({
               />
             </div>
             <div>
-              <p className="text-xs font-medium text-orika-cloud">
+              <p className="text-xs font-medium text-brand-cloud">
                 Apply VAT (7.5%)
               </p>
-              <p className="text-[0.65rem] text-orika-smoke">
+              <p className="text-[0.65rem] text-brand-smoke">
                 {f.value !== false
                   ? "VAT will be added to the net amount"
                   : "Zero-rated — no VAT on this quotation"}
@@ -629,7 +629,7 @@ function StepPricing({
         control={form.control}
         render={({ field }) => (
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-cloud">
+            <label className="mb-1.5 block text-xs font-medium text-brand-cloud">
               Notes
             </label>
             <Textarea
@@ -645,7 +645,7 @@ function StepPricing({
         control={form.control}
         render={({ field }) => (
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-cloud">
+            <label className="mb-1.5 block text-xs font-medium text-brand-cloud">
               Terms & Conditions
             </label>
             <Textarea
@@ -685,10 +685,10 @@ function StepReview({
 }: StepReviewProps) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-orika-cloud">
+      <p className="text-sm text-brand-cloud">
         Review the totals before creating the quotation.
       </p>
-      <div className="rounded-lg border border-white/5 bg-orika-graphite/20 p-4 space-y-2">
+      <div className="rounded-lg border border-white/5 bg-brand-graphite/20 p-4 space-y-2">
         <TotalRow
           label="Line Subtotal"
           value={fmtMoney(lineSubtotal, currency)}
@@ -710,7 +710,7 @@ function StepReview({
           <TotalRow label="Total" value={fmtMoney(total, currency)} bold />
         </div>
       </div>
-      <p className="text-xs text-orika-smoke">
+      <p className="text-xs text-brand-smoke">
         {lineCount} line item{lineCount !== 1 ? "s" : ""}. A PDF will be
         available on the quotation page. The quote will be saved as a draft.
       </p>
@@ -727,8 +727,8 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-center gap-2 border-b border-black/10 pb-2">
-      <Icon className="h-4 w-4 text-orika-gold" />
-      <h3 className="text-sm font-semibold text-orika-black">{title}</h3>
+      <Icon className="h-4 w-4 text-brand-accent" />
+      <h3 className="text-sm font-semibold text-brand-black">{title}</h3>
     </div>
   );
 }
@@ -746,17 +746,17 @@ function TotalRow({
 }) {
   return (
     <div className="flex justify-between gap-4 text-sm">
-      <span className={muted ? "text-orika-smoke" : "text-orika-cloud"}>
+      <span className={muted ? "text-brand-smoke" : "text-brand-cloud"}>
         {label}
       </span>
       <span
         className={cn(
           "tabular-nums",
           bold
-            ? "font-semibold text-orika-cream"
+            ? "font-semibold text-brand-cream"
             : muted
-              ? "text-orika-smoke"
-              : "text-orika-cream",
+              ? "text-brand-smoke"
+              : "text-brand-cream",
         )}
       >
         {value}
@@ -929,7 +929,7 @@ export function QuoteFormModal({ open, onClose, onCreated, prefill }: Props) {
               key={s.key}
               className={cn(
                 "h-1 flex-1 rounded-full transition-colors",
-                i <= stepIndex ? "bg-orika-gold" : "bg-orika-graphite",
+                i <= stepIndex ? "bg-brand-accent" : "bg-brand-graphite",
               )}
             />
           ))}

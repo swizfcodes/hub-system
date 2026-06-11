@@ -167,7 +167,7 @@ export function CreateDeliveryModal({
             )}
           </div>
         ) : (
-          <div className="rounded-xl border border-orika-cloud/40 bg-orika-cream/30 px-4 py-3 text-sm text-orika-black">
+          <div className="rounded-xl border border-brand-cloud/40 bg-brand-cream/30 px-4 py-3 text-sm text-brand-black">
             For <strong>{prefill?.contact?.display_name}</strong> — items copy
             from the {prefill?.reference_type === "sales_order" ? "order" : "sale"}{" "}
             automatically.
@@ -320,7 +320,7 @@ export function CreateDeliveryModal({
             {fields.map((f, i) => (
               <div
                 key={f.id}
-                className="rounded-xl border border-orika-cloud/40 p-3 space-y-2.5"
+                className="rounded-xl border border-brand-cloud/40 p-3 space-y-2.5"
               >
                 <CatalogueSearchInput
                   surface="light"
@@ -341,7 +341,7 @@ export function CreateDeliveryModal({
                         <Input
                           {...field}
                           label="Item *"
-                          placeholder="e.g. Orika Rouge 500ml"
+                          placeholder="e.g. Rouge 500ml"
                           surface="light"
                           error={fieldState.error?.message}
                         />
@@ -368,7 +368,7 @@ export function CreateDeliveryModal({
                     <button
                       type="button"
                       onClick={() => remove(i)}
-                      className="p-2.5 mb-1 text-orika-black/40 hover:text-state-danger"
+                      className="p-2.5 mb-1 text-brand-black/40 hover:text-state-danger"
                       aria-label="Remove item"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -382,7 +382,7 @@ export function CreateDeliveryModal({
               onClick={() =>
                 append({ product_id: "", description: "", quantity: 1 })
               }
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orika-cloud/60 py-2.5 text-xs font-medium text-orika-black/60 hover:border-orika-black/40 hover:text-orika-black"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand-cloud/60 py-2.5 text-xs font-medium text-brand-black/60 hover:border-brand-black/40 hover:text-brand-black"
             >
               <Plus className="w-3.5 h-3.5" />
               Add another item

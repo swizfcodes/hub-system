@@ -72,7 +72,7 @@ export function LogActivityFab({ dealId }: Props) {
               <button
                 key={t}
                 onClick={() => open(t)}
-                className="inline-flex items-center gap-2 pl-2 pr-3 py-2 rounded-full bg-orika-charcoal border border-orika-graphite shadow-card hover:border-orika-gold hover:shadow-glow-sm transition-all"
+                className="inline-flex items-center gap-2 pl-2 pr-3 py-2 rounded-full bg-brand-charcoal border border-brand-graphite shadow-card hover:border-brand-accent hover:shadow-glow-sm transition-all"
               >
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -80,11 +80,11 @@ export function LogActivityFab({ dealId }: Props) {
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-xs font-semibold text-orika-cream whitespace-nowrap">
+                <span className="text-xs font-semibold text-brand-cream whitespace-nowrap">
                   {m.label}
                 </span>
                 {m.shortcut && (
-                  <kbd className="hidden lg:inline text-[0.55rem] px-1 py-0.5 rounded bg-orika-black/40 text-orika-smoke">
+                  <kbd className="hidden lg:inline text-[0.55rem] px-1 py-0.5 rounded bg-brand-black/40 text-brand-smoke">
                     {m.shortcut}
                   </kbd>
                 )}
@@ -96,7 +96,7 @@ export function LogActivityFab({ dealId }: Props) {
         {/* Main FAB */}
         <button
           onClick={() => open("call")}
-          className="w-14 h-14 rounded-full bg-orika-gold text-orika-black flex items-center justify-center shadow-glow-md hover:scale-105 hover:shadow-glow-lg transition-all"
+          className="w-14 h-14 rounded-full bg-brand-accent text-brand-black flex items-center justify-center shadow-glow-md hover:scale-105 hover:shadow-glow-lg transition-all"
           aria-label="Log activity"
         >
           <Plus className="w-6 h-6" />

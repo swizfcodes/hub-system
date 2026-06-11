@@ -159,20 +159,20 @@ export default function TransfersPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-sm text-orika-cream">
+                        <span className="font-mono text-sm text-brand-cream">
                           {t.transfer_number}
                         </span>
                         <Badge tone={STATUS_TONE[t.status]} size="xs" dot>
                           {t.status.replace("_", " ")}
                         </Badge>
                       </div>
-                      <div className="text-[0.65rem] text-orika-cloud mt-1 inline-flex items-center gap-1.5">
+                      <div className="text-[0.65rem] text-brand-cloud mt-1 inline-flex items-center gap-1.5">
                         <MapPin className="w-2.5 h-2.5" />{" "}
                         {t.from_location_name}
-                        <span className="text-orika-smoke">→</span>
+                        <span className="text-brand-smoke">→</span>
                         <MapPin className="w-2.5 h-2.5" /> {t.to_location_name}
                       </div>
-                      <div className="text-[0.6rem] text-orika-smoke mt-0.5">
+                      <div className="text-[0.6rem] text-brand-smoke mt-0.5">
                         Initiated {fmtRelative(t.initiated_at)} ·{" "}
                         {t.initiated_by_name ?? "—"}
                       </div>

@@ -103,14 +103,14 @@ export function DispatchModal({ open, onClose, delivery, onDispatched }: Props) 
     >
       <div className="space-y-5">
         {/* Address confirmation */}
-        <div className="flex items-start gap-2.5 rounded-xl border border-orika-cloud/40 bg-orika-cream/30 px-4 py-3">
-          <MapPin className="h-4 w-4 shrink-0 text-orika-black/60 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-xl border border-brand-cloud/40 bg-brand-cream/30 px-4 py-3">
+          <MapPin className="h-4 w-4 shrink-0 text-brand-black/60 mt-0.5" />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-orika-black">
+            <p className="text-sm font-medium text-brand-black">
               {delivery.contact_name}
               {delivery.primary_phone ? ` · ${delivery.primary_phone}` : ""}
             </p>
-            <p className="text-xs text-orika-black/60 mt-0.5">
+            <p className="text-xs text-brand-black/60 mt-0.5">
               {addressStr || "No address recorded"}
             </p>
           </div>
@@ -130,8 +130,8 @@ export function DispatchModal({ open, onClose, delivery, onDispatched }: Props) 
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-xs font-medium transition-all border",
                   company === c
-                    ? "border-orika-gold bg-orika-gold/10 text-orika-black"
-                    : "border-orika-cloud/50 text-orika-black/60 hover:border-orika-black/30",
+                    ? "border-brand-accent bg-brand-accent/10 text-brand-black"
+                    : "border-brand-cloud/50 text-brand-black/60 hover:border-brand-black/30",
                 )}
               >
                 {c}
@@ -189,13 +189,13 @@ export function DispatchModal({ open, onClose, delivery, onDispatched }: Props) 
           className={cn(
             "flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs",
             hasEmail
-              ? "bg-orika-gold/5 border border-orika-gold/20 text-orika-black/70"
+              ? "bg-brand-accent/5 border border-brand-accent/20 text-brand-black/70"
               : "bg-state-warn/5 border border-state-warn/30 text-state-warn",
           )}
         >
           {hasEmail ? (
             <>
-              <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-orika-gold" />
+              <Mail className="w-3.5 h-3.5 mt-0.5 shrink-0 text-brand-accent" />
               <p>
                 The customer will be emailed the dispatch notice, driver
                 details and a link to <strong>sign for the delivery</strong> on

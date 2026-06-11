@@ -35,7 +35,7 @@ export function TypeTabBar({ active, onChange, counts = {} }: Props) {
       role="tablist"
       className="flex overflow-x-auto hide-scrollbar -mx-1 px-1"
     >
-      <div className="inline-flex p-1 gap-1 rounded-xl bg-orika-charcoal border border-orika-graphite">
+      <div className="inline-flex p-1 gap-1 rounded-xl bg-brand-charcoal border border-brand-graphite">
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = active === t.key;
@@ -49,8 +49,8 @@ export function TypeTabBar({ active, onChange, counts = {} }: Props) {
               className={cn(
                 "inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg whitespace-nowrap text-xs font-semibold uppercase tracking-wide transition-all",
                 isActive
-                  ? "bg-orika-cream text-orika-black shadow-card"
-                  : "text-orika-smoke hover:text-orika-cream",
+                  ? "bg-brand-cream text-brand-black shadow-card"
+                  : "text-brand-smoke hover:text-brand-cream",
               )}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -60,8 +60,8 @@ export function TypeTabBar({ active, onChange, counts = {} }: Props) {
                   className={cn(
                     "inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded-full text-[0.6rem] font-bold",
                     isActive
-                      ? "bg-orika-black/10 text-orika-black"
-                      : "bg-orika-graphite text-orika-cloud",
+                      ? "bg-brand-black/10 text-brand-black"
+                      : "bg-brand-graphite text-brand-cloud",
                   )}
                 >
                   {c}

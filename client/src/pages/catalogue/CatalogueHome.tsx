@@ -282,11 +282,11 @@ function ProductsTab({
             ...cats.map((c) => ({ value: c.category_id, label: c.name })),
           ]}
         />
-        <div className="inline-flex rounded-xl border border-orika-graphite overflow-hidden">
+        <div className="inline-flex rounded-xl border border-brand-graphite overflow-hidden">
           <button
             onClick={() => downloadProductTemplate().catch(() => {})}
             title="Download the Excel import template"
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal text-orika-smoke hover:text-orika-cream border-r border-orika-graphite"
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-brand-charcoal text-brand-smoke hover:text-brand-cream border-r border-brand-graphite"
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Template</span>
@@ -294,13 +294,13 @@ function ProductsTab({
           <button
             onClick={() => setImporting(true)}
             title="Import products from a filled Excel template"
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-orika-charcoal text-orika-smoke hover:text-orika-cream"
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all bg-brand-charcoal text-brand-smoke hover:text-brand-cream"
           >
             <Upload className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Import</span>
           </button>
         </div>
-        <div className="inline-flex p-0.5 rounded-xl bg-orika-charcoal border border-orika-graphite">
+        <div className="inline-flex p-0.5 rounded-xl bg-brand-charcoal border border-brand-graphite">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s.key}
@@ -308,15 +308,15 @@ function ProductsTab({
               className={cn(
                 "inline-flex items-center px-3 py-1.5 rounded-lg text-[0.65rem] font-semibold uppercase tracking-wide transition-all",
                 statusFilter === s.key
-                  ? "bg-orika-graphite text-orika-cream"
-                  : "text-orika-smoke hover:text-orika-cream",
+                  ? "bg-brand-graphite text-brand-cream"
+                  : "text-brand-smoke hover:text-brand-cream",
               )}
             >
               {s.label}
             </button>
           ))}
         </div>
-        <div className="inline-flex p-0.5 rounded-xl bg-orika-charcoal border border-orika-graphite">
+        <div className="inline-flex p-0.5 rounded-xl bg-brand-charcoal border border-brand-graphite">
           {(["cards", "table"] as View[]).map((v) => (
             <button
               key={v}
@@ -324,8 +324,8 @@ function ProductsTab({
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.65rem] font-semibold uppercase tracking-wide transition-all",
                 view === v
-                  ? "bg-orika-graphite text-orika-cream"
-                  : "text-orika-smoke hover:text-orika-cream",
+                  ? "bg-brand-graphite text-brand-cream"
+                  : "text-brand-smoke hover:text-brand-cream",
               )}
             >
               {v === "cards" ? (
@@ -373,9 +373,9 @@ function ProductsTab({
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 overflow-hidden">
+        <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-orika-charcoal border-b border-orika-graphite">
+            <thead className="bg-brand-charcoal border-b border-brand-graphite">
               <tr>
                 <Th>Product</Th>
                 <Th>SKU</Th>
@@ -392,13 +392,13 @@ function ProductsTab({
                 <tr
                   key={p.product_id}
                   onClick={() => navigate(`/catalogue/${p.product_id}`)}
-                  className="border-b border-orika-graphite/40 hover:bg-orika-charcoal cursor-pointer"
+                  className="border-b border-brand-graphite/40 hover:bg-brand-charcoal cursor-pointer"
                 >
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       <ProductImage product={p} size="sm" />
                       <div className="min-w-0">
-                        <div className="text-orika-cream truncate flex items-center gap-1.5">
+                        <div className="text-brand-cream truncate flex items-center gap-1.5">
                           {p.name}
                           {!p.is_active && (
                             <Badge tone="warn" size="xs">
@@ -414,10 +414,10 @@ function ProductsTab({
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-orika-smoke text-xs">
+                  <td className="px-4 py-2.5 font-mono text-brand-smoke text-xs">
                     {p.sku}
                   </td>
-                  <td className="px-4 py-2.5 text-orika-cloud text-xs">
+                  <td className="px-4 py-2.5 text-brand-cloud text-xs">
                     {p.category_name ?? "—"}
                   </td>
                   <td className="px-4 py-2.5 text-right text-xs">
@@ -436,10 +436,10 @@ function ProductsTab({
                       hideCost
                     />
                   </td>
-                  <td className="px-4 py-2.5 text-right text-xs text-orika-cloud">
+                  <td className="px-4 py-2.5 text-right text-xs text-brand-cloud">
                     {p.reorder_level}
                   </td>
-                  <td className="px-4 py-2.5 text-[0.65rem] text-orika-smoke">
+                  <td className="px-4 py-2.5 text-[0.65rem] text-brand-smoke">
                     {fmtRelative(p.updated_at)}
                   </td>
                   <td
@@ -510,7 +510,7 @@ function Th({
   return (
     <th
       className={cn(
-        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-orika-smoke font-semibold",
+        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-brand-smoke font-semibold",
         className,
       )}
     >
@@ -576,14 +576,14 @@ function CategoriesTab({
       {cats.map((c) => (
         <div
           key={c.category_id}
-          className="rounded-xl border border-orika-graphite bg-orika-charcoal/60 p-4 flex items-center gap-3"
+          className="rounded-xl border border-brand-graphite bg-brand-charcoal/60 p-4 flex items-center gap-3"
         >
-          <div className="w-9 h-9 rounded-lg bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-brand-accent/15 text-brand-accent flex items-center justify-center">
             <Tag className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-orika-cream">
+              <span className="text-sm font-medium text-brand-cream">
                 {c.name}
               </span>
               {!c.is_active && (
@@ -593,7 +593,7 @@ function CategoriesTab({
               )}
             </div>
             {c.description && (
-              <p className="text-xs text-orika-smoke truncate">
+              <p className="text-xs text-brand-smoke truncate">
                 {c.description}
               </p>
             )}
@@ -693,11 +693,11 @@ function LocationsTab({
           {(locs ?? []).map((l) => (
             <div
               key={l.location_id}
-              className="rounded-xl border border-orika-graphite bg-orika-charcoal/60 p-4"
+              className="rounded-xl border border-brand-graphite bg-brand-charcoal/60 p-4"
             >
               <div className="flex items-center gap-2 mb-1">
-                <MapPin className="w-3.5 h-3.5 text-orika-gold" />
-                <span className="text-sm font-medium text-orika-cream">
+                <MapPin className="w-3.5 h-3.5 text-brand-accent" />
+                <span className="text-sm font-medium text-brand-cream">
                   {l.name}
                 </span>
                 {!l.is_active && (
@@ -706,11 +706,11 @@ function LocationsTab({
                   </Badge>
                 )}
               </div>
-              <div className="text-[0.65rem] text-orika-smoke uppercase tracking-widest">
+              <div className="text-[0.65rem] text-brand-smoke uppercase tracking-widest">
                 {l.location_type.replace(/_/g, " ")}
               </div>
               {l.address && (
-                <div className="text-xs text-orika-cloud mt-2">{l.address}</div>
+                <div className="text-xs text-brand-cloud mt-2">{l.address}</div>
               )}
             </div>
           ))}
@@ -720,12 +720,12 @@ function LocationsTab({
       {/* Create location modal */}
       {creating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-orika-black shadow-2xl p-6 space-y-5">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-brand-black shadow-2xl p-6 space-y-5">
             <div>
-              <h2 className="text-lg font-semibold text-orika-cream">
+              <h2 className="text-lg font-semibold text-brand-cream">
                 New Stock Location
               </h2>
-              <p className="text-xs text-orika-smoke mt-0.5">
+              <p className="text-xs text-brand-smoke mt-0.5">
                 Warehouses, showrooms, POS counters, and transit points all live
                 here.
               </p>
@@ -733,7 +733,7 @@ function LocationsTab({
 
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Name <span className="text-red-400">*</span>
                 </label>
                 <Input
@@ -746,7 +746,7 @@ function LocationsTab({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Location Type <span className="text-red-400">*</span>
                 </label>
                 <Select
@@ -762,9 +762,9 @@ function LocationsTab({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Address{" "}
-                  <span className="text-orika-smoke/40">(optional)</span>
+                  <span className="text-brand-smoke/40">(optional)</span>
                 </label>
                 <Input
                   type="text"

@@ -61,14 +61,14 @@ export function PermissionMatrix({
     <div className="overflow-x-auto rounded-2xl border border-white/5">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-white/10 bg-orika-charcoal">
-            <th className="sticky left-0 bg-orika-charcoal px-4 py-3 text-left text-[0.6rem] uppercase tracking-widest text-orika-smoke z-10">
+          <tr className="border-b border-white/10 bg-brand-charcoal">
+            <th className="sticky left-0 bg-brand-charcoal px-4 py-3 text-left text-[0.6rem] uppercase tracking-widest text-brand-smoke z-10">
               Role
             </th>
             {modules.map((m) => (
               <th
                 key={m.module}
-                className="px-3 py-3 text-center text-[0.6rem] uppercase tracking-widest text-orika-smoke min-w-[80px]"
+                className="px-3 py-3 text-center text-[0.6rem] uppercase tracking-widest text-brand-smoke min-w-[80px]"
               >
                 {MODULE_LABELS[m.module] ?? m.module}
               </th>
@@ -87,7 +87,7 @@ export function PermissionMatrix({
           ))}
         </tbody>
       </table>
-      <p className="px-4 py-2 text-[10px] text-orika-smoke/50">
+      <p className="px-4 py-2 text-[10px] text-brand-smoke/50">
         All {catalogue.length} modules shown — scroll horizontally. Click a
         role row to open the full editor.
       </p>
@@ -119,19 +119,19 @@ function RoleMatrixRow({
     <tr
       onClick={onSelect}
       className={cn(
-        "cursor-pointer transition-colors hover:bg-orika-graphite/20",
+        "cursor-pointer transition-colors hover:bg-brand-graphite/20",
         isSelected
-          ? "bg-orika-gold/5 border-l-2 border-orika-gold"
-          : "bg-orika-charcoal",
+          ? "bg-brand-accent/5 border-l-2 border-brand-accent"
+          : "bg-brand-charcoal",
       )}
     >
       <td className="sticky left-0 bg-inherit px-4 py-3 z-10">
         <div className="flex items-center gap-2">
-          <Shield className="h-3.5 w-3.5 text-orika-smoke/50 shrink-0" />
+          <Shield className="h-3.5 w-3.5 text-brand-smoke/50 shrink-0" />
           <div>
-            <p className="font-medium text-orika-cream">{role.role_name}</p>
+            <p className="font-medium text-brand-cream">{role.role_name}</p>
             {role.is_system && (
-              <p className="text-[9px] text-orika-smoke/50">System role</p>
+              <p className="text-[9px] text-brand-smoke/50">System role</p>
             )}
           </div>
         </div>
@@ -151,7 +151,7 @@ function RoleMatrixRow({
                 <Check className="h-3 w-3" />
               </span>
             ) : hasView ? (
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orika-smoke/20 text-orika-smoke mx-auto">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-smoke/20 text-brand-smoke mx-auto">
                 <Check className="h-3 w-3" />
               </span>
             ) : (
@@ -234,11 +234,11 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Shield className="h-5 w-5 text-orika-gold" />
+        <Shield className="h-5 w-5 text-brand-accent" />
         <div>
-          <h3 className="font-semibold text-orika-cream">{role.role_name}</h3>
+          <h3 className="font-semibold text-brand-cream">{role.role_name}</h3>
           {role.description && (
-            <p className="text-xs text-orika-smoke">{role.description}</p>
+            <p className="text-xs text-brand-smoke">{role.description}</p>
           )}
         </div>
         {isSystemRole && (
@@ -265,10 +265,10 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                 onClick={() =>
                   setExpandedModule(isExpanded ? null : cat.module)
                 }
-                className="flex w-full items-center justify-between px-4 py-3 bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-3 bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <p className="text-sm font-medium text-orika-cream">
+                  <p className="text-sm font-medium text-brand-cream">
                     {MODULE_LABELS[cat.module] ?? cat.module}
                   </p>
                   {modulePerms.length > 0 && (
@@ -292,7 +292,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                 </div>
                 <ChevronDown
                   className={cn(
-                    "h-4 w-4 text-orika-smoke transition-transform",
+                    "h-4 w-4 text-brand-smoke transition-transform",
                     isExpanded && "rotate-180",
                   )}
                 />
@@ -300,7 +300,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
 
               {/* Action toggles */}
               {isExpanded && (
-                <div className="border-t border-white/5 bg-orika-black/20 px-4 py-3 space-y-3">
+                <div className="border-t border-white/5 bg-brand-black/20 px-4 py-3 space-y-3">
                   {/* Action grid */}
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {ALL_ACTIONS.filter((a) => cat.actions.includes(a)).map(
@@ -317,8 +317,8 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                             className={cn(
                               "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all",
                               granted
-                                ? "border-transparent text-orika-cream"
-                                : "border-white/10 text-orika-smoke hover:border-white/20",
+                                ? "border-transparent text-brand-cream"
+                                : "border-white/10 text-brand-smoke hover:border-white/20",
                               isSystemRole && "cursor-not-allowed opacity-60",
                             )}
                             style={
@@ -346,7 +346,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                   {/* Record scope + hidden fields for each granted action */}
                   {modulePerms.length > 0 && !isSystemRole && (
                     <div className="border-t border-white/5 pt-3 space-y-2">
-                      <p className="text-[0.6rem] uppercase tracking-widest text-orika-smoke/60">
+                      <p className="text-[0.6rem] uppercase tracking-widest text-brand-smoke/60">
                         Data access refinement
                       </p>
                       {modulePerms
@@ -356,7 +356,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                             key={perm.permission_id}
                             className="flex flex-wrap items-center gap-3"
                           >
-                            <span className="text-xs text-orika-smoke w-16">
+                            <span className="text-xs text-brand-smoke w-16">
                               Scope:
                             </span>
                             <select
@@ -369,7 +369,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                                   hidden_fields: perm.hidden_fields,
                                 })
                               }
-                              className="rounded-lg border border-white/10 bg-orika-charcoal px-2 py-1 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                              className="rounded-lg border border-white/10 bg-brand-charcoal px-2 py-1 text-xs text-brand-cream focus:border-brand-accent/40 focus:outline-none"
                             >
                               {Object.entries(RECORD_SCOPE_META).map(
                                 ([v, m]) => (
@@ -381,7 +381,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                             </select>
 
                             {/* Hidden fields */}
-                            <span className="text-xs text-orika-smoke">
+                            <span className="text-xs text-brand-smoke">
                               Hide:
                             </span>
                             <div className="flex flex-wrap gap-1">
@@ -412,7 +412,7 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
                                       "rounded px-1.5 py-0.5 text-[9px] font-medium transition-all",
                                       isHidden
                                         ? "bg-red-900/30 text-red-400 border border-red-500/30"
-                                        : "bg-orika-graphite/30 text-orika-smoke/50 border border-transparent hover:border-white/10",
+                                        : "bg-brand-graphite/30 text-brand-smoke/50 border border-transparent hover:border-white/10",
                                     )}
                                   >
                                     {f.label}

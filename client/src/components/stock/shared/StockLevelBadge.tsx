@@ -30,8 +30,8 @@ export function StockLevelBadge({
   const cls = {
     danger: "bg-state-danger/15 text-state-danger border-state-danger/30",
     warn: "bg-state-warn/15 text-state-warn border-state-warn/30",
-    sage: "bg-living-sage/15 text-living-sage border-living-sage/30",
-    neutral: "bg-orika-graphite/40 text-orika-cloud border-orika-graphite",
+    sage: "bg-accent2/15 text-accent2 border-accent2/30",
+    neutral: "bg-brand-graphite/40 text-brand-cloud border-brand-graphite",
   }[tone];
 
   const label = out
@@ -57,13 +57,13 @@ export function StockLevelBadge({
             : tone === "warn"
               ? "bg-state-warn"
               : tone === "sage"
-                ? "bg-living-sage"
-                : "bg-orika-cloud",
+                ? "bg-accent2"
+                : "bg-brand-cloud",
         )}
       />
       {label}
       {available != null && available !== onHand && (
-        <span className="text-orika-smoke">· {available} avail.</span>
+        <span className="text-brand-smoke">· {available} avail.</span>
       )}
     </span>
   );

@@ -95,16 +95,16 @@ export function CrmQuickActionsFab() {
       {/* Backdrop on mobile */}
       {!isDesktop && open && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-orika-black/70 backdrop-blur-sm animate-fade-in"
+          className="lg:hidden fixed inset-0 z-40 bg-brand-black/70 backdrop-blur-sm animate-fade-in"
           onClick={close}
         />
       )}
 
       {/* Mobile bottom-sheet */}
       {!isDesktop && open && (
-        <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-orika-charcoal border-t border-orika-graphite rounded-t-3xl p-5 pb-safe animate-slide-up shadow-modal">
-          <div className="w-12 h-1 rounded-full bg-orika-graphite mx-auto mb-4" />
-          <h3 className="text-[0.7rem] tracking-widest uppercase text-orika-gold mb-3 text-center">
+        <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-brand-charcoal border-t border-brand-graphite rounded-t-3xl p-5 pb-safe animate-slide-up shadow-modal">
+          <div className="w-12 h-1 rounded-full bg-brand-graphite mx-auto mb-4" />
+          <h3 className="text-[0.7rem] tracking-widest uppercase text-brand-accent mb-3 text-center">
             Quick actions
           </h3>
           <div className="space-y-2">
@@ -114,9 +114,9 @@ export function CrmQuickActionsFab() {
                 <button
                   key={a.key}
                   onClick={a.onClick}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-orika-graphite/60 hover:bg-orika-graphite text-orika-cream transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-brand-graphite/60 hover:bg-brand-graphite text-brand-cream transition-colors"
                 >
-                  <span className="w-10 h-10 rounded-full bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+                  <span className="w-10 h-10 rounded-full bg-brand-accent/15 text-brand-accent flex items-center justify-center">
                     <Icon className="w-5 h-5" />
                   </span>
                   <span className="text-sm font-medium">{a.label}</span>
@@ -148,12 +148,12 @@ export function CrmQuickActionsFab() {
                 <button
                   key={a.key}
                   onClick={a.onClick}
-                  className="inline-flex items-center gap-2 pl-2 pr-4 py-2 rounded-full bg-orika-charcoal border border-orika-graphite shadow-card hover:border-orika-gold hover:shadow-glow-sm transition-all"
+                  className="inline-flex items-center gap-2 pl-2 pr-4 py-2 rounded-full bg-brand-charcoal border border-brand-graphite shadow-card hover:border-brand-accent hover:shadow-glow-sm transition-all"
                 >
-                  <span className="w-7 h-7 rounded-full bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+                  <span className="w-7 h-7 rounded-full bg-brand-accent/15 text-brand-accent flex items-center justify-center">
                     <Icon className="w-3.5 h-3.5" />
                   </span>
-                  <span className="text-xs font-semibold text-orika-cream whitespace-nowrap">
+                  <span className="text-xs font-semibold text-brand-cream whitespace-nowrap">
                     {a.label}
                   </span>
                 </button>
@@ -167,7 +167,7 @@ export function CrmQuickActionsFab() {
       <button
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "lg:hidden fixed bottom-20 right-5 z-50 w-14 h-14 rounded-full bg-orika-gold text-orika-black flex items-center justify-center shadow-glow-md transition-all",
+          "lg:hidden fixed bottom-20 right-5 z-50 w-14 h-14 rounded-full bg-brand-accent text-brand-black flex items-center justify-center shadow-glow-md transition-all",
           open && "rotate-45",
         )}
         aria-label={open ? "Close quick actions" : "Open quick actions"}

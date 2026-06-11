@@ -90,7 +90,7 @@ export default function InvoiceDetail() {
   if (!invoice) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Invoice not found.</p>
+        <p className="text-brand-smoke">Invoice not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -197,8 +197,8 @@ export default function InvoiceDetail() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left — Invoice details */}
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-4">
             Invoice Details
           </p>
           <DetailRow label="Customer" value={invoice.contact_name} />
@@ -223,7 +223,7 @@ export default function InvoiceDetail() {
           {/* Payment instructions / link */}
           {invoice.payment_instructions && (
             <div className="flex justify-between gap-2 pt-1">
-              <span className="text-xs text-orika-smoke shrink-0">
+              <span className="text-xs text-brand-smoke shrink-0">
                 Payment Link
               </span>
               {isUrl(invoice.payment_instructions) ? (
@@ -231,13 +231,13 @@ export default function InvoiceDetail() {
                   href={invoice.payment_instructions}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs font-medium text-orika-gold hover:underline"
+                  className="flex items-center gap-1 text-xs font-medium text-brand-accent hover:underline"
                 >
                   Open Link
                   <ExternalLink className="h-3 w-3" />
                 </a>
               ) : (
-                <span className="text-xs text-orika-cream max-w-[60%] text-right">
+                <span className="text-xs text-brand-cream max-w-[60%] text-right">
                   {invoice.payment_instructions}
                 </span>
               )}
@@ -246,8 +246,8 @@ export default function InvoiceDetail() {
         </div>
 
         {/* Right — Financials */}
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-4">
             Summary
           </p>
           <AmountRow
@@ -297,9 +297,9 @@ export default function InvoiceDetail() {
 
       {/* Line items */}
       {invoice.lines && invoice.lines.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden">
           <div className="px-6 py-4 border-b border-white/5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Line Items
             </p>
           </div>
@@ -316,7 +316,7 @@ export default function InvoiceDetail() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -326,24 +326,24 @@ export default function InvoiceDetail() {
             <tbody className="divide-y divide-white/5">
               {invoice.lines.map((line) => (
                 <tr key={line.line_id}>
-                  <td className="px-4 py-3 text-orika-cream">
+                  <td className="px-4 py-3 text-brand-cream">
                     {line.description}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                  <td className="px-4 py-3 text-brand-smoke tabular-nums">
                     {line.quantity}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                  <td className="px-4 py-3 text-brand-smoke tabular-nums">
                     {fmtMoney(line.unit_price, currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                  <td className="px-4 py-3 text-brand-smoke tabular-nums">
                     {line.discount_amount > 0
                       ? fmtMoney(line.discount_amount, currency)
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                  <td className="px-4 py-3 text-brand-smoke tabular-nums">
                     {fmtMoney(line.vat_amount, currency)}
                   </td>
-                  <td className="px-4 py-3 font-medium text-orika-cream tabular-nums">
+                  <td className="px-4 py-3 font-medium text-brand-cream tabular-nums">
                     {fmtMoney(line.line_total, currency)}
                   </td>
                 </tr>
@@ -355,9 +355,9 @@ export default function InvoiceDetail() {
 
       {/* Payments ledger */}
       {invoice.payments && invoice.payments.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden">
           <div className="px-6 py-4 border-b border-white/5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Payment History
             </p>
           </div>
@@ -368,7 +368,7 @@ export default function InvoiceDetail() {
                   (h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-medium uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -379,16 +379,16 @@ export default function InvoiceDetail() {
             <tbody className="divide-y divide-white/5">
               {invoice.payments.map((p) => (
                 <tr key={p.payment_id}>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDate(p.payment_date)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud">
+                  <td className="px-4 py-3 text-brand-cloud">
                     {PAYMENT_METHOD_LABEL[p.payment_method]}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke font-mono text-xs">
+                  <td className="px-4 py-3 text-brand-smoke font-mono text-xs">
                     {p.reference ?? p.paystack_reference ?? "—"}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-orika-cream tabular-nums">
+                  <td className="px-4 py-3 font-semibold text-brand-cream tabular-nums">
                     {fmtMoney(p.amount, currency)}
                   </td>
                   <td className="px-4 py-3">
@@ -407,7 +407,7 @@ export default function InvoiceDetail() {
 
       {/* Credit notes section */}
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Credit Notes
         </p>
         {!["paid", "voided"].includes(invoice.status) && (
@@ -429,7 +429,7 @@ export default function InvoiceDetail() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-orika-smoke hover:text-red-400"
+              className="text-brand-smoke hover:text-red-400"
               onClick={() => setShowWriteOff(true)}
             >
               <FileX className="h-4 w-4" />
@@ -494,14 +494,14 @@ function DetailRow({
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className="text-orika-smoke shrink-0">{label}</span>
+      <span className="text-brand-smoke shrink-0">{label}</span>
       <span
         className={cn(
           "text-right",
           capitalize && "capitalize",
           highlight === "danger" && "text-red-400 font-medium",
           highlight === "warning" && "text-amber-400 font-medium",
-          !highlight && "text-orika-cream",
+          !highlight && "text-brand-cream",
         )}
       >
         {value}
@@ -527,7 +527,7 @@ function AmountRow({
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className={muted ? "text-orika-smoke" : "text-orika-cloud"}>
+      <span className={muted ? "text-brand-smoke" : "text-brand-cloud"}>
         {label}
       </span>
       <span
@@ -536,7 +536,7 @@ function AmountRow({
           bold ? "font-semibold" : "",
           highlight === "warning" && value > 0 ? "text-amber-400" : "",
           highlight === "success" && value === 0 ? "text-green-400" : "",
-          !highlight && (muted ? "text-orika-smoke" : "text-orika-cream"),
+          !highlight && (muted ? "text-brand-smoke" : "text-brand-cream"),
         )}
       >
         {fmtMoney(value, currency)}

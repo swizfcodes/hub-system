@@ -120,15 +120,15 @@ export default function CurrencyRates() {
                 <Card key={pair} className="p-5">
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div>
-                      <div className="text-xs uppercase tracking-widest text-orika-smoke">
+                      <div className="text-xs uppercase tracking-widest text-brand-smoke">
                         {pair}
                       </div>
-                      <div className="font-display text-3xl text-orika-cream mt-0.5 tabular-nums">
+                      <div className="font-display text-3xl text-brand-cream mt-0.5 tabular-nums">
                         {latest.rate.toLocaleString("en-NG", {
                           maximumFractionDigits: 4,
                         })}
                       </div>
-                      <div className="text-xs text-orika-smoke mt-1 flex items-center gap-1.5">
+                      <div className="text-xs text-brand-smoke mt-1 flex items-center gap-1.5">
                         <Database className="w-3 h-3" /> {latest.source} ·{" "}
                         {fmtDateTime(latest.valid_at)}
                       </div>
@@ -144,17 +144,17 @@ export default function CurrencyRates() {
                     {list.slice(0, 8).map((r) => (
                       <div
                         key={r.rate_id}
-                        className="p-2 rounded-lg bg-orika-black/30 border border-orika-graphite"
+                        className="p-2 rounded-lg bg-brand-black/30 border border-brand-graphite"
                       >
-                        <div className="font-mono text-orika-cream">
+                        <div className="font-mono text-brand-cream">
                           {r.rate.toLocaleString("en-NG", {
                             maximumFractionDigits: 4,
                           })}
                         </div>
-                        <div className="text-orika-smoke text-[0.65rem] mt-0.5">
+                        <div className="text-brand-smoke text-[0.65rem] mt-0.5">
                           {fmtDateTime(r.valid_at)}
                         </div>
-                        <div className="text-orika-smoke text-[0.6rem] mt-0.5 uppercase tracking-wide">
+                        <div className="text-brand-smoke text-[0.6rem] mt-0.5 uppercase tracking-wide">
                           {r.source}
                         </div>
                       </div>
@@ -272,7 +272,7 @@ function Sparkline({ values }: { values: number[] }) {
       width="120"
       height="32"
       viewBox="0 0 100 32"
-      className="text-orika-gold"
+      className="text-brand-accent"
     >
       <polyline
         fill="none"

@@ -4,6 +4,7 @@
  * (/security/permissions/users/:id/...) that previously had no UI in
  * the Security module.
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Key, X } from "lucide-react";
 import { Modal } from "@components/ui/Modal";
@@ -18,7 +19,6 @@ import {
   setPermittedBusinesses,
   removeRoleAtBusiness,
 } from "@services/security";
-import { BUSINESS_LABELS } from "@typedefs/security";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 
@@ -29,14 +29,14 @@ interface UserAccessDrawerProps {
   onClose: () => void;
 }
 
-const ALL_BUSINESSES = Object.keys(BUSINESS_LABELS);
-
 export function UserAccessDrawer({
   userId,
   displayName,
   open,
   onClose,
 }: UserAccessDrawerProps) {
+  const { businesses: brandedBusinesses, businessLabel } = useBranding();
+  const ALL_BUSINESSES = brandedBusinesses.map((b) => b.business_key);
   const qc = useQueryClient();
 
   const { data: access, isLoading } = useQuery({
@@ -144,11 +144,11 @@ export function UserAccessDrawer({
                     }}
                     className={
                       permitted
-                        ? "rounded-full px-3 py-1 text-xs font-medium bg-orika-gold text-orika-black"
-                        : "rounded-full px-3 py-1 text-xs font-medium bg-orika-cloud/30 text-text-on-light-muted hover:bg-orika-cloud/50"
+                        ? "rounded-full px-3 py-1 text-xs font-medium bg-brand-accent text-brand-black"
+                        : "rounded-full px-3 py-1 text-xs font-medium bg-brand-cloud/30 text-text-on-light-muted hover:bg-brand-cloud/50"
                     }
                   >
-                    {BUSINESS_LABELS[b] ?? b}
+                    {businessLabel(b) || b}
                   </button>
                 );
               })}
@@ -165,11 +165,11 @@ export function UserAccessDrawer({
               return (
                 <div
                   key={b}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-orika-cloud/40 px-4 py-3"
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-brand-cloud/40 px-4 py-3"
                 >
                   <div className="w-32 shrink-0">
-                    <p className="text-sm font-medium text-orika-black">
-                      {b === "*" ? "All businesses" : (BUSINESS_LABELS[b] ?? b)}
+                    <p className="text-sm font-medium text-brand-black">
+                      {b === "*" ? "All businesses" : businessLabel(b) || b}
                     </p>
                     {assignment && (
                       <Badge tone="info" size="xs">

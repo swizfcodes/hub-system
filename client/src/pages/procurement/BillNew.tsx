@@ -205,18 +205,18 @@ export default function BillNew() {
         </div>
 
         <header className="mb-6">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             Supplier bill · 3-way match
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            Match <span className="italic text-orika-gold">PO + GRN + Bill</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            Match <span className="italic text-brand-accent">PO + GRN + Bill</span>
           </h1>
         </header>
 
         {!poId ? (
           <Card className="p-6 text-center">
-            <Receipt className="w-8 h-8 text-orika-smoke/40 mx-auto mb-3" />
-            <p className="text-sm text-orika-smoke">
+            <Receipt className="w-8 h-8 text-brand-smoke/40 mx-auto mb-3" />
+            <p className="text-sm text-brand-smoke">
               Open a purchase order and choose “Enter supplier bill” to record
               and match a bill against it.
             </p>
@@ -233,14 +233,14 @@ export default function BillNew() {
         ) : createdBill ? (
           /* ── Inline payment step (quick chain) ─────────────────────── */
           <Card className="p-6 max-w-lg mx-auto space-y-4">
-            <div className="flex items-center gap-2 text-living-sage">
+            <div className="flex items-center gap-2 text-accent2">
               <Check className="w-5 h-5" />
               <p className="text-sm font-medium">
                 Bill {createdBill.supplier_invoice_number} recorded ·{" "}
                 {fmtMoney(createdBill.amount, createdBill.currency)}
               </p>
             </div>
-            <p className="text-sm text-orika-cloud">
+            <p className="text-sm text-brand-cloud">
               How much have you paid the supplier so far? Leave it blank if you
               haven’t paid yet — you can record payments later from the bill.
             </p>
@@ -280,18 +280,18 @@ export default function BillNew() {
             <Card className="p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+                  <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
                     Purchase order
                   </p>
-                  <p className="text-sm text-orika-cream font-medium">
+                  <p className="text-sm text-brand-cream font-medium">
                     {po.po_number} · {po.supplier_name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+                  <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
                     Currency
                   </p>
-                  <p className="text-sm text-orika-cream font-mono">
+                  <p className="text-sm text-brand-cream font-mono">
                     {currency}
                   </p>
                 </div>
@@ -323,31 +323,31 @@ export default function BillNew() {
 
             {/* Lines */}
             <Card className="overflow-hidden">
-              <div className="px-5 py-3 border-b border-orika-graphite">
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+              <div className="px-5 py-3 border-b border-brand-graphite">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
                   Lines — what the supplier invoiced
                 </h3>
               </div>
               {evaluated.length === 0 ? (
-                <p className="p-6 text-sm text-orika-smoke text-center">
+                <p className="p-6 text-sm text-brand-smoke text-center">
                   Nothing has been received on this PO yet. Receive the goods
                   before billing.
                 </p>
               ) : (
-                <div className="divide-y divide-orika-graphite/40">
+                <div className="divide-y divide-brand-graphite/40">
                   {evaluated.map((l, i) => (
                     <div key={l.po_line_id} className="p-4 space-y-2">
                       <div className="flex items-baseline justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm text-orika-cream truncate">
+                          <p className="text-sm text-brand-cream truncate">
                             {l.product_name}
                           </p>
-                          <p className="text-[0.65rem] text-orika-smoke">
+                          <p className="text-[0.65rem] text-brand-smoke">
                             Received {l.received} · PO price{" "}
                             {fmtMoney(l.po_price, currency)}
                           </p>
                         </div>
-                        <span className="text-sm font-mono text-orika-gold shrink-0">
+                        <span className="text-sm font-mono text-brand-accent shrink-0">
                           {fmtMoney(l.lineTotal, currency)}
                         </span>
                       </div>
@@ -386,7 +386,7 @@ export default function BillNew() {
                               updateLine(i, { variance_note: e.target.value })
                             }
                             placeholder="e.g. supplier raised prices; agreed by phone"
-                            className="w-full rounded-lg border border-state-warn/30 bg-orika-graphite py-2 px-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-state-warn focus:outline-none"
+                            className="w-full rounded-lg border border-state-warn/30 bg-brand-graphite py-2 px-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-state-warn focus:outline-none"
                           />
                         </div>
                       )}
@@ -394,9 +394,9 @@ export default function BillNew() {
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between px-5 py-3 border-t border-orika-graphite bg-orika-black/30">
-                <span className="text-sm text-orika-smoke">Bill total</span>
-                <span className="text-lg font-display text-orika-gold tabular-nums">
+              <div className="flex items-center justify-between px-5 py-3 border-t border-brand-graphite bg-brand-black/30">
+                <span className="text-sm text-brand-smoke">Bill total</span>
+                <span className="text-lg font-display text-brand-accent tabular-nums">
                   {fmtMoney(billTotal, currency)}
                 </span>
               </div>

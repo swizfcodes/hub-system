@@ -69,8 +69,8 @@ export default function RFQPage() {
               onClick={() => setStatusFilter(s.key as RFQStatus | "")}
               className={`px-3 py-1.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-widest transition-all ${
                 statusFilter === s.key
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-charcoal border border-orika-graphite text-orika-smoke hover:text-orika-cream"
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-charcoal border border-brand-graphite text-brand-smoke hover:text-brand-cream"
               }`}
             >
               {s.label}
@@ -101,18 +101,18 @@ export default function RFQPage() {
           <div className="space-y-2">
             {rfqs.map((r) => (
               <Link key={r.rfq_id} to={`/procurement/rfqs/${r.rfq_id}`}>
-                <Card className="p-4 hover:border-orika-gold/40 transition-all">
+                <Card className="p-4 hover:border-brand-accent/40 transition-all">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs text-orika-smoke">
+                        <span className="font-mono text-xs text-brand-smoke">
                           {r.rfq_number}
                         </span>
-                        <span className="text-sm font-medium text-orika-cream truncate">
+                        <span className="text-sm font-medium text-brand-cream truncate">
                           {r.title}
                         </span>
                       </div>
-                      <div className="text-[0.65rem] text-orika-smoke mt-1">
+                      <div className="text-[0.65rem] text-brand-smoke mt-1">
                         {r.response_deadline && (
                           <>Deadline {fmtDate(r.response_deadline)} · </>
                         )}

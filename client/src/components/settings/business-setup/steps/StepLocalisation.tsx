@@ -45,7 +45,7 @@ export function StepLocalisation({ control }: Props) {
   return (
     <div className="space-y-8">
       <header>
-        <h2 className="font-display font-light text-3xl text-orika-black">
+        <h2 className="font-display font-light text-3xl text-brand-black">
           Localisation & Payments
         </h2>
         <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -65,7 +65,7 @@ export function StepLocalisation({ control }: Props) {
               control={control}
               name={`payment_methods.${pm.key}` as const}
               render={({ field }) => (
-                <div className="p-3 rounded-xl bg-white/50 border border-orika-cloud/40">
+                <div className="p-3 rounded-xl bg-white/50 border border-brand-cloud/40">
                   <Switch
                     surface="light"
                     checked={!!field.value}

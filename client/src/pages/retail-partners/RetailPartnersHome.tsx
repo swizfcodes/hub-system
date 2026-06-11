@@ -114,8 +114,8 @@ export default function RetailPartnersHome() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <Users className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">No retail partners yet.</p>
+            <Users className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">No retail partners yet.</p>
             <Button
               variant="ghost"
               className="mt-4"
@@ -128,7 +128,7 @@ export default function RetailPartnersHome() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[700px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Code",
                     "Partner",
@@ -140,7 +140,7 @@ export default function RetailPartnersHome() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -151,22 +151,22 @@ export default function RetailPartnersHome() {
                 {filtered.map((partner) => (
                   <tr
                     key={partner.partner_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors cursor-pointer"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors cursor-pointer"
                     onClick={() =>
                       navigate(`/retail-partners/${partner.partner_id}`)
                     }
                   >
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-orika-gold">
+                      <span className="font-mono text-xs text-brand-accent">
                         {partner.partner_code}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-orika-cream">
+                      <p className="font-medium text-brand-cream">
                         {partner.display_name}
                       </p>
                       {partner.company_name && (
-                        <p className="text-xs text-orika-smoke">
+                        <p className="text-xs text-brand-smoke">
                           {partner.company_name}
                         </p>
                       )}
@@ -174,7 +174,7 @@ export default function RetailPartnersHome() {
                     <td className="px-4 py-3">
                       <PartnerBadge type={partner.arrangement_type} size="xs" />
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums text-brand-cream">
                       {(partner.units_held ?? 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 tabular-nums">
@@ -182,17 +182,17 @@ export default function RetailPartnersHome() {
                         className={
                           (partner.outstanding_balance ?? 0) > 0
                             ? "text-amber-400"
-                            : "text-orika-smoke"
+                            : "text-brand-smoke"
                         }
                       >
                         {fmtMoney(partner.outstanding_balance ?? 0, currency)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {CYCLE_LABEL[partner.settlement_cycle]}
                     </td>
                     <td className="px-4 py-3">
-                      <ChevronRight className="h-4 w-4 text-orika-smoke" />
+                      <ChevronRight className="h-4 w-4 text-brand-smoke" />
                     </td>
                   </tr>
                 ))}
@@ -226,15 +226,15 @@ function KpiCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4">
       <div className="flex items-center gap-2 mb-1.5">
-        <Icon className="h-4 w-4 text-orika-smoke" />
-        <p className="text-xs uppercase tracking-widest text-orika-smoke">
+        <Icon className="h-4 w-4 text-brand-smoke" />
+        <p className="text-xs uppercase tracking-widest text-brand-smoke">
           {label}
         </p>
       </div>
       <p
-        className={`font-display text-2xl font-light tabular-nums ${highlight ? "text-amber-400" : "text-orika-cream"}`}
+        className={`font-display text-2xl font-light tabular-nums ${highlight ? "text-amber-400" : "text-brand-cream"}`}
       >
         {value}
       </p>

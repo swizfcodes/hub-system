@@ -42,8 +42,8 @@ export function ReportChart({
 
   if (!rows.length) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl border border-white/5 bg-orika-charcoal">
-        <p className="text-sm text-orika-smoke">No data to chart</p>
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-white/5 bg-brand-charcoal">
+        <p className="text-sm text-brand-smoke">No data to chart</p>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export function ReportChart({
     const total = pieData.reduce((s, d) => s + d.value, 0);
 
     return (
-      <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4">
+      <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4">
         <ResponsiveContainer width="100%" height={320}>
           <PieChart>
             <Pie
@@ -141,7 +141,7 @@ export function ReportChart({
     : Bar) as unknown as ElementType;
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4">
       <ResponsiveContainer width="100%" height={320}>
         <ChartComponent {...sharedProps}>
           <CartesianGrid

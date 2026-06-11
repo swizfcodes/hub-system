@@ -115,7 +115,7 @@ export default function PartnerDetail() {
   if (!partner) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Partner not found.</p>
+        <p className="text-brand-smoke">Partner not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -260,7 +260,7 @@ export default function PartnerDetail() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {[
                   "Product",
                   "Sent",
@@ -273,7 +273,7 @@ export default function PartnerDetail() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-3 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-3 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -282,23 +282,23 @@ export default function PartnerDetail() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {consignments.map((c) => (
-                <tr key={c.consignment_id} className="bg-orika-charcoal">
-                  <td className="px-3 py-3 text-orika-cream">
+                <tr key={c.consignment_id} className="bg-brand-charcoal">
+                  <td className="px-3 py-3 text-brand-cream">
                     {c.product_name ?? c.product_id.slice(0, 8)}
                   </td>
-                  <td className="px-3 py-3 tabular-nums text-orika-smoke">
+                  <td className="px-3 py-3 tabular-nums text-brand-smoke">
                     {c.quantity_sent}
                   </td>
-                  <td className="px-3 py-3 tabular-nums text-orika-smoke">
+                  <td className="px-3 py-3 tabular-nums text-brand-smoke">
                     {c.quantity_sold}
                   </td>
-                  <td className="px-3 py-3 tabular-nums font-medium text-orika-cream">
+                  <td className="px-3 py-3 tabular-nums font-medium text-brand-cream">
                     {c.quantity_outstanding}
                   </td>
-                  <td className="px-3 py-3 tabular-nums text-orika-smoke">
+                  <td className="px-3 py-3 tabular-nums text-brand-smoke">
                     {fmtMoney(c.agreed_price, currency)}
                   </td>
-                  <td className="px-3 py-3 text-orika-smoke">
+                  <td className="px-3 py-3 text-brand-smoke">
                     {fmtDate(c.sent_date)}
                   </td>
                   <td className="px-3 py-3">
@@ -312,7 +312,7 @@ export default function PartnerDetail() {
                           setRecallTarget(c);
                           setShowRecall(true);
                         }}
-                        className="text-orika-smoke hover:text-orika-gold transition-colors"
+                        className="text-brand-smoke hover:text-brand-accent transition-colors"
                       >
                         <RefreshCcw className="h-4 w-4" />
                       </button>
@@ -324,7 +324,7 @@ export default function PartnerDetail() {
                 <tr>
                   <td
                     colSpan={8}
-                    className="px-4 py-8 text-center text-sm text-orika-smoke"
+                    className="px-4 py-8 text-center text-sm text-brand-smoke"
                   >
                     No consignment stock on file.
                   </td>
@@ -340,7 +340,7 @@ export default function PartnerDetail() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full min-w-[500px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {[
                   "Sale Date",
                   "Qty Sold",
@@ -351,7 +351,7 @@ export default function PartnerDetail() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -360,23 +360,23 @@ export default function PartnerDetail() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {salesData.map((s: any) => (
-                <tr key={s.sale_id} className="bg-orika-charcoal">
-                  <td className="px-4 py-3 text-orika-smoke">
+                <tr key={s.sale_id} className="bg-brand-charcoal">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDate(s.sale_date)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums text-brand-cream">
                     {s.quantity_sold}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                  <td className="px-4 py-3 tabular-nums text-brand-smoke">
                     {fmtMoney(s.sale_price, currency)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums font-medium text-brand-cream">
                     {fmtMoney(s.sale_price * s.quantity_sold, currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {s.notes ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDateTime(s.recorded_at)}
                   </td>
                 </tr>
@@ -385,7 +385,7 @@ export default function PartnerDetail() {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-orika-smoke"
+                    className="px-4 py-8 text-center text-sm text-brand-smoke"
                   >
                     No sales reported yet.
                   </td>
@@ -401,7 +401,7 @@ export default function PartnerDetail() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {[
                   "Number",
                   "Period",
@@ -413,7 +413,7 @@ export default function PartnerDetail() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -422,20 +422,20 @@ export default function PartnerDetail() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {settlementsData.map((s: any) => (
-                <tr key={s.settlement_id} className="bg-orika-charcoal">
-                  <td className="px-4 py-3 font-mono text-xs text-orika-gold">
+                <tr key={s.settlement_id} className="bg-brand-charcoal">
+                  <td className="px-4 py-3 font-mono text-xs text-brand-accent">
                     {s.settlement_number}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDate(s.period_start)} – {fmtDate(s.period_end)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums text-brand-cream">
                     {fmtMoney(s.total_sales_value, currency)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                  <td className="px-4 py-3 tabular-nums text-brand-smoke">
                     {fmtMoney(s.partner_commission, currency)}
                   </td>
-                  <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums font-medium text-brand-cream">
                     {fmtMoney(s.amount_due_to_us, currency)}
                   </td>
                   <td className="px-4 py-3">
@@ -446,7 +446,7 @@ export default function PartnerDetail() {
                       {s.status === "draft" && (
                         <button
                           onClick={() => sentMutation.mutate(s.settlement_id)}
-                          className="text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke hover:text-brand-accent transition-colors"
                           title="Mark Sent"
                         >
                           <Send className="h-4 w-4" />
@@ -455,7 +455,7 @@ export default function PartnerDetail() {
                       {s.status === "sent" && (
                         <button
                           onClick={() => paidMutation.mutate(s.settlement_id)}
-                          className="text-orika-smoke hover:text-green-400 transition-colors"
+                          className="text-brand-smoke hover:text-green-400 transition-colors"
                           title="Mark Paid"
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -469,7 +469,7 @@ export default function PartnerDetail() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-8 text-center text-sm text-orika-smoke"
+                    className="px-4 py-8 text-center text-sm text-brand-smoke"
                   >
                     No settlements yet.
                   </td>
@@ -548,12 +548,12 @@ function InfoCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3">
-      <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+    <div className="rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3">
+      <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
         {label}
       </p>
       <p
-        className={`text-sm font-semibold tabular-nums ${capitalize ? "capitalize" : ""} ${highlight ? "text-amber-400" : "text-orika-cream"}`}
+        className={`text-sm font-semibold tabular-nums ${capitalize ? "capitalize" : ""} ${highlight ? "text-amber-400" : "text-brand-cream"}`}
       >
         {value}
       </p>

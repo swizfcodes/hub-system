@@ -90,13 +90,13 @@ export function TasksTab({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-orika-cloud">
+        <div className="text-sm text-brand-cloud">
           {open.length} open · {done.length} completed
         </div>
         <div className="flex items-center gap-2">
           <Link
             to={`/tasks?reference_type=contact&reference_id=${contactId}`}
-            className="inline-flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-cream transition-colors"
           >
             Open in Tasks <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
@@ -175,7 +175,7 @@ function Section({
 }) {
   return (
     <section>
-      <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+      <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
         {title}
       </h3>
       <div className="space-y-2">
@@ -206,8 +206,8 @@ function TaskRow({
           className={cn(
             "shrink-0 w-5 h-5 rounded border flex items-center justify-center transition-colors",
             task.status === "done"
-              ? "bg-living-sage border-living-sage text-orika-black"
-              : "border-orika-smoke hover:border-orika-gold",
+              ? "bg-accent2 border-accent2 text-brand-black"
+              : "border-brand-smoke hover:border-brand-accent",
           )}
           aria-label={task.status === "done" ? "Reopen" : "Mark done"}
         >
@@ -218,8 +218,8 @@ function TaskRow({
             <span
               className={cn(
                 "text-sm",
-                task.status === "done" && "line-through text-orika-smoke",
-                task.status !== "done" && "text-orika-cream",
+                task.status === "done" && "line-through text-brand-smoke",
+                task.status !== "done" && "text-brand-cream",
               )}
             >
               {task.title}
@@ -228,7 +228,7 @@ function TaskRow({
               {task.priority}
             </Badge>
           </div>
-          <div className="flex items-center gap-3 text-[0.65rem] text-orika-smoke mt-1">
+          <div className="flex items-center gap-3 text-[0.65rem] text-brand-smoke mt-1">
             {task.due_at && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -243,7 +243,7 @@ function TaskRow({
           <select
             value={task.status}
             onChange={(e) => onMove(task.task_id, e.target.value as TaskStatus)}
-            className="appearance-none bg-orika-graphite text-orika-cream text-[0.65rem] uppercase tracking-wide font-semibold pl-3 pr-7 py-1.5 rounded-lg border border-orika-graphite focus:outline-none focus:border-orika-gold"
+            className="appearance-none bg-brand-graphite text-brand-cream text-[0.65rem] uppercase tracking-wide font-semibold pl-3 pr-7 py-1.5 rounded-lg border border-brand-graphite focus:outline-none focus:border-brand-accent"
           >
             {(Object.keys(STATUS_LABELS) as TaskStatus[]).map((s) => (
               <option key={s} value={s}>
@@ -251,7 +251,7 @@ function TaskRow({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-orika-smoke pointer-events-none" />
+          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-smoke pointer-events-none" />
         </div>
       </div>
     </Card>

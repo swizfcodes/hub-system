@@ -167,7 +167,7 @@ export default function ProductDetail() {
               />
               <div>
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
+                  <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
                     {product.name}
                   </h1>
                   {!product.is_active && (
@@ -181,12 +181,12 @@ export default function ProductDetail() {
                     </Badge>
                   )}
                 </div>
-                <div className="text-xs font-mono text-orika-smoke mb-3">
+                <div className="text-xs font-mono text-brand-smoke mb-3">
                   {product.sku}
                   {product.barcode && ` · ${product.barcode}`}
                 </div>
                 {product.description && (
-                  <p className="text-sm text-orika-cloud max-w-2xl mb-4">
+                  <p className="text-sm text-brand-cloud max-w-2xl mb-4">
                     {product.description}
                   </p>
                 )}
@@ -248,7 +248,7 @@ export default function ProductDetail() {
                   )}
                   <button
                     onClick={() => setSharing(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-cream"
+                    className="inline-flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-cream"
                   >
                     <Copy className="w-3 h-3" /> Share
                   </button>
@@ -345,16 +345,16 @@ function OverviewTab({ product }: { product: Product }) {
       <InfoCard label="Last updated" value={fmtDateTime(product.updated_at)} />
       {Object.keys(product.custom_fields ?? {}).length > 0 && (
         <Card className="p-4 sm:col-span-2 lg:col-span-3">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-2">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-2">
             Custom fields
           </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {Object.entries(product.custom_fields ?? {}).map(([k, v]) => (
               <div key={k} className="flex items-baseline gap-2 text-xs">
-                <dt className="text-orika-smoke capitalize">
+                <dt className="text-brand-smoke capitalize">
                   {k.replace(/_/g, " ")}:
                 </dt>
-                <dd className="text-orika-cream truncate">{String(v)}</dd>
+                <dd className="text-brand-cream truncate">{String(v)}</dd>
               </div>
             ))}
           </dl>
@@ -374,13 +374,13 @@ function InfoCard({
   hint?: string;
 }) {
   return (
-    <div className="p-4 rounded-xl border border-orika-graphite bg-orika-charcoal/60">
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+    <div className="p-4 rounded-xl border border-brand-graphite bg-brand-charcoal/60">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
-      <div className="text-sm font-medium text-orika-cream mt-1">{value}</div>
+      <div className="text-sm font-medium text-brand-cream mt-1">{value}</div>
       {hint && (
-        <div className="text-[0.6rem] text-orika-smoke mt-1">{hint}</div>
+        <div className="text-[0.6rem] text-brand-smoke mt-1">{hint}</div>
       )}
     </div>
   );
@@ -458,7 +458,7 @@ function ImagesTab({ productId }: { productId: string }) {
           {images.map((img) => (
             <div
               key={img.image_id}
-              className="relative rounded-xl overflow-hidden border border-orika-graphite group"
+              className="relative rounded-xl overflow-hidden border border-brand-graphite group"
             >
               <img
                 src={img.url}
@@ -466,11 +466,11 @@ function ImagesTab({ productId }: { productId: string }) {
                 className="w-full aspect-square object-cover"
               />
               {img.is_primary && (
-                <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orika-black/70 text-orika-gold text-[0.55rem] uppercase tracking-widest">
-                  <Star className="w-2.5 h-2.5 fill-orika-gold" /> Primary
+                <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-black/70 text-brand-accent text-[0.55rem] uppercase tracking-widest">
+                  <Star className="w-2.5 h-2.5 fill-brand-accent" /> Primary
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-orika-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+              <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-brand-black to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                 {!img.is_primary && (
                   <Button
                     size="sm"
@@ -540,24 +540,24 @@ function SuppliersTab({ productId }: { productId: string }) {
         <div className="space-y-2">
           {links.map((l) => (
             <Card key={l.supplier_id} className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-living-sage/15 text-living-sage flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-accent2/15 text-accent2 flex items-center justify-center">
                 <Truck className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <Link
                     to={`/procurement/suppliers/${l.supplier_id}`}
-                    className="text-sm font-medium text-orika-cream hover:text-orika-gold truncate"
+                    className="text-sm font-medium text-brand-cream hover:text-brand-accent truncate"
                   >
                     {l.supplier_name}
                   </Link>
                   {l.is_preferred && (
                     <Badge tone="gold" size="xs">
-                      <Star className="w-2.5 h-2.5 fill-orika-gold" /> Preferred
+                      <Star className="w-2.5 h-2.5 fill-brand-accent" /> Preferred
                     </Badge>
                   )}
                 </div>
-                <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                <div className="text-[0.65rem] text-brand-smoke mt-0.5">
                   {l.supplier_sku && <>SKU {l.supplier_sku} · </>}
                   {l.unit_cost != null && (
                     <>Cost {fmtMoney(l.unit_cost, "NGN")} · </>
@@ -567,7 +567,7 @@ function SuppliersTab({ productId }: { productId: string }) {
               </div>
               <button
                 onClick={() => remove.mutate(l.supplier_id)}
-                className="p-2 text-orika-smoke hover:text-state-danger"
+                className="p-2 text-brand-smoke hover:text-state-danger"
                 aria-label="Unlink"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -654,7 +654,7 @@ function LinkSupplierModal({
         <select
           value={supplierId}
           onChange={(e) => setSupplierId(e.target.value)}
-          className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3 px-4 text-sm"
+          className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3 px-4 text-sm"
         >
           <option value="">Pick a supplier…</option>
           {(sups?.data ?? []).map((s) => (
@@ -685,7 +685,7 @@ function LinkSupplierModal({
             type="checkbox"
             checked={isPreferred}
             onChange={(e) => setIsPreferred(e.target.checked)}
-            className="w-4 h-4 accent-orika-gold"
+            className="w-4 h-4 accent-brand-accent"
           />
           <span>Mark as preferred supplier for this product</span>
         </label>
@@ -840,7 +840,7 @@ function BarcodesTab({ product }: { product: Product }) {
               <BarcodePreview value={c.barcode_value} type={c.barcode_type} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-sm text-orika-cream truncate">
+                  <span className="font-mono text-sm text-brand-cream truncate">
                     {c.barcode_value}
                   </span>
                   {c.is_primary && (
@@ -868,7 +868,7 @@ function BarcodesTab({ product }: { product: Product }) {
                 {!c.is_primary && (
                   <button
                     onClick={() => remove.mutate(c.barcode_id)}
-                    className="p-2 text-orika-smoke hover:text-state-danger"
+                    className="p-2 text-brand-smoke hover:text-state-danger"
                     aria-label="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -912,7 +912,7 @@ function BarcodesTab({ product }: { product: Product }) {
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3 px-4 text-sm"
+            className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3 px-4 text-sm"
           >
             <option value="EAN13">EAN-13</option>
             <option value="UPC">UPC</option>
@@ -987,13 +987,13 @@ function BarcodePrintSettingsModal({
             type="checkbox"
             checked={s.silentPrint}
             onChange={(e) => setS({ ...s, silentPrint: e.target.checked })}
-            className="mt-1 w-4 h-4 accent-orika-gold"
+            className="mt-1 w-4 h-4 accent-brand-accent"
           />
           <span>
-            <span className="block text-sm font-medium text-orika-charcoal">
+            <span className="block text-sm font-medium text-brand-charcoal">
               Silent thermal printing (QZ Tray)
             </span>
-            <span className="block text-xs text-orika-smoke">
+            <span className="block text-xs text-brand-smoke">
               Sends raw ZPL to the Honeywell with no dialog. Requires the free
               QZ Tray app on this workstation. Falls back to the browser dialog
               if unavailable.
@@ -1012,7 +1012,7 @@ function BarcodePrintSettingsModal({
               className="sm:col-span-2"
             />
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Resolution
               </label>
               <select
@@ -1020,7 +1020,7 @@ function BarcodePrintSettingsModal({
                 onChange={(e) =>
                   setS({ ...s, dpi: Number(e.target.value) as 203 | 300 })
                 }
-                className="w-full bg-white border border-orika-cloud/40 rounded-xl py-2.5 px-3 text-sm"
+                className="w-full bg-white border border-brand-cloud/40 rounded-xl py-2.5 px-3 text-sm"
               >
                 <option value={203}>203 dpi</option>
                 <option value={300}>300 dpi</option>
@@ -1130,12 +1130,12 @@ function StockTab({ product }: { product: Product }) {
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-orika-cream flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-orika-gold" /> By location
+          <h3 className="text-sm font-medium text-brand-cream flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-brand-accent" /> By location
           </h3>
           <Link
             to="/stock"
-            className="text-xs text-orika-smoke hover:text-orika-gold"
+            className="text-xs text-brand-smoke hover:text-brand-accent"
           >
             Open Stock module →
           </Link>
@@ -1145,22 +1145,22 @@ function StockTab({ product }: { product: Product }) {
             {stock.by_location.map((l) => (
               <div
                 key={l.location_id}
-                className="flex items-center justify-between text-sm border-b border-orika-graphite/40 last:border-0 py-1.5"
+                className="flex items-center justify-between text-sm border-b border-brand-graphite/40 last:border-0 py-1.5"
               >
-                <span className="text-orika-cloud">
+                <span className="text-brand-cloud">
                   {l.location_name}{" "}
-                  <span className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                  <span className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                     {l.location_type?.replace(/_/g, " ")}
                   </span>
                 </span>
-                <span className="text-orika-cream font-medium">
+                <span className="text-brand-cream font-medium">
                   {l.on_hand}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             No stock movements yet. Receive stock via a Purchase Order or a
             stock adjustment in the Stock module — on-hand updates here
             automatically.
@@ -1168,9 +1168,9 @@ function StockTab({ product }: { product: Product }) {
         )}
       </Card>
 
-      <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-4 flex items-start gap-3">
-        <BookOpen className="w-4 h-4 text-orika-smoke mt-0.5 shrink-0" />
-        <div className="text-xs text-orika-cloud">
+      <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/40 p-4 flex items-start gap-3">
+        <BookOpen className="w-4 h-4 text-brand-smoke mt-0.5 shrink-0" />
+        <div className="text-xs text-brand-cloud">
           On-hand is the live sum of every stock movement (receipts, transfers,
           sales, adjustments). To receive stock, create a Purchase Order and
           mark it received, or post a stock adjustment — both feed this number
@@ -1196,11 +1196,11 @@ function StockStat({
     ok: "text-emerald-400",
     warn: "text-state-warn",
     danger: "text-state-danger",
-    neutral: "text-orika-cloud",
+    neutral: "text-brand-cloud",
   }[tone];
   return (
-    <div className="p-4 rounded-xl border border-orika-graphite bg-orika-charcoal/60">
-      <div className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+    <div className="p-4 rounded-xl border border-brand-graphite bg-brand-charcoal/60">
+      <div className="flex items-center gap-1.5 text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {icon}
         {label}
       </div>
@@ -1214,10 +1214,10 @@ function AccountingPlaceholderTab({ product }: { product: Product }) {
   return (
     <div className="space-y-4">
       <Card className="p-5">
-        <h3 className="font-display text-xl text-orika-cream mb-1">
+        <h3 className="font-display text-xl text-brand-cream mb-1">
           GL Account mapping
         </h3>
-        <p className="text-sm text-orika-cloud mb-4">
+        <p className="text-sm text-brand-cloud mb-4">
           When this product is bought, stocked, or sold, postings go to:
         </p>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -1244,9 +1244,9 @@ function AccountingPlaceholderTab({ product }: { product: Product }) {
           />
         </div>
       </Card>
-      <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-4 flex items-start gap-3">
-        <BookOpen className="w-4 h-4 text-orika-smoke mt-0.5 shrink-0" />
-        <div className="text-xs text-orika-cloud">
+      <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/40 p-4 flex items-start gap-3">
+        <BookOpen className="w-4 h-4 text-brand-smoke mt-0.5 shrink-0" />
+        <div className="text-xs text-brand-cloud">
           Per-product GL account overrides are not yet configurable. The
           category defaults apply. Contact your administrator to update account
           mappings.
@@ -1258,11 +1258,11 @@ function AccountingPlaceholderTab({ product }: { product: Product }) {
 
 function Map({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-3 rounded-xl border border-orika-graphite bg-orika-charcoal/60">
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+    <div className="p-3 rounded-xl border border-brand-graphite bg-brand-charcoal/60">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
-      <div className="text-xs text-orika-cream mt-1 truncate font-mono">
+      <div className="text-xs text-brand-cream mt-1 truncate font-mono">
         {value}
       </div>
     </div>

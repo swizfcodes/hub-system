@@ -11,14 +11,14 @@ export function ViewSwitcher({
   onChange: (v: DirectoryView) => void;
 }) {
   return (
-    <div className="inline-flex p-0.5 rounded-lg bg-orika-charcoal border border-orika-graphite">
+    <div className="inline-flex p-0.5 rounded-lg bg-brand-charcoal border border-brand-graphite">
       <button
         onClick={() => onChange("rail")}
         className={cn(
           "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[0.65rem] font-semibold uppercase tracking-wide transition-all",
           value === "rail"
-            ? "bg-orika-graphite text-orika-cream"
-            : "text-orika-smoke hover:text-orika-cream",
+            ? "bg-brand-graphite text-brand-cream"
+            : "text-brand-smoke hover:text-brand-cream",
         )}
         aria-label="Master-detail view"
         title="Master-detail"
@@ -30,8 +30,8 @@ export function ViewSwitcher({
         className={cn(
           "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[0.65rem] font-semibold uppercase tracking-wide transition-all",
           value === "cards"
-            ? "bg-orika-graphite text-orika-cream"
-            : "text-orika-smoke hover:text-orika-cream",
+            ? "bg-brand-graphite text-brand-cream"
+            : "text-brand-smoke hover:text-brand-cream",
         )}
         aria-label="Card view"
         title="Cards"

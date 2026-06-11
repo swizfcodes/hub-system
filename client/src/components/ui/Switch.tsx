@@ -40,16 +40,16 @@ export function Switch({
         className={cn(
           "mt-0.5 relative w-10 h-6 rounded-full transition-colors flex-shrink-0",
           checked
-            ? "bg-orika-gold"
+            ? "bg-brand-accent"
             : isDark
-              ? "bg-orika-graphite"
-              : "bg-orika-cloud",
-          "focus-visible:ring-2 focus-visible:ring-orika-gold focus-visible:ring-offset-2",
+              ? "bg-brand-graphite"
+              : "bg-brand-cloud",
+          "focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-orika-cream shadow-card transition-transform",
+            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-brand-cream shadow-card transition-transform",
             checked && "translate-x-4",
           )}
         />
@@ -60,7 +60,7 @@ export function Switch({
             <div
               className={cn(
                 "text-sm font-medium",
-                isDark ? "text-orika-cream" : "text-orika-black",
+                isDark ? "text-brand-cream" : "text-brand-black",
               )}
             >
               {label}
@@ -70,7 +70,7 @@ export function Switch({
             <div
               className={cn(
                 "text-xs mt-0.5",
-                isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+                isDark ? "text-brand-smoke" : "text-text-on-light-muted",
               )}
             >
               {description}

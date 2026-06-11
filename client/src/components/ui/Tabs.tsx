@@ -33,8 +33,8 @@ export function Tabs({
         className={cn(
           "inline-flex p-1 rounded-xl border",
           isDark
-            ? "bg-orika-charcoal border-orika-graphite"
-            : "bg-orika-cloud/30 border-orika-cloud/40",
+            ? "bg-brand-charcoal border-brand-graphite"
+            : "bg-brand-cloud/30 border-brand-cloud/40",
           className,
         )}
       >
@@ -46,11 +46,11 @@ export function Tabs({
               "px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all whitespace-nowrap",
               active === t.key
                 ? isDark
-                  ? "bg-orika-gold text-orika-black shadow-glow-sm"
-                  : "bg-orika-black text-orika-cream"
+                  ? "bg-brand-accent text-brand-black shadow-glow-sm"
+                  : "bg-brand-black text-brand-cream"
                 : isDark
-                  ? "text-orika-smoke hover:text-orika-cream"
-                  : "text-text-on-light-muted hover:text-orika-black",
+                  ? "text-brand-smoke hover:text-brand-cream"
+                  : "text-text-on-light-muted hover:text-brand-black",
             )}
           >
             <span className="inline-flex items-center gap-2">
@@ -69,7 +69,7 @@ export function Tabs({
     <div
       className={cn(
         "flex border-b overflow-x-auto hide-scrollbar",
-        isDark ? "border-orika-graphite" : "border-orika-cloud/40",
+        isDark ? "border-brand-graphite" : "border-brand-cloud/40",
         className,
       )}
     >
@@ -80,10 +80,10 @@ export function Tabs({
           className={cn(
             "px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold uppercase tracking-wide transition-all whitespace-nowrap border-b-2 -mb-px",
             active === t.key
-              ? "border-orika-gold text-orika-gold"
+              ? "border-brand-accent text-brand-accent"
               : isDark
-                ? "border-transparent text-orika-smoke hover:text-orika-cream"
-                : "border-transparent text-text-on-light-muted hover:text-orika-black",
+                ? "border-transparent text-brand-smoke hover:text-brand-cream"
+                : "border-transparent text-text-on-light-muted hover:text-brand-black",
           )}
         >
           <span className="inline-flex items-center gap-2">

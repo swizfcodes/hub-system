@@ -43,7 +43,7 @@ function priorMonth(): string {
 }
 
 const STATUS_TONE: Record<string, string> = {
-  draft: "bg-white/10 text-orika-cloud",
+  draft: "bg-white/10 text-brand-cloud",
   reviewed: "bg-blue-500/15 text-blue-300",
   filed: "bg-amber-500/15 text-amber-300",
   paid: "bg-green-500/15 text-green-300",
@@ -136,7 +136,7 @@ export default function TaxCenter() {
                 "text-xs px-3 py-1 rounded-full",
                 profile.is_small_company
                   ? "bg-green-500/15 text-green-300"
-                  : "bg-white/10 text-orika-cloud",
+                  : "bg-white/10 text-brand-cloud",
               )}
             >
               {profile.is_small_company
@@ -153,22 +153,22 @@ export default function TaxCenter() {
           {dash.deadlines.map((d) => (
             <div
               key={d.tax_type}
-              className="rounded-2xl border border-white/8 bg-orika-graphite px-4 py-3"
+              className="rounded-2xl border border-white/8 bg-brand-graphite px-4 py-3"
             >
-              <p className="text-xs text-orika-smoke">
+              <p className="text-xs text-brand-smoke">
                 {d.tax_type} · {d.period_label}
               </p>
-              <p className="text-sm font-semibold text-orika-cream mt-0.5">
+              <p className="text-sm font-semibold text-brand-cream mt-0.5">
                 Due {d.due}
               </p>
-              <p className="text-[11px] text-orika-smoke/70">{d.authority}</p>
+              <p className="text-[11px] text-brand-smoke/70">{d.authority}</p>
             </div>
           ))}
         </div>
       ) : null}
 
       {/* Controls */}
-      <div className="rounded-2xl border border-white/8 bg-orika-graphite p-5 space-y-4">
+      <div className="rounded-2xl border border-white/8 bg-brand-graphite p-5 space-y-4">
         <div className="flex flex-wrap gap-1.5">
           {TAX_TABS.map((t) => (
             <button
@@ -177,8 +177,8 @@ export default function TaxCenter() {
               className={cn(
                 "px-3 py-1.5 rounded-xl text-xs font-medium transition-colors",
                 taxType === t.type
-                  ? "bg-orika-gold/15 text-orika-gold border border-orika-gold/30"
-                  : "text-orika-cloud hover:bg-white/5 border border-transparent",
+                  ? "bg-brand-accent/15 text-brand-accent border border-brand-accent/30"
+                  : "text-brand-cloud hover:bg-white/5 border border-transparent",
               )}
             >
               {t.label}
@@ -188,14 +188,14 @@ export default function TaxCenter() {
 
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <label className="block text-xs text-orika-smoke mb-1">
+            <label className="block text-xs text-brand-smoke mb-1">
               {cadence === "year" ? "Year (YYYY)" : "Period (YYYY-MM)"}
             </label>
             <input
               value={period}
               onChange={(e) => setPeriod(e.target.value.trim())}
               placeholder={cadence === "year" ? "2026" : "2026-05"}
-              className="rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2 text-sm text-orika-cream focus:outline-none focus:border-orika-gold/40 w-36"
+              className="rounded-xl border border-white/10 bg-brand-charcoal px-3 py-2 text-sm text-brand-cream focus:outline-none focus:border-brand-accent/40 w-36"
             />
           </div>
           <Button
@@ -221,17 +221,17 @@ export default function TaxCenter() {
 
       {/* Workpaper */}
       {wp && (
-        <div className="rounded-2xl border border-white/8 bg-orika-graphite p-5 space-y-5">
+        <div className="rounded-2xl border border-white/8 bg-brand-graphite p-5 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-orika-smoke uppercase tracking-wide">
+              <p className="text-xs text-brand-smoke uppercase tracking-wide">
                 {wp.tax_type} · {wp.period_label}
               </p>
-              <p className="text-3xl font-bold text-orika-cream mt-1">
+              <p className="text-3xl font-bold text-brand-cream mt-1">
                 {fmtMoney(filing?.final_amount ?? wp.computed_amount)}
               </p>
               {wp.meta?.deadline ? (
-                <p className="text-xs text-orika-smoke mt-1">
+                <p className="text-xs text-brand-smoke mt-1">
                   Due: {String(wp.meta.deadline)}
                 </p>
               ) : null}
@@ -272,10 +272,10 @@ export default function TaxCenter() {
                   key={k}
                   className="flex justify-between border-b border-white/5 py-1.5"
                 >
-                  <span className="text-xs text-orika-smoke capitalize">
+                  <span className="text-xs text-brand-smoke capitalize">
                     {k.replace(/_/g, " ")}
                   </span>
-                  <span className="text-sm text-orika-cream text-right">
+                  <span className="text-sm text-brand-cream text-right">
                     {fmtSummary(v)}
                   </span>
                 </div>
@@ -286,7 +286,7 @@ export default function TaxCenter() {
           {wp.lines?.length > 0 && (
             <div className="overflow-x-auto rounded-xl border border-white/8">
               <table className="w-full text-xs">
-                <thead className="bg-white/5 text-orika-smoke">
+                <thead className="bg-white/5 text-brand-smoke">
                   <tr>
                     {(wp.tax_type === "CIT"
                       ? ["Line", "Code", "Type", "Amount"]
@@ -305,7 +305,7 @@ export default function TaxCenter() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="text-orika-cloud">
+                <tbody className="text-brand-cloud">
                   {wp.lines.slice(0, 200).map((l: any, i: number) => (
                     <tr key={i} className="border-t border-white/5">
                       {wp.tax_type === "CIT" ? (
@@ -397,13 +397,13 @@ export default function TaxCenter() {
 
       {/* Filing history */}
       {dash?.filings?.length ? (
-        <div className="rounded-2xl border border-white/8 bg-orika-graphite p-5">
-          <p className="text-sm font-semibold text-orika-cream mb-3">
+        <div className="rounded-2xl border border-white/8 bg-brand-graphite p-5">
+          <p className="text-sm font-semibold text-brand-cream mb-3">
             Recent returns
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="text-orika-smoke">
+              <thead className="text-brand-smoke">
                 <tr>
                   {["Type", "Period", "Amount", "Status", "Reference"].map(
                     (h) => (
@@ -414,10 +414,10 @@ export default function TaxCenter() {
                   )}
                 </tr>
               </thead>
-              <tbody className="text-orika-cloud">
+              <tbody className="text-brand-cloud">
                 {dash.filings.map((f) => (
                   <tr key={f.filing_id} className="border-t border-white/5">
-                    <td className="px-3 py-2 font-medium text-orika-cream">
+                    <td className="px-3 py-2 font-medium text-brand-cream">
                       {f.tax_type}
                     </td>
                     <td className="px-3 py-2">{f.period_label}</td>
@@ -432,7 +432,7 @@ export default function TaxCenter() {
                         {f.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-orika-smoke">
+                    <td className="px-3 py-2 text-brand-smoke">
                       {f.filing_reference ?? "—"}
                     </td>
                   </tr>

@@ -57,7 +57,7 @@ export function Modal({
       aria-modal="true"
     >
       <div
-        className="absolute inset-0 bg-orika-black/70 backdrop-blur-md"
+        className="absolute inset-0 bg-brand-black/70 backdrop-blur-md"
         onClick={closeOnBackdrop ? onClose : undefined}
       />
       <div
@@ -65,8 +65,8 @@ export function Modal({
           "relative w-full rounded-3xl shadow-modal animate-scale-in",
           sizes[size],
           isDark
-            ? "bg-orika-charcoal border border-orika-graphite"
-            : "bg-surface-light border border-orika-cloud/30 surface-light",
+            ? "bg-brand-charcoal border border-brand-graphite"
+            : "bg-surface-light border border-brand-cloud/30 surface-light",
           "max-h-[90vh] flex flex-col",
         )}
       >
@@ -74,14 +74,14 @@ export function Modal({
           <div
             className={cn(
               "px-6 sm:px-8 py-5 sm:py-6 border-b",
-              isDark ? "border-orika-graphite" : "border-orika-cloud/30",
+              isDark ? "border-brand-graphite" : "border-brand-cloud/30",
             )}
           >
             {title && (
               <h2
                 className={cn(
                   "font-display font-light text-2xl sm:text-3xl",
-                  isDark ? "text-orika-cream" : "text-orika-black",
+                  isDark ? "text-brand-cream" : "text-brand-black",
                 )}
               >
                 {title}
@@ -91,7 +91,7 @@ export function Modal({
               <p
                 className={cn(
                   "mt-1.5 text-xs sm:text-sm",
-                  isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+                  isDark ? "text-brand-smoke" : "text-text-on-light-muted",
                 )}
               >
                 {description}
@@ -105,8 +105,8 @@ export function Modal({
           className={cn(
             "absolute top-4 right-4 sm:top-5 sm:right-5 p-2 rounded-full transition-colors",
             isDark
-              ? "text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite"
-              : "text-orika-smoke hover:text-orika-black hover:bg-white/60",
+              ? "text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite"
+              : "text-brand-smoke hover:text-brand-black hover:bg-white/60",
           )}
           aria-label="Close"
         >
@@ -118,8 +118,8 @@ export function Modal({
             className={cn(
               "px-6 sm:px-8 py-4 border-t flex items-center justify-end gap-3",
               isDark
-                ? "border-orika-graphite bg-orika-charcoal"
-                : "border-orika-cloud/30 bg-surface-light",
+                ? "border-brand-graphite bg-brand-charcoal"
+                : "border-brand-cloud/30 bg-surface-light",
             )}
           >
             {footer}

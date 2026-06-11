@@ -120,7 +120,7 @@ export function QuickAddProductModal({
           surface="light"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Orika Rouge — Signature Edition (500ml)"
+          placeholder="e.g. Rouge — Signature Edition (500ml)"
           autoFocus
         />
         <Input

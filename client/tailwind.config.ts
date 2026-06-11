@@ -4,72 +4,93 @@ const config: Config = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      // ── DESIGN TOKENS ──────────────────────────────────────
+      // Every colour reads a CSS variable holding an "R G B"
+      // triplet. Defaults live in styles/index.css (:root); the
+      // ThemeProvider overwrites them at runtime from
+      // GET /api/branding (shared.platform_settings), so the
+      // whole app is re-themeable per deployment with no rebuild.
+      //
+      // Semantics of the neutral scale (dark default theme):
+      //   black     app background          cream  primary text
+      //   charcoal  card surface            cloud  secondary text
+      //   graphite  borders / elevated      smoke  muted text
+      //   ink       elevated-2              stone  faint text
+      //   accent    THE brand accent (+dim/glow variants)
+      //   accent2/3 supporting accents (decorative, themeable)
+      //   biz       the ACTIVE business's accent (layer-2 branding,
+      //             swapped on business switch from business_config)
       colors: {
-        orika: {
-          black: "#0A0908",
-          charcoal: "#1A1814",
-          graphite: "#2A2520",
-          ink: "#3A342E",
-          cream: "#F0EAE0",
-          cloud: "#C8C2B8",
-          smoke: "#6A6560",
-          stone: "#9E9891",
-          gold: "#C9A86C",
-          "gold-dim": "#8A6A30",
-          "gold-glow": "#D9BC87",
+        brand: {
+          black: "rgb(var(--brand-black) / <alpha-value>)",
+          charcoal: "rgb(var(--brand-charcoal) / <alpha-value>)",
+          graphite: "rgb(var(--brand-graphite) / <alpha-value>)",
+          ink: "rgb(var(--brand-ink) / <alpha-value>)",
+          cream: "rgb(var(--brand-cream) / <alpha-value>)",
+          cloud: "rgb(var(--brand-cloud) / <alpha-value>)",
+          smoke: "rgb(var(--brand-smoke) / <alpha-value>)",
+          stone: "rgb(var(--brand-stone) / <alpha-value>)",
+          accent: "rgb(var(--brand-accent) / <alpha-value>)",
+          "accent-dim": "rgb(var(--brand-accent-dim) / <alpha-value>)",
+          "accent-glow": "rgb(var(--brand-accent-glow) / <alpha-value>)",
         },
-        living: {
-          sage: "#8B9D77",
-          "sage-dim": "#6F7E5E",
-          "sage-glow": "#A8B894",
+        accent2: {
+          DEFAULT: "rgb(var(--accent2) / <alpha-value>)",
+          dim: "rgb(var(--accent2-dim) / <alpha-value>)",
+          glow: "rgb(var(--accent2-glow) / <alpha-value>)",
         },
-        bejewelled: {
-          rose: "#B76E79",
-          "rose-dim": "#955862",
-          "rose-glow": "#D08E97",
+        accent3: {
+          DEFAULT: "rgb(var(--accent3) / <alpha-value>)",
+          dim: "rgb(var(--accent3-dim) / <alpha-value>)",
+          glow: "rgb(var(--accent3-glow) / <alpha-value>)",
+        },
+        biz: {
+          accent: "rgb(var(--biz-accent) / <alpha-value>)",
+          "accent-dim": "rgb(var(--biz-accent-dim) / <alpha-value>)",
+          "accent-glow": "rgb(var(--biz-accent-glow) / <alpha-value>)",
         },
         surface: {
-          primary: "#0A0908",
-          secondary: "#1A1814",
-          tertiary: "#2A2520",
-          elevated: "#3A342E",
+          primary: "rgb(var(--brand-black) / <alpha-value>)",
+          secondary: "rgb(var(--brand-charcoal) / <alpha-value>)",
+          tertiary: "rgb(var(--brand-graphite) / <alpha-value>)",
+          elevated: "rgb(var(--brand-ink) / <alpha-value>)",
           // Light surfaces for modals/forms (luxury cream — never #FFF)
-          light: "#F0EAE0",
-          "light-soft": "#E6DFD3",
-          "light-deep": "#D9D0C2",
+          light: "rgb(var(--surface-light) / <alpha-value>)",
+          "light-soft": "rgb(var(--surface-light-soft) / <alpha-value>)",
+          "light-deep": "rgb(var(--surface-light-deep) / <alpha-value>)",
         },
         text: {
-          primary: "#F0EAE0",
-          muted: "#6A6560",
-          accent: "#C9A86C",
+          primary: "rgb(var(--brand-cream) / <alpha-value>)",
+          muted: "rgb(var(--brand-smoke) / <alpha-value>)",
+          accent: "rgb(var(--brand-accent) / <alpha-value>)",
           // Light-surface text
-          "on-light": "#0A0908",
-          "on-light-muted": "#6A6560",
+          "on-light": "rgb(var(--brand-black) / <alpha-value>)",
+          "on-light-muted": "rgb(var(--brand-smoke) / <alpha-value>)",
         },
         state: {
-          success: "#8B9D77",
-          warn: "#D9A741",
-          danger: "#C75B5B",
-          info: "#7A8FA8",
+          success: "rgb(var(--state-success) / <alpha-value>)",
+          warn: "rgb(var(--state-warn) / <alpha-value>)",
+          danger: "rgb(var(--state-danger) / <alpha-value>)",
+          info: "rgb(var(--state-info) / <alpha-value>)",
         },
       },
       fontFamily: {
-        display: ['"Cormorant Garamond"', "serif"],
-        body: ["Montserrat", "sans-serif"],
-        mono: ['"JetBrains Mono"', "monospace"],
+        display: ["var(--font-display)", "serif"],
+        body: ["var(--font-body)", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
       boxShadow: {
-        "glow-sm": "0 0 10px rgba(201,168,108,0.15)",
-        "glow-md": "0 0 20px rgba(201,168,108,0.25)",
-        "glow-lg": "0 0 40px rgba(201,168,108,0.20)",
+        "glow-sm": "0 0 10px rgb(var(--brand-accent) / 0.15)",
+        "glow-md": "0 0 20px rgb(var(--brand-accent) / 0.25)",
+        "glow-lg": "0 0 40px rgb(var(--brand-accent) / 0.20)",
         card: "0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3)",
         "card-lg":
           "0 12px 24px -8px rgba(0,0,0,0.6), 0 4px 8px -2px rgba(0,0,0,0.4)",
         modal:
           "0 20px 25px -5px rgba(0,0,0,0.8), 0 10px 10px -5px rgba(0,0,0,0.6)",
         lift: "0 8px 24px rgba(0,0,0,0.4)",
-        "rose-glow": "0 0 24px rgba(183,110,121,0.18)",
-        "sage-glow": "0 0 24px rgba(139,157,119,0.18)",
+        "accent3-glow": "0 0 24px rgb(var(--accent3) / 0.18)",
+        "accent2-glow": "0 0 24px rgb(var(--accent2) / 0.18)",
       },
       animation: {
         "fade-in": "fade-in 0.4s ease-out",

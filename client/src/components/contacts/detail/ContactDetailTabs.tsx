@@ -178,7 +178,7 @@ function DealsTab({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <TrendingUp className="w-3.5 h-3.5" /> Deals · {deals.length}
         </h3>
         <Button
@@ -217,11 +217,11 @@ function DealsTab({
         <div className="space-y-2">
           {deals.map((d) => (
             <Link key={d.deal_id} to={`/crm/${d.deal_id}`}>
-              <Card className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer">
+              <Card className="p-4 hover:border-brand-accent/40 transition-all cursor-pointer">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-orika-cream truncate">
+                      <span className="text-sm font-medium text-brand-cream truncate">
                         {d.title}
                       </span>
                       <StagePill stageKey={d.stage} />
@@ -236,19 +236,19 @@ function DealsTab({
                         </Badge>
                       )}
                     </div>
-                    <div className="text-[0.65rem] text-orika-smoke mt-1">
+                    <div className="text-[0.65rem] text-brand-smoke mt-1">
                       Updated {fmtRelative(d.updated_at)}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-mono text-sm text-orika-gold">
+                    <div className="font-mono text-sm text-brand-accent">
                       {fmtMoney(d.expected_value, "NGN")}
                     </div>
-                    <div className="text-[0.6rem] text-orika-smoke">
+                    <div className="text-[0.6rem] text-brand-smoke">
                       {d.probability}%
                     </div>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-orika-smoke shrink-0 mt-0.5" />
+                  <ArrowUpRight className="w-4 h-4 text-brand-smoke shrink-0 mt-0.5" />
                 </div>
                 <ProbabilityBar
                   probability={d.probability ?? 50}
@@ -285,7 +285,7 @@ function ContactInvoicesTab({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <Receipt className="w-3.5 h-3.5" /> Invoices · {invoices.length}
         </h3>
         <Link to={`/invoicing?contact=${contactId}`}>
@@ -315,11 +315,11 @@ function ContactInvoicesTab({
         <div className="space-y-2">
           {invoices.map((inv) => (
             <Link key={inv.invoice_id} to={`/invoicing/${inv.invoice_id}`}>
-              <Card className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer">
+              <Card className="p-4 hover:border-brand-accent/40 transition-all cursor-pointer">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs text-orika-smoke">
+                      <span className="font-mono text-xs text-brand-smoke">
                         {inv.invoice_number}
                       </span>
                       <Badge
@@ -336,15 +336,15 @@ function ContactInvoicesTab({
                         {inv.status}
                       </Badge>
                     </div>
-                    <div className="text-[0.65rem] text-orika-smoke mt-1">
+                    <div className="text-[0.65rem] text-brand-smoke mt-1">
                       Due {fmtDate(inv.due_date)}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-sm text-orika-gold">
+                    <span className="font-mono text-sm text-brand-accent">
                       {fmtMoney(inv.total_amount, "NGN")}
                     </span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-brand-smoke" />
                   </div>
                 </div>
               </Card>
@@ -414,7 +414,7 @@ function SupplierPurchasingTab({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <ShoppingCart className="w-3.5 h-3.5" /> Purchase orders ·{" "}
           {pos.length}
         </h3>
@@ -459,10 +459,10 @@ function SupplierPurchasingTab({
               key={po.po_id}
               to={`/procurement/purchase-orders/${po.po_id}`}
             >
-              <Card className="p-4 hover:border-orika-gold/40 transition-all cursor-pointer">
+              <Card className="p-4 hover:border-brand-accent/40 transition-all cursor-pointer">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-orika-smoke">
+                    <span className="font-mono text-xs text-brand-smoke">
                       {po.po_number}
                     </span>
                     <Badge tone={poTone(po.status)} size="xs" dot>
@@ -470,10 +470,10 @@ function SupplierPurchasingTab({
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-sm text-orika-gold">
+                    <span className="font-mono text-sm text-brand-accent">
                       {fmtMoney(po.total_amount, "NGN")}
                     </span>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-brand-smoke" />
                   </div>
                 </div>
               </Card>
@@ -549,7 +549,7 @@ function ContactDocumentsTab({ contactId, contactName }: { contactId: string; co
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <FileText className="w-3.5 h-3.5" /> Documents · {docs.length}
         </h3>
         <div className="flex items-center gap-2">
@@ -557,7 +557,7 @@ function ContactDocumentsTab({ contactId, contactName }: { contactId: string; co
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
             title="Document type"
-            className="bg-orika-charcoal text-orika-cream border border-orika-graphite rounded-lg px-2.5 py-2 text-xs focus:border-orika-gold focus:outline-none max-w-[10rem]"
+            className="bg-brand-charcoal text-brand-cream border border-brand-graphite rounded-lg px-2.5 py-2 text-xs focus:border-brand-accent focus:outline-none max-w-[10rem]"
           >
             {CONTACT_DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
@@ -590,14 +590,14 @@ function ContactDocumentsTab({ contactId, contactName }: { contactId: string; co
         <div className="space-y-2">
           {docs.map((d) => (
             <Card key={d.document_id} className="p-3.5 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-orika-graphite text-orika-gold flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-brand-graphite text-brand-accent flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-orika-cream truncate">
+                <div className="text-sm text-brand-cream truncate">
                   {d.title}
                 </div>
-                <div className="text-[0.6rem] text-orika-smoke mt-0.5">
+                <div className="text-[0.6rem] text-brand-smoke mt-0.5">
                   {fmtBytes(d.file_size_bytes)} · {fmtRelative(d.created_at)}
                   {d.uploaded_by_name ? ` · ${d.uploaded_by_name}` : ""}
                 </div>
@@ -608,14 +608,14 @@ function ContactDocumentsTab({ contactId, contactName }: { contactId: string; co
                     showToast.error("Download failed"),
                   )
                 }
-                className="p-2 text-orika-smoke hover:text-orika-cream"
+                className="p-2 text-brand-smoke hover:text-brand-cream"
                 aria-label="Download"
               >
                 <Download className="w-4 h-4" />
               </button>
               <button
                 onClick={() => remove.mutate(d.document_id)}
-                className="p-2 text-orika-smoke hover:text-state-danger"
+                className="p-2 text-brand-smoke hover:text-state-danger"
                 aria-label="Delete"
               >
                 <Trash2 className="w-4 h-4" />
@@ -696,7 +696,7 @@ function RetailPartnerTab({ contact }: { contact: Contact }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <Handshake className="w-3.5 h-3.5" /> Partnership · {partner.partner_code}
         </h3>
         <Link to="/retail-partners">
@@ -713,39 +713,39 @@ function RetailPartnerTab({ contact }: { contact: Contact }) {
       {/* Terms */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             Arrangement
           </div>
-          <div className="text-sm text-orika-cream mt-1 capitalize">
+          <div className="text-sm text-brand-cream mt-1 capitalize">
             {partner.arrangement_type}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             {partner.arrangement_type === "wholesale"
               ? "Wholesale discount"
               : "Our margin"}
           </div>
-          <div className="text-sm text-orika-cream mt-1">
+          <div className="text-sm text-brand-cream mt-1">
             {partner.arrangement_type === "wholesale"
               ? `${partner.wholesale_discount_pct ?? 0}%`
               : `${partner.consignment_margin_pct ?? 0}%`}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             Units on consignment
           </div>
-          <div className="text-sm text-orika-cream mt-1 tabular-nums">
+          <div className="text-sm text-brand-cream mt-1 tabular-nums">
             {onConsignment}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             Balance owed to us
           </div>
           <div
-            className={`text-sm mt-1 tabular-nums ${Number(partner.current_balance) > 0 ? "text-state-warn" : "text-living-sage"}`}
+            className={`text-sm mt-1 tabular-nums ${Number(partner.current_balance) > 0 ? "text-state-warn" : "text-accent2"}`}
           >
             {fmtMoney(partner.current_balance ?? 0, "NGN")}
           </div>
@@ -754,18 +754,18 @@ function RetailPartnerTab({ contact }: { contact: Contact }) {
 
       {/* Outstanding settlements */}
       <div>
-        <h4 className="text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2">
+        <h4 className="text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-2">
           Settlements · {unpaidSettlements.length} open
         </h4>
         {settlements.length === 0 ? (
-          <p className="text-xs text-orika-smoke">No settlements yet.</p>
+          <p className="text-xs text-brand-smoke">No settlements yet.</p>
         ) : (
           <div className="space-y-2">
             {settlements.slice(0, 8).map((st) => (
               <Card key={st.settlement_id} className="p-3.5">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-orika-smoke">
+                    <span className="font-mono text-xs text-brand-smoke">
                       {st.settlement_number}
                     </span>
                     <Badge
@@ -776,7 +776,7 @@ function RetailPartnerTab({ contact }: { contact: Contact }) {
                       {st.status}
                     </Badge>
                   </div>
-                  <span className="font-mono text-sm text-orika-gold">
+                  <span className="font-mono text-sm text-brand-accent">
                     {fmtMoney(st.net_payable ?? st.amount ?? 0, "NGN")}
                   </span>
                 </div>

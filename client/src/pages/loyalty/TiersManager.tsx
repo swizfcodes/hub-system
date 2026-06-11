@@ -106,10 +106,10 @@ export default function TiersManager() {
             ))}
           </div>
         ) : sortedTiers.length === 0 ? (
-          <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-16 text-center">
-            <Trophy className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">No tiers yet</p>
-            <p className="text-xs text-orika-smoke/50 mt-1">
+          <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-16 text-center">
+            <Trophy className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">No tiers yet</p>
+            <p className="text-xs text-brand-smoke/50 mt-1">
               Create tiers to segment your loyalty members (e.g. Bronze, Silver,
               Gold)
             </p>
@@ -134,13 +134,13 @@ export default function TiersManager() {
                 className={cn(
                   "flex items-center gap-4 rounded-2xl border px-5 py-4 transition-all cursor-grab active:cursor-grabbing",
                   dragOver === index
-                    ? "border-orika-gold/40 bg-orika-gold/5"
-                    : "border-white/5 bg-orika-charcoal hover:border-white/10",
+                    ? "border-brand-accent/40 bg-brand-accent/5"
+                    : "border-white/5 bg-brand-charcoal hover:border-white/10",
                 )}
                 style={{ borderLeft: `4px solid ${tier.colour}` }}
               >
                 {/* Drag handle */}
-                <GripVertical className="h-5 w-5 shrink-0 text-orika-smoke/30 cursor-grab" />
+                <GripVertical className="h-5 w-5 shrink-0 text-brand-smoke/30 cursor-grab" />
 
                 {/* Colour dot */}
                 <div
@@ -150,10 +150,10 @@ export default function TiersManager() {
 
                 {/* Tier info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-orika-cream">
+                  <p className="font-semibold text-brand-cream">
                     {tier.tier_name}
                   </p>
-                  <p className="text-xs text-orika-smoke mt-0.5">
+                  <p className="text-xs text-brand-smoke mt-0.5">
                     {tier.min_points.toLocaleString()} pts
                     {tier.max_points !== null
                       ? ` – ${tier.max_points.toLocaleString()} pts`
@@ -184,7 +184,7 @@ export default function TiersManager() {
                   <button
                     type="button"
                     onClick={() => setEditTier(tier)}
-                    className="text-orika-smoke hover:text-orika-gold transition-colors"
+                    className="text-brand-smoke hover:text-brand-accent transition-colors"
                     title="Edit tier"
                   >
                     <Edit2 className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function TiersManager() {
                         return;
                       deleteMutation.mutate(tier.tier_id);
                     }}
-                    className="text-orika-smoke hover:text-state-danger transition-colors"
+                    className="text-brand-smoke hover:text-state-danger transition-colors"
                     title="Delete tier"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -209,7 +209,7 @@ export default function TiersManager() {
               </div>
             ))}
 
-            <p className="text-xs text-orika-smoke/50 text-center pt-2">
+            <p className="text-xs text-brand-smoke/50 text-center pt-2">
               Drag tiers to reorder them. Changes save automatically.
             </p>
           </div>

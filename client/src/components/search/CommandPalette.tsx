@@ -195,13 +195,13 @@ export function CommandPalette({ open, onClose }: Props) {
       }}
     >
       {/* Panel */}
-      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-orika-black shadow-2xl overflow-hidden">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-brand-black shadow-2xl overflow-hidden">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
           {loading ? (
-            <Loader2 className="h-4 w-4 text-orika-smoke shrink-0 animate-spin" />
+            <Loader2 className="h-4 w-4 text-brand-smoke shrink-0 animate-spin" />
           ) : (
-            <Search className="h-4 w-4 text-orika-smoke shrink-0" />
+            <Search className="h-4 w-4 text-brand-smoke shrink-0" />
           )}
           <input
             ref={inputRef}
@@ -210,7 +210,7 @@ export function CommandPalette({ open, onClose }: Props) {
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             placeholder="Search contacts, products…"
-            className="flex-1 bg-transparent text-sm text-orika-cream placeholder-orika-smoke/40 focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-brand-cream placeholder-brand-smoke/40 focus:outline-none"
           />
           {query && (
             <button
@@ -218,12 +218,12 @@ export function CommandPalette({ open, onClose }: Props) {
                 setQuery("");
                 setResults([]);
               }}
-              className="text-orika-smoke hover:text-orika-cream transition-colors"
+              className="text-brand-smoke hover:text-brand-cream transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
           )}
-          <kbd className="text-[10px] px-1.5 py-0.5 bg-orika-graphite border border-white/10 rounded text-orika-smoke font-mono hidden sm:block">
+          <kbd className="text-[10px] px-1.5 py-0.5 bg-brand-graphite border border-white/10 rounded text-brand-smoke font-mono hidden sm:block">
             Esc
           </kbd>
         </div>
@@ -233,25 +233,25 @@ export function CommandPalette({ open, onClose }: Props) {
           {query.trim().length === 0 ? (
             /* Empty state — shortcuts hint */
             <div className="px-4 py-8 text-center space-y-4">
-              <Search className="h-8 w-8 text-orika-smoke/20 mx-auto" />
-              <p className="text-sm text-orika-smoke/50">
+              <Search className="h-8 w-8 text-brand-smoke/20 mx-auto" />
+              <p className="text-sm text-brand-smoke/50">
                 Type to search across contacts and products
               </p>
-              <div className="flex items-center justify-center gap-4 text-xs text-orika-smoke/30">
+              <div className="flex items-center justify-center gap-4 text-xs text-brand-smoke/30">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-orika-graphite rounded border border-white/10 font-mono">
+                  <kbd className="px-1.5 py-0.5 bg-brand-graphite rounded border border-white/10 font-mono">
                     ↑↓
                   </kbd>
                   navigate
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-orika-graphite rounded border border-white/10 font-mono">
+                  <kbd className="px-1.5 py-0.5 bg-brand-graphite rounded border border-white/10 font-mono">
                     ↵
                   </kbd>
                   select
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-orika-graphite rounded border border-white/10 font-mono">
+                  <kbd className="px-1.5 py-0.5 bg-brand-graphite rounded border border-white/10 font-mono">
                     Esc
                   </kbd>
                   close
@@ -260,15 +260,15 @@ export function CommandPalette({ open, onClose }: Props) {
             </div>
           ) : query.trim().length < 2 ? (
             <div className="px-4 py-6 text-center">
-              <p className="text-sm text-orika-smoke/40">
+              <p className="text-sm text-brand-smoke/40">
                 Keep typing to search…
               </p>
             </div>
           ) : results.length === 0 && !loading ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm text-orika-smoke/50">
+              <p className="text-sm text-brand-smoke/50">
                 No results for{" "}
-                <span className="text-orika-cream">"{query}"</span>
+                <span className="text-brand-cream">"{query}"</span>
               </p>
             </div>
           ) : (
@@ -279,12 +279,12 @@ export function CommandPalette({ open, onClose }: Props) {
               return (
                 <div key={category}>
                   {/* Group header */}
-                  <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-orika-charcoal/40">
-                    <Icon className="h-3.5 w-3.5 text-orika-smoke/50" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-orika-smoke/50">
+                  <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-brand-charcoal/40">
+                    <Icon className="h-3.5 w-3.5 text-brand-smoke/50" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-smoke/50">
                       {label}
                     </span>
-                    <span className="ml-auto text-[10px] text-orika-smoke/30">
+                    <span className="ml-auto text-[10px] text-brand-smoke/30">
                       {items.length}
                     </span>
                   </div>
@@ -301,20 +301,20 @@ export function CommandPalette({ open, onClose }: Props) {
                         className={cn(
                           "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
                           isActive
-                            ? "bg-orika-gold/10 text-orika-cream"
-                            : "hover:bg-orika-graphite/30 text-orika-smoke",
+                            ? "bg-brand-accent/10 text-brand-cream"
+                            : "hover:bg-brand-graphite/30 text-brand-smoke",
                         )}
                       >
                         <div
                           className={cn(
                             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
-                            isActive ? "bg-orika-gold/20" : "bg-orika-graphite",
+                            isActive ? "bg-brand-accent/20" : "bg-brand-graphite",
                           )}
                         >
                           <Icon
                             className={cn(
                               "h-3.5 w-3.5",
-                              isActive ? "text-orika-gold" : "text-orika-smoke",
+                              isActive ? "text-brand-accent" : "text-brand-smoke",
                             )}
                           />
                         </div>
@@ -323,20 +323,20 @@ export function CommandPalette({ open, onClose }: Props) {
                             className={cn(
                               "text-sm truncate",
                               isActive
-                                ? "text-orika-cream font-medium"
-                                : "text-orika-smoke",
+                                ? "text-brand-cream font-medium"
+                                : "text-brand-smoke",
                             )}
                           >
                             {result.label}
                           </p>
                           {result.sublabel && (
-                            <p className="text-[11px] text-orika-smoke/40 truncate">
+                            <p className="text-[11px] text-brand-smoke/40 truncate">
                               {result.sublabel}
                             </p>
                           )}
                         </div>
                         {isActive && (
-                          <ArrowRight className="h-3.5 w-3.5 text-orika-gold shrink-0" />
+                          <ArrowRight className="h-3.5 w-3.5 text-brand-accent shrink-0" />
                         )}
                       </button>
                     );
@@ -350,10 +350,10 @@ export function CommandPalette({ open, onClose }: Props) {
         {/* Footer */}
         {results.length > 0 && (
           <div className="border-t border-white/5 px-4 py-2 flex items-center justify-between">
-            <p className="text-[10px] text-orika-smoke/35">
+            <p className="text-[10px] text-brand-smoke/35">
               {results.length} result{results.length !== 1 ? "s" : ""}
             </p>
-            <p className="text-[10px] text-orika-smoke/35 hidden sm:block">
+            <p className="text-[10px] text-brand-smoke/35 hidden sm:block">
               Use arrow keys to navigate
             </p>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useBranding } from "@/providers/ThemeProvider";
 import { useNavigate } from "react-router-dom";
 import {
   Mail,
@@ -101,6 +102,11 @@ const PILLARS = [
 ];
 
 export default function Login() {
+  const { platform, businesses } = useBranding();
+  const nameWords = (platform.product_name || "Hub").split(" ");
+  const nameTail = nameWords.length > 1 ? nameWords.pop() : "";
+  const nameHead = nameWords.join(" ");
+
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -294,22 +300,28 @@ export default function Login() {
   if (splashVisible) {
     return (
       <div
-        className={`fixed inset-0 z-[9999] bg-orika-black flex flex-col items-center justify-center transition-opacity duration-800 ${splashProgress === 100 ? "opacity-0" : "opacity-100"}`}
+        className={`fixed inset-0 z-[9999] bg-brand-black flex flex-col items-center justify-center transition-opacity duration-800 ${splashProgress === 100 ? "opacity-0" : "opacity-100"}`}
       >
-        <div className="w-[120px] h-[120px] rounded-full bg-orika-black border border-orika-gold/50 flex items-center justify-center animate-splash-pulse shadow-glow-md p-4 overflow-hidden">
-          <img
-            src="/assets/images/logos/orika-logo-white.png"
-            alt="Orika"
-            className="w-full h-full object-contain"
-          />
+        <div className="w-[120px] h-[120px] rounded-full bg-brand-black border border-brand-accent/50 flex items-center justify-center animate-splash-pulse shadow-glow-md p-4 overflow-hidden">
+          {platform.logo_light_url ? (
+            <img
+              src={platform.logo_light_url}
+              alt={platform.product_name}
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <span className="font-display text-brand-accent text-5xl">
+              {(platform.product_name || "H").charAt(0)}
+            </span>
+          )}
         </div>
-        <div className="w-[200px] h-[2px] bg-orika-graphite rounded-sm mt-10 overflow-hidden">
+        <div className="w-[200px] h-[2px] bg-brand-graphite rounded-sm mt-10 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#8A6A30] via-orika-gold to-[#D9BC87] rounded-sm transition-all duration-300"
+            className="h-full bg-gradient-to-r from-brand-accent-dim via-brand-accent to-brand-accent-glow rounded-sm transition-all duration-300"
             style={{ width: `${splashProgress}%` }}
           />
         </div>
-        <p className="font-display italic font-light text-[0.95rem] text-orika-smoke mt-6 tracking-widest animate-splash-text">
+        <p className="font-display italic font-light text-[0.95rem] text-brand-smoke mt-6 tracking-widest animate-splash-text">
           Crafting experiences, one detail at a time
         </p>
       </div>
@@ -317,7 +329,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen relative animate-app-in bg-orika-black font-body text-orika-cream overflow-x-hidden">
+    <div className="min-h-screen relative animate-app-in bg-brand-black font-body text-brand-cream overflow-x-hidden">
       {/* Ambient canvas particles */}
       <canvas
         ref={canvasRef}
@@ -326,9 +338,9 @@ export default function Login() {
 
       {/* Gradient orbs for depth */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-5%] w-[50vw] h-[50vw] rounded-full bg-orika-gold/[0.035] blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-orika-gold/[0.025] blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30vw] h-[30vw] rounded-full bg-orika-gold/[0.015] blur-[80px]" />
+        <div className="absolute top-[-10%] left-[-5%] w-[50vw] h-[50vw] rounded-full bg-brand-accent/[0.035] blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-brand-accent/[0.025] blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30vw] h-[30vw] rounded-full bg-brand-accent/[0.015] blur-[80px]" />
       </div>
 
       {/* Main content — blurs when login modal opens */}
@@ -341,19 +353,19 @@ export default function Login() {
             <h2 className="font-display font-light text-4xl lg:text-5xl leading-tight">
               {greeting}
             </h2>
-            <p className="font-light text-sm text-orika-smoke mt-2 tracking-wide">
+            <p className="font-light text-sm text-brand-smoke mt-2 tracking-wide">
               {subGreeting}
             </p>
           </div>
           <div className="text-center md:text-right">
-            <div className="font-mono text-3xl text-orika-gold tracking-wide leading-none">
+            <div className="font-mono text-3xl text-brand-accent tracking-wide leading-none">
               {time.toLocaleTimeString("en-GB", {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
               })}
             </div>
-            <div className="font-light text-xs text-orika-smoke mt-2 tracking-wider uppercase">
+            <div className="font-light text-xs text-brand-smoke mt-2 tracking-wider uppercase">
               {time.toLocaleDateString("en-GB", {
                 weekday: "long",
                 day: "numeric",
@@ -369,38 +381,58 @@ export default function Login() {
           {/* Left: brand identity */}
           <div className="flex-1 text-center lg:text-left">
             <h1 className="font-display font-light text-5xl lg:text-7xl tracking-wide mb-3">
-              Orika <span className="text-orika-gold">Hub</span>
+              {nameHead}
+              {nameTail && (
+                <>
+                  {" "}
+                  <span className="text-brand-accent">{nameTail}</span>
+                </>
+              )}
             </h1>
-            <p className="font-display italic font-light text-xl text-orika-cloud mb-6">
-              Where luxury meets intelligence
-            </p>
-            <p className="font-light text-sm md:text-base text-orika-cloud leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              The central command for two distinct luxury brands — managing
-              customer relationships, inventory, retail partners, and operations
-              with precision.
+            {platform.tagline && (
+              <p className="font-display italic font-light text-xl text-brand-cloud mb-6">
+                {platform.tagline}
+              </p>
+            )}
+            <p className="font-light text-sm md:text-base text-brand-cloud leading-relaxed max-w-2xl mx-auto lg:mx-0">
+              The central command for your brands — managing customer
+              relationships, inventory, retail partners, and operations with
+              precision.
             </p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4 mt-8">
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium tracking-wide uppercase bg-living-sage/10 text-living-sage border border-living-sage/25">
-                <span className="w-1.5 h-1.5 rounded-full bg-living-sage animate-pulse" />{" "}
-                Orika Living
-              </span>
-              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium tracking-wide uppercase bg-bejewelled-rose/10 text-bejewelled-rose border border-bejewelled-rose/25">
-                <span className="w-1.5 h-1.5 rounded-full bg-bejewelled-rose animate-pulse" />{" "}
-                Bejewelled
-              </span>
+              {businesses.map((b) => (
+                <span
+                  key={b.business_key}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-medium tracking-wide uppercase border"
+                  style={{
+                    color: b.accent_colour || "rgb(var(--brand-accent))",
+                    borderColor: `${b.accent_colour || "#888888"}40`,
+                    backgroundColor: `${b.accent_colour || "#888888"}1A`,
+                  }}
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor:
+                        b.accent_colour || "rgb(var(--brand-accent))",
+                    }}
+                  />{" "}
+                  {b.display_name}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* Right: rotating quote card */}
           <div className="flex-1 w-full max-w-lg">
-            <div className="relative p-8 border-l-2 border-orika-gold bg-gradient-to-br from-orika-gold/8 via-orika-gold/3 to-transparent rounded-r-2xl backdrop-blur-sm">
+            <div className="relative p-8 border-l-2 border-brand-accent bg-gradient-to-br from-brand-accent/8 via-brand-accent/3 to-transparent rounded-r-2xl backdrop-blur-sm">
               {/* Decorative top accent */}
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orika-gold/10 to-transparent rounded-br-2xl rounded-tl-none pointer-events-none" />
-              <p className="font-display italic font-light text-xl lg:text-2xl text-orika-cream leading-relaxed mb-6 min-h-[100px] flex items-center">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-brand-accent/10 to-transparent rounded-br-2xl rounded-tl-none pointer-events-none" />
+              <p className="font-display italic font-light text-xl lg:text-2xl text-brand-cream leading-relaxed mb-6 min-h-[100px] flex items-center">
                 &ldquo;{QUOTES[currentQuote].text}&rdquo;
               </p>
               <div className="flex items-center justify-between">
-                <p className="font-body font-medium text-[0.7rem] text-orika-gold tracking-wider uppercase">
+                <p className="font-body font-medium text-[0.7rem] text-brand-accent tracking-wider uppercase">
                   — {QUOTES[currentQuote].author}
                 </p>
                 <div className="flex gap-1.5 flex-wrap max-w-[120px] justify-end">
@@ -408,7 +440,7 @@ export default function Login() {
                     <button
                       key={i}
                       onClick={() => setCurrentQuote(i)}
-                      className={`w-1.5 h-1.5 rounded-full border transition-all ${i === currentQuote ? "bg-orika-gold border-orika-gold scale-125" : "bg-orika-graphite border-orika-smoke hover:border-orika-gold/50"}`}
+                      className={`w-1.5 h-1.5 rounded-full border transition-all ${i === currentQuote ? "bg-brand-accent border-brand-accent scale-125" : "bg-brand-graphite border-brand-smoke hover:border-brand-accent/50"}`}
                       aria-label={`Quote ${i + 1}`}
                     />
                   ))}
@@ -420,10 +452,10 @@ export default function Login() {
 
         {/* Brand pillars — replaces the video strip */}
         <div className="mt-auto">
-          <div className="font-body font-medium text-[0.65rem] tracking-[0.18em] uppercase text-orika-gold mb-6 flex items-center gap-4">
-            <div className="flex-1 h-px bg-gradient-to-l from-orika-gold/20 to-transparent" />
-            The Orika Standard
-            <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/20 to-transparent" />
+          <div className="font-body font-medium text-[0.65rem] tracking-[0.18em] uppercase text-brand-accent mb-6 flex items-center gap-4">
+            <div className="flex-1 h-px bg-gradient-to-l from-brand-accent/20 to-transparent" />
+            {`The ${platform.company_name || platform.product_name} Standard`}
+            <div className="flex-1 h-px bg-gradient-to-r from-brand-accent/20 to-transparent" />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {PILLARS.map((p) => {
@@ -431,15 +463,15 @@ export default function Login() {
               return (
                 <div
                   key={p.label}
-                  className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 backdrop-blur-sm p-5 hover:border-orika-gold/30 hover:-translate-y-0.5 transition-all group"
+                  className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 backdrop-blur-sm p-5 hover:border-brand-accent/30 hover:-translate-y-0.5 transition-all group"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-orika-gold/10 text-orika-gold flex items-center justify-center mb-4 group-hover:bg-orika-gold/20 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-brand-accent/10 text-brand-accent flex items-center justify-center mb-4 group-hover:bg-brand-accent/20 transition-colors">
                     <Icon className="w-4 h-4" />
                   </div>
-                  <p className="font-semibold text-sm text-orika-cream mb-1">
+                  <p className="font-semibold text-sm text-brand-cream mb-1">
                     {p.label}
                   </p>
-                  <p className="font-light text-xs text-orika-smoke leading-relaxed">
+                  <p className="font-light text-xs text-brand-smoke leading-relaxed">
                     {p.desc}
                   </p>
                 </div>
@@ -455,11 +487,11 @@ export default function Login() {
       >
         <button
           onClick={openLogin}
-          className="group flex items-center gap-3 px-8 py-4 rounded-full bg-orika-cream text-orika-black font-semibold text-sm tracking-widest uppercase shadow-[0_0_40px_rgba(201,168,108,0.2)] hover:shadow-[0_0_60px_rgba(201,168,108,0.4)] hover:-translate-y-1 transition-all duration-300"
+          className="group flex items-center gap-3 px-8 py-4 rounded-full bg-brand-cream text-brand-black font-semibold text-sm tracking-widest uppercase shadow-[0_0_40px_rgba(201,168,108,0.2)] hover:shadow-[0_0_60px_rgba(201,168,108,0.4)] hover:-translate-y-1 transition-all duration-300"
         >
           Access Hub
-          <div className="w-6 h-6 rounded-full bg-orika-black flex items-center justify-center group-hover:bg-orika-gold transition-colors">
-            <ChevronRight className="w-4 h-4 text-orika-cream" />
+          <div className="w-6 h-6 rounded-full bg-brand-black flex items-center justify-center group-hover:bg-brand-accent transition-colors">
+            <ChevronRight className="w-4 h-4 text-brand-cream" />
           </div>
         </button>
       </div>
@@ -468,31 +500,37 @@ export default function Login() {
       {loginModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-orika-black/60 backdrop-blur-xl"
+            className="absolute inset-0 bg-brand-black/60 backdrop-blur-xl"
             onClick={closeLogin}
           />
-          <div className="relative w-full max-w-[420px] bg-orika-cream rounded-3xl p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] animate-app-in border border-white/20">
+          <div className="relative w-full max-w-[420px] bg-brand-cream rounded-3xl p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] animate-app-in border border-white/20">
             <button
               onClick={closeLogin}
-              className="absolute top-6 right-6 text-orika-smoke hover:text-orika-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
+              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="w-[80px] h-[80px] mx-auto rounded-full bg-white border border-orika-cloud/50 flex items-center justify-center mb-6 shadow-sm p-2 overflow-hidden">
-              <img
-                src="/assets/images/logos/orika-logo-black.png"
-                alt="Orika"
-                className="w-full h-full object-contain"
-              />
+            <div className="w-[80px] h-[80px] mx-auto rounded-full bg-white border border-brand-cloud/50 flex items-center justify-center mb-6 shadow-sm p-2 overflow-hidden">
+              {platform.logo_dark_url ? (
+                <img
+                  src={platform.logo_dark_url}
+                  alt={platform.product_name}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="font-display text-brand-black text-3xl">
+                  {(platform.product_name || "H").charAt(0)}
+                </span>
+              )}
             </div>
 
-            <h2 className="font-display font-light text-3xl text-center text-orika-black mb-1">
+            <h2 className="font-display font-light text-3xl text-center text-brand-black mb-1">
               Welcome back
             </h2>
-            <p className="font-light text-xs text-center text-orika-smoke mb-8">
-              Secure access to Orika Hub
+            <p className="font-light text-xs text-center text-brand-smoke mb-8">
+              Secure access to {platform.product_name}
             </p>
 
             {error && (
@@ -506,40 +544,40 @@ export default function Login() {
 
             <form onSubmit={handleLogin} noValidate>
               <div className="mb-5">
-                <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2 ml-1">
+                <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-2 ml-1">
                   Email address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/70" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-smoke/70" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-orika-black focus:outline-none focus:border-orika-black focus:ring-1 focus:ring-orika-black transition-all placeholder-orika-cloud/70 shadow-sm"
+                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all placeholder-brand-cloud/70 shadow-sm"
                     placeholder="you@company.com"
                   />
                 </div>
               </div>
 
               <div className="mb-6">
-                <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-2 ml-1">
+                <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-2 ml-1">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/70" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-smoke/70" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
-                    className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-orika-black focus:outline-none focus:border-orika-black focus:ring-1 focus:ring-orika-black transition-all placeholder-orika-cloud/70 shadow-sm"
+                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all placeholder-brand-cloud/70 shadow-sm"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-orika-smoke/70 hover:text-orika-black transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 hover:text-brand-black transition-colors"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? (
@@ -553,7 +591,7 @@ export default function Login() {
 
               <div className="flex items-center justify-between mb-8 px-1">
                 <label className="flex items-center gap-2.5 cursor-pointer group">
-                  <div className="relative w-4 h-4 border border-orika-cloud bg-white rounded flex items-center justify-center group-hover:border-orika-black transition-colors">
+                  <div className="relative w-4 h-4 border border-brand-cloud bg-white rounded flex items-center justify-center group-hover:border-brand-black transition-colors">
                     <input
                       type="checkbox"
                       className="sr-only"
@@ -561,17 +599,17 @@ export default function Login() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                     />
                     {rememberMe && (
-                      <Check className="w-3 h-3 text-orika-black" />
+                      <Check className="w-3 h-3 text-brand-black" />
                     )}
                   </div>
-                  <span className="text-xs font-medium text-orika-smoke">
+                  <span className="text-xs font-medium text-brand-smoke">
                     Remember me
                   </span>
                 </label>
                 <button
                   type="button"
                   onClick={openForgot}
-                  className="text-xs font-medium text-orika-black hover:text-orika-gold transition-colors"
+                  className="text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -580,13 +618,13 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="relative w-full py-4 rounded-xl bg-orika-black text-orika-cream font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-orika-charcoal hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none login-btn"
+                className="relative w-full py-4 rounded-xl bg-brand-black text-brand-cream font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-brand-charcoal hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none login-btn"
               >
                 <span className={isLoading ? "invisible" : ""}>Sign In</span>
                 <span className="btn-shimmer" />
                 {isLoading && (
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="w-5 h-5 border-2 border-orika-cream/20 border-t-orika-cream rounded-full animate-[spin_0.7s_linear_infinite]" />
+                    <span className="w-5 h-5 border-2 border-brand-cream/20 border-t-brand-cream rounded-full animate-[spin_0.7s_linear_infinite]" />
                   </span>
                 )}
               </button>
@@ -598,43 +636,43 @@ export default function Login() {
       {/* ── Forgot password modal ── */}
       {forgotModalOpen && (
         <div
-          className="fixed inset-0 z-[8000] bg-orika-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-app-in"
+          className="fixed inset-0 z-[8000] bg-brand-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-app-in"
           onClick={closeForgot}
         >
           <div
-            className="relative w-full max-w-[420px] bg-orika-cream border border-white/20 rounded-3xl p-8 lg:p-10 shadow-2xl"
+            className="relative w-full max-w-[420px] bg-brand-cream border border-white/20 rounded-3xl p-8 lg:p-10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={closeForgot}
-              className="absolute top-6 right-6 text-orika-smoke hover:text-orika-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
+              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
             {!forgotSuccess ? (
               <>
-                <h3 className="font-display font-light text-3xl text-orika-black mb-2">
+                <h3 className="font-display font-light text-3xl text-brand-black mb-2">
                   Reset access
                 </h3>
-                <p className="text-xs font-light text-orika-smoke mb-8 leading-relaxed">
+                <p className="text-xs font-light text-brand-smoke mb-8 leading-relaxed">
                   Enter your account email to receive a secure reset link.
                 </p>
                 <form onSubmit={handleForgot}>
                   <div className="mb-8 relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orika-smoke/70" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-smoke/70" />
                     <input
                       type="email"
                       required
                       autoComplete="email"
-                      className="w-full bg-white border border-orika-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-orika-black focus:outline-none focus:border-orika-black focus:ring-1 focus:ring-orika-black transition-all shadow-sm"
+                      className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm"
                       placeholder="you@company.com"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="relative w-full py-4 rounded-xl bg-orika-black text-orika-cream hover:bg-orika-charcoal transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
+                    className="relative w-full py-4 rounded-xl bg-brand-black text-brand-cream hover:bg-brand-charcoal transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
                   >
                     {isLoading ? "Processing…" : "Send Link"}
                   </button>
@@ -642,13 +680,13 @@ export default function Login() {
               </>
             ) : (
               <div className="text-center py-6 animate-app-in">
-                <div className="w-16 h-16 rounded-full bg-white border border-living-sage/30 flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <Check className="w-8 h-8 text-living-sage" />
+                <div className="w-16 h-16 rounded-full bg-white border border-accent2/30 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                  <Check className="w-8 h-8 text-accent2" />
                 </div>
-                <h3 className="font-display font-light text-2xl text-orika-black mb-2">
+                <h3 className="font-display font-light text-2xl text-brand-black mb-2">
                   Check your inbox
                 </h3>
-                <p className="text-xs text-orika-smoke font-light px-4">
+                <p className="text-xs text-brand-smoke font-light px-4">
                   If the email matches an active account, a secure reset link
                   has been dispatched.
                 </p>

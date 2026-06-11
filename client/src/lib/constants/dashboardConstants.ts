@@ -103,13 +103,8 @@ export function getNotificationMeta(type: string) {
 
 // ── Brand toggle options ──────────────────────────────────────────────────────
 
-export const BRAND_OPTIONS = [
-  { value: "combined", label: "Combined", icon: "🔗" },
-  { value: "jewelry", label: "Bejewelled", icon: "💎" },
-  { value: "diffusers", label: "Orika Living", icon: "🕯️" },
-] as const;
-
-export type BrandOption = (typeof BRAND_OPTIONS)[number]["value"];
+// Brand toggle options are built dynamically from useBranding()
+// (GET /api/branding) — see DashboardPage. Never hardcode them.
 
 // ── Period options ────────────────────────────────────────────────────────────
 

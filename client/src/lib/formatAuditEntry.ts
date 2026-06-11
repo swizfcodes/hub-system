@@ -123,12 +123,12 @@ export function auditActionColor(action: string): string {
     case "update":
     case "send":
     case "approve":
-      return "text-orika-gold";
+      return "text-brand-accent";
     case "delete":
       return "text-state-danger";
     case "download":
       return "text-blue-400";
     default:
-      return "text-orika-smoke";
+      return "text-brand-smoke";
   }
 }
