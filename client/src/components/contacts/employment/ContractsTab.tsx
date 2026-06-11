@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { NumberField } from "@components/ui/NumberField";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, FileSignature, Lock } from "lucide-react";
+import { Plus, FileSignature, Lock, Download } from "lucide-react";
 import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 import { Modal } from "@components/ui/Modal";
@@ -13,7 +13,11 @@ import { Textarea } from "@components/ui/Textarea";
 import { Badge } from "@components/ui/Badge";
 import { Skeleton } from "@components/ui/Skeleton";
 import { EmptyState } from "@components/ui/EmptyState";
-import { listContracts, addContract } from "@services/contacts/staff";
+import {
+  listContracts,
+  addContract,
+  openContractPdf,
+} from "@services/contacts/staff";
 import { contractSchema, type ContractValues } from "@lib/schemas/staff";
 import { fmtDate, fmtMoney } from "@lib/format";
 import { showToast } from "@hooks/useToast";
@@ -98,6 +102,18 @@ export function ContractsTab({ profileId }: { profileId: string }) {
                   </p>
                 )}
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={<Download className="w-3.5 h-3.5" />}
+                onClick={() =>
+                  openContractPdf(profileId, c.contract_id).catch((e) =>
+                    showToast.error("Could not open contract", errMsg(e)),
+                  )
+                }
+              >
+                PDF
+              </Button>
             </Card>
           ))}
         </div>

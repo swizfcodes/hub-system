@@ -267,6 +267,19 @@ async function listContracts(client, profileId) {
   return rows;
 }
 
+async function findContractById(client, contractId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT contract_id, profile_id, contract_type, effective_from,
+            effective_to, gross_salary, document_id, notes, created_at
+     FROM shared.staff_contracts
+     WHERE contract_id = $1`,
+    [contractId],
+  );
+  return row || null;
+}
+
 async function insertContract(client, data) {
   const {
     rows: [row],
@@ -701,6 +714,7 @@ module.exports = {
   getOrgChart,
   // contracts
   listContracts,
+  findContractById,
   insertContract,
   // assets
   listAssets,
