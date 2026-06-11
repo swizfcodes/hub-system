@@ -46,6 +46,7 @@ async function _notifyTierUpgrade(
     body: `A customer just upgraded to the ${newTier.tier_name} loyalty tier.`,
     referenceType: "contact",
     referenceId: contactId,
+    actionUrl: `/contacts/${contactId}`,
   });
 }
 

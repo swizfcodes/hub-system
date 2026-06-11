@@ -238,7 +238,7 @@ async function addAddress(contactId, data, user) {
         contactId,
         address_type: data.address_type,
       });
-    return repo.insertAddress(client, {
+    const address = await repo.insertAddress(client, {
       contactId,
       address_type: data.address_type,
       line1: data.line1,
@@ -253,6 +253,22 @@ async function addAddress(contactId, data, user) {
       is_default: data.is_default,
       userId: user.user_id,
     });
+
+    // Addresses are a sub-resource of the contact — log against the
+    // contact record so the edit shows up on its audit trail. (This was
+    // previously missing entirely: address changes left no audit entry.)
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "System",
+      business: user.current_business || "shared",
+      module: "crm",
+      action: "update",
+      table: "contacts",
+      recordId: contactId,
+      after: { address_added: address },
+    });
+
+    return address;
   });
 }
 

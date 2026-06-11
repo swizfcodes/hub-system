@@ -503,6 +503,12 @@ async function notifyManagers(
        AND (ur.business=$1 OR ur.business='*')`,
     [business],
   );
+  // Deep link for the notification click. Expenses have a detail route;
+  // cash advances live in a tab on the expenses home.
+  const actionUrl =
+    referenceType === "expense" && referenceId
+      ? `/expenses/${referenceId}`
+      : "/expenses";
   for (const m of managers) {
     await notifService.create(client, {
       userId: m.user_id,
@@ -512,6 +518,7 @@ async function notifyManagers(
       body,
       referenceType,
       referenceId,
+      actionUrl,
     });
   }
 }

@@ -208,6 +208,21 @@ async function insert(client, data) {
   return row;
 }
 
+// Link an (unlinked) document to a record — used by the dedupe path so
+// re-uploading known bytes against a contact/invoice still attaches it.
+async function updateReference(client, { documentId, referenceType, referenceId }) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE shared.documents
+     SET reference_type = $2, reference_id = $3
+     WHERE document_id = $1 AND is_deleted = false
+     RETURNING *`,
+    [documentId, referenceType || null, referenceId || null],
+  );
+  return row || null;
+}
+
 async function softDelete(client, documentId) {
   const {
     rows: [row],
@@ -268,6 +283,7 @@ module.exports = {
   findById,
   findByContentHash,
   insert,
+  updateReference,
   softDelete,
   // tags
   addTag,

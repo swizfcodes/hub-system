@@ -335,6 +335,7 @@ async function createTransaction(business, data, user) {
             body: `Staff requesting price below minimum. Approval ID: ${da.approval_id}`,
             referenceType: "discount_approval",
             referenceId: da.approval_id,
+            actionUrl: "/pos",
           });
         }
         throw Object.assign(
