@@ -17,7 +17,8 @@ export type MessagingSocketEvent =
   | "typing"
   | "presence:online"
   | "presence:offline"
-  | "notification:new";
+  | "notification:new"
+  | "branding:updated";
 
 const eventName = (type: MessagingSocketEvent) => `orika:${type}`;
 

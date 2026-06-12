@@ -36,6 +36,7 @@ const repo = require("./store.repository");
 // ─────────────────────────────────────────────────────────────
 
 const STORE_BUSINESS = "diffusers";
+const { businessLabel } = require("../../lib/branding");
 const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
 
 // Scents are derived from published products, but the ERP captures no
@@ -267,7 +268,7 @@ async function createOrder({
       const vaResult = await optimusService.openVirtualAccount({
         amountKobo: totalKobo,
         transactionRef,
-        description: `Orika Living order #${order.id}`,
+        description: `${businessLabel(STORE_BUSINESS)} order #${order.id}`,
         customerRef: customer.id,
         firstname: firstName,
         surname: lastName,
@@ -456,7 +457,7 @@ async function verifyAndFulfil(reference) {
         revLines[1].credit = grossNaira;
       }
       revenueEntry = await journalService.postEntry(client, {
-        description: `Web Sale ${order.id} (Orika Living)`,
+        description: `Web Sale ${order.id} (${businessLabel(STORE_BUSINESS)})`,
         referenceType: "store_order",
         referenceId: order.id,
         postedBy: order.customerId,
