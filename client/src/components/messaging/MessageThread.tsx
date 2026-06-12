@@ -54,6 +54,10 @@ import {
   isUserOnline,
 } from "@lib/socket";
 import {
+  registerActiveChannel,
+  unregisterActiveChannel,
+} from "@lib/notifications/chatAlerts";
+import {
   getChannelDisplayName,
   getDirectPeer,
   getAvatarColour,
@@ -114,10 +118,15 @@ export function MessageThread({
   usePresence();
   useChannelMessages(channel.channel_id);
 
-  // Join the channel's socket room for typing indicators.
+  // Join the channel's socket room for typing indicators, and register as
+  // the on-screen conversation so the alert layer stays quiet for it.
   useEffect(() => {
     joinChannelRoom(channel.channel_id);
-    return () => leaveChannelRoom(channel.channel_id);
+    registerActiveChannel(channel.channel_id);
+    return () => {
+      leaveChannelRoom(channel.channel_id);
+      unregisterActiveChannel(channel.channel_id);
+    };
   }, [channel.channel_id]);
 
   const { data: messages = [], isLoading } = useQuery({
@@ -125,6 +134,50 @@ export function MessageThread({
     queryFn: () => listMessages(channel.channel_id, { limit: 50 }),
     refetchOnWindowFocus: false,
   });
+
+  // "N unread" divider — anchored once per conversation open, to the
+  // oldest message that was unread at that moment. Anchoring to a
+  // message_id keeps the line fixed while mark-read fires and new
+  // messages arrive underneath it.
+  const [unreadDivider, setUnreadDivider] = useState<{
+    channelId: string;
+    messageId: string;
+    count: number;
+  } | null>(null);
+  useEffect(() => {
+    if (isLoading || unreadDivider?.channelId === channel.channel_id) return;
+    const count = channel.unread_count ?? 0;
+    let anchor: { channelId: string; messageId: string; count: number } = {
+      channelId: channel.channel_id,
+      messageId: "",
+      count: 0,
+    };
+    let remaining = count;
+    if (count > 0) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (m.sender_user_id !== userId && m.sender_kind !== "system") {
+          remaining -= 1;
+          if (remaining === 0) {
+            anchor = {
+              channelId: channel.channel_id,
+              messageId: m.message_id,
+              count,
+            };
+            break;
+          }
+        }
+      }
+    }
+    setUnreadDivider(anchor);
+  }, [
+    isLoading,
+    messages,
+    channel.channel_id,
+    channel.unread_count,
+    userId,
+    unreadDivider?.channelId,
+  ]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -589,6 +642,15 @@ export function MessageThread({
                     <span className="rounded-full bg-brand-charcoal px-3 py-1 text-[10px] font-medium text-brand-smoke/70">
                       {fmtDayLabel(msg.created_at)}
                     </span>
+                  </div>
+                )}
+                {unreadDivider?.messageId === msg.message_id && (
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="h-px flex-1 bg-brand-accent/25" />
+                    <span className="rounded-full bg-brand-accent/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-brand-accent">
+                      {unreadDivider.count} unread
+                    </span>
+                    <div className="h-px flex-1 bg-brand-accent/25" />
                   </div>
                 )}
                 <MessageBubble

@@ -8,6 +8,7 @@ import { BusinessSwitchManager } from "./BusinessSwitchManager";
 import { CrmQuickActionsFab } from "@components/crm/fab/CrmQuickActionsFab";
 import { PermissionGate } from "@components/shared/PermissionGate";
 import { FloatingHelpButton } from "@components/help/FloatingHelpButton";
+import { ChatNotificationManager } from "@components/notifications/ChatNotificationManager";
 import { useUiStore } from "@stores/useUiStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
@@ -92,6 +93,7 @@ export function AppShell() {
       <AppMenuFab />
       {onCrm && <CrmQuickActionsFab />}
       <FloatingHelpButton />
+      <ChatNotificationManager />
 
       {/* Guarded business-context switch: confirm → blurred 5s reload overlay */}
       <BusinessSwitchManager />

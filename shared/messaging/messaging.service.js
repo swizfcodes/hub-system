@@ -42,6 +42,21 @@ function emitToChannelMembers(channel, event, data) {
   }
 }
 
+// message:new carries a personalised `recipient` block per member (their
+// own mute flag) so the client alert layer can decide locally whether to
+// beep / notify. The business-room copy stays generic — clients use it
+// for cache refresh only and never alert on payloads without `recipient`.
+function emitNewMessage(channel, payload) {
+  for (const m of channel.members || []) {
+    if (!m.user_id) continue;
+    emitToUser(m.user_id, "message:new", {
+      ...payload,
+      recipient: { muted: !!m.is_muted },
+    });
+  }
+  emitToBusiness(channel.business || "shared", "message:new", payload);
+}
+
 // ─────────────────────────────────────────────────────────────
 // CHANNELS
 // ─────────────────────────────────────────────────────────────
@@ -482,11 +497,12 @@ async function sendMessage(channelId, data, user) {
       messageId: message.message_id,
       senderUserId: user.user_id,
       senderName: user.display_name,
+      channelName: channel.name || null,
+      channelType: channel.channel_type,
+      messageType: message.message_type,
       preview: (data.content || "").substring(0, 120),
     };
-    emitToChannelMembers(channel, "message:new", payload);
-    // Legacy business-room emit kept for any non-member listeners.
-    emitToBusiness(channel.business || "shared", "message:new", payload);
+    emitNewMessage(channel, payload);
 
     return message;
   });
@@ -601,11 +617,14 @@ async function forwardMessage(messageId, { channel_ids }, user) {
           displayName: att.display_name,
         });
       }
-      emitToChannelMembers(target, "message:new", {
+      emitNewMessage(target, {
         channelId: targetId,
         messageId: copy.message_id,
         senderUserId: user.user_id,
         senderName: user.display_name,
+        channelName: target.name || null,
+        channelType: target.channel_type,
+        messageType: copy.message_type,
         preview: (original.content || "").substring(0, 120),
       });
       forwarded.push(copy.message_id);
