@@ -104,8 +104,10 @@ flagged in the logs.
 1. **Optimus must activate Live mode for the app** (OPTO872115) — having Live
    API keys is not the same thing; until activation the gateway accepts only
    Inspect and rejects Live with error 01. All three services approved, and
-   the app's settlement account mapping confirmed (not the AB MICROFINANCE
-   BANK placeholder). Webhook URL set to
+   settlement confirmed as mapped to ORIKA LIVING LTD's corporate account at
+   Optimus Bank (the unactivated app profile shows an unset beneficiary —
+   defaulted bank name, null account number — so have Optimus confirm the
+   mapping in writing at activation). Webhook URL set to
    `https://app.orikaliving.com/api/webhooks/optimus`.
 2. Server `.env`: Optimus section present (see `.env.example`), **no**
    `OPTIMUS_PAY_BASE_URL` line.
