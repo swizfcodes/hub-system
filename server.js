@@ -31,6 +31,13 @@ async function start() {
   await businesses.loadActiveBusinesses();
   jobRunner.start();
 
+  // Pre-render footer social icons for email templates (Gmail strips
+  // data: URIs, so icons must exist as hosted files). Best-effort —
+  // footers fall back to text links until the files exist.
+  require("./lib/email/assets")
+    .ensureSocialIcons()
+    .catch((err) => logger.warn(`Email asset warm-up failed: ${err.message}`));
+
   server.listen(config.app.port, () => {
     logger.info(
       `🚀 Hub server running on http://localhost:${config.app.port} [${config.app.env}]`,

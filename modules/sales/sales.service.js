@@ -776,6 +776,10 @@ async function createDirectOrder(business, data, user) {
   }
 
   // ── Auto-send receipt by email ─────────────────────────────────────
+  // The receipt template renders a full itemised receipt: line items,
+  // subtotal, VAT, total, and payment methods. Read the totals back
+  // from the invoice we just created (the recorded figures, not a
+  // recomputation) so the email always matches the books.
   let receiptSent = false;
   try {
     const { rows: [contact] } = await require("../../config/db").pool.query(
@@ -783,10 +787,43 @@ async function createDirectOrder(business, data, user) {
       [data.contact_id],
     );
     if (contact?.email) {
+      const { invoice, lines } = await withBusinessContext(business, async (client) => {
+        const { rows: [inv] } = await client.query(
+          `SELECT subtotal, discount_total, vat_amount, total_amount
+             FROM invoices WHERE invoice_id = $1`,
+          [result.invoice_id],
+        );
+        const { rows: invLines } = await client.query(
+          `SELECT description, quantity, unit_price, line_total
+             FROM invoice_lines WHERE invoice_id = $1
+            ORDER BY display_order`,
+          [result.invoice_id],
+        );
+        return { invoice: inv, lines: invLines };
+      });
+
+      const paymentMethods = (data.payments || [])
+        .map((p) => paymentMethodLabel(p.payment_method))
+        .filter(Boolean)
+        .filter((label, i, all) => all.indexOf(label) === i)
+        .join(" • ");
+
       const { subject, html } = renderEmail("receipt", business, {
         contact_name: contact.display_name,
-        order_number: result.order_number,
-        total_amount: result.total_amount,
+        transaction_number: result.order_number,
+        transaction_date: new Date().toLocaleString("en-NG", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        lines,
+        subtotal: invoice?.subtotal,
+        discount_total: invoice?.discount_total,
+        vat_amount: invoice?.vat_amount,
+        total_amount: invoice?.total_amount ?? result.total_amount,
+        payment_methods: paymentMethods,
         invoice_number: result.invoice_number,
       });
       await sendEmail({
@@ -802,6 +839,24 @@ async function createDirectOrder(business, data, user) {
   }
 
   return { ...result, receipt_sent: receiptSent };
+}
+
+/** Human label for a payment method code, e.g. "bank_transfer" → "Bank Transfer". */
+function paymentMethodLabel(method) {
+  return (
+    {
+      cash: "Cash",
+      bank_transfer: "Bank Transfer",
+      pos_card: "POS Card",
+      mobile_money: "Mobile Money",
+      paystack: "Paystack",
+      loyalty_redemption: "Loyalty",
+      credit: "Credit",
+    }[method] ||
+    String(method || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 // ─── Orders ───────────────────────────────────────────────────────────────────

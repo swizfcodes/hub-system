@@ -50,3 +50,5 @@ PHASE1_QA_CHECKLIST.md
 .cache
 # Redis persistence snapshots (local dev server artifact)
 dump.rdb
+# Generated email previews (node scripts/previewEmails.js)
+documents/email-previews/
