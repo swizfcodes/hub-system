@@ -90,7 +90,8 @@ flagged in the logs.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| "Request mode not supported" | `mock_mode` doesn't match the dashboard app mode (or invalid value) | `OPTIMUS_PAY_MOCK_MODE=Live` (config also normalizes/validates this), confirm app is Live on the console |
+| "Request mode not supported" (error code 01) | The app on OnePipe is not enabled for the mode sent. An app awaiting live activation accepts only `Inspect` and rejects `Live` | Optimus must activate Live for the app (OPTO872115) — email digitalbanking@optimusbank.com. Don't "fix" it by switching production to Inspect |
+| Account provisioned but payer's bank finds no name (e.g. "John Doe", 999… number) | `Inspect` mode fabricates a placeholder account — nothing is registered at the real bank, so name-enquiry fails and it can never receive money | Live mode only. Real accounts carry `name_on_account` (ORIKA LIVING LTD) |
 | "Could not provision payment account…" | Any open_account failure — the customer-facing wrapper | `grep '\[optimus\]' logs/error.log` for the provider's real message |
 | HTTP 401 from API | Wrong/whitespace-padded key or secret; service not approved for the app | Re-paste keys exactly; confirm service approval on the console |
 | "Optimus Pay is not configured…" (503) | Env vars missing on the server | Set `OPTIMUS_PAY_API_KEY` / `OPTIMUS_PAY_CLIENT_SECRET`, restart PM2 |
@@ -100,7 +101,13 @@ flagged in the logs.
 
 ## Go-live checklist
 
-1. Dashboard: app **Live**, all three services approved, webhook URL set to
+1. **Optimus must activate Live mode for the app** (OPTO872115) — having Live
+   API keys is not the same thing; until activation the gateway accepts only
+   Inspect and rejects Live with error 01. All three services approved, and
+   settlement confirmed as mapped to ORIKA LIVING LTD's corporate account at
+   Optimus Bank (the unactivated app profile shows an unset beneficiary —
+   defaulted bank name, null account number — so have Optimus confirm the
+   mapping in writing at activation). Webhook URL set to
    `https://app.orikaliving.com/api/webhooks/optimus`.
 2. Server `.env`: Optimus section present (see `.env.example`), **no**
    `OPTIMUS_PAY_BASE_URL` line.
