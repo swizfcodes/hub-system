@@ -9,6 +9,24 @@ require("dotenv").config({
         : ".env.local",
 });
 
+// OnePipe accepts exactly "Live" or "Inspect" for transaction.mock_mode and
+// rejects anything else (or a value that doesn't match the app's mode on the
+// Optimus dashboard) with "Request mode not supported". Normalize case and
+// whitespace, and fall back to "Live" so a stale env value can never take
+// checkout down.
+function normalizeOptimusMockMode(raw) {
+  const mode = { live: "Live", inspect: "Inspect" }[
+    String(raw || "Live").trim().toLowerCase()
+  ];
+  if (!mode) {
+    console.warn(
+      `[config] OPTIMUS_PAY_MOCK_MODE="${raw}" is not a valid OnePipe request mode (Live | Inspect) — using "Live"`,
+    );
+    return "Live";
+  }
+  return mode;
+}
+
 const config = {
   // Fixed UUID used as posted_by for machine-generated journal entries
   // (e.g. payment-gateway webhooks). Must exist in shared.users — seeded by
@@ -74,21 +92,26 @@ const config = {
   },
 
   optimusPay: {
-    apiKey: process.env.OPTIMUS_PAY_API_KEY,
-    clientSecret: process.env.OPTIMUS_PAY_CLIENT_SECRET,
+    // Trimmed because the Signature header is MD5(request_ref;client_secret)
+    // — one invisible trailing space pasted into .env breaks every call
+    // with a 401 and no useful message.
+    apiKey: (process.env.OPTIMUS_PAY_API_KEY || "").trim(),
+    clientSecret: (process.env.OPTIMUS_PAY_CLIENT_SECRET || "").trim(),
     // Name registered on provisioned virtual accounts (what a payer sees on
     // name-enquiry before transferring). Defaults to the customer's name
     // per-order when unset; set a business name to brand the account.
     accountName: process.env.OPTIMUS_PAY_ACCOUNT_NAME,
-    // Open Account transaction mode. "Live" processes real transactions;
-    // your Optimus account may also expose a sandbox/test value.
-    mockMode: process.env.OPTIMUS_PAY_MOCK_MODE || "Live",
-    // Swap to https://api.onepipe.io for production
-    baseUrl:
-      process.env.NODE_ENV === "production"
-        ? "https://api.onepipe.io"
-        : process.env.OPTIMUS_PAY_BASE_URL ||
-          "https://409a9dcf-73e5-41bb-aa2e-ba6c286173a3.mock.pstmn.io",
+    // transaction.mock_mode — must match the app's mode on the Optimus
+    // dashboard. Only "Live" or "Inspect" exist; anything else is rejected
+    // by the API with "Request mode not supported".
+    mockMode: normalizeOptimusMockMode(process.env.OPTIMUS_PAY_MOCK_MODE),
+    // Live OnePipe endpoint by default — deliberately NOT keyed on NODE_ENV,
+    // so a PM2 started without `--env production` can't silently re-route
+    // payments to a dead mock. Set OPTIMUS_PAY_BASE_URL only to point local
+    // dev at scripts/optimus-mock-server.js; leave it unset in production.
+    baseUrl: (process.env.OPTIMUS_PAY_BASE_URL || "https://api.onepipe.io")
+      .trim()
+      .replace(/\/+$/, ""),
     notificationUrl:
       process.env.OPTIMUS_PAY_NOTIFICATION_URL ||
       `${process.env.HUB_BASE_URL || "http://localhost:7000"}/api/webhooks/optimus`,

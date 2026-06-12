@@ -56,4 +56,7 @@ tests/        — Unit and integration tests
 ## Tests
 
 - Run `npm test`
-- Read `TEST_SUMMARY.md` for more information
+
+## Payments
+
+- Optimus Pay (virtual-account collections): see `documents/OPTIMUS_PAY.md`
