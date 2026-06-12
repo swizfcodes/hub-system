@@ -668,12 +668,17 @@ function paymentMethodToCOA(method) {
 }
 
 async function postPosRevenueJournal(client, business, tx, payments, lines, exchangeRate = 1) {
-  // Helper: convert sale-currency amount to NGN for journal posting.
-  const toNGN = (amt) => parseFloat((amt * exchangeRate).toFixed(2));
-
   // Sum subtotal and VAT across the sale lines. We recompute here rather
   // than relying on the transaction header so the journal numbers match
   // exactly what was posted to transaction_lines.
+  //
+  // IMPORTANT: line `unit_price` is ALREADY in NGN. The POS cart prices
+  // products in the base currency (NGN) and only the *payment* is taken
+  // in a foreign currency (see PaymentSheet on the client). So the
+  // revenue and VAT credits below are used as-is — they must NOT be
+  // multiplied by the exchange rate. Only the cash/bank debit (the
+  // foreign tender) is converted back to NGN. Converting the credits too
+  // double-counts the rate and throws "Journal out of balance".
   let subtotal = 0;
   let vatTotal = 0;
   const vatRate = getVatRate(business);
@@ -685,15 +690,13 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
     subtotal += net;
     vatTotal += vat;
   }
-  subtotal = parseFloat(subtotal.toFixed(2));
-  vatTotal = parseFloat(vatTotal.toFixed(2));
-
-  // Convert to NGN for journal entries (all accounting is in NGN)
-  const subtotalNGN = toNGN(subtotal);
-  const vatTotalNGN = toNGN(vatTotal);
+  const subtotalNGN = parseFloat(subtotal.toFixed(2));
+  const vatTotalNGN = parseFloat(vatTotal.toFixed(2));
+  const saleTotalNGN = parseFloat((subtotalNGN + vatTotalNGN).toFixed(2));
 
   // Group payments by COA code so multiple split-payments to the same
-  // destination (e.g. two cash payments) book as a single line.
+  // destination (e.g. two cash payments) book as a single line. Each
+  // payment is taken in the sale currency, so convert it to NGN here.
   const debitsByAccount = new Map();
   for (const p of payments) {
     const code = paymentMethodToCOA(p.payment_method);
@@ -704,9 +707,33 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
       );
       continue;
     }
+    const amtNGN = parseFloat((parseFloat(p.amount) * exchangeRate).toFixed(2));
+    debitsByAccount.set(accId, (debitsByAccount.get(accId) || 0) + amtNGN);
+  }
+
+  // Reconcile the debit side to the NGN sale value. The customer tenders
+  // the NGN-equivalent of the sale and any change is returned, so the
+  // recognised receipt equals subtotal + VAT. Converting a foreign tender
+  // and rounding to 2dp leaves a sub-unit residual (rate × 0.005 ≈ several
+  // naira) that would otherwise break the DR=CR balance check; fold that
+  // residual (and any change) into the largest debit — conventionally the
+  // cash drawer, which is where change is given from.
+  const debitSum = parseFloat(
+    [...debitsByAccount.values()].reduce((s, v) => s + v, 0).toFixed(2),
+  );
+  const residual = parseFloat((saleTotalNGN - debitSum).toFixed(2));
+  if (Math.abs(residual) >= 0.01 && debitsByAccount.size > 0) {
+    let largestAcc = null;
+    let largestAmt = -Infinity;
+    for (const [accId, amt] of debitsByAccount.entries()) {
+      if (amt > largestAmt) {
+        largestAmt = amt;
+        largestAcc = accId;
+      }
+    }
     debitsByAccount.set(
-      accId,
-      (debitsByAccount.get(accId) || 0) + toNGN(parseFloat(p.amount)),
+      largestAcc,
+      parseFloat((largestAmt + residual).toFixed(2)),
     );
   }
 
