@@ -7,15 +7,17 @@
  * Built on top of api.onepipe.io; all requests share the same
  * auth/signature scheme and request envelope.
  *
- * Environment toggle (one-line swap):
- *   NODE_ENV=production  → https://api.onepipe.io
- *   otherwise            → mock server (config.optimusPay.baseUrl)
+ * Endpoint selection: always https://api.onepipe.io unless
+ * OPTIMUS_PAY_BASE_URL explicitly points local dev at
+ * scripts/optimus-mock-server.js (never set it in production).
  *
  * Key concepts:
  *   - Every request needs a unique `request_ref`
  *   - Signature = MD5( request_ref + ";" + client_secret )
  *   - Sensitive fields in auth.secure are Triple-DES encrypted
  *   - Amounts are in KOBO (multiply naira × 100)
+ *   - transaction.mock_mode must match the app's dashboard mode
+ *     ("Live" | "Inspect") or the API replies "Request mode not supported"
  */
 
 const axios = require("axios");
@@ -80,6 +82,36 @@ function makeRequestRef(prefix = "hub") {
   return `${prefix}-${uuidv4()}`;
 }
 
+/**
+ * Fail fast with an actionable message when credentials are absent.
+ * Without this the API just answers 401 to "Bearer undefined" and the
+ * storefront shows a generic failure with no clue it's an env problem.
+ */
+function assertConfigured() {
+  const { apiKey, clientSecret } = config.optimusPay;
+  if (!apiKey || !clientSecret) {
+    throw Object.assign(
+      new Error(
+        "Optimus Pay is not configured: set OPTIMUS_PAY_API_KEY and OPTIMUS_PAY_CLIENT_SECRET in the server .env and restart",
+      ),
+      { status: 503 },
+    );
+  }
+}
+
+/**
+ * Normalize a Nigerian mobile number to the international format the API
+ * examples use (0803… → 234803…). Non-digits are stripped; anything that
+ * isn't a local 11-digit number is passed through as digits unchanged.
+ */
+function normalizeMsisdn(mobileNo) {
+  const digits = String(mobileNo || "").replace(/[^0-9]/g, "");
+  if (digits.length === 11 && digits.startsWith("0")) {
+    return `234${digits.slice(1)}`;
+  }
+  return digits;
+}
+
 // ── API: Open Virtual Account ─────────────────────────────────────────────────
 
 /**
@@ -116,6 +148,7 @@ async function openVirtualAccount({
   email,
   mobileNo,
 }) {
+  assertConfigured();
   const { baseUrl, notificationUrl, accountName, mockMode } =
     config.optimusPay;
   const requestRef = makeRequestRef("openacct");
@@ -149,11 +182,11 @@ async function openVirtualAccount({
       transaction_ref_parent: null,
       amount: 0,
       customer: {
-        customer_ref: customerRef,
+        customer_ref: String(customerRef),
         firstname,
         surname,
         email,
-        mobile_no: mobileNo,
+        mobile_no: normalizeMsisdn(mobileNo),
       },
       meta: {
         // Expected payment for this account, in kobo (per the integration's
@@ -247,6 +280,13 @@ async function openVirtualAccount({
     logger.error(
       `[optimus] openVirtualAccount failed status=${data.status}: ${errMsg}`,
     );
+    if (/request mode/i.test(String(errMsg))) {
+      logger.error(
+        `[optimus] OPS HINT: the API rejected mock_mode="${mockMode}". ` +
+          `OPTIMUS_PAY_MOCK_MODE must match the app's mode on the Optimus ` +
+          `dashboard — a Live app accepts only "Live".`,
+      );
+    }
     throw Object.assign(new Error(errMsg), { status: 502 });
   }
 
@@ -309,6 +349,7 @@ async function openVirtualAccount({
  * @returns {{ status, providerResponse, raw }}
  */
 async function queryTransaction(transactionRef, requestType = "collect") {
+  assertConfigured();
   const { baseUrl } = config.optimusPay;
   const requestRef = makeRequestRef("query");
 
@@ -360,4 +401,5 @@ module.exports = {
   computeSignature,
   encrypt,
   makeRequestRef,
+  normalizeMsisdn,
 };

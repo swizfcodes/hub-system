@@ -265,18 +265,35 @@ async function createOrder({
       const lastName = rest.join(" ") || "N/A";
       const transactionRef = `store-${order.id}`;
 
-      const vaResult = await optimusService.openVirtualAccount({
-        amountKobo: totalKobo,
-        transactionRef,
-        description: `${businessLabel(STORE_BUSINESS)} order #${order.id}`,
-        customerRef: customer.id,
-        firstname: firstName,
-        surname: lastName,
-        email: delivery_address.email,
-        mobileNo:
-          (delivery_address.phone || "").replace(/[^0-9]/g, "") ||
-          "2340000000000",
-      });
+      let vaResult;
+      try {
+        vaResult = await optimusService.openVirtualAccount({
+          amountKobo: totalKobo,
+          transactionRef,
+          description: `${businessLabel(STORE_BUSINESS)} order #${order.id}`,
+          customerRef: customer.id,
+          firstname: firstName,
+          surname: lastName,
+          email: delivery_address.email,
+          mobileNo:
+            (delivery_address.phone || "").replace(/[^0-9]/g, "") ||
+            "2340000000000",
+        });
+      } catch (err) {
+        // The provider's raw message (e.g. "Request mode not supported")
+        // means nothing to a shopper and leaks integration detail. The full
+        // cause is already logged inside optimus.service — show the same
+        // friendly fallback the campaign storefront uses.
+        logger.error(
+          `[store] Optimus Pay provisioning failed for order ${order.id}: ${err.message}`,
+        );
+        throw Object.assign(
+          new Error(
+            "Could not provision payment account. Please try again or choose another method.",
+          ),
+          { status: 502 },
+        );
+      }
 
       await repo.setOrderOptimusRef(client, order.id, {
         transactionRef,
