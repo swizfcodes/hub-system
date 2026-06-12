@@ -192,10 +192,33 @@ async function openVirtualAccount({
 
   // OnePipe's transact endpoint is versioned: POST {base}/v2/transact
   // (same path for the mock and production servers).
-  const { data } = await axios.post(`${baseUrl}/v2/transact`, body, {
-    headers: buildHeaders(requestRef),
-    timeout: 30_000,
-  });
+  let data;
+  try {
+    ({ data } = await axios.post(`${baseUrl}/v2/transact`, body, {
+      headers: buildHeaders(requestRef),
+      timeout: 30_000,
+    }));
+  } catch (err) {
+    // Axios throws on 4xx/5xx and its err.message hides the response body —
+    // which is where OnePipe explains WHAT was wrong (bad payload field,
+    // service not approved, invalid key, etc.). Log it in full.
+    const httpStatus = err.response?.status;
+    const respBody = err.response?.data;
+    logger.error(
+      `[optimus] openVirtualAccount HTTP ${httpStatus ?? "no-response"} ` +
+        `txn_ref=${transactionRef} provider_says=` +
+        `${respBody ? JSON.stringify(respBody).slice(0, 800) : err.message}`,
+    );
+    const provMsg =
+      respBody?.message ||
+      respBody?.data?.error?.message ||
+      respBody?.data?.error ||
+      err.message;
+    throw Object.assign(
+      new Error(`Optimus Pay open_account failed (HTTP ${httpStatus ?? "?"}): ${provMsg}`),
+      { status: 502 },
+    );
+  }
 
   // "Duplicate": Optimus rejects similar requests made within a 5-minute
   // window. Surface it distinctly so callers can treat the original request
@@ -301,10 +324,22 @@ async function queryTransaction(transactionRef, requestType = "collect") {
     },
   };
 
-  const { data } = await axios.post(`${baseUrl}/v2/transact/query`, body, {
-    headers: buildHeaders(requestRef),
-    timeout: 30_000,
-  });
+  let data;
+  try {
+    ({ data } = await axios.post(`${baseUrl}/v2/transact/query`, body, {
+      headers: buildHeaders(requestRef),
+      timeout: 30_000,
+    }));
+  } catch (err) {
+    const httpStatus = err.response?.status;
+    const respBody = err.response?.data;
+    logger.error(
+      `[optimus] queryTransaction HTTP ${httpStatus ?? "no-response"} ` +
+        `ref=${transactionRef} provider_says=` +
+        `${respBody ? JSON.stringify(respBody).slice(0, 800) : err.message}`,
+    );
+    throw err;
+  }
 
   logger.info(
     `[optimus] queryTransaction ref=${transactionRef} → status=${data.status}`,
