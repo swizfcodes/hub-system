@@ -181,11 +181,12 @@ async function sendViaEmail(business, tx, overrideTo, invoiceNumber) {
       contact_name: tx.contact_name || "Valued Customer",
       transaction_number: tx.transaction_number,
       transaction_date: formatDate(tx.created_at),
+      // Raw values — the receipt template owns money formatting.
       lines: (tx.lines || []).map((l) => ({
         description: l.description,
-        qty: l.quantity,
-        unit_price: formatCurrency(l.unit_price),
-        line_total: formatCurrency(l.line_total),
+        quantity: l.quantity,
+        unit_price: l.unit_price,
+        line_total: l.line_total,
       })),
       subtotal: tx.subtotal,
       discount_total: tx.discount_total,

@@ -183,6 +183,15 @@ async function updateBusiness(businessKey, fields, user) {
       before,
       after,
     });
+    // Push the fresh row into the in-memory cache — emails, PDFs, and
+    // branding endpoints read from it, so without this a new logo or
+    // colour wouldn't apply until the next restart.
+    businesses.addToCache(after);
+    // Brand colours / social links may have changed: re-render footer
+    // icons in the new palette. Best-effort, never blocks the update.
+    require("../../lib/email/assets")
+      .ensureSocialIcons()
+      .catch(() => {});
     return after;
   });
 }
