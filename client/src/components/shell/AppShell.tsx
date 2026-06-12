@@ -7,7 +7,7 @@ import { AppMenuFab } from "./AppMenuFab";
 import { BusinessSwitchManager } from "./BusinessSwitchManager";
 import { CrmQuickActionsFab } from "@components/crm/fab/CrmQuickActionsFab";
 import { PermissionGate } from "@components/shared/PermissionGate";
-import { FloatingHelpButton } from "@components/help/FloatingHelpButton";
+import { FloatingLauncher } from "./FloatingLauncher";
 import { ChatNotificationManager } from "@components/notifications/ChatNotificationManager";
 import { useUiStore } from "@stores/useUiStore";
 import { useAuthStore } from "@stores/useAuthStore";
@@ -92,7 +92,7 @@ export function AppShell() {
       <MobileBottomNav />
       <AppMenuFab />
       {onCrm && <CrmQuickActionsFab />}
-      <FloatingHelpButton />
+      <FloatingLauncher />
       <ChatNotificationManager />
 
       {/* Guarded business-context switch: confirm → blurred 5s reload overlay */}
