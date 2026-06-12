@@ -79,7 +79,7 @@ export function ConfirmationModal({
         </>
       }
     >
-      <div className="text-sm text-orika-black/80 leading-relaxed">
+      <div className="text-sm text-brand-black/80 leading-relaxed">
         {message}
       </div>
       {confirmPhrase && (

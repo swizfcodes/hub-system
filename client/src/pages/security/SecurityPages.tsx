@@ -10,6 +10,7 @@
 // SECURITY DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useBranding } from "@/providers/ThemeProvider";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -58,7 +59,7 @@ import {
   createRole,
   deleteRole,
 } from "@services/security";
-import { MODULE_LABELS, BUSINESS_LABELS } from "@typedefs/security";
+import { MODULE_LABELS } from "@typedefs/security";
 import { fmtDate } from "@lib/format";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
@@ -112,10 +113,10 @@ export function SecurityDashboard() {
             <button
               key={item.href}
               onClick={() => navigate(item.href)}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-5 hover:border-white/15 hover:bg-orika-graphite/20 transition-all"
+              className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-5 hover:border-white/15 hover:bg-brand-graphite/20 transition-all"
             >
-              <item.icon className="h-6 w-6 text-orika-gold" />
-              <p className="text-xs font-medium text-orika-cream text-center">
+              <item.icon className="h-6 w-6 text-brand-accent" />
+              <p className="text-xs font-medium text-brand-cream text-center">
                 {item.label}
               </p>
             </button>
@@ -125,7 +126,7 @@ export function SecurityDashboard() {
         <div className="grid gap-6 md:grid-cols-2">
           {/* Health checklist */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-orika-cream">
+            <p className="text-sm font-semibold text-brand-cream">
               Security Health
             </p>
             {isLoading ? (
@@ -173,7 +174,7 @@ export function SecurityDashboard() {
                     >
                       {item.label}
                     </p>
-                    <ChevronRight className="h-3.5 w-3.5 text-orika-smoke/50" />
+                    <ChevronRight className="h-3.5 w-3.5 text-brand-smoke/50" />
                   </button>
                 ))}
               </div>
@@ -183,12 +184,12 @@ export function SecurityDashboard() {
           {/* Recent security events */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Recent Events
               </p>
               <button
                 onClick={() => navigate("/security/audit")}
-                className="text-xs text-orika-gold hover:underline"
+                className="text-xs text-brand-accent hover:underline"
               >
                 View all
               </button>
@@ -204,25 +205,25 @@ export function SecurityDashboard() {
                 {(stats?.recent_events ?? []).slice(0, 8).map((e) => (
                   <div
                     key={e.log_id}
-                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-orika-charcoal px-4 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-brand-charcoal px-4 py-2.5"
                   >
-                    <LogIn className="h-3.5 w-3.5 text-orika-smoke/50 shrink-0" />
+                    <LogIn className="h-3.5 w-3.5 text-brand-smoke/50 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-orika-cream truncate">
+                      <p className="text-xs text-brand-cream truncate">
                         <span className="font-medium">{e.user_name}</span>
-                        <span className="text-orika-smoke">
+                        <span className="text-brand-smoke">
                           {" "}
                           · {e.module} / {e.action}
                         </span>
                       </p>
-                      <p className="text-[10px] text-orika-smoke/50">
+                      <p className="text-[10px] text-brand-smoke/50">
                         {fmtDate(e.occurred_at)}
                       </p>
                     </div>
                   </div>
                 ))}
                 {(stats?.recent_events ?? []).length === 0 && (
-                  <p className="text-sm text-orika-smoke text-center py-6">
+                  <p className="text-sm text-brand-smoke text-center py-6">
                     No recent events
                   </p>
                 )}
@@ -238,6 +239,7 @@ export function SecurityDashboard() {
 // ── UsersPage ─────────────────────────────────────────────────────────────────
 
 export function UsersPage() {
+  const { businessLabel } = useBranding();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
@@ -302,11 +304,11 @@ export function UsersPage() {
             {users.map((user) => (
               <div
                 key={user.profile_id}
-                className="flex items-center gap-4 rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4 hover:border-white/10 transition-colors"
+                className="flex items-center gap-4 rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4 hover:border-white/10 transition-colors"
               >
                 {/* Avatar */}
-                <div className="h-9 w-9 rounded-full bg-orika-graphite flex items-center justify-center shrink-0">
-                  <span className="text-sm font-semibold text-orika-cream">
+                <div className="h-9 w-9 rounded-full bg-brand-graphite flex items-center justify-center shrink-0">
+                  <span className="text-sm font-semibold text-brand-cream">
                     {user.display_name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -314,7 +316,7 @@ export function UsersPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-orika-cream">
+                    <p className="font-medium text-brand-cream">
                       {user.display_name}
                     </p>
                     {user.role_name && (
@@ -333,7 +335,7 @@ export function UsersPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-orika-smoke mt-0.5">
+                  <p className="text-xs text-brand-smoke mt-0.5">
                     {user.email ?? "No email"}
                     {user.job_title ? ` · ${user.job_title}` : ""}
                     {user.last_login_at
@@ -355,7 +357,7 @@ export function UsersPage() {
                 {/* Business badges */}
                 <div className="hidden sm:flex gap-1 shrink-0">
                   <Badge tone="info" size="xs">
-                    {BUSINESS_LABELS[user.business] ?? user.business}
+                    {businessLabel(user.business) || user.business}
                   </Badge>
                 </div>
 
@@ -365,14 +367,14 @@ export function UsersPage() {
                     <button
                       onClick={() => setAccessUser(user)}
                       title="Manage role & business access"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Key className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setSessions(user)}
                       title="View sessions"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Clock className="h-4 w-4" />
                     </button>
@@ -382,7 +384,7 @@ export function UsersPage() {
                           resetMutation.mutate(user.profile_id);
                       }}
                       title="Reset password"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <RefreshCw className="h-4 w-4" />
                     </button>
@@ -397,7 +399,7 @@ export function UsersPage() {
                             deactivateMutation.mutate(user.profile_id);
                         }}
                         title="Deactivate access"
-                        className="text-orika-smoke hover:text-state-danger transition-colors"
+                        className="text-brand-smoke hover:text-state-danger transition-colors"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -519,8 +521,8 @@ export function RolesPage() {
                   className={cn(
                     "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors",
                     selectedRole === r.role_id
-                      ? "bg-orika-gold/10 border border-orika-gold/30 text-orika-cream"
-                      : "text-orika-smoke hover:bg-orika-graphite/20",
+                      ? "bg-brand-accent/10 border border-brand-accent/30 text-brand-cream"
+                      : "text-brand-smoke hover:bg-brand-graphite/20",
                   )}
                 >
                   <span className="text-sm font-medium">{r.role_name}</span>
@@ -531,7 +533,7 @@ export function RolesPage() {
                         if (confirm(`Delete role "${r.role_name}"?`))
                           deleteMutation.mutate(r.role_id);
                       }}
-                      className="text-orika-smoke/30 hover:text-state-danger transition-colors"
+                      className="text-brand-smoke/30 hover:text-state-danger transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -549,8 +551,8 @@ export function RolesPage() {
         {/* Create role modal */}
         {showCreateRole && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-orika-charcoal p-6 space-y-4">
-              <h3 className="font-semibold text-orika-cream">
+            <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-brand-charcoal p-6 space-y-4">
+              <h3 className="font-semibold text-brand-cream">
                 Create New Role
               </h3>
               <Input
@@ -728,7 +730,7 @@ export function AuditLogPage() {
           />
         </div>
 
-        <p className="text-xs text-orika-smoke">
+        <p className="text-xs text-brand-smoke">
           {total.toLocaleString()} entries
         </p>
 
@@ -753,7 +755,7 @@ export function AuditLogPage() {
               />
             ))}
             {entries.length === 0 && (
-              <div className="py-12 text-center text-sm text-orika-smoke">
+              <div className="py-12 text-center text-sm text-brand-smoke">
                 No audit entries match these filters.
               </div>
             )}
@@ -771,7 +773,7 @@ export function AuditLogPage() {
             >
               Previous
             </Button>
-            <span className="text-xs text-orika-smoke">
+            <span className="text-xs text-brand-smoke">
               Page {filters.page} of {totalPages}
             </span>
             <Button
@@ -808,21 +810,21 @@ function AuditRow({
     <div
       className={cn(
         "rounded-xl border transition-all overflow-hidden",
-        isExpanded ? "border-orika-gold/30" : "border-white/5",
-        "bg-orika-charcoal",
+        isExpanded ? "border-brand-accent/30" : "border-white/5",
+        "bg-brand-charcoal",
       )}
     >
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-4 px-4 py-3 text-left hover:bg-orika-graphite/20 transition-colors"
+        className="flex w-full items-center gap-4 px-4 py-3 text-left hover:bg-brand-graphite/20 transition-colors"
       >
-        <span className="text-[10px] text-orika-smoke/50 tabular-nums w-32 shrink-0">
+        <span className="text-[10px] text-brand-smoke/50 tabular-nums w-32 shrink-0">
           {fmtDate(entry.occurred_at)}
         </span>
-        <span className="text-xs font-medium text-orika-cream w-32 shrink-0 truncate">
+        <span className="text-xs font-medium text-brand-cream w-32 shrink-0 truncate">
           {entry.user_name}
         </span>
-        <span className="text-xs text-orika-smoke">
+        <span className="text-xs text-brand-smoke">
           {MODULE_LABELS[entry.module] ?? entry.module}
         </span>
         <span
@@ -835,7 +837,7 @@ function AuditRow({
           {entry.action}
         </span>
         {entry.ip_address && (
-          <span className="text-[10px] text-orika-smoke/40 shrink-0">
+          <span className="text-[10px] text-brand-smoke/40 shrink-0">
             {entry.ip_address}
           </span>
         )}
@@ -844,14 +846,14 @@ function AuditRow({
         <div className="border-t border-white/5 px-4 py-4 space-y-3">
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
-              <p className="text-orika-smoke/60 mb-1">Table</p>
-              <p className="text-orika-cream font-mono">
+              <p className="text-brand-smoke/60 mb-1">Table</p>
+              <p className="text-brand-cream font-mono">
                 {entry.table_name ?? "—"}
               </p>
             </div>
             <div>
-              <p className="text-orika-smoke/60 mb-1">Record ID</p>
-              <p className="text-orika-cream font-mono truncate">
+              <p className="text-brand-smoke/60 mb-1">Record ID</p>
+              <p className="text-brand-cream font-mono truncate">
                 {entry.record_id ?? "—"}
               </p>
             </div>
@@ -863,7 +865,7 @@ function AuditRow({
                   <p className="text-[10px] text-red-400/70 uppercase tracking-widest mb-1">
                     Before
                   </p>
-                  <pre className="rounded-lg bg-red-900/10 border border-red-500/20 p-2 text-[10px] text-orika-cloud overflow-x-auto max-h-32">
+                  <pre className="rounded-lg bg-red-900/10 border border-red-500/20 p-2 text-[10px] text-brand-cloud overflow-x-auto max-h-32">
                     {JSON.stringify(entry.before_state, null, 2)}
                   </pre>
                 </div>
@@ -873,7 +875,7 @@ function AuditRow({
                   <p className="text-[10px] text-emerald-400/70 uppercase tracking-widest mb-1">
                     After
                   </p>
-                  <pre className="rounded-lg bg-emerald-900/10 border border-emerald-500/20 p-2 text-[10px] text-orika-cloud overflow-x-auto max-h-32">
+                  <pre className="rounded-lg bg-emerald-900/10 border border-emerald-500/20 p-2 text-[10px] text-brand-cloud overflow-x-auto max-h-32">
                     {JSON.stringify(entry.after_state, null, 2)}
                   </pre>
                 </div>
@@ -907,6 +909,7 @@ const acceptSchema = z
 type AcceptValues = z.infer<typeof acceptSchema>;
 
 export function AcceptInvitePage() {
+  const { platform, businessLabel } = useBranding();
   const navigate = useNavigate();
   const { token = "" } = useParams<{ token: string }>();
   const [tokenData, setTokenData] = useState<
@@ -953,8 +956,8 @@ export function AcceptInvitePage() {
 
   if (tokenLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-orika-black">
-        <div className="animate-pulse text-orika-smoke text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-brand-black">
+        <div className="animate-pulse text-brand-smoke text-sm">
           Verifying invite link…
         </div>
       </div>
@@ -963,16 +966,16 @@ export function AcceptInvitePage() {
 
   if (tokenError || !tokenData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-orika-black px-4">
-        <div className="max-w-sm w-full rounded-2xl border border-red-500/30 bg-orika-charcoal px-8 py-10 text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center bg-brand-black px-4">
+        <div className="max-w-sm w-full rounded-2xl border border-red-500/30 bg-brand-charcoal px-8 py-10 text-center space-y-4">
           <AlertTriangle className="mx-auto h-10 w-10 text-red-400" />
-          <h1 className="text-lg font-semibold text-orika-cream">
+          <h1 className="text-lg font-semibold text-brand-cream">
             Link Unavailable
           </h1>
-          <p className="text-sm text-orika-smoke">
+          <p className="text-sm text-brand-smoke">
             {tokenError ?? "This invite link cannot be used."}
           </p>
-          <p className="text-xs text-orika-smoke/50">
+          <p className="text-xs text-brand-smoke/50">
             Please ask your admin to send a new invite.
           </p>
         </div>
@@ -982,14 +985,14 @@ export function AcceptInvitePage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-orika-black px-4">
-        <div className="max-w-sm w-full rounded-2xl border border-emerald-500/30 bg-orika-charcoal px-8 py-10 text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center bg-brand-black px-4">
+        <div className="max-w-sm w-full rounded-2xl border border-emerald-500/30 bg-brand-charcoal px-8 py-10 text-center space-y-4">
           <CheckCircle className="mx-auto h-10 w-10 text-emerald-400" />
-          <h1 className="text-lg font-semibold text-orika-cream">
+          <h1 className="text-lg font-semibold text-brand-cream">
             Account Created!
           </h1>
-          <p className="text-sm text-orika-smoke">
-            Your Orika Hub account is ready.
+          <p className="text-sm text-brand-smoke">
+            Your {platform.product_name} account is ready.
           </p>
           <Button onClick={() => navigate("/login")} fullWidth>
             Go to Login
@@ -1000,29 +1003,29 @@ export function AcceptInvitePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orika-black px-4">
+    <div className="min-h-screen flex items-center justify-center bg-brand-black px-4">
       <div className="max-w-sm w-full space-y-6">
         {/* Branding */}
         <div className="text-center">
-          <Shield className="mx-auto h-10 w-10 text-orika-gold mb-3" />
-          <h1 className="text-2xl font-display font-light text-orika-cream">
-            Welcome to Orika Hub
+          <Shield className="mx-auto h-10 w-10 text-brand-accent mb-3" />
+          <h1 className="text-2xl font-display font-light text-brand-cream">
+            Welcome to {platform.product_name}
           </h1>
-          <p className="text-sm text-orika-smoke mt-1">
+          <p className="text-sm text-brand-smoke mt-1">
             You've been invited as{" "}
-            <strong className="text-orika-cream">{tokenData.role_name}</strong>
+            <strong className="text-brand-cream">{tokenData.role_name}</strong>
           </p>
-          <p className="text-xs text-orika-smoke/50 mt-0.5">
+          <p className="text-xs text-brand-smoke/50 mt-0.5">
             Access:{" "}
             {tokenData.businesses
-              .map((b) => BUSINESS_LABELS[b] ?? b)
+              .map((b) => businessLabel(b) || b)
               .join(", ")}
           </p>
         </div>
 
         {/* Form */}
-        <div className="rounded-2xl border border-white/10 bg-orika-charcoal px-6 py-6 space-y-4">
-          <p className="text-[0.65rem] text-orika-smoke text-center">
+        <div className="rounded-2xl border border-white/10 bg-brand-charcoal px-6 py-6 space-y-4">
+          <p className="text-[0.65rem] text-brand-smoke text-center">
             Complete your account setup. This link expires{" "}
             {fmtDate(tokenData.expires_at)}.
           </p>
@@ -1056,7 +1059,7 @@ export function AcceptInvitePage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((s) => !s)}
-                      className="text-orika-smoke hover:text-orika-cream"
+                      className="text-brand-smoke hover:text-brand-cream"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -1095,8 +1098,8 @@ export function AcceptInvitePage() {
           </Button>
         </div>
 
-        <p className="text-center text-xs text-orika-smoke/40">
-          By creating an account you agree to Orika Hub's terms of use.
+        <p className="text-center text-xs text-brand-smoke/40">
+          By creating an account you agree to {platform.product_name}'s terms of use.
         </p>
       </div>
     </div>

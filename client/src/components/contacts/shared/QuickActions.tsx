@@ -52,8 +52,8 @@ export function QuickActions({
   const baseCls = cn(
     "inline-flex items-center justify-center rounded-full transition-all",
     surface === "dark"
-      ? "bg-orika-graphite/60 text-orika-cream hover:bg-orika-graphite hover:text-orika-gold"
-      : "bg-white/60 text-orika-black hover:bg-white hover:shadow-card",
+      ? "bg-brand-graphite/60 text-brand-cream hover:bg-brand-graphite hover:text-brand-accent"
+      : "bg-white/60 text-brand-black hover:bg-white hover:shadow-card",
     sizeMap[size],
   );
 

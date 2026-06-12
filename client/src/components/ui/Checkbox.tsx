@@ -29,12 +29,12 @@ export function Checkbox({
         className={cn(
           "relative w-4 h-4 rounded flex items-center justify-center transition-colors flex-shrink-0",
           isDark
-            ? "border border-orika-graphite bg-orika-charcoal group-hover:border-orika-gold/50"
-            : "border border-orika-cloud bg-white group-hover:border-orika-black",
+            ? "border border-brand-graphite bg-brand-charcoal group-hover:border-brand-accent/50"
+            : "border border-brand-cloud bg-white group-hover:border-brand-black",
           checked &&
             (isDark
-              ? "border-orika-gold bg-orika-gold/15"
-              : "border-orika-black bg-orika-cream"),
+              ? "border-brand-accent bg-brand-accent/15"
+              : "border-brand-black bg-brand-cream"),
         )}
       >
         <input
@@ -48,7 +48,7 @@ export function Checkbox({
           <Check
             className={cn(
               "w-3 h-3",
-              isDark ? "text-orika-gold" : "text-orika-black",
+              isDark ? "text-brand-accent" : "text-brand-black",
             )}
           />
         )}
@@ -57,7 +57,7 @@ export function Checkbox({
         <span
           className={cn(
             "text-xs font-medium",
-            isDark ? "text-orika-cream" : "text-orika-black",
+            isDark ? "text-brand-cream" : "text-brand-black",
           )}
         >
           {label}

@@ -103,7 +103,7 @@ export default function CrmHome() {
               />
               {workspace === "deals" && (
                 <>
-                  <div className="inline-flex p-0.5 rounded-xl bg-orika-charcoal border border-orika-graphite">
+                  <div className="inline-flex p-0.5 rounded-xl bg-brand-charcoal border border-brand-graphite">
                     {(
                       [
                         { key: "board", label: "Board", icon: LayoutGrid },
@@ -118,8 +118,8 @@ export default function CrmHome() {
                           className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.65rem] font-semibold uppercase tracking-wide transition-all",
                             dealsView === v.key
-                              ? "bg-orika-graphite text-orika-cream"
-                              : "text-orika-smoke hover:text-orika-cream",
+                              ? "bg-brand-graphite text-brand-cream"
+                              : "text-brand-smoke hover:text-brand-cream",
                           )}
                           title={v.label}
                         >

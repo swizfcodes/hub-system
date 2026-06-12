@@ -92,7 +92,7 @@ export function ChannelSelector({
 
   return (
     <div className="space-y-1.5">
-      <p className="text-[0.7rem] font-medium uppercase tracking-widest text-orika-smoke">
+      <p className="text-[0.7rem] font-medium uppercase tracking-widest text-brand-smoke">
         Publish To *
       </p>
       <div className="flex flex-wrap gap-2">
@@ -109,7 +109,7 @@ export function ChannelSelector({
                 "flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all",
                 selected
                   ? "border-2"
-                  : "border border-white/10 text-orika-smoke hover:border-white/25",
+                  : "border border-white/10 text-brand-smoke hover:border-white/25",
                 disabled && "opacity-50 cursor-not-allowed",
               )}
               style={
@@ -154,8 +154,8 @@ export function MetricsPanel({ postId }: { postId: string }) {
   if (!metrics.length) {
     return (
       <div className="rounded-xl border border-white/5 py-8 text-center">
-        <BarChart2 className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-        <p className="text-xs text-orika-smoke">
+        <BarChart2 className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+        <p className="text-xs text-brand-smoke">
           Analytics will appear after publishing
         </p>
       </div>
@@ -179,14 +179,14 @@ export function MetricsPanel({ postId }: { postId: string }) {
         return (
           <div
             key={channel}
-            className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-3"
+            className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-3"
           >
             <div className="flex items-center gap-2">
               <span className="text-base">{meta.icon}</span>
-              <p className="text-xs font-semibold text-orika-cream">
+              <p className="text-xs font-semibold text-brand-cream">
                 {meta.label}
               </p>
-              <span className="ml-auto text-[10px] text-orika-smoke/50">
+              <span className="ml-auto text-[10px] text-brand-smoke/50">
                 Updated {fmtDate(m.fetched_at)}
               </span>
             </div>
@@ -200,15 +200,15 @@ export function MetricsPanel({ postId }: { postId: string }) {
                 { icon: BarChart2, label: "Impressions", value: m.impressions },
               ].map(({ label, value }) => (
                 <div key={label} className="text-center">
-                  <p className="text-xs font-semibold tabular-nums text-orika-cream">
+                  <p className="text-xs font-semibold tabular-nums text-brand-cream">
                     {(value || 0).toLocaleString()}
                   </p>
-                  <p className="text-[10px] text-orika-smoke">{label}</p>
+                  <p className="text-[10px] text-brand-smoke">{label}</p>
                 </div>
               ))}
             </div>
             {m.extras?.views && (
-              <p className="text-xs text-orika-smoke">
+              <p className="text-xs text-brand-smoke">
                 {m.extras.views.toLocaleString()} video views
               </p>
             )}
@@ -241,15 +241,15 @@ export function PostCommentsPanel({ postId }: { postId: string }) {
   if (!comments.length) {
     return (
       <div className="py-8 text-center">
-        <MessageCircle className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-        <p className="text-xs text-orika-smoke">No comments yet</p>
+        <MessageCircle className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+        <p className="text-xs text-brand-smoke">No comments yet</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-orika-smoke/50 mb-3">
+      <p className="text-xs text-brand-smoke/50 mb-3">
         To reply, click the external link to open the post in the native app.
       </p>
       {comments.map((c) => {
@@ -257,15 +257,15 @@ export function PostCommentsPanel({ postId }: { postId: string }) {
         return (
           <div
             key={c.id}
-            className="flex items-start gap-3 rounded-xl border border-white/5 bg-orika-charcoal px-3 py-2.5"
+            className="flex items-start gap-3 rounded-xl border border-white/5 bg-brand-charcoal px-3 py-2.5"
           >
             <span className="text-sm shrink-0 mt-0.5">{meta.icon}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-orika-cream">{c.author}</p>
-              <p className="text-xs text-orika-smoke mt-0.5 line-clamp-2">
+              <p className="text-xs font-medium text-brand-cream">{c.author}</p>
+              <p className="text-xs text-brand-smoke mt-0.5 line-clamp-2">
                 {c.text}
               </p>
-              <p className="text-[10px] text-orika-smoke/50 mt-1">
+              <p className="text-[10px] text-brand-smoke/50 mt-1">
                 {fmtDate(c.created_at)}
               </p>
             </div>
@@ -273,7 +273,7 @@ export function PostCommentsPanel({ postId }: { postId: string }) {
               href={c.native_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-orika-smoke hover:text-orika-gold transition-colors shrink-0"
+              className="text-brand-smoke hover:text-brand-accent transition-colors shrink-0"
               title="Reply in native app"
             >
               <ExternalLink className="h-3.5 w-3.5" />

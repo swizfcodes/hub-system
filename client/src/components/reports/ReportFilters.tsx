@@ -90,14 +90,14 @@ export function ReportFilters({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/5 bg-orika-charcoal p-4">
+    <div className="space-y-4 rounded-2xl border border-white/5 bg-brand-charcoal p-4">
       <div className="flex flex-wrap items-start gap-4">
         {/* Date range */}
         {needsDates && (
           <div className="flex flex-wrap items-end gap-3">
             {/* Presets */}
             <div className="space-y-1">
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
                 Quick range
               </p>
               <div className="flex gap-1 flex-wrap">
@@ -108,8 +108,8 @@ export function ReportFilters({
                     className={cn(
                       "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors",
                       preset === p.value
-                        ? "bg-orika-gold text-orika-black"
-                        : "bg-orika-graphite/30 text-orika-smoke hover:text-orika-cream",
+                        ? "bg-brand-accent text-brand-black"
+                        : "bg-brand-graphite/30 text-brand-smoke hover:text-brand-cream",
                     )}
                   >
                     {p.label}
@@ -166,7 +166,7 @@ export function ReportFilters({
         {/* Comparison */}
         {needsDates && (
           <div className="space-y-1">
-            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+            <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
               Compare to
             </p>
             <Select
@@ -190,7 +190,7 @@ export function ReportFilters({
       {/* Custom comparison range */}
       {showCompare && filters.compareMode === "custom" && (
         <div className="flex gap-3 border-t border-white/5 pt-3">
-          <span className="text-xs text-orika-smoke mt-2">Compare:</span>
+          <span className="text-xs text-brand-smoke mt-2">Compare:</span>
           <Input
             label="From"
             type="date"
@@ -216,7 +216,7 @@ export function ReportFilters({
       {showCompare &&
         filters.compareMode !== "custom" &&
         filters.compareStart && (
-          <p className="text-xs text-orika-smoke border-t border-white/5 pt-2">
+          <p className="text-xs text-brand-smoke border-t border-white/5 pt-2">
             Comparing to: {filters.compareStart} → {filters.compareEnd}
           </p>
         )}

@@ -42,9 +42,9 @@ export function WizardShell({
                   className={cn(
                     "group w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all",
                     active
-                      ? "bg-orika-gold/10 border border-orika-gold/30"
+                      ? "bg-brand-accent/10 border border-brand-accent/30"
                       : "border border-transparent",
-                    !active && done && "hover:bg-orika-charcoal/60",
+                    !active && done && "hover:bg-brand-charcoal/60",
                     !clickable && "cursor-default",
                   )}
                 >
@@ -52,10 +52,10 @@ export function WizardShell({
                     className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
                       done
-                        ? "bg-living-sage/20 text-living-sage"
+                        ? "bg-accent2/20 text-accent2"
                         : active
-                          ? "bg-orika-gold text-orika-black shadow-glow-sm"
-                          : "bg-orika-graphite text-orika-smoke",
+                          ? "bg-brand-accent text-brand-black shadow-glow-sm"
+                          : "bg-brand-graphite text-brand-smoke",
                     )}
                   >
                     {done ? <Check className="w-4 h-4" /> : i + 1}
@@ -65,16 +65,16 @@ export function WizardShell({
                       className={cn(
                         "text-sm font-medium truncate",
                         active
-                          ? "text-orika-cream"
+                          ? "text-brand-cream"
                           : done
-                            ? "text-orika-cloud"
-                            : "text-orika-smoke",
+                            ? "text-brand-cloud"
+                            : "text-brand-smoke",
                       )}
                     >
                       {step.label}
                     </div>
                     {step.description && (
-                      <div className="text-[0.65rem] text-orika-smoke truncate hidden lg:block">
+                      <div className="text-[0.65rem] text-brand-smoke truncate hidden lg:block">
                         {step.description}
                       </div>
                     )}
@@ -88,7 +88,7 @@ export function WizardShell({
 
       {/* Body */}
       <section className="min-w-0">
-        <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-10 border border-orika-cloud/30 shadow-lift">
+        <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-10 border border-brand-cloud/30 shadow-lift">
           <div className="animate-slide-up">{children}</div>
         </div>
         {footer && (

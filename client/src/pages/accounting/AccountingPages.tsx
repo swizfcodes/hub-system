@@ -106,7 +106,7 @@ export function ChartOfAccounts() {
             ))}
           </div>
         ) : ledgerLines.length === 0 ? (
-          <p className="text-sm text-orika-smoke py-8 text-center">
+          <p className="text-sm text-brand-smoke py-8 text-center">
             No transactions posted to this account yet.
           </p>
         ) : (
@@ -124,7 +124,7 @@ export function ChartOfAccounts() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-3 py-2 text-left text-[0.65rem] uppercase tracking-widest text-orika-smoke"
+                      className="px-3 py-2 text-left text-[0.65rem] uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -134,19 +134,19 @@ export function ChartOfAccounts() {
               <tbody className="divide-y divide-white/5">
                 {ledgerLines.map((line, i) => (
                   <tr key={i} className="hover:bg-white/5">
-                    <td className="px-3 py-2 text-orika-smoke">
+                    <td className="px-3 py-2 text-brand-smoke">
                       {fmtDate(line.entry_date)}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-orika-gold">
+                    <td className="px-3 py-2 font-mono text-xs text-brand-accent">
                       {line.entry_number}
                     </td>
-                    <td className="px-3 py-2 text-orika-cloud max-w-xs truncate">
+                    <td className="px-3 py-2 text-brand-cloud max-w-xs truncate">
                       {line.description}
                     </td>
-                    <td className="px-3 py-2 tabular-nums text-orika-cream">
+                    <td className="px-3 py-2 tabular-nums text-brand-cream">
                       {line.debit > 0 ? fmtMoney(line.debit, currency) : "—"}
                     </td>
-                    <td className="px-3 py-2 tabular-nums text-orika-cream">
+                    <td className="px-3 py-2 tabular-nums text-brand-cream">
                       {line.credit > 0 ? fmtMoney(line.credit, currency) : "—"}
                     </td>
                     <td
@@ -237,8 +237,8 @@ export function JournalsPage() {
             onClick={() => setRefType(t)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               refTypeFilter === t
-                ? "bg-orika-gold text-orika-black"
-                : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/70"
+                ? "bg-brand-accent text-brand-black"
+                : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/70"
             }`}
           >
             {t === "" ? "All" : (REFERENCE_TYPE_LABEL[t] ?? t)}
@@ -256,7 +256,7 @@ export function JournalsPage() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {[
                   "Entry #",
                   "Date",
@@ -268,7 +268,7 @@ export function JournalsPage() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -279,22 +279,22 @@ export function JournalsPage() {
               {journals.map((je) => (
                 <tr
                   key={je.entry_id}
-                  className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                  className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-orika-gold">
+                  <td className="px-4 py-3 font-mono text-xs text-brand-accent">
                     {je.entry_number}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDJ(je.entry_date)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud max-w-xs truncate">
+                  <td className="px-4 py-3 text-brand-cloud max-w-xs truncate">
                     {je.description}
                   </td>
-                  <td className="px-4 py-3 text-xs text-orika-smoke">
+                  <td className="px-4 py-3 text-xs text-brand-smoke">
                     {REFERENCE_TYPE_LABEL[je.reference_type] ??
                       je.reference_type}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums text-brand-cream">
                     {fmtJ(je.total_debit ?? 0, currency)}
                   </td>
                   <td className="px-4 py-3">
@@ -311,7 +311,7 @@ export function JournalsPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => setSelected(je.entry_id)}
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
@@ -532,8 +532,8 @@ export function ReconciliationPage() {
             onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
               filter === f
-                ? "bg-orika-gold text-orika-black"
-                : "bg-orika-graphite text-orika-cloud"
+                ? "bg-brand-accent text-brand-black"
+                : "bg-brand-graphite text-brand-cloud"
             }`}
           >
             {f === "unreconciled" ? "Unreconciled" : "All"}
@@ -551,12 +551,12 @@ export function ReconciliationPage() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {["Date", "Description", "Amount", "Account", "Status", ""].map(
                   (h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -568,20 +568,20 @@ export function ReconciliationPage() {
               {statements.map((stmt) => (
                 <tr
                   key={stmt.statement_id}
-                  className="bg-orika-charcoal hover:bg-orika-graphite/20"
+                  className="bg-brand-charcoal hover:bg-brand-graphite/20"
                 >
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtDRec(stmt.transaction_date)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud max-w-xs truncate">
+                  <td className="px-4 py-3 text-brand-cloud max-w-xs truncate">
                     {stmt.description}
                   </td>
                   <td
-                    className={`px-4 py-3 tabular-nums font-medium ${stmt.amount >= 0 ? "text-orika-cream" : "text-red-400"}`}
+                    className={`px-4 py-3 tabular-nums font-medium ${stmt.amount >= 0 ? "text-brand-cream" : "text-red-400"}`}
                   >
                     {fmtRec(Math.abs(stmt.amount), currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {stmt.account_name}
                   </td>
                   <td className="px-4 py-3">
@@ -604,7 +604,7 @@ export function ReconciliationPage() {
                             value={paymentId}
                             onChange={(e) => setPaymentId(e.target.value)}
                             placeholder="Journal entry ID"
-                            className="rounded-lg border border-orika-graphite bg-orika-charcoal px-2 py-1 text-xs text-orika-cream w-36 focus:outline-none focus:border-orika-gold/40"
+                            className="rounded-lg border border-brand-graphite bg-brand-charcoal px-2 py-1 text-xs text-brand-cream w-36 focus:outline-none focus:border-brand-accent/40"
                           />
                           <button
                             onClick={() =>
@@ -622,7 +622,7 @@ export function ReconciliationPage() {
                       ) : (
                         <button
                           onClick={() => setMatchingId(stmt.statement_id)}
-                          className="text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-xs text-brand-smoke hover:text-brand-accent transition-colors"
                         >
                           Match
                         </button>
@@ -634,7 +634,7 @@ export function ReconciliationPage() {
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-8 text-center text-sm text-orika-smoke"
+                    className="px-4 py-8 text-center text-sm text-brand-smoke"
                   >
                     {filter === "unreconciled"
                       ? "All items reconciled."
@@ -713,11 +713,11 @@ export function FiscalPeriodsPage() {
         <div className="overflow-x-auto rounded-2xl border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-charcoal">
+              <tr className="border-b border-white/5 bg-brand-charcoal">
                 {["Period", "Type", "Dates", "Status", ""].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -726,14 +726,14 @@ export function FiscalPeriodsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {periods.map((period) => (
-                <tr key={period.period_id} className="bg-orika-charcoal">
-                  <td className="px-4 py-3 font-medium text-orika-cream">
+                <tr key={period.period_id} className="bg-brand-charcoal">
+                  <td className="px-4 py-3 font-medium text-brand-cream">
                     {period.name}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke capitalize">
+                  <td className="px-4 py-3 text-brand-smoke capitalize">
                     {period.period_type}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke">
+                  <td className="px-4 py-3 text-brand-smoke">
                     {fmtFP(period.start_date)} — {fmtFP(period.end_date)}
                   </td>
                   <td className="px-4 py-3">
@@ -758,7 +758,7 @@ export function FiscalPeriodsPage() {
                           )
                             closeMut.mutate(period.period_id);
                         }}
-                        className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-amber-400 transition-colors"
+                        className="flex items-center gap-1.5 text-xs text-brand-smoke hover:text-amber-400 transition-colors"
                       >
                         <Lock className="h-3.5 w-3.5" /> Close
                       </button>
@@ -772,7 +772,7 @@ export function FiscalPeriodsPage() {
                           )
                             reopenMut.mutate(period.period_id);
                         }}
-                        className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                        className="flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-accent transition-colors"
                       >
                         <Unlock className="h-3.5 w-3.5" /> Reopen
                       </button>
@@ -784,7 +784,7 @@ export function FiscalPeriodsPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-8 text-center text-sm text-orika-smoke"
+                    className="px-4 py-8 text-center text-sm text-brand-smoke"
                   >
                     No fiscal periods configured. Seed the fiscal_periods table.
                   </td>

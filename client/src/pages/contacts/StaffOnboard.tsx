@@ -215,11 +215,11 @@ export default function StaffOnboard() {
         </div>
 
         <header className="mb-8">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             Step {stepIndex + 1} of {STEPS.length}
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            New <span className="italic text-orika-gold">team member</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            New <span className="italic text-brand-accent">team member</span>
           </h1>
         </header>
 
@@ -265,7 +265,7 @@ export default function StaffOnboard() {
             {stepIndex === 0 && (
               <div className="space-y-6">
                 <header>
-                  <h2 className="font-display font-light text-3xl text-orika-black">
+                  <h2 className="font-display font-light text-3xl text-brand-black">
                     Person
                   </h2>
                   <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -274,7 +274,7 @@ export default function StaffOnboard() {
                   </p>
                 </header>
 
-                <div className="rounded-2xl border border-orika-cloud/40 bg-white/50 p-5">
+                <div className="rounded-2xl border border-brand-cloud/40 bg-white/50 p-5">
                   <ContactSearchInput
                     value={linkedContact}
                     onChange={(c) => {
@@ -292,7 +292,7 @@ export default function StaffOnboard() {
                 </div>
 
                 {linkedContact ? (
-                  <div className="rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.05] p-4 text-sm text-orika-black">
+                  <div className="rounded-2xl border border-brand-accent/30 bg-brand-accent/[0.05] p-4 text-sm text-brand-black">
                     Onboarding <strong>{linkedContact.display_name}</strong>
                     {linkedContact.primary_phone
                       ? ` · ${linkedContact.primary_phone}`
@@ -328,7 +328,7 @@ export default function StaffOnboard() {
             {stepIndex === 1 && (
               <div className="space-y-6">
                 <header>
-                  <h2 className="font-display font-light text-3xl text-orika-black">
+                  <h2 className="font-display font-light text-3xl text-brand-black">
                     Employment
                   </h2>
                   <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -391,7 +391,7 @@ export default function StaffOnboard() {
             {stepIndex === 2 && (
               <div className="space-y-6">
                 <header>
-                  <h2 className="font-display font-light text-3xl text-orika-black">
+                  <h2 className="font-display font-light text-3xl text-brand-black">
                     Financial & ID
                   </h2>
                   <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -400,7 +400,7 @@ export default function StaffOnboard() {
                   </p>
                 </header>
 
-                <div className="rounded-xl border border-state-warn/30 bg-state-warn/[0.06] p-3 flex items-start gap-2 text-xs text-orika-black/80">
+                <div className="rounded-xl border border-state-warn/30 bg-state-warn/[0.06] p-3 flex items-start gap-2 text-xs text-brand-black/80">
                   <Sparkles className="w-3.5 h-3.5 text-state-warn mt-0.5 shrink-0" />
                   <p>
                     Filling base salary creates an initial contract record
@@ -447,7 +447,7 @@ export default function StaffOnboard() {
             {stepIndex === 3 && (
               <div className="space-y-6">
                 <header>
-                  <h2 className="font-display font-light text-3xl text-orika-black">
+                  <h2 className="font-display font-light text-3xl text-brand-black">
                     Access
                   </h2>
                   <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -460,7 +460,7 @@ export default function StaffOnboard() {
                   control={control}
                   name="create_login"
                   render={({ field }) => (
-                    <div className="p-4 rounded-2xl bg-white/50 border border-orika-cloud/40">
+                    <div className="p-4 rounded-2xl bg-white/50 border border-brand-cloud/40">
                       <Switch
                         surface="light"
                         checked={!!field.value}
@@ -521,7 +521,7 @@ export default function StaffOnboard() {
         size="md"
         title={
           <span className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-full bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+            <span className="w-9 h-9 rounded-full bg-brand-accent/15 text-brand-accent flex items-center justify-center">
               <Check className="w-4 h-4" />
             </span>
             Temporary password
@@ -538,7 +538,7 @@ export default function StaffOnboard() {
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-state-warn/[0.08] border border-state-warn/30 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-state-warn mt-0.5 shrink-0" />
-              <p className="text-xs text-orika-black/80">
+              <p className="text-xs text-brand-black/80">
                 Copy this password now. You can't see it again.
               </p>
             </div>
@@ -546,7 +546,7 @@ export default function StaffOnboard() {
               <div className="text-[0.65rem] tracking-widest uppercase text-text-on-light-muted ml-1 mb-2">
                 Email
               </div>
-              <code className="block w-full px-3 py-2.5 bg-white border border-orika-cloud/40 rounded-xl text-sm text-orika-black">
+              <code className="block w-full px-3 py-2.5 bg-white border border-brand-cloud/40 rounded-xl text-sm text-brand-black">
                 {credentials.email}
               </code>
             </div>
@@ -555,7 +555,7 @@ export default function StaffOnboard() {
                 Temporary password
               </div>
               <div className="relative">
-                <code className="block w-full px-3 py-2.5 bg-white border border-orika-cloud/40 rounded-xl text-sm font-mono text-orika-black tracking-wider pr-12">
+                <code className="block w-full px-3 py-2.5 bg-white border border-brand-cloud/40 rounded-xl text-sm font-mono text-brand-black tracking-wider pr-12">
                   {credentials.temp_password}
                 </code>
                 <button
@@ -563,7 +563,7 @@ export default function StaffOnboard() {
                     navigator.clipboard.writeText(credentials.temp_password);
                     showToast.success("Copied");
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-orika-smoke hover:text-orika-black hover:bg-orika-cloud/30 rounded-lg transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-brand-smoke hover:text-brand-black hover:bg-brand-cloud/30 rounded-lg transition-colors"
                   aria-label="Copy"
                 >
                   <Copy className="w-4 h-4" />

@@ -65,7 +65,7 @@ export function AppShell() {
 
   // Still loading from localStorage — show a blank screen, not a redirect.
   if (!isHydrated) {
-    return <div className="min-h-screen bg-orika-black" />;
+    return <div className="min-h-screen bg-brand-black" />;
   }
 
   if (!user) {
@@ -73,7 +73,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-orika-black text-orika-cream bg-grid-noise">
+    <div className="min-h-screen bg-brand-black text-brand-cream bg-grid-noise">
       <Sidebar />
       <div
         className={cn(

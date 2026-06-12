@@ -25,7 +25,7 @@ export function StepProvisioning({
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="font-display font-light text-3xl text-orika-black">
+        <h2 className="font-display font-light text-3xl text-brand-black">
           Advanced — Database Provisioning
         </h2>
         <p className="text-sm text-text-on-light-muted mt-1.5">
@@ -62,10 +62,10 @@ export function StepProvisioning({
       />
 
       {provisionSchema && (
-        <div className="rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-5 animate-slide-up space-y-5">
+        <div className="rounded-2xl border border-brand-accent/30 bg-brand-accent/[0.04] p-5 animate-slide-up space-y-5">
           <div className="flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-orika-gold mt-0.5 shrink-0" />
-            <div className="text-sm text-orika-black/80">
+            <ShieldAlert className="w-5 h-5 text-brand-accent mt-0.5 shrink-0" />
+            <div className="text-sm text-brand-black/80">
               <strong>Provisioning will create the following:</strong>
               <ul className="mt-2 list-disc pl-5 space-y-1 text-text-on-light-muted">
                 <li>A new Postgres schema named after the business key</li>
@@ -120,9 +120,9 @@ function ProvOption({
         "w-full text-left p-5 rounded-2xl border transition-all",
         selected
           ? accent
-            ? "bg-orika-gold/[0.08] border-orika-gold shadow-glow-sm"
-            : "bg-orika-black/[0.04] border-orika-black"
-          : "bg-white/40 border-orika-cloud/40 hover:border-orika-black/40",
+            ? "bg-brand-accent/[0.08] border-brand-accent shadow-glow-sm"
+            : "bg-brand-black/[0.04] border-brand-black"
+          : "bg-white/40 border-brand-cloud/40 hover:border-brand-black/40",
       )}
     >
       <div className="flex items-start gap-4">
@@ -130,19 +130,19 @@ function ProvOption({
           className={cn(
             "w-11 h-11 rounded-xl flex items-center justify-center shrink-0",
             accent
-              ? "bg-orika-gold/20 text-orika-gold-dim"
-              : "bg-orika-cream text-orika-black",
+              ? "bg-brand-accent/20 text-brand-accent-dim"
+              : "bg-brand-cream text-brand-black",
           )}
         >
           {icon}
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-display text-xl text-orika-black">
+            <span className="font-display text-xl text-brand-black">
               {title}
             </span>
             {accent && (
-              <span className="text-[0.6rem] uppercase tracking-widest px-2 py-0.5 bg-orika-gold/20 text-orika-gold-dim rounded-full font-bold">
+              <span className="text-[0.6rem] uppercase tracking-widest px-2 py-0.5 bg-brand-accent/20 text-brand-accent-dim rounded-full font-bold">
                 Recommended
               </span>
             )}
@@ -150,14 +150,14 @@ function ProvOption({
           <div className="text-xs text-text-on-light-muted mt-0.5 italic">
             {tagline}
           </div>
-          <p className="text-sm text-orika-black/70 mt-2 leading-relaxed">
+          <p className="text-sm text-brand-black/70 mt-2 leading-relaxed">
             {body}
           </p>
         </div>
         <div
           className={cn(
             "w-5 h-5 rounded-full border-2 shrink-0 mt-1",
-            selected ? "border-orika-gold bg-orika-gold" : "border-orika-cloud",
+            selected ? "border-brand-accent bg-brand-accent" : "border-brand-cloud",
           )}
         />
       </div>

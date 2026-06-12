@@ -96,10 +96,10 @@ export default function RFQDetail() {
             <Card className="p-5 sm:p-6 mb-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <div className="text-[0.6rem] text-orika-smoke font-mono">
+                  <div className="text-[0.6rem] text-brand-smoke font-mono">
                     {rfq.rfq_number}
                   </div>
-                  <h1 className="font-display text-3xl text-orika-cream mt-1">
+                  <h1 className="font-display text-3xl text-brand-cream mt-1">
                     {rfq.title}
                   </h1>
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -161,24 +161,24 @@ export default function RFQDetail() {
                 </div>
               </div>
               {rfq.notes && (
-                <p className="mt-4 text-sm text-orika-cloud">{rfq.notes}</p>
+                <p className="mt-4 text-sm text-brand-cloud">{rfq.notes}</p>
               )}
             </Card>
 
             {/* Portal token info */}
             {showTokens && (
-              <Card className="p-4 mb-6 bg-orika-gold/[0.04] border-orika-gold/30">
+              <Card className="p-4 mb-6 bg-brand-accent/[0.04] border-brand-accent/30">
                 <div className="flex items-start gap-2 text-sm">
-                  <Sparkles className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
+                  <Sparkles className="w-4 h-4 text-brand-accent mt-0.5 shrink-0" />
                   <div className="flex-1">
-                    <p className="text-orika-cream">
+                    <p className="text-brand-cream">
                       Sending this RFQ generates a unique tokenised URL per
                       supplier:
                     </p>
-                    <code className="block mt-2 px-3 py-2 bg-orika-black/40 rounded-lg font-mono text-xs text-orika-gold">
+                    <code className="block mt-2 px-3 py-2 bg-brand-black/40 rounded-lg font-mono text-xs text-brand-accent">
                       https://app.orikaliving.com/rfq/&lt;token&gt;
                     </code>
-                    <p className="text-xs text-orika-smoke mt-2">
+                    <p className="text-xs text-brand-smoke mt-2">
                       Each supplier can only see their own submission form.
                       Click <strong>Send RFQ</strong> to dispatch the tokens.
                     </p>
@@ -189,7 +189,7 @@ export default function RFQDetail() {
 
             {/* Quotes (with best-value scoring) */}
             <section>
-              <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2">
+              <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3 inline-flex items-center gap-2">
                 <Trophy className="w-3.5 h-3.5" /> Supplier responses ·{" "}
                 {scored.length}
               </h3>
@@ -206,18 +206,18 @@ export default function RFQDetail() {
                     return (
                       <Card
                         key={q.quote_id}
-                        className={`p-4 ${q.is_recommended ? "border-orika-gold/40 bg-orika-gold/[0.04]" : ""}`}
+                        className={`p-4 ${q.is_recommended ? "border-brand-accent/40 bg-brand-accent/[0.04]" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-3 min-w-0">
                             {q.is_recommended && (
-                              <Trophy className="w-4 h-4 text-orika-gold shrink-0" />
+                              <Trophy className="w-4 h-4 text-brand-accent shrink-0" />
                             )}
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Link
                                   to={`/procurement/suppliers/${q.supplier_id}`}
-                                  className="text-sm font-medium text-orika-cream hover:text-orika-gold truncate"
+                                  className="text-sm font-medium text-brand-cream hover:text-brand-accent truncate"
                                 >
                                   {sup?.display_name ?? q.supplier_name}
                                 </Link>
@@ -227,7 +227,7 @@ export default function RFQDetail() {
                                   </Badge>
                                 )}
                               </div>
-                              <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                              <div className="text-[0.65rem] text-brand-smoke mt-0.5">
                                 Score{" "}
                                 {((q.weighted_score ?? 0) * 100).toFixed(0)}/100
                                 · {fmtRelative(q.created_at)}
@@ -239,7 +239,7 @@ export default function RFQDetail() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-mono text-lg text-orika-gold">
+                            <span className="font-mono text-lg text-brand-accent">
                               {fmtMoney(q.unit_price, q.currency)}
                             </span>
                             <Button

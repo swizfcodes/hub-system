@@ -136,9 +136,9 @@ export default function CampaignsHome() {
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+              className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
             >
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
                 {kpi.label}
               </p>
               <p
@@ -168,8 +168,8 @@ export default function CampaignsHome() {
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   typeFilter === t
-                    ? "bg-orika-gold text-orika-black"
-                    : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/70",
+                    ? "bg-brand-accent text-brand-black"
+                    : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/70",
                 )}
               >
                 {t === "all"
@@ -190,9 +190,9 @@ export default function CampaignsHome() {
             ))}
           </div>
         ) : campaigns.length === 0 ? (
-          <div className="py-16 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-            <BarChart2 className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">No campaigns yet</p>
+          <div className="py-16 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+            <BarChart2 className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">No campaigns yet</p>
             <Button
               variant="ghost"
               className="mt-4"
@@ -205,7 +205,7 @@ export default function CampaignsHome() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Name",
                     "Type",
@@ -218,7 +218,7 @@ export default function CampaignsHome() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -238,19 +238,19 @@ export default function CampaignsHome() {
                   return (
                     <tr
                       key={campaign.campaign_id}
-                      className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                      className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <button
                           onClick={() =>
                             navigate(`/campaigns/${campaign.campaign_id}`)
                           }
-                          className="font-medium text-orika-cream hover:text-orika-gold transition-colors text-left"
+                          className="font-medium text-brand-cream hover:text-brand-accent transition-colors text-left"
                         >
                           {campaign.campaign_name}
                         </button>
                         {campaign.subject_line && (
-                          <p className="text-xs text-orika-smoke truncate max-w-[200px]">
+                          <p className="text-xs text-brand-smoke truncate max-w-[200px]">
                             {campaign.subject_line}
                           </p>
                         )}
@@ -258,18 +258,18 @@ export default function CampaignsHome() {
                       <td className="px-4 py-3">
                         <CampaignTypePill type={campaign.campaign_type} />
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                      <td className="px-4 py-3 tabular-nums text-brand-smoke">
                         {campaign.recipient_count.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                      <td className="px-4 py-3 tabular-nums text-brand-smoke">
                         {campaign.delivered_count.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-cream">
+                      <td className="px-4 py-3 tabular-nums text-brand-cream">
                         {campaign.campaign_type === "email"
                           ? `${openRate}%`
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 text-orika-smoke">
+                      <td className="px-4 py-3 text-brand-smoke">
                         {campaign.sent_at
                           ? fmtDate(campaign.sent_at)
                           : campaign.scheduled_at
@@ -289,7 +289,7 @@ export default function CampaignsHome() {
                               navigate(`/campaigns/${campaign.campaign_id}`)
                             }
                             title="View"
-                            className="text-orika-smoke hover:text-orika-gold transition-colors"
+                            className="text-brand-smoke hover:text-brand-accent transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -302,7 +302,7 @@ export default function CampaignsHome() {
                                 }}
                                 disabled={sendingId === campaign.campaign_id}
                                 title="Send now"
-                                className="text-orika-smoke hover:text-green-400 transition-colors disabled:opacity-40"
+                                className="text-brand-smoke hover:text-green-400 transition-colors disabled:opacity-40"
                               >
                                 <Send className="h-4 w-4" />
                               </button>
@@ -313,7 +313,7 @@ export default function CampaignsHome() {
                                 cancelMutation.mutate(campaign.campaign_id)
                               }
                               title="Cancel"
-                              className="text-orika-smoke hover:text-state-danger transition-colors"
+                              className="text-brand-smoke hover:text-state-danger transition-colors"
                             >
                               <XCircle className="h-4 w-4" />
                             </button>

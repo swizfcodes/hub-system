@@ -62,13 +62,13 @@ export function ReportTable({
       <div className="overflow-x-auto rounded-2xl border border-white/5">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-orika-charcoal">
+            <tr className="border-b border-white/5 bg-brand-charcoal">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => toggleSort(col.key)}
                   className={cn(
-                    "px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke cursor-pointer select-none hover:text-orika-cream transition-colors",
+                    "px-4 py-3 text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke cursor-pointer select-none hover:text-brand-cream transition-colors",
                     NUMERIC_TYPES.includes(col.type)
                       ? "text-right"
                       : "text-left",
@@ -83,7 +83,7 @@ export function ReportTable({
                 </th>
               ))}
               {compareReport && (
-                <th className="px-4 py-3 text-right text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke/50">
+                <th className="px-4 py-3 text-right text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke/50">
                   Δ vs Compare
                 </th>
               )}
@@ -94,7 +94,7 @@ export function ReportTable({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-sm text-orika-smoke"
+                  className="px-4 py-12 text-center text-sm text-brand-smoke"
                 >
                   No data in this range.
                 </td>
@@ -118,7 +118,7 @@ export function ReportTable({
               return (
                 <tr
                   key={i}
-                  className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                  className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                 >
                   {columns.map((col) => (
                     <td
@@ -126,8 +126,8 @@ export function ReportTable({
                       className={cn(
                         "px-4 py-3 tabular-nums",
                         NUMERIC_TYPES.includes(col.type)
-                          ? "text-right font-medium text-orika-cream"
-                          : "text-orika-cloud",
+                          ? "text-right font-medium text-brand-cream"
+                          : "text-brand-cloud",
                       )}
                     >
                       {formatCellValue(row[col.key], col.type)}
@@ -138,7 +138,7 @@ export function ReportTable({
                       {delta !== null ? (
                         <DeltaBadge delta={delta} />
                       ) : (
-                        <span className="text-orika-smoke/30">—</span>
+                        <span className="text-brand-smoke/30">—</span>
                       )}
                     </td>
                   )}
@@ -149,7 +149,7 @@ export function ReportTable({
           {/* Totals row */}
           {meta.totals && (
             <tfoot>
-              <tr className="border-t-2 border-white/10 bg-orika-graphite/20">
+              <tr className="border-t-2 border-white/10 bg-brand-graphite/20">
                 {columns.map((col, i) => {
                   const total = meta.totals![col.key];
                   return (
@@ -158,8 +158,8 @@ export function ReportTable({
                       className={cn(
                         "px-4 py-3 font-semibold tabular-nums",
                         NUMERIC_TYPES.includes(col.type)
-                          ? "text-right text-orika-cream"
-                          : "text-orika-smoke",
+                          ? "text-right text-brand-cream"
+                          : "text-brand-smoke",
                       )}
                     >
                       {i === 0
@@ -178,7 +178,7 @@ export function ReportTable({
       </div>
 
       {truncated && (
-        <p className="text-xs text-center text-orika-smoke">
+        <p className="text-xs text-center text-brand-smoke">
           Showing {maxRows.toLocaleString()} of {rows.length.toLocaleString()}{" "}
           rows — export to see all.
         </p>
@@ -218,12 +218,12 @@ function SummaryCards({
         return (
           <div
             key={key}
-            className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+            className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
           >
-            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+            <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
               {label}
             </p>
-            <p className="font-display text-xl font-light tabular-nums text-orika-cream">
+            <p className="font-display text-xl font-light tabular-nums text-brand-cream">
               {formatted}
             </p>
           </div>
@@ -240,7 +240,7 @@ function DeltaBadge({ delta }: { delta: number }) {
   const isZero = Math.abs(delta) < 0.01;
 
   if (isZero)
-    return <Minus className="mx-auto h-3.5 w-3.5 text-orika-smoke/40" />;
+    return <Minus className="mx-auto h-3.5 w-3.5 text-brand-smoke/40" />;
 
   return (
     <span

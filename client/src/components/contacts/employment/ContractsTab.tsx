@@ -49,7 +49,7 @@ export function ContractsTab({ profileId }: { profileId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
           Compensation history
         </h3>
         <Button
@@ -78,7 +78,7 @@ export function ContractsTab({ profileId }: { profileId: string }) {
         <div className="space-y-2">
           {(data ?? []).map((c) => (
             <Card key={c.contract_id} className="p-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orika-gold/15 text-orika-gold flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-brand-accent/15 text-brand-accent flex items-center justify-center shrink-0">
                 <FileSignature className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -86,18 +86,18 @@ export function ContractsTab({ profileId }: { profileId: string }) {
                   <Badge tone="gold" size="xs">
                     {c.contract_type.replace("_", " ")}
                   </Badge>
-                  <span className="text-sm font-mono text-orika-gold">
+                  <span className="text-sm font-mono text-brand-accent">
                     {fmtMoney(c.gross_salary, "NGN")}
                   </span>
                 </div>
-                <div className="text-[0.65rem] text-orika-smoke mt-1">
+                <div className="text-[0.65rem] text-brand-smoke mt-1">
                   Effective {fmtDate(c.effective_from)}
                   {c.effective_to
                     ? ` — ${fmtDate(c.effective_to)}`
                     : " · current"}
                 </div>
                 {c.notes && (
-                  <p className="text-xs text-orika-cloud mt-1.5 italic">
+                  <p className="text-xs text-brand-cloud mt-1.5 italic">
                     "{c.notes}"
                   </p>
                 )}

@@ -149,31 +149,31 @@ export default function PODetail() {
             <main className="space-y-6 min-w-0">
               {/* Lines */}
               <Card className="overflow-hidden">
-                <div className="px-5 py-3 border-b border-orika-graphite flex items-center justify-between">
-                  <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+                <div className="px-5 py-3 border-b border-brand-graphite flex items-center justify-between">
+                  <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5" /> Line items
                   </h3>
-                  <span className="text-[0.65rem] text-orika-smoke">
+                  <span className="text-[0.65rem] text-brand-smoke">
                     {totalReceived}/{totalOrdered} units received
                   </span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-orika-charcoal border-b border-orika-graphite">
+                    <thead className="bg-brand-charcoal border-b border-brand-graphite">
                       <tr>
-                        <th className="px-4 py-2 text-left text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                        <th className="px-4 py-2 text-left text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                           Product
                         </th>
-                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                           Qty ordered
                         </th>
-                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                           Qty received
                         </th>
-                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                           Unit price
                         </th>
-                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                        <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                           Line total
                         </th>
                       </tr>
@@ -185,29 +185,29 @@ export default function PODetail() {
                         return (
                           <tr
                             key={l.line_id}
-                            className="border-b border-orika-graphite/40"
+                            className="border-b border-brand-graphite/40"
                           >
                             <td className="px-4 py-2.5">
-                              <div className="text-orika-cream">
+                              <div className="text-brand-cream">
                                 {l.product_name ?? l.description ?? "—"}
                               </div>
                               {l.product_sku && (
-                                <div className="text-[0.6rem] font-mono text-orika-smoke">
+                                <div className="text-[0.6rem] font-mono text-brand-smoke">
                                   {l.product_sku}
                                 </div>
                               )}
                               {l.description &&
                                 l.description !== l.product_name && (
-                                  <div className="text-[0.6rem] text-orika-smoke/80 italic">
+                                  <div className="text-[0.6rem] text-brand-smoke/80 italic">
                                     {l.description}
                                   </div>
                                 )}
                             </td>
-                            <td className="px-4 py-2.5 text-right text-orika-cream">
+                            <td className="px-4 py-2.5 text-right text-brand-cream">
                               {l.quantity_ordered}
                             </td>
                             <td className="px-4 py-2.5 text-right">
-                              <span className="text-orika-cream">
+                              <span className="text-brand-cream">
                                 {l.quantity_received ?? 0}
                               </span>
                               {remaining > 0 && (
@@ -216,10 +216,10 @@ export default function PODetail() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-2.5 text-right font-mono text-orika-cream">
+                            <td className="px-4 py-2.5 text-right font-mono text-brand-cream">
                               {fmtMoney(l.unit_price, po.currency)}
                             </td>
-                            <td className="px-4 py-2.5 text-right font-mono text-orika-gold">
+                            <td className="px-4 py-2.5 text-right font-mono text-brand-accent">
                               {fmtMoney(l.line_total, po.currency)}
                             </td>
                           </tr>
@@ -232,12 +232,12 @@ export default function PODetail() {
 
               {/* Goods receipts */}
               <Card className="p-5">
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3 inline-flex items-center gap-2">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3 inline-flex items-center gap-2">
                   <Truck className="w-3.5 h-3.5" /> Goods receipts ·{" "}
                   {receipts.length}
                 </h3>
                 {receipts.length === 0 ? (
-                  <p className="text-xs text-orika-cloud">
+                  <p className="text-xs text-brand-cloud">
                     {po.status === "received"
                       ? "All ordered goods have been received."
                       : po.status === "partially_received"
@@ -249,18 +249,18 @@ export default function PODetail() {
                     {receipts.map((r) => (
                       <div
                         key={r.receipt_id}
-                        className="flex items-center gap-3 text-xs py-2 border-b border-orika-graphite/40 last:border-0"
+                        className="flex items-center gap-3 text-xs py-2 border-b border-brand-graphite/40 last:border-0"
                       >
-                        <ArrowDownToLine className="w-3.5 h-3.5 text-orika-gold shrink-0" />
-                        <span className="text-orika-cream flex-1">
+                        <ArrowDownToLine className="w-3.5 h-3.5 text-brand-accent shrink-0" />
+                        <span className="text-brand-cream flex-1">
                           Received {fmtDate(r.received_date)}
                         </span>
                         {r.notes && (
-                          <span className="text-orika-smoke truncate max-w-xs">
+                          <span className="text-brand-smoke truncate max-w-xs">
                             {r.notes}
                           </span>
                         )}
-                        <span className="text-orika-smoke shrink-0">
+                        <span className="text-brand-smoke shrink-0">
                           {r.lines?.length ?? 0} line(s)
                         </span>
                       </div>
@@ -271,10 +271,10 @@ export default function PODetail() {
 
               {po.notes && (
                 <Card className="p-5">
-                  <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-2">
+                  <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-2">
                     Notes
                   </h3>
-                  <p className="text-sm text-orika-cloud whitespace-pre-line">
+                  <p className="text-sm text-brand-cloud whitespace-pre-line">
                     {po.notes}
                   </p>
                 </Card>
@@ -284,7 +284,7 @@ export default function PODetail() {
             {/* Sticky sidebar */}
             <aside className="lg:sticky lg:top-24 space-y-3">
               <Card className="p-4">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-1">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-1">
                   Status
                 </div>
                 <Badge tone={STATUS_TONE[po.status]} size="sm" dot>
@@ -297,14 +297,14 @@ export default function PODetail() {
                   to={`/procurement/suppliers/${po.supplier_id}`}
                   className="flex items-center gap-3 group"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-living-sage/15 text-living-sage flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-accent2/15 text-accent2 flex items-center justify-center">
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-orika-cream truncate group-hover:text-orika-gold">
+                    <div className="text-sm font-medium text-brand-cream truncate group-hover:text-brand-accent">
                       {po.supplier_name}
                     </div>
-                    <span className="text-[0.6rem] text-orika-smoke">
+                    <span className="text-[0.6rem] text-brand-smoke">
                       Open supplier
                     </span>
                   </div>
@@ -312,44 +312,44 @@ export default function PODetail() {
               </Card>
 
               <Card className="p-4">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                   Total
                 </div>
-                <div className="text-2xl font-display text-orika-gold tabular-nums">
+                <div className="text-2xl font-display text-brand-accent tabular-nums">
                   {fmtMoney(po.total_amount, po.currency)}
                 </div>
                 {po.ngn_equivalent && po.currency !== "NGN" && (
-                  <div className="text-[0.65rem] text-orika-smoke font-mono mt-1">
+                  <div className="text-[0.65rem] text-brand-smoke font-mono mt-1">
                     ≈ {fmtMoney(po.ngn_equivalent, "NGN")} @ {po.exchange_rate}
                   </div>
                 )}
-                <div className="border-t border-orika-graphite mt-3 pt-3 space-y-1 text-xs">
-                  <div className="flex justify-between text-orika-smoke">
+                <div className="border-t border-brand-graphite mt-3 pt-3 space-y-1 text-xs">
+                  <div className="flex justify-between text-brand-smoke">
                     <span>Subtotal</span>
-                    <span className="font-mono text-orika-cream">
+                    <span className="font-mono text-brand-cream">
                       {fmtMoney(po.subtotal, po.currency)}
                     </span>
                   </div>
                   {po.shipping_cost > 0 && (
-                    <div className="flex justify-between text-orika-smoke">
+                    <div className="flex justify-between text-brand-smoke">
                       <span>Shipping</span>
-                      <span className="font-mono text-orika-cream">
+                      <span className="font-mono text-brand-cream">
                         {fmtMoney(po.shipping_cost, po.currency)}
                       </span>
                     </div>
                   )}
                   {po.import_duty > 0 && (
-                    <div className="flex justify-between text-orika-smoke">
+                    <div className="flex justify-between text-brand-smoke">
                       <span>Duty</span>
-                      <span className="font-mono text-orika-cream">
+                      <span className="font-mono text-brand-cream">
                         {fmtMoney(po.import_duty, po.currency)}
                       </span>
                     </div>
                   )}
                   {po.other_charges > 0 && (
-                    <div className="flex justify-between text-orika-smoke">
+                    <div className="flex justify-between text-brand-smoke">
                       <span>Other</span>
-                      <span className="font-mono text-orika-cream">
+                      <span className="font-mono text-brand-cream">
                         {fmtMoney(po.other_charges, po.currency)}
                       </span>
                     </div>
@@ -374,31 +374,31 @@ export default function PODetail() {
               {/* Payables summary — bills raised against this PO */}
               {bills.length > 0 && (
                 <Card className="p-4 space-y-2">
-                  <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                  <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                     Supplier bills
                   </div>
                   {bills.map((b) => (
                     <Link
                       key={b.sup_invoice_id}
                       to={`/procurement/bills/${b.sup_invoice_id}`}
-                      className="block rounded-lg border border-orika-graphite/60 px-3 py-2 hover:border-orika-gold/40"
+                      className="block rounded-lg border border-brand-graphite/60 px-3 py-2 hover:border-brand-accent/40"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-orika-cream truncate">
+                        <span className="text-xs text-brand-cream truncate">
                           {b.supplier_invoice_number}
                         </span>
                         <Badge tone={BILL_TONE[b.status]} size="xs">
                           {b.status}
                         </Badge>
                       </div>
-                      <div className="mt-1 flex items-center justify-between text-[0.65rem] text-orika-smoke">
+                      <div className="mt-1 flex items-center justify-between text-[0.65rem] text-brand-smoke">
                         <span>{fmtMoney(b.amount, b.currency)}</span>
                         {(b.amount_outstanding ?? 0) > 0 ? (
                           <span className="text-state-warn">
                             {fmtMoney(b.amount_outstanding ?? 0, b.currency)} owed
                           </span>
                         ) : (
-                          <span className="text-living-sage">Settled</span>
+                          <span className="text-accent2">Settled</span>
                         )}
                       </div>
                       {b.has_variance && (
@@ -501,8 +501,8 @@ export default function PODetail() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between">
-      <span className="text-orika-smoke">{label}</span>
-      <span className="text-orika-cream truncate ml-2">{value}</span>
+      <span className="text-brand-smoke">{label}</span>
+      <span className="text-brand-cream truncate ml-2">{value}</span>
     </div>
   );
 }

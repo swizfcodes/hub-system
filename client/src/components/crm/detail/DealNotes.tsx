@@ -29,7 +29,7 @@ export function DealNotes({ dealId }: { dealId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <StickyNote className="w-3.5 h-3.5" /> Notes
         </h3>
         <Button
@@ -61,18 +61,18 @@ export function DealNotes({ dealId }: { dealId: string }) {
               key={n.note_id}
               className={cn(
                 "p-3",
-                n.is_pinned && "border-orika-gold/40 bg-orika-gold/[0.04]",
+                n.is_pinned && "border-brand-accent/40 bg-brand-accent/[0.04]",
               )}
             >
               {n.is_pinned && (
-                <div className="inline-flex items-center gap-1 text-[0.55rem] uppercase tracking-widest text-orika-gold mb-1.5">
+                <div className="inline-flex items-center gap-1 text-[0.55rem] uppercase tracking-widest text-brand-accent mb-1.5">
                   <Pin className="w-2.5 h-2.5" /> Pinned
                 </div>
               )}
-              <p className="text-sm text-orika-cream whitespace-pre-line">
+              <p className="text-sm text-brand-cream whitespace-pre-line">
                 {n.content}
               </p>
-              <div className="text-[0.6rem] text-orika-smoke mt-2">
+              <div className="text-[0.6rem] text-brand-smoke mt-2">
                 {n.created_by_email ?? "Staff"} · {fmtRelative(n.created_at)}
               </div>
             </Card>
@@ -166,7 +166,7 @@ function AddNoteModal({
           error={errors.content?.message}
           autoFocus
         />
-        <div className="p-3 rounded-xl bg-orika-cream/40 border border-orika-cloud/40">
+        <div className="p-3 rounded-xl bg-brand-cream/40 border border-brand-cloud/40">
           <Switch
             surface="light"
             checked={!!isPinned}

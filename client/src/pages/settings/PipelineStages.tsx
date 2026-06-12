@@ -159,7 +159,7 @@ export default function PipelineStages() {
           />
         ) : (
           <div>
-            <div className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+            <div className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
               Kanban preview · drag to reorder
             </div>
             <DndContext
@@ -316,7 +316,7 @@ function AddStageModal({
                 key={c}
                 type="button"
                 onClick={() => setColour(c)}
-                className={`w-9 h-9 rounded-lg transition-transform hover:scale-110 ${colour === c ? "ring-2 ring-orika-black ring-offset-2 ring-offset-surface-light" : ""}`}
+                className={`w-9 h-9 rounded-lg transition-transform hover:scale-110 ${colour === c ? "ring-2 ring-brand-black ring-offset-2 ring-offset-surface-light" : ""}`}
                 style={{ background: c }}
               />
             ))}

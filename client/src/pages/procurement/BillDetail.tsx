@@ -143,38 +143,38 @@ export default function BillDetail() {
 
               {/* Lines */}
               <Card className="overflow-hidden">
-                <div className="px-5 py-3 border-b border-orika-graphite flex items-center justify-between">
-                  <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+                <div className="px-5 py-3 border-b border-brand-graphite flex items-center justify-between">
+                  <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5" /> Billed lines
                   </h3>
                   {bill.po_number && (
                     <Link
                       to={`/procurement/purchase-orders/${bill.po_id}`}
-                      className="text-[0.65rem] text-orika-smoke hover:text-orika-gold"
+                      className="text-[0.65rem] text-brand-smoke hover:text-brand-accent"
                     >
                       PO {bill.po_number}
                     </Link>
                   )}
                 </div>
                 {(bill.lines ?? []).length === 0 ? (
-                  <p className="p-6 text-sm text-orika-smoke text-center">
+                  <p className="p-6 text-sm text-brand-smoke text-center">
                     No line detail recorded for this bill.
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-orika-charcoal border-b border-orika-graphite">
+                      <thead className="bg-brand-charcoal border-b border-brand-graphite">
                         <tr>
-                          <th className="px-4 py-2 text-left text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                          <th className="px-4 py-2 text-left text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                             Item
                           </th>
-                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                             Qty
                           </th>
-                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                             Unit price
                           </th>
-                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+                          <th className="px-4 py-2 text-right text-[0.6rem] tracking-widest uppercase text-brand-smoke">
                             Total
                           </th>
                         </tr>
@@ -183,14 +183,14 @@ export default function BillDetail() {
                         {(bill.lines ?? []).map((l) => (
                           <tr
                             key={l.bill_line_id}
-                            className="border-b border-orika-graphite/40"
+                            className="border-b border-brand-graphite/40"
                           >
                             <td className="px-4 py-2.5">
-                              <div className="text-orika-cream">
+                              <div className="text-brand-cream">
                                 {l.product_name ?? l.description ?? "Item"}
                               </div>
                               {l.product_sku && (
-                                <div className="text-[0.6rem] font-mono text-orika-smoke">
+                                <div className="text-[0.6rem] font-mono text-brand-smoke">
                                   {l.product_sku}
                                 </div>
                               )}
@@ -200,13 +200,13 @@ export default function BillDetail() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-4 py-2.5 text-right text-orika-cream">
+                            <td className="px-4 py-2.5 text-right text-brand-cream">
                               {l.quantity}
                             </td>
-                            <td className="px-4 py-2.5 text-right font-mono text-orika-cream">
+                            <td className="px-4 py-2.5 text-right font-mono text-brand-cream">
                               {fmtMoney(l.unit_price, bill.currency)}
                             </td>
-                            <td className="px-4 py-2.5 text-right font-mono text-orika-gold">
+                            <td className="px-4 py-2.5 text-right font-mono text-brand-accent">
                               {fmtMoney(
                                 l.line_total ?? l.quantity * l.unit_price,
                                 bill.currency,
@@ -222,10 +222,10 @@ export default function BillDetail() {
 
               {bill.notes && (
                 <Card className="p-5">
-                  <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-2">
+                  <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-2">
                     Notes
                   </h3>
-                  <p className="text-sm text-orika-cloud whitespace-pre-line">
+                  <p className="text-sm text-brand-cloud whitespace-pre-line">
                     {bill.notes}
                   </p>
                 </Card>
@@ -235,7 +235,7 @@ export default function BillDetail() {
             {/* Sidebar */}
             <aside className="lg:sticky lg:top-24 space-y-3">
               <Card className="p-4">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-1">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-1">
                   Status
                 </div>
                 <Badge tone={TONE[bill.status]} size="sm" dot>
@@ -244,23 +244,23 @@ export default function BillDetail() {
               </Card>
 
               <Card className="p-4">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                   Bill total
                 </div>
-                <div className="text-2xl font-display text-orika-gold tabular-nums">
+                <div className="text-2xl font-display text-brand-accent tabular-nums">
                   {fmtMoney(bill.amount, bill.currency)}
                 </div>
-                <div className="border-t border-orika-graphite mt-3 pt-3 space-y-1 text-xs">
-                  <div className="flex justify-between text-orika-smoke">
+                <div className="border-t border-brand-graphite mt-3 pt-3 space-y-1 text-xs">
+                  <div className="flex justify-between text-brand-smoke">
                     <span>Paid</span>
-                    <span className="font-mono text-orika-cream">
+                    <span className="font-mono text-brand-cream">
                       {fmtMoney(bill.amount_paid, bill.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-orika-smoke">
+                  <div className="flex justify-between text-brand-smoke">
                     <span>Outstanding</span>
                     <span
-                      className={`font-mono ${outstanding > 0 ? "text-state-warn" : "text-living-sage"}`}
+                      className={`font-mono ${outstanding > 0 ? "text-state-warn" : "text-accent2"}`}
                     >
                       {fmtMoney(outstanding, bill.currency)}
                     </span>
@@ -275,7 +275,7 @@ export default function BillDetail() {
                 {bill.supplier_id && (
                   <Link
                     to={`/procurement/suppliers/${bill.supplier_id}`}
-                    className="flex items-center gap-2 pt-1 text-orika-smoke hover:text-orika-gold"
+                    className="flex items-center gap-2 pt-1 text-brand-smoke hover:text-brand-accent"
                   >
                     <Building2 className="w-3.5 h-3.5" />
                     {bill.supplier_name}
@@ -399,8 +399,8 @@ export default function BillDetail() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between">
-      <span className="text-orika-smoke">{label}</span>
-      <span className="text-orika-cream truncate ml-2">{value}</span>
+      <span className="text-brand-smoke">{label}</span>
+      <span className="text-brand-cream truncate ml-2">{value}</span>
     </div>
   );
 }

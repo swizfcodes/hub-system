@@ -47,7 +47,7 @@ export function TierBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border border-white/10 font-medium text-orika-smoke",
+          "inline-flex items-center gap-1 rounded-full border border-white/10 font-medium text-brand-smoke",
           size === "xs"
             ? "px-1.5 py-0.5 text-[0.55rem]"
             : size === "md"
@@ -109,7 +109,7 @@ export function PointsCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
             Points Balance
           </p>
           <p
@@ -118,7 +118,7 @@ export function PointsCard({
           >
             {balance.toLocaleString()}
           </p>
-          <p className="text-[0.65rem] text-orika-smoke mt-0.5">
+          <p className="text-[0.65rem] text-brand-smoke mt-0.5">
             loyalty points
           </p>
         </div>
@@ -127,7 +127,7 @@ export function PointsCard({
 
       {tier && (
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-orika-smoke">
+          <div className="flex items-center justify-between text-xs text-brand-smoke">
             <span>{tier.min_points.toLocaleString()} pts</span>
             <span>
               {tier.max_points
@@ -135,7 +135,7 @@ export function PointsCard({
                 : "No limit"}
             </span>
           </div>
-          <div className="h-1.5 rounded-full bg-orika-graphite overflow-hidden">
+          <div className="h-1.5 rounded-full bg-brand-graphite overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
               style={{
@@ -175,8 +175,8 @@ export function TransactionList({
   if (!transactions.length) {
     return (
       <div className="py-8 text-center rounded-xl border border-white/5">
-        <Award className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-        <p className="text-sm text-orika-smoke">No transactions yet</p>
+        <Award className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+        <p className="text-sm text-brand-smoke">No transactions yet</p>
       </div>
     );
   }
@@ -203,11 +203,11 @@ export function TransactionList({
 
             {/* Notes / reference */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-orika-cream truncate">
+              <p className="text-xs text-brand-cream truncate">
                 {tx.notes ??
                   (tx.reference_type ? `Ref: ${tx.reference_type}` : "—")}
               </p>
-              <p className="text-[10px] text-orika-smoke/60">
+              <p className="text-[10px] text-brand-smoke/60">
                 {fmtDate(tx.created_at)}
               </p>
             </div>
@@ -454,9 +454,9 @@ export function RedeemModal({
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl border border-orika-gold/20 bg-orika-gold/5 px-4 py-3 text-sm">
-          <span className="text-orika-smoke">Current balance: </span>
-          <span className="font-semibold text-orika-gold">
+        <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 px-4 py-3 text-sm">
+          <span className="text-brand-smoke">Current balance: </span>
+          <span className="font-semibold text-brand-accent">
             {balance.toLocaleString()} pts
           </span>
         </div>

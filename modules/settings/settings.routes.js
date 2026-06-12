@@ -500,4 +500,43 @@ router.patch(
   },
 );
 
+
+// ─── PLATFORM APPEARANCE (white-label) ───────────────────────
+// The deployment's own identity: product name, fonts, theme.
+// Public read lives at /api/branding (branding.public.routes.js).
+
+// GET /api/settings/appearance
+router.get("/appearance", can("settings", "view"), async (req, res, next) => {
+  try {
+    res.json(await service.getPlatformSettings());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/settings/appearance
+router.patch(
+  "/appearance",
+  body("product_name").optional().isString().trim().isLength({ min: 1, max: 60 }),
+  body("tagline").optional({ nullable: true }).isString().isLength({ max: 120 }),
+  body("company_name").optional({ nullable: true }).isString().isLength({ max: 120 }),
+  body("logo_light_url").optional({ nullable: true }).isString(),
+  body("logo_dark_url").optional({ nullable: true }).isString(),
+  body("favicon_url").optional({ nullable: true }).isString(),
+  body("font_display").optional().isString().trim().isLength({ min: 1, max: 80 }),
+  body("font_body").optional().isString().trim().isLength({ min: 1, max: 80 }),
+  body("font_mono").optional().isString().trim().isLength({ min: 1, max: 80 }),
+  body("font_css_url").optional({ nullable: true }).isString(),
+  body("theme").optional().isObject(),
+  validate,
+  can("settings", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.updatePlatformSettings(req.body, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 module.exports = router;

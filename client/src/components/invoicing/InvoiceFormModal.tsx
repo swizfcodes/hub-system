@@ -196,7 +196,7 @@ function StepLines({
         {fields.map((field, i) => (
           <div
             key={field.id}
-            className="rounded-xl border border-orika-cloud/30 bg-orika-cloud/10 p-4 space-y-3"
+            className="rounded-xl border border-brand-cloud/30 bg-brand-cloud/10 p-4 space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-text-on-light-muted">
@@ -275,7 +275,7 @@ function StepLines({
             </div>
             <p className="text-right text-xs text-text-on-light-muted">
               Line total:{" "}
-              <span className="font-semibold text-orika-black">
+              <span className="font-semibold text-brand-black">
                 {fmtMoney(
                   (watchedLines[i]?.unit_price ?? 0) *
                     (watchedLines[i]?.quantity ?? 1) -
@@ -291,7 +291,7 @@ function StepLines({
       <button
         type="button"
         onClick={() => append(DEFAULT_LINE)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orika-cloud/50 py-3 text-sm text-text-on-light-muted hover:border-orika-black hover:text-orika-black transition-colors"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand-cloud/50 py-3 text-sm text-text-on-light-muted hover:border-brand-black hover:text-brand-black transition-colors"
       >
         <Plus className="h-4 w-4" /> Add Line
       </button>
@@ -326,22 +326,22 @@ function StepReview({
 }: StepReviewProps) {
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-orika-cloud/30 bg-orika-cloud/10 p-4 space-y-1.5 text-sm">
+      <div className="rounded-xl border border-brand-cloud/30 bg-brand-cloud/10 p-4 space-y-1.5 text-sm">
         <div className="flex justify-between">
           <span className="text-text-on-light-muted">Customer</span>
-          <span className="font-medium text-orika-black">
+          <span className="font-medium text-brand-black">
             {contact?.display_name ?? "—"}
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-text-on-light-muted">Type</span>
-          <span className="font-medium text-orika-black capitalize">
+          <span className="font-medium text-brand-black capitalize">
             {form.watch("invoice_type").replace("_", " ")}
           </span>
         </div>
         <div className="flex justify-between">
           <span className="text-text-on-light-muted">Due</span>
-          <span className="font-medium text-orika-black">
+          <span className="font-medium text-brand-black">
             {form.watch("due_date")}
           </span>
         </div>
@@ -353,7 +353,7 @@ function StepReview({
             <span className="text-text-on-light-muted truncate max-w-[60%]">
               {l.description || `Line ${i + 1}`} x {l.quantity ?? 0}
             </span>
-            <span className="tabular-nums text-orika-black">
+            <span className="tabular-nums text-brand-black">
               {fmtMoney(
                 (l.unit_price ?? 0) * (l.quantity ?? 0) -
                   (l.discount_amount ?? 0),
@@ -364,7 +364,7 @@ function StepReview({
         ))}
       </div>
 
-      <div className="space-y-1 border-t border-orika-cloud/30 pt-3 text-sm">
+      <div className="space-y-1 border-t border-brand-cloud/30 pt-3 text-sm">
         <ReviewRow label="Subtotal" value={lineSubtotal} currency={currency} />
         {discTotal > 0 && (
           <ReviewRow
@@ -380,7 +380,7 @@ function StepReview({
           currency={currency}
           muted
         />
-        <div className="border-t border-orika-cloud/30 pt-2">
+        <div className="border-t border-brand-cloud/30 pt-2">
           <ReviewRow
             label="Total"
             value={grandTotal}
@@ -424,17 +424,17 @@ function ReviewRow({
 }) {
   return (
     <div className="flex justify-between">
-      <span className={muted ? "text-text-on-light-muted" : "text-orika-black"}>
+      <span className={muted ? "text-text-on-light-muted" : "text-brand-black"}>
         {label}
       </span>
       <span
         className={cn(
           "tabular-nums",
           bold
-            ? "font-semibold text-orika-black"
+            ? "font-semibold text-brand-black"
             : muted
               ? "text-text-on-light-muted"
-              : "text-orika-black",
+              : "text-brand-black",
         )}
       >
         {fmtMoney(value, currency)}
@@ -553,8 +553,8 @@ export function InvoiceFormModal({ open, onClose, onCreated, prefill }: Props) {
                 className={cn(
                   "h-1.5 rounded-full transition-all",
                   i <= stepIndex
-                    ? "w-8 bg-orika-black"
-                    : "w-4 bg-orika-cloud/50",
+                    ? "w-8 bg-brand-black"
+                    : "w-4 bg-brand-cloud/50",
                 )}
               />
             ))}

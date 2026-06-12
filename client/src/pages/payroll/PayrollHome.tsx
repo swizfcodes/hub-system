@@ -96,7 +96,7 @@ export default function PayrollHome() {
 
         {/* Runs list */}
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Payroll Runs
           </p>
 
@@ -107,8 +107,8 @@ export default function PayrollHome() {
               ))}
             </div>
           ) : runs.length === 0 ? (
-            <div className="py-12 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-              <p className="text-sm text-orika-smoke mb-3">
+            <div className="py-12 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+              <p className="text-sm text-brand-smoke mb-3">
                 No payroll runs yet.
               </p>
               <Button variant="ghost" onClick={() => setShowInitiate(true)}>
@@ -119,7 +119,7 @@ export default function PayrollHome() {
             <div className="overflow-x-auto rounded-2xl border border-white/5">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
-                  <tr className="border-b border-white/5 bg-orika-charcoal">
+                  <tr className="border-b border-white/5 bg-brand-charcoal">
                     {[
                       "Run #",
                       "Period",
@@ -132,7 +132,7 @@ export default function PayrollHome() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                       >
                         {h}
                       </th>
@@ -143,25 +143,25 @@ export default function PayrollHome() {
                   {runs.map((run) => (
                     <tr
                       key={run.run_id}
-                      className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors cursor-pointer"
+                      className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors cursor-pointer"
                       onClick={() => navigate(`/payroll/runs/${run.run_id}`)}
                     >
-                      <td className="px-4 py-3 font-mono text-xs text-orika-gold">
+                      <td className="px-4 py-3 font-mono text-xs text-brand-accent">
                         {run.run_number}
                       </td>
-                      <td className="px-4 py-3 font-medium text-orika-cream">
+                      <td className="px-4 py-3 font-medium text-brand-cream">
                         {formatPeriod(run.period_month, run.period_year)}
                       </td>
-                      <td className="px-4 py-3 text-orika-smoke">
+                      <td className="px-4 py-3 text-brand-smoke">
                         {run.payslip_count ?? "—"}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-cream">
+                      <td className="px-4 py-3 tabular-nums text-brand-cream">
                         {fmtMoney(run.total_gross, currency)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-green-400">
                         {fmtMoney(run.total_net, currency)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                      <td className="px-4 py-3 tabular-nums text-brand-smoke">
                         {mode === "full_paye"
                           ? fmtMoney(run.total_paye, currency)
                           : "—"}
@@ -170,7 +170,7 @@ export default function PayrollHome() {
                         <RunStatusBadge status={run.status} size="xs" />
                       </td>
                       <td className="px-4 py-3">
-                        <ChevronRight className="h-4 w-4 text-orika-smoke" />
+                        <ChevronRight className="h-4 w-4 text-brand-smoke" />
                       </td>
                     </tr>
                   ))}

@@ -83,9 +83,9 @@ export default function EnquiriesHome() {
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+              className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
             >
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
                 {kpi.label}
               </p>
               <p
@@ -101,7 +101,7 @@ export default function EnquiriesHome() {
         {/* Controls */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-smoke" />
             <Input
               className="pl-9"
               placeholder="Search name, email or message…"
@@ -126,8 +126,8 @@ export default function EnquiriesHome() {
                 className={
                   "rounded-full border px-3 py-1 text-xs font-medium transition-all " +
                   (status === opt.v
-                    ? "border-orika-gold bg-orika-gold/10 text-orika-gold"
-                    : "border-white/10 text-orika-smoke hover:border-white/25")
+                    ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                    : "border-white/10 text-brand-smoke hover:border-white/25")
                 }
               >
                 {opt.label}
@@ -138,7 +138,7 @@ export default function EnquiriesHome() {
 
         {/* List */}
         {isLoading ? (
-          <p className="text-sm text-orika-smoke py-12 text-center">Loading…</p>
+          <p className="text-sm text-brand-smoke py-12 text-center">Loading…</p>
         ) : enquiries.length === 0 ? (
           <EmptyState
             title="No enquiries"
@@ -194,26 +194,26 @@ function EnquiryCard({
   });
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4 sm:p-5">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-display text-lg text-orika-cream">{e.name}</h3>
+            <h3 className="font-display text-lg text-brand-cream">{e.name}</h3>
             <Badge tone={STATUS_TONE[e.status]}>{e.status}</Badge>
           </div>
-          <p className="text-[0.7rem] uppercase tracking-widest text-orika-smoke mt-0.5">
+          <p className="text-[0.7rem] uppercase tracking-widest text-brand-smoke mt-0.5">
             {e.type}
           </p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-orika-smoke">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-brand-smoke">
             <a
               href={`mailto:${e.email}`}
-              className="flex items-center gap-1 hover:text-orika-gold"
+              className="flex items-center gap-1 hover:text-brand-accent"
             >
               <Mail className="h-3 w-3" /> {e.email}
             </a>
             <a
               href={`tel:${e.phone}`}
-              className="flex items-center gap-1 hover:text-orika-gold"
+              className="flex items-center gap-1 hover:text-brand-accent"
             >
               <Phone className="h-3 w-3" /> {e.phone}
             </a>
@@ -228,7 +228,7 @@ function EnquiryCard({
           <button
             type="button"
             onClick={() => setReplyOpen((o) => !o)}
-            className="rounded-full border border-orika-gold/40 px-2.5 py-1 text-[0.7rem] text-orika-gold hover:bg-orika-gold/10 transition-all"
+            className="rounded-full border border-brand-accent/40 px-2.5 py-1 text-[0.7rem] text-brand-accent hover:bg-brand-accent/10 transition-all"
           >
             Reply
           </button>
@@ -238,7 +238,7 @@ function EnquiryCard({
               type="button"
               disabled={pending}
               onClick={() => onSetStatus(s)}
-              className="rounded-full border border-white/10 px-2.5 py-1 text-[0.7rem] capitalize text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold transition-all disabled:opacity-50"
+              className="rounded-full border border-white/10 px-2.5 py-1 text-[0.7rem] capitalize text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent transition-all disabled:opacity-50"
             >
               Mark {s}
             </button>
@@ -246,14 +246,14 @@ function EnquiryCard({
         </div>
       </div>
 
-      <p className="mt-3 whitespace-pre-wrap text-sm text-orika-cloud/90 border-t border-white/5 pt-3">
+      <p className="mt-3 whitespace-pre-wrap text-sm text-brand-cloud/90 border-t border-white/5 pt-3">
         {shown}
       </p>
       {isLong && (
         <button
           type="button"
           onClick={() => setExpanded((x) => !x)}
-          className="mt-1 text-xs text-orika-gold hover:underline"
+          className="mt-1 text-xs text-brand-accent hover:underline"
         >
           {expanded ? "View less" : "View more"}
         </button>
@@ -267,7 +267,7 @@ function EnquiryCard({
             onChange={(ev) => setReply(ev.target.value)}
             rows={4}
             placeholder={`Write a reply to ${e.name}… (sent to their inbox via messaging)`}
-            className="w-full rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/60 focus:border-orika-gold/40 focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2 text-sm text-brand-cream placeholder:text-brand-smoke/60 focus:border-brand-accent/40 focus:outline-none"
           />
           <div className="flex items-center justify-end gap-2">
             <Button

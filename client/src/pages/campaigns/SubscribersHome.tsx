@@ -89,9 +89,9 @@ export default function SubscribersHome() {
           ].map((kpi) => (
             <div
               key={kpi.label}
-              className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+              className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
             >
-              <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+              <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
                 {kpi.label}
               </p>
               <p
@@ -107,7 +107,7 @@ export default function SubscribersHome() {
         {/* Controls */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orika-smoke" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-smoke" />
             <Input
               className="pl-9"
               placeholder="Search by email…"
@@ -130,8 +130,8 @@ export default function SubscribersHome() {
                 className={
                   "rounded-full border px-3 py-1 text-xs font-medium transition-all " +
                   (status === opt.v
-                    ? "border-orika-gold bg-orika-gold/10 text-orika-gold"
-                    : "border-white/10 text-orika-smoke hover:border-white/25")
+                    ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                    : "border-white/10 text-brand-smoke hover:border-white/25")
                 }
               >
                 {opt.label}
@@ -142,7 +142,7 @@ export default function SubscribersHome() {
 
         {/* Table */}
         {isLoading ? (
-          <p className="text-sm text-orika-smoke py-12 text-center">Loading…</p>
+          <p className="text-sm text-brand-smoke py-12 text-center">Loading…</p>
         ) : subscribers.length === 0 ? (
           <EmptyState
             title="No subscribers yet"
@@ -152,7 +152,7 @@ export default function SubscribersHome() {
           <div className="overflow-hidden rounded-2xl border border-white/5">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5 text-left text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+                <tr className="border-b border-white/5 text-left text-[0.65rem] uppercase tracking-widest text-brand-smoke">
                   <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Source</th>
@@ -171,10 +171,10 @@ export default function SubscribersHome() {
                         {s.is_active ? "Active" : "Unsubscribed"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke">
+                    <td className="px-4 py-3 text-brand-smoke">
                       {s.source || "—"}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke tabular-nums">
+                    <td className="px-4 py-3 text-brand-smoke tabular-nums">
                       {new Date(s.subscribed_at).toLocaleDateString()}
                     </td>
                   </tr>

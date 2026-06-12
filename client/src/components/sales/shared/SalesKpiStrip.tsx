@@ -36,9 +36,9 @@ function KpiCard({
   }[accent];
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-white/5 bg-orika-charcoal px-4 py-4 sm:px-5">
+    <div className="flex flex-col gap-2 rounded-xl border border-white/5 bg-brand-charcoal px-4 py-4 sm:px-5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+        <span className="text-xs font-medium uppercase tracking-widest text-brand-smoke">
           {label}
         </span>
         <Icon className="h-4 w-4" style={{ color: accentColor }} />

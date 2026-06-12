@@ -134,9 +134,9 @@ export function CampaignStatsPanel({
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+          className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
         >
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
             {card.label}
           </p>
           <p
@@ -146,7 +146,7 @@ export function CampaignStatsPanel({
             {card.value}
           </p>
           {card.sub && (
-            <p className="text-[10px] text-orika-smoke mt-0.5">{card.sub}</p>
+            <p className="text-[10px] text-brand-smoke mt-0.5">{card.sub}</p>
           )}
         </div>
       ))}
@@ -179,7 +179,7 @@ export function AudiencePreviewBar({
           ? "border-state-danger/30 bg-state-danger/5"
           : isNearLimit
             ? "border-amber-500/30 bg-amber-900/10"
-            : "border-white/10 bg-orika-charcoal",
+            : "border-white/10 bg-brand-charcoal",
       )}
     >
       <Users
@@ -189,11 +189,11 @@ export function AudiencePreviewBar({
             ? "text-state-danger"
             : isNearLimit
               ? "text-amber-400"
-              : "text-orika-gold",
+              : "text-brand-accent",
         )}
       />
       {loading ? (
-        <span className="text-orika-smoke">Calculating audience…</span>
+        <span className="text-brand-smoke">Calculating audience…</span>
       ) : (
         <span
           className={
@@ -201,7 +201,7 @@ export function AudiencePreviewBar({
               ? "text-state-danger"
               : isNearLimit
                 ? "text-amber-400"
-                : "text-orika-cream"
+                : "text-brand-cream"
           }
         >
           <strong className="tabular-nums">{count.toLocaleString()}</strong>{" "}
@@ -315,7 +315,7 @@ export function AudienceBuilder({
 
       {/* Quick pick — the common "email my newsletter subscribers" case in one tap */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Quick Audiences
         </p>
         <div className="flex flex-wrap gap-2">
@@ -333,8 +333,8 @@ export function AudienceBuilder({
               "rounded-full border px-3 py-1 text-xs font-medium transition-all",
               value.include?.contact_type?.length === 1 &&
                 value.include.contact_type[0] === "subscriber"
-                ? "border-orika-gold bg-orika-gold/10 text-orika-gold"
-                : "border-white/10 text-orika-smoke hover:border-white/25",
+                ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                : "border-white/10 text-brand-smoke hover:border-white/25",
             )}
           >
             Newsletter subscribers
@@ -344,7 +344,7 @@ export function AudienceBuilder({
 
       {/* Contact type chips */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Contact Type
         </p>
         <div className="flex flex-wrap gap-2">
@@ -360,8 +360,8 @@ export function AudienceBuilder({
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition-all",
                   selected
-                    ? "border-orika-gold bg-orika-gold/10 text-orika-gold"
-                    : "border-white/10 text-orika-smoke hover:border-white/25",
+                    ? "border-brand-accent bg-brand-accent/10 text-brand-accent"
+                    : "border-white/10 text-brand-smoke hover:border-white/25",
                 )}
               >
                 {opt.label}
@@ -404,7 +404,7 @@ export function AudienceBuilder({
 
       {/* Tags */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Tags{" "}
           <span className="normal-case font-normal">
             (must have any of these)
@@ -414,13 +414,13 @@ export function AudienceBuilder({
           {(value.include?.tag_names ?? []).map((tag) => (
             <span
               key={tag}
-              className="flex items-center gap-1 rounded-full bg-orika-gold/15 border border-orika-gold/30 px-2 py-0.5 text-xs text-orika-gold"
+              className="flex items-center gap-1 rounded-full bg-brand-accent/15 border border-brand-accent/30 px-2 py-0.5 text-xs text-brand-accent"
             >
               <Tag className="h-3 w-3" />
               {tag}
               <button
                 onClick={() => removeTag(tag)}
-                className="ml-0.5 text-orika-gold/60 hover:text-orika-gold"
+                className="ml-0.5 text-brand-accent/60 hover:text-brand-accent"
               >
                 ×
               </button>
@@ -439,7 +439,7 @@ export function AudienceBuilder({
               }
             }}
             placeholder="Type a tag and press Enter"
-            className="flex-1 rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2 text-sm text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none"
+            className="flex-1 rounded-xl border border-white/10 bg-brand-charcoal px-3 py-2 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none"
           />
           <Button
             size="sm"
@@ -454,7 +454,7 @@ export function AudienceBuilder({
 
       {/* Channel requirements — maps to channel_requirements field read by compileFilter */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Must Have
         </p>
         <div className="flex gap-3">
@@ -499,9 +499,9 @@ export function AudienceBuilder({
           }
           className="rounded"
         />
-        <span className="text-orika-cloud">
+        <span className="text-brand-cloud">
           Exclude contacts who previously unsubscribed{" "}
-          <span className="text-orika-smoke">(recommended)</span>
+          <span className="text-brand-smoke">(recommended)</span>
         </span>
       </label>
     </div>
@@ -517,34 +517,34 @@ export function FollowUpList({
 }) {
   if (!suggestions.length)
     return (
-      <p className="text-sm text-orika-smoke">
+      <p className="text-sm text-brand-smoke">
         No follow-up suggestions for this campaign.
       </p>
     );
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-orika-smoke/60 mb-3">
+      <p className="text-xs text-brand-smoke/60 mb-3">
         These VIP customers opened your campaign multiple times but didn't click
         — a personal follow-up call may close the sale.
       </p>
       {suggestions.map((s) => (
         <div
           key={s.contact_id}
-          className="flex items-center gap-4 rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3"
+          className="flex items-center gap-4 rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3"
         >
-          <div className="h-8 w-8 rounded-full bg-orika-gold/15 flex items-center justify-center shrink-0">
-            <UserCheck className="h-4 w-4 text-orika-gold" />
+          <div className="h-8 w-8 rounded-full bg-brand-accent/15 flex items-center justify-center shrink-0">
+            <UserCheck className="h-4 w-4 text-brand-accent" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-orika-cream">
+            <p className="text-sm font-medium text-brand-cream">
               {s.display_name}
             </p>
-            <p className="text-xs text-orika-smoke">{s.reason}</p>
+            <p className="text-xs text-brand-smoke">{s.reason}</p>
           </div>
           <div className="text-right">
             {s.primary_phone && (
-              <p className="text-xs text-orika-cloud">{s.primary_phone}</p>
+              <p className="text-xs text-brand-cloud">{s.primary_phone}</p>
             )}
             <Badge tone="gold" size="xs">
               VIP · Opened {s.open_count}×

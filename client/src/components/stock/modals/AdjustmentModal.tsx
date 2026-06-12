@@ -204,7 +204,7 @@ export function AdjustmentModal({
           />
           <div className="flex items-end">
             <div
-              className={`w-full rounded-xl py-3.5 px-4 text-sm font-mono text-center border ${delta < 0 ? "bg-state-danger/10 text-state-danger border-state-danger/30" : delta > 0 ? "bg-living-sage/10 text-living-sage border-living-sage/30" : "bg-orika-cream border-orika-cloud/40 text-orika-black/70"}`}
+              className={`w-full rounded-xl py-3.5 px-4 text-sm font-mono text-center border ${delta < 0 ? "bg-state-danger/10 text-state-danger border-state-danger/30" : delta > 0 ? "bg-accent2/10 text-accent2 border-accent2/30" : "bg-brand-cream border-brand-cloud/40 text-brand-black/70"}`}
             >
               {delta > 0 ? "+" : ""}
               {delta}
@@ -213,7 +213,7 @@ export function AdjustmentModal({
         </div>
 
         {(type === "write_off" || type === "damage") && (
-          <div className="rounded-xl bg-state-warn/[0.08] border border-state-warn/30 p-3 flex items-start gap-2 text-xs text-orika-black/80">
+          <div className="rounded-xl bg-state-warn/[0.08] border border-state-warn/30 p-3 flex items-start gap-2 text-xs text-brand-black/80">
             <AlertTriangle className="w-3.5 h-3.5 text-state-warn mt-0.5 shrink-0" />
             <p>
               <strong>Write-offs and damage</strong> may require approval above

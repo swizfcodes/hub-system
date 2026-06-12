@@ -25,14 +25,14 @@ export function SessionHeader({
   if (!session) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-orika-charcoal px-4 py-3">
+    <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-brand-charcoal px-4 py-3">
       <div className="flex items-center gap-3 min-w-0">
         <div className="h-2 w-2 rounded-full bg-green-400 shrink-0" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-orika-cream">
+          <p className="truncate text-sm font-semibold text-brand-cream">
             {terminal?.name ?? "POS"}
           </p>
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             Float: {fmtMoney(session.opening_float, currency)}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function SessionHeader({
 
       <div className="flex items-center gap-2 shrink-0">
         {parked.length > 0 && (
-          <span className="rounded-full bg-orika-graphite px-2 py-0.5 text-xs text-orika-cloud">
+          <span className="rounded-full bg-brand-graphite px-2 py-0.5 text-xs text-brand-cloud">
             {parked.length} parked
           </span>
         )}
@@ -53,7 +53,7 @@ export function SessionHeader({
         <button
           onClick={onXReport}
           title="X Report"
-          className="rounded-lg p-1.5 text-orika-smoke hover:text-orika-gold transition-colors"
+          className="rounded-lg p-1.5 text-brand-smoke hover:text-brand-accent transition-colors"
         >
           <BarChart2 className="h-4 w-4" />
         </button>

@@ -24,7 +24,7 @@ export default function SettingsHome() {
           />
           <Link
             to="/"
-            className="hidden sm:inline-flex items-center gap-2 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+            className="hidden sm:inline-flex items-center gap-2 text-xs text-brand-smoke hover:text-brand-cream transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Return to App Menu
@@ -32,13 +32,13 @@ export default function SettingsHome() {
         </div>
 
         <header className="mb-10 animate-app-in">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             Configuration
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-5xl text-orika-cream leading-tight">
-            Settings <span className="italic text-orika-gold">Center</span>
+          <h1 className="font-display font-light text-3xl sm:text-5xl text-brand-cream leading-tight">
+            Settings <span className="italic text-brand-accent">Center</span>
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-orika-cloud max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-brand-cloud max-w-2xl">
             Every knob, dial, and switch for your two businesses lives here —
             business identity, banking, tax, branding, pipelines, document
             numbering and role-based access control.
@@ -47,10 +47,10 @@ export default function SettingsHome() {
 
         <section>
           <div className="flex items-center gap-4 mb-5">
-            <div className="text-[0.65rem] tracking-[0.18em] uppercase text-orika-gold">
+            <div className="text-[0.65rem] tracking-[0.18em] uppercase text-brand-accent">
               Modules
             </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/30 to-transparent" />
+            <div className="flex-1 h-px bg-gradient-to-r from-brand-accent/30 to-transparent" />
           </div>
           <AppGrid modules={modules} />
         </section>

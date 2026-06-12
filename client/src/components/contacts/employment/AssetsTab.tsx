@@ -72,12 +72,12 @@ export function AssetsTab({ profileId }: { profileId: string }) {
         <div className="space-y-2">
           {(data ?? []).map((a) => (
             <Card key={a.asset_id} className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-living-sage/15 text-living-sage flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-accent2/15 text-accent2 flex items-center justify-center shrink-0">
                 <Package className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-orika-cream truncate">
+                  <span className="text-sm text-brand-cream truncate">
                     {a.description}
                   </span>
                   <Badge tone="neutral" size="xs">
@@ -89,7 +89,7 @@ export function AssetsTab({ profileId }: { profileId: string }) {
                     </Badge>
                   )}
                 </div>
-                <div className="text-[0.65rem] text-orika-smoke mt-1">
+                <div className="text-[0.65rem] text-brand-smoke mt-1">
                   Issued {fmtDate(a.issued_date)}
                   {a.returned_date && ` · Returned ${fmtDate(a.returned_date)}`}
                   {a.serial_number && ` · S/N ${a.serial_number}`}

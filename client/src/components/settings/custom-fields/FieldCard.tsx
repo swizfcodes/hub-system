@@ -49,22 +49,22 @@ export function FieldCard({ field, onUpdate, onDelete }: Props) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-2xl border bg-orika-charcoal border-orika-graphite transition-all",
-        isDragging && "opacity-50 ring-2 ring-orika-gold",
+        "rounded-2xl border bg-brand-charcoal border-brand-graphite transition-all",
+        isDragging && "opacity-50 ring-2 ring-brand-accent",
       )}
     >
       <div className="p-3 sm:p-4 flex items-center gap-3">
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-orika-smoke hover:text-orika-cream p-1"
+          className="cursor-grab active:cursor-grabbing text-brand-smoke hover:text-brand-cream p-1"
           aria-label="Reorder"
         >
           <GripVertical className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm text-orika-cream truncate">
+            <span className="font-medium text-sm text-brand-cream truncate">
               {field.field_label}
             </span>
             <Badge tone="neutral" size="xs">
@@ -81,13 +81,13 @@ export function FieldCard({ field, onUpdate, onDelete }: Props) {
               </Badge>
             )}
           </div>
-          <div className="text-[0.65rem] text-orika-smoke mt-0.5 font-mono">
+          <div className="text-[0.65rem] text-brand-smoke mt-0.5 font-mono">
             {field.field_key}
           </div>
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-2 text-orika-smoke hover:text-orika-cream transition-colors"
+          className="p-2 text-brand-smoke hover:text-brand-cream transition-colors"
           aria-label={expanded ? "Collapse" : "Expand"}
         >
           {expanded ? (
@@ -99,7 +99,7 @@ export function FieldCard({ field, onUpdate, onDelete }: Props) {
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-orika-graphite space-y-4 animate-slide-down">
+        <div className="px-4 pb-4 pt-2 border-t border-brand-graphite space-y-4 animate-slide-down">
           <div className="grid gap-3 sm:grid-cols-2">
             <Input
               surface="dark"
@@ -135,14 +135,14 @@ export function FieldCard({ field, onUpdate, onDelete }: Props) {
 
           {needsOptions && (
             <div className="space-y-2">
-              <div className="text-[0.65rem] tracking-widest uppercase text-orika-smoke">
+              <div className="text-[0.65rem] tracking-widest uppercase text-brand-smoke">
                 Options
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {field.options.map((opt, i) => (
                   <span
                     key={`${opt}-${i}`}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-orika-graphite text-orika-cream border border-orika-graphite"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-brand-graphite text-brand-cream border border-brand-graphite"
                   >
                     {opt}
                     <button

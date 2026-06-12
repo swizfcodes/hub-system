@@ -118,7 +118,7 @@ export function QuickAddModal({
               reset();
               onClose();
             }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-orika-black/80 hover:text-orika-gold transition-colors mr-auto"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-brand-black/80 hover:text-brand-accent transition-colors mr-auto"
           >
             <ArrowUpRight className="w-3.5 h-3.5" />
             Open full form
@@ -201,8 +201,8 @@ export function QuickAddModal({
                       className={cn(
                         "inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-all",
                         selected
-                          ? "bg-orika-black text-orika-cream border-orika-black"
-                          : "bg-white border-orika-cloud/40 text-orika-black/70 hover:border-orika-black/40",
+                          ? "bg-brand-black text-brand-cream border-brand-black"
+                          : "bg-white border-brand-cloud/40 text-brand-black/70 hover:border-brand-black/40",
                       )}
                       style={
                         selected

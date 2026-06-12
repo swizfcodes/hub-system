@@ -117,16 +117,16 @@ export default function HelpEditor() {
           <div className="space-y-2">
             {filtered.map((a) => (
               <Card key={a.article_id} className="p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-orika-gold/10 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-brand-accent/10 flex items-center justify-center shrink-0">
                   {a.article_type === "faq" ? (
-                    <HelpCircle className="w-4 h-4 text-orika-gold" />
+                    <HelpCircle className="w-4 h-4 text-brand-accent" />
                   ) : (
-                    <BookOpen className="w-4 h-4 text-orika-gold" />
+                    <BookOpen className="w-4 h-4 text-brand-accent" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-orika-cream truncate">
+                    <span className="text-sm font-medium text-brand-cream truncate">
                       {a.title}
                     </span>
                     <Badge tone="gold" size="xs">
@@ -141,7 +141,7 @@ export default function HelpEditor() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-[0.65rem] text-orika-smoke mt-0.5">
+                  <p className="text-[0.65rem] text-brand-smoke mt-0.5">
                     Order: {a.display_order}
                   </p>
                 </div>
@@ -164,7 +164,7 @@ export default function HelpEditor() {
               </Card>
             ))}
             {filtered.length === 0 && (
-              <p className="text-sm text-orika-smoke text-center py-8">
+              <p className="text-sm text-brand-smoke text-center py-8">
                 No articles{filterModule ? ` for ${filterModule}` : ""}.
               </p>
             )}
@@ -326,7 +326,7 @@ function ArticleModal({
                 type="checkbox"
                 checked={isPublished}
                 onChange={(e) => setIsPublished(e.target.checked)}
-                className="rounded border-orika-graphite"
+                className="rounded border-brand-graphite"
               />
               <span className="text-sm text-text-on-light">Published</span>
             </label>

@@ -36,51 +36,51 @@ export function TodayHeroCard({ currency }: { currency: string }) {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-orika-gold/20 bg-orika-gold/5 px-5 py-6 animate-pulse h-28" />
+      <div className="rounded-2xl border border-brand-accent/20 bg-brand-accent/5 px-5 py-6 animate-pulse h-28" />
     );
   }
   if (!today) return null;
 
   return (
-    <div className="rounded-2xl border border-orika-gold/20 bg-orika-gold/5 px-5 py-4">
+    <div className="rounded-2xl border border-brand-accent/20 bg-brand-accent/5 px-5 py-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <p className="text-sm text-orika-smoke">Today so far</p>
-          <p className="font-display text-4xl font-light text-orika-gold tabular-nums mt-1">
+          <p className="text-sm text-brand-smoke">Today so far</p>
+          <p className="font-display text-4xl font-light text-brand-accent tabular-nums mt-1">
             {fmtMoney(today.revenue, currency)}
           </p>
         </div>
         <div className="flex flex-wrap gap-6">
           <div className="text-center">
-            <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+            <p className="font-display text-2xl font-light text-brand-cream tabular-nums">
               {today.transaction_count}
             </p>
-            <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+            <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
               Transactions
             </p>
           </div>
           <div className="text-center">
-            <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+            <p className="font-display text-2xl font-light text-brand-cream tabular-nums">
               {today.order_count}
             </p>
-            <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+            <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
               Orders
             </p>
           </div>
           <div className="text-center">
-            <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+            <p className="font-display text-2xl font-light text-brand-cream tabular-nums">
               {today.new_customers}
             </p>
-            <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+            <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
               New Customers
             </p>
           </div>
           {today.top_product && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-orika-cream truncate max-w-[140px]">
+              <p className="text-sm font-semibold text-brand-cream truncate max-w-[140px]">
                 {today.top_product.name}
               </p>
-              <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+              <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
                 Top Product · {today.top_product.units} units
               </p>
             </div>
@@ -131,8 +131,8 @@ export function QuickActions({ max = 5 }: { max?: number }) {
           className={cn(
             "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors border",
             primary
-              ? "bg-orika-gold text-orika-black border-orika-gold hover:bg-orika-gold/90"
-              : "bg-orika-charcoal text-orika-cream border-white/10 hover:border-orika-gold/40",
+              ? "bg-brand-accent text-brand-black border-brand-accent hover:bg-brand-accent/90"
+              : "bg-brand-charcoal text-brand-cream border-white/10 hover:border-brand-accent/40",
           )}
         >
           <Icon className="h-4 w-4" />
@@ -156,30 +156,30 @@ export function MyRecentSales({ currency }: { currency: string }) {
 
   return (
     <section>
-      <h2 className="text-sm font-semibold text-orika-cream mb-3">
+      <h2 className="text-sm font-semibold text-brand-cream mb-3">
         My Recent Sales
       </h2>
       {isLoading ? (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal h-40 animate-pulse" />
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal h-40 animate-pulse" />
       ) : sales.length === 0 ? (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-8 text-center">
-          <p className="text-sm text-orika-smoke">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-8 text-center">
+          <p className="text-sm text-brand-smoke">
             No sales yet today — your transactions will appear here.
           </p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal divide-y divide-white/5 overflow-hidden">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal divide-y divide-white/5 overflow-hidden">
           {sales.map((s) => (
             <button
               key={s.order_id}
               onClick={() => navigate(`/sales/orders/${s.order_id}`)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-orika-graphite/30 transition-colors"
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-brand-graphite/30 transition-colors"
             >
               <div className="min-w-0">
-                <p className="text-sm text-orika-cream truncate">
+                <p className="text-sm text-brand-cream truncate">
                   {s.customer_name || "Walk-in customer"}
                 </p>
-                <p className="text-[11px] text-orika-smoke">
+                <p className="text-[11px] text-brand-smoke">
                   {s.order_number} ·{" "}
                   {new Date(s.created_at).toLocaleTimeString("en-NG", {
                     hour: "2-digit",
@@ -187,7 +187,7 @@ export function MyRecentSales({ currency }: { currency: string }) {
                   })}
                 </p>
               </div>
-              <p className="text-sm font-medium text-orika-gold tabular-nums whitespace-nowrap">
+              <p className="text-sm font-medium text-brand-accent tabular-nums whitespace-nowrap">
                 {fmtMoney(Number(s.total_amount), currency)}
               </p>
             </button>

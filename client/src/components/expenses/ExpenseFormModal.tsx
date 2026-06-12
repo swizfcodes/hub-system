@@ -247,7 +247,7 @@ export function ExpenseFormModal({
             "rounded-xl border px-4 py-3 text-xs",
             watchedAmount > 10_000
               ? "border-amber-500/30 bg-amber-900/10 text-amber-300"
-              : "border-orika-cloud/30 text-text-on-light-muted",
+              : "border-brand-cloud/30 text-text-on-light-muted",
           )}
         >
           {watchedAmount > 10_000 ? (

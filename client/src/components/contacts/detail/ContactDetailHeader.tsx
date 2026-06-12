@@ -73,7 +73,7 @@ export function ContactDetailHeader({
   });
 
   return (
-    <header className="relative rounded-3xl bg-gradient-to-br from-orika-charcoal to-orika-black border border-orika-graphite overflow-hidden">
+    <header className="relative rounded-3xl bg-gradient-to-br from-brand-charcoal to-brand-black border border-brand-graphite overflow-hidden">
       {/* Brand accent stripe */}
       <div
         className="absolute top-0 inset-x-0 h-1"
@@ -84,7 +84,7 @@ export function ContactDetailHeader({
         {onBack && (
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-cream mb-4 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-cream mb-4 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to directory
           </button>
@@ -94,11 +94,11 @@ export function ContactDetailHeader({
           <ContactAvatar contact={contact} size="xl" />
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-2 flex-wrap">
-              <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream leading-tight">
+              <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream leading-tight">
                 {contact.display_name}
               </h1>
               {contact.priority_level === "vip" && (
-                <Star className="w-5 h-5 fill-orika-gold text-orika-gold mt-2" />
+                <Star className="w-5 h-5 fill-brand-accent text-brand-accent mt-2" />
               )}
               {contact.is_deleted && (
                 <Badge tone="danger" size="sm">
@@ -107,7 +107,7 @@ export function ContactDetailHeader({
               )}
             </div>
             {contact.company_name && (
-              <p className="text-sm text-orika-smoke mt-1">
+              <p className="text-sm text-brand-smoke mt-1">
                 {contact.company_name}
               </p>
             )}
@@ -226,11 +226,11 @@ function Stat({
 }) {
   return (
     <div>
-      <div className="text-[0.55rem] tracking-widest uppercase text-orika-smoke">
+      <div className="text-[0.55rem] tracking-widest uppercase text-brand-smoke">
         {label}
       </div>
       <div
-        className={`text-sm text-orika-cream mt-0.5 truncate ${mono ? "font-mono" : "font-medium"}`}
+        className={`text-sm text-brand-cream mt-0.5 truncate ${mono ? "font-mono" : "font-medium"}`}
       >
         {value}
       </div>

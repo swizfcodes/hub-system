@@ -98,7 +98,7 @@ export default function StorefrontSignatures() {
         </div>
 
         {isLoading ? (
-          <p className="text-sm text-orika-smoke py-12 text-center">Loading…</p>
+          <p className="text-sm text-brand-smoke py-12 text-center">Loading…</p>
         ) : (
           <div className="space-y-4">
             {(rows ?? []).map((s) => (
@@ -194,13 +194,13 @@ function SignatureEditor({
   }
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-display text-lg text-orika-cream">
+          <h3 className="font-display text-lg text-brand-cream">
             {form.name || (isDraft ? "New format" : form.slug)}
           </h3>
-          <p className="text-[0.7rem] uppercase tracking-widest text-orika-smoke">
+          <p className="text-[0.7rem] uppercase tracking-widest text-brand-smoke">
             {isDraft ? "Unsaved" : form.slug}
           </p>
         </div>
@@ -226,7 +226,7 @@ function SignatureEditor({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs text-orika-smoke">Name</span>
+          <span className="text-xs text-brand-smoke">Name</span>
           <Input
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
@@ -234,7 +234,7 @@ function SignatureEditor({
           />
         </label>
         <label className="block">
-          <span className="text-xs text-orika-smoke">Display order</span>
+          <span className="text-xs text-brand-smoke">Display order</span>
           <NumberField
             placeholder="0"
             value={form.display_order}
@@ -245,7 +245,7 @@ function SignatureEditor({
 
       <div className="grid gap-4 sm:grid-cols-2 mt-4">
         <label className="block">
-          <span className="text-xs text-orika-smoke">Size label</span>
+          <span className="text-xs text-brand-smoke">Size label</span>
           <Input
             value={form.size_label}
             onChange={(e) => set("size_label", e.target.value)}
@@ -253,7 +253,7 @@ function SignatureEditor({
           />
         </label>
         <label className="block">
-          <span className="text-xs text-orika-smoke">Price label</span>
+          <span className="text-xs text-brand-smoke">Price label</span>
           <Input
             value={form.price_label}
             onChange={(e) => set("price_label", e.target.value)}
@@ -263,18 +263,18 @@ function SignatureEditor({
       </div>
 
       <label className="block mt-4">
-        <span className="text-xs text-orika-smoke">Blurb</span>
+        <span className="text-xs text-brand-smoke">Blurb</span>
         <textarea
           value={form.blurb}
           onChange={(e) => set("blurb", e.target.value)}
           rows={2}
-          className="w-full mt-1 rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+          className="w-full mt-1 rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
         />
       </label>
 
       {/* Card image — upload OR paste a URL */}
       <div className="mt-4">
-        <span className="text-xs text-orika-smoke">Card image</span>
+        <span className="text-xs text-brand-smoke">Card image</span>
         <div className="flex flex-col gap-2 mt-1 sm:flex-row sm:items-center">
           {form.image && (
             <img
@@ -290,7 +290,7 @@ function SignatureEditor({
             className="flex-1"
           />
           <label className="cursor-pointer">
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold transition-all">
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent transition-all">
               <Upload className="h-3.5 w-3.5" />
               {uploading ? "Uploading…" : "Upload"}
             </span>

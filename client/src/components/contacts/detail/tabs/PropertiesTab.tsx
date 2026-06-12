@@ -26,13 +26,13 @@ export function PropertiesTab({ contact }: { contact: Contact }) {
       <section>
         <SectionHeader icon={<Tag className="w-3.5 h-3.5" />} title="Tags" />
         {(contact.tags ?? []).length === 0 ? (
-          <p className="text-xs text-orika-smoke">No tags yet.</p>
+          <p className="text-xs text-brand-smoke">No tags yet.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {(contact.tags ?? []).map((t) => (
               <span
                 key={t.tag_id}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-medium border bg-orika-charcoal text-orika-cream"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-medium border bg-brand-charcoal text-brand-cream"
                 style={{ borderColor: `${t.colour}55` }}
               >
                 <span
@@ -40,7 +40,7 @@ export function PropertiesTab({ contact }: { contact: Contact }) {
                   style={{ background: t.colour }}
                 />
                 {t.tag_name}
-                <span className="text-[0.55rem] text-orika-smoke">
+                <span className="text-[0.55rem] text-brand-smoke">
                   ·{t.business}
                 </span>
               </span>
@@ -81,29 +81,29 @@ export function PropertiesTab({ contact }: { contact: Contact }) {
                   </Badge>
                   {a.is_default && (
                     <Badge tone="gold" size="xs">
-                      <Star className="w-3 h-3 fill-orika-gold" /> Default
+                      <Star className="w-3 h-3 fill-brand-accent" /> Default
                     </Badge>
                   )}
                 </div>
                 {a.recipient_name && (
-                  <div className="text-xs text-orika-smoke">
+                  <div className="text-xs text-brand-smoke">
                     {a.recipient_name}
                   </div>
                 )}
-                <div className="text-sm text-orika-cream">
+                <div className="text-sm text-brand-cream">
                   {a.line1}
                   {a.line2 ? `, ${a.line2}` : ""}
                 </div>
-                <div className="text-xs text-orika-cloud mt-0.5">
+                <div className="text-xs text-brand-cloud mt-0.5">
                   {[a.area, a.city, a.state].filter(Boolean).join(", ")}
                 </div>
                 {a.landmark && (
-                  <div className="text-[0.65rem] text-orika-smoke mt-1">
+                  <div className="text-[0.65rem] text-brand-smoke mt-1">
                     Near {a.landmark}
                   </div>
                 )}
                 {a.is_verified && (
-                  <div className="inline-flex items-center gap-1 mt-2 text-[0.6rem] text-living-sage">
+                  <div className="inline-flex items-center gap-1 mt-2 text-[0.6rem] text-accent2">
                     <Check className="w-3 h-3" /> Verified by delivery
                   </div>
                 )}
@@ -118,7 +118,7 @@ export function PropertiesTab({ contact }: { contact: Contact }) {
         <section>
           <SectionHeader title="Notes" />
           <Card className="p-4">
-            <p className="text-sm text-orika-cloud whitespace-pre-line">
+            <p className="text-sm text-brand-cloud whitespace-pre-line">
               {contact.notes}
             </p>
           </Card>
@@ -145,7 +145,7 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h3 className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-orika-gold">
+      <h3 className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-brand-accent">
         {icon}
         {title}
       </h3>
@@ -279,7 +279,7 @@ function AddAddressModal({
             label="Recipient phone (if different)"
           />
         </div>
-        <div className="p-3 rounded-xl bg-orika-cream/40 border border-orika-cloud/40">
+        <div className="p-3 rounded-xl bg-brand-cream/40 border border-brand-cloud/40">
           <Switch
             surface="light"
             checked={!!isDefault}

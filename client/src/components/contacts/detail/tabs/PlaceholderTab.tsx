@@ -21,7 +21,7 @@ export function PlaceholderTab({
         linkTo && (
           <Link
             to={linkTo}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-orika-gold hover:text-orika-cream transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-accent hover:text-brand-cream transition-colors"
           >
             {linkLabel ?? "Open module"} <ArrowUpRight className="w-4 h-4" />
           </Link>

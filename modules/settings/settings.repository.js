@@ -692,7 +692,68 @@ async function updateDocumentSequence(client, seqId, fields) {
   return row || null;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// PLATFORM SETTINGS (white-label / appearance)
+// Singleton row in shared.platform_settings — the deployment's
+// own identity: product name, fonts, colour theme, logos.
+// ─────────────────────────────────────────────────────────────
+
+async function getPlatformSettings(client) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT product_name, tagline, company_name,
+            logo_light_url, logo_dark_url, favicon_url,
+            font_display, font_body, font_mono, font_css_url,
+            theme, updated_at
+     FROM shared.platform_settings LIMIT 1`,
+  );
+  return row || null;
+}
+
+async function updatePlatformSettings(client, fields, userId) {
+  const allowed = [
+    "product_name",
+    "tagline",
+    "company_name",
+    "logo_light_url",
+    "logo_dark_url",
+    "favicon_url",
+    "font_display",
+    "font_body",
+    "font_mono",
+    "font_css_url",
+    "theme",
+  ];
+  const sets = [];
+  const values = [];
+  let i = 1;
+  for (const key of allowed) {
+    if (fields[key] === undefined) continue;
+    if (key === "theme") {
+      // Merge, don't replace — a partial theme patch (one colour)
+      // must not wipe the other tokens.
+      sets.push(`theme = theme || $${i++}::jsonb`);
+      values.push(JSON.stringify(fields[key]));
+    } else {
+      sets.push(`${key} = $${i++}`);
+      values.push(fields[key]);
+    }
+  }
+  if (!sets.length) return getPlatformSettings(client);
+  sets.push(`updated_at = now()`, `updated_by = $${i++}`);
+  values.push(userId || null);
+  await client.query(
+    `UPDATE shared.platform_settings SET ${sets.join(", ")}`,
+    values,
+  );
+  return getPlatformSettings(client);
+}
+
 module.exports = {
+  getPlatformSettings,
+  updatePlatformSettings,
   // business config
   listBusinesses,
   findBusinessByKey,

@@ -183,11 +183,11 @@ export default function BusinessSetupNew() {
         </div>
 
         <header className="mb-8">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             Step {stepIndex + 1} of {STEPS.length}
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            New <span className="italic text-orika-gold">business line</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            New <span className="italic text-brand-accent">business line</span>
           </h1>
         </header>
 
@@ -272,9 +272,9 @@ export default function BusinessSetupNew() {
               {watch("legal_name") && <> ({watch("legal_name")})</>}.
             </p>
             {provisionSchema ? (
-              <div className="rounded-lg bg-orika-gold/[0.08] border border-orika-gold/30 p-3 text-xs text-orika-black/80">
+              <div className="rounded-lg bg-brand-accent/[0.08] border border-brand-accent/30 p-3 text-xs text-brand-black/80">
                 <strong>Full provisioning</strong> will create the{" "}
-                <code className="font-mono bg-orika-cream/60 px-1 rounded">
+                <code className="font-mono bg-brand-cream/60 px-1 rounded">
                   {watch("business_key")}
                 </code>{" "}
                 Postgres schema and run every template migration. This isn't

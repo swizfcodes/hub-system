@@ -72,7 +72,7 @@ export function BusinessSwitcher({ variant = "sidebar" }: Props) {
           const b = visible.find((x) => x.business_key === e.target.value);
           if (b) requestSwitch(b);
         }}
-        className="bg-orika-charcoal text-orika-cream border border-orika-graphite rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide focus:border-orika-gold focus:outline-none"
+        className="bg-brand-charcoal text-brand-cream border border-brand-graphite rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide focus:border-brand-accent focus:outline-none"
       >
         {visible.map((b) => (
           <option key={b.business_key} value={b.business_key}>
@@ -86,7 +86,7 @@ export function BusinessSwitcher({ variant = "sidebar" }: Props) {
   return (
     <div
       className={cn(
-        "p-1 bg-orika-black/40 border border-orika-graphite rounded-xl",
+        "p-1 bg-brand-black/40 border border-brand-graphite rounded-xl",
         variant === "sidebar" ? "flex" : "inline-flex",
       )}
     >
@@ -100,8 +100,8 @@ export function BusinessSwitcher({ variant = "sidebar" }: Props) {
             className={cn(
               "relative flex-1 px-3 py-2 rounded-lg text-[0.65rem] font-semibold uppercase tracking-widest transition-all",
               isActive
-                ? "text-orika-black"
-                : "text-orika-cloud hover:text-orika-cream",
+                ? "text-brand-black"
+                : "text-brand-cloud hover:text-brand-cream",
             )}
             style={isActive ? { background: accent } : {}}
           >

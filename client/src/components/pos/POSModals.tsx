@@ -198,7 +198,7 @@ export function ReceiptModal({
 
       {/* Receipt delivery */}
       <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-medium uppercase tracking-widest text-brand-smoke">
           Send Receipt
         </p>
         <div className="grid grid-cols-2 gap-2">
@@ -222,7 +222,7 @@ export function ReceiptModal({
           </Button>
         </div>
         {!hasPhone && !hasEmail && (
-          <p className="text-xs text-orika-smoke/60">
+          <p className="text-xs text-brand-smoke/60">
             No contact method on file — link a customer to send digital
             receipts.
           </p>
@@ -232,7 +232,7 @@ export function ReceiptModal({
       {/* Invoice option */}
       <Button
         variant="ghost"
-        className="w-full justify-start text-orika-smoke"
+        className="w-full justify-start text-brand-smoke"
         onClick={handleInvoice}
         loading={invoicing}
       >
@@ -246,19 +246,19 @@ export function ReceiptModal({
   const invoiceBody = invoiceData && (
     <div className="space-y-5">
       {/* Invoice reference */}
-      <div className="rounded-xl border border-orika-gold/20 bg-orika-gold/5 px-4 py-3">
+      <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-orika-smoke uppercase tracking-widest">
+            <p className="text-xs text-brand-smoke uppercase tracking-widest">
               Invoice
             </p>
-            <p className="text-base font-semibold text-orika-cream">
+            <p className="text-base font-semibold text-brand-cream">
               {invoiceData.invoice_number}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-orika-smoke">Amount Due</p>
-            <p className="text-lg font-extrabold text-orika-gold">
+            <p className="text-xs text-brand-smoke">Amount Due</p>
+            <p className="text-lg font-extrabold text-brand-accent">
               {fmtMoney(invoiceData.total_amount, currency)}
             </p>
           </div>
@@ -268,11 +268,11 @@ export function ReceiptModal({
       {/* Bank account details */}
       {invoiceData.bank_account ? (
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke flex items-center gap-1.5">
+          <p className="text-xs font-medium uppercase tracking-widest text-brand-smoke flex items-center gap-1.5">
             <Building2 className="h-3.5 w-3.5" />
             Transfer To
           </p>
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal divide-y divide-white/5">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal divide-y divide-white/5">
             <BankDetailRow
               label="Bank"
               value={invoiceData.bank_account.bank_name}
@@ -307,15 +307,15 @@ export function ReceiptModal({
 
       {/* Reference input */}
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
-          Transfer Reference <span className="text-orika-smoke/50">(optional)</span>
+        <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
+          Transfer Reference <span className="text-brand-smoke/50">(optional)</span>
         </label>
         <Input
           value={reference}
           onChange={(e) => setReference(e.target.value)}
           placeholder="e.g. ORI-20240607-001"
         />
-        <p className="mt-1 text-xs text-orika-smoke/50">
+        <p className="mt-1 text-xs text-brand-smoke/50">
           Enter the reference from the bank alert once payment arrives.
         </p>
       </div>
@@ -336,9 +336,9 @@ export function ReceiptModal({
       </div>
 
       {confirmResult.receipt_sent ? (
-        <div className="rounded-lg border border-white/5 bg-orika-charcoal px-4 py-3 flex items-center gap-3">
-          <Mail className="h-4 w-4 text-orika-smoke shrink-0" />
-          <p className="text-sm text-orika-smoke">
+        <div className="rounded-lg border border-white/5 bg-brand-charcoal px-4 py-3 flex items-center gap-3">
+          <Mail className="h-4 w-4 text-brand-smoke shrink-0" />
+          <p className="text-sm text-brand-smoke">
             Receipt emailed to customer
           </p>
         </div>
@@ -365,7 +365,7 @@ export function ReceiptModal({
       {view === "invoice" && (
         <Button
           variant="ghost"
-          className="text-orika-smoke"
+          className="text-brand-smoke"
           onClick={() => setView("default")}
           disabled={confirming}
         >
@@ -420,15 +420,15 @@ function BankDetailRow({
 }) {
   return (
     <div className="flex items-center justify-between px-4 py-2.5 gap-3">
-      <span className="text-xs text-orika-smoke shrink-0">{label}</span>
+      <span className="text-xs text-brand-smoke shrink-0">{label}</span>
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-sm text-orika-cream font-medium truncate">
+        <span className="text-sm text-brand-cream font-medium truncate">
           {value}
         </span>
         {onCopy && (
           <button
             onClick={onCopy}
-            className="shrink-0 text-orika-smoke/50 hover:text-orika-gold transition-colors"
+            className="shrink-0 text-brand-smoke/50 hover:text-brand-accent transition-colors"
             title="Copy"
           >
             <Copy className="h-3.5 w-3.5" />
@@ -509,16 +509,16 @@ export function SessionCloseModal({
           </div>
         )}
 
-        <div className="rounded-lg bg-orika-graphite/30 px-4 py-3 text-sm space-y-2">
+        <div className="rounded-lg bg-brand-graphite/30 px-4 py-3 text-sm space-y-2">
           <div className="flex justify-between">
-            <span className="text-orika-smoke">Opening Float</span>
-            <span className="text-orika-cream tabular-nums">
+            <span className="text-brand-smoke">Opening Float</span>
+            <span className="text-brand-cream tabular-nums">
               {fmtMoney(session?.opening_float ?? 0, currency)}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-orika-smoke">Revenue This Session</span>
-            <span className="text-orika-cream tabular-nums">
+            <span className="text-brand-smoke">Revenue This Session</span>
+            <span className="text-brand-cream tabular-nums">
               {fmtMoney(session?.total_revenue ?? 0, currency)}
             </span>
           </div>
@@ -547,7 +547,7 @@ export function SessionCloseModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Notes (optional)
               </label>
               <Textarea
@@ -584,14 +584,14 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
       {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-50 w-72 border-l border-white/5 bg-orika-black shadow-2xl flex flex-col">
+      <div className="fixed inset-y-0 right-0 z-50 w-72 border-l border-white/5 bg-brand-black shadow-2xl flex flex-col">
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
-          <h2 className="text-sm font-semibold text-orika-cream">
+          <h2 className="text-sm font-semibold text-brand-cream">
             Parked ({parked.length})
           </h2>
           <button
             onClick={onClose}
-            className="text-orika-smoke hover:text-orika-cream transition-colors"
+            className="text-brand-smoke hover:text-brand-cream transition-colors"
           >
             ✕
           </button>
@@ -599,24 +599,24 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
 
         <div className="flex-1 overflow-y-auto divide-y divide-white/5">
           {parked.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-orika-smoke">
+            <p className="px-4 py-8 text-center text-sm text-brand-smoke">
               No parked transactions
             </p>
           ) : (
             parked.map((p: ParkedTransaction) => (
               <div key={p.park_id} className="px-4 py-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-orika-smoke shrink-0" />
-                  <span className="text-xs text-orika-cloud truncate">
+                  <Clock className="h-3.5 w-3.5 text-brand-smoke shrink-0" />
+                  <span className="text-xs text-brand-cloud truncate">
                     {p.label ?? fmtDateTime(p.parked_at)}
                   </span>
                 </div>
                 {p.customer && (
-                  <p className="text-xs text-orika-smoke truncate">
+                  <p className="text-xs text-brand-smoke truncate">
                     {p.customer.display_name}
                   </p>
                 )}
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {p.lines.length} item{p.lines.length !== 1 ? "s" : ""}
                 </p>
                 <div className="flex gap-2">
@@ -625,14 +625,14 @@ export function ParkedDrawer({ open, onClose }: ParkedDrawerProps) {
                       resumeParked(p.park_id);
                       onClose();
                     }}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-orika-gold/10 py-1.5 text-xs font-medium text-orika-gold hover:bg-orika-gold/20 transition-colors"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-brand-accent/10 py-1.5 text-xs font-medium text-brand-accent hover:bg-brand-accent/20 transition-colors"
                   >
                     <Play className="h-3 w-3" />
                     Resume
                   </button>
                   <button
                     onClick={() => discardParked(p.park_id)}
-                    className="rounded-md px-2 py-1.5 text-orika-smoke hover:text-red-400 transition-colors"
+                    className="rounded-md px-2 py-1.5 text-brand-smoke hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -698,7 +698,7 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
       }
     >
       <div className="space-y-4">
-        <p className="text-sm text-orika-smoke/80">
+        <p className="text-sm text-brand-smoke/80">
           One or more items are priced below the minimum selling price. A
           manager must approve to continue.
         </p>
@@ -707,7 +707,7 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
           control={form.control}
           render={({ field, fieldState }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Manager Email
               </label>
               <Input
@@ -723,7 +723,7 @@ export function DiscountGate({ open, onClose, onApproved }: DiscountGateProps) {
           control={form.control}
           render={({ field, fieldState }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Password
               </label>
               <Input
@@ -855,7 +855,7 @@ export function ReturnModal({
 
           {/* Line selection */}
           <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-widest text-orika-smoke">
+            <p className="text-xs font-medium uppercase tracking-widest text-brand-smoke">
               Select Items to Return
             </p>
             {productLines.map((line) => (
@@ -864,15 +864,15 @@ export function ReturnModal({
                 className="flex items-center gap-3 rounded-lg border border-black/10 px-3 py-2.5"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm text-orika-smoke">
+                  <p className="truncate text-sm text-brand-smoke">
                     {line.description}
                   </p>
-                  <p className="text-xs text-orika-smoke/60">
+                  <p className="text-xs text-brand-smoke/60">
                     {fmtMoney(line.unit_price, currency)} × {line.quantity} sold
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-orika-smoke">Return:</span>
+                  <span className="text-xs text-brand-smoke">Return:</span>
                   <div className="w-14 shrink-0">
                     <NumberField
                       surface="light"
@@ -886,7 +886,7 @@ export function ReturnModal({
                       className="px-2 py-1 text-center"
                     />
                   </div>
-                  <span className="text-xs text-orika-smoke">
+                  <span className="text-xs text-brand-smoke">
                     / {line.quantity}
                   </span>
                 </div>
@@ -894,7 +894,7 @@ export function ReturnModal({
             ))}
 
             {productLines.length === 0 && (
-              <p className="text-sm text-orika-smoke">
+              <p className="text-sm text-brand-smoke">
                 No returnable items on this transaction.
               </p>
             )}
@@ -905,7 +905,7 @@ export function ReturnModal({
             control={form.control}
             render={({ field }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Refund Method
                 </label>
                 <Select
@@ -925,7 +925,7 @@ export function ReturnModal({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Reason *
                 </label>
                 <Input
@@ -965,26 +965,26 @@ export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-semibold text-orika-cream">
+          <p className="font-semibold text-brand-cream">
             {report.terminal_name}
           </p>
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             Opened {fmtDateTime(report.opened_at)} · {report.opened_by}
           </p>
           {isZ && (
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               Closed {fmtDateTime((report as ZReport).closed_at)}
             </p>
           )}
         </div>
-        <span className="rounded-full bg-orika-graphite px-2.5 py-1 text-xs font-bold text-orika-gold">
+        <span className="rounded-full bg-brand-graphite px-2.5 py-1 text-xs font-bold text-brand-accent">
           {report.report_type} Report
         </span>
       </div>
 
       {/* Revenue breakdown */}
-      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+      <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
           Revenue
         </p>
         <ReportRow
@@ -1009,8 +1009,8 @@ export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
       </div>
 
       {/* Transaction counts */}
-      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+      <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
           Transactions
         </p>
         <ReportRow
@@ -1030,8 +1030,8 @@ export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
       </div>
 
       {/* Cash drawer */}
-      <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+      <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
           Cash Drawer
         </p>
         {isZ ? (
@@ -1065,7 +1065,7 @@ export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
               />
             </div>
             {(report as ZReport).reconciliation_notes && (
-              <p className="mt-2 text-xs text-orika-smoke italic">
+              <p className="mt-2 text-xs text-brand-smoke italic">
                 Note: {(report as ZReport).reconciliation_notes}
               </p>
             )}
@@ -1113,12 +1113,12 @@ function ReportRow({
 }) {
   return (
     <div className="flex justify-between gap-2 text-sm">
-      <span className="text-orika-smoke">{label}</span>
+      <span className="text-brand-smoke">{label}</span>
       <span
         className={
           bold
-            ? "font-semibold text-orika-cream tabular-nums"
-            : "text-orika-cream tabular-nums"
+            ? "font-semibold text-brand-cream tabular-nums"
+            : "text-brand-cream tabular-nums"
         }
       >
         {value}
@@ -1140,7 +1140,7 @@ function VarianceRow({
   const Icon = meta.icon;
   return (
     <div className="flex justify-between items-center text-sm">
-      <span className="text-orika-smoke">Variance</span>
+      <span className="text-brand-smoke">Variance</span>
       <span
         className="flex items-center gap-1 font-medium"
         style={{ color: meta.color }}

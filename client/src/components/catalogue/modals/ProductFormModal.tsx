@@ -291,7 +291,7 @@ export function ProductFormModal({
     if (publishPromptShownRef.current) return; // once per modal session
     if (isPublished) return; // already opted in
     publishPromptShownRef.current = true;
-    toast("Publish this product to the Orika Living website?", {
+    toast("Publish this product to the online store?", {
       description:
         "We’ll generate the URL slug, tick Published, and take you to Size (ml).",
       duration: 12000,
@@ -437,7 +437,7 @@ export function ProductFormModal({
     >
       <form className="space-y-5">
         {/* --- Image Upload Block --- */}
-        <div className="flex items-center gap-4 p-4 border border-orika-cloud/40 rounded-xl bg-white/50">
+        <div className="flex items-center gap-4 p-4 border border-brand-cloud/40 rounded-xl bg-white/50">
           <input
             type="file"
             accept="image/*"
@@ -448,7 +448,7 @@ export function ProductFormModal({
 
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-20 h-20 shrink-0 rounded-lg border border-dashed border-orika-graphite/40 flex items-center justify-center bg-white hover:bg-orika-cloud/10 cursor-pointer overflow-hidden relative group transition-colors"
+            className="w-20 h-20 shrink-0 rounded-lg border border-dashed border-brand-graphite/40 flex items-center justify-center bg-white hover:bg-brand-cloud/10 cursor-pointer overflow-hidden relative group transition-colors"
           >
             {imagePreview ? (
               <img
@@ -457,15 +457,15 @@ export function ProductFormModal({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <ImagePlus className="w-6 h-6 text-orika-smoke group-hover:text-orika-gold transition-colors" />
+              <ImagePlus className="w-6 h-6 text-brand-smoke group-hover:text-brand-accent transition-colors" />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-orika-charcoal">
+            <div className="text-sm font-medium text-brand-charcoal">
               {editing ? "Replace Primary Image" : "Primary Image"}
             </div>
-            <div className="text-xs text-orika-smoke mb-2 truncate">
+            <div className="text-xs text-brand-smoke mb-2 truncate">
               High resolution JPEG or PNG.
             </div>
             {imageFile && (
@@ -634,7 +634,7 @@ export function ProductFormModal({
                   Storefront listing
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Publish this product to the Orika Living website
+                  Publish this product to the online store
                 </p>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

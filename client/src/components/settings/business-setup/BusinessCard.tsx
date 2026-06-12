@@ -13,7 +13,7 @@ interface Props {
 
 export function BusinessCard({ business: b, onArchive }: Props) {
   return (
-    <article className="group relative rounded-3xl border border-orika-graphite bg-orika-charcoal/70 overflow-hidden hover:border-orika-gold/40 hover:shadow-card-lg hover:-translate-y-1 transition-all">
+    <article className="group relative rounded-3xl border border-brand-graphite bg-brand-charcoal/70 overflow-hidden hover:border-brand-accent/40 hover:shadow-card-lg hover:-translate-y-1 transition-all">
       {/* Accent stripe */}
       <div
         className="absolute top-0 inset-x-0 h-1.5"
@@ -22,7 +22,7 @@ export function BusinessCard({ business: b, onArchive }: Props) {
 
       {/* Logo & branding row */}
       <div className="p-6 pb-4 flex items-start gap-4">
-        <div className="shrink-0 w-16 h-16 rounded-2xl bg-orika-cream border border-orika-cloud/40 p-2 flex items-center justify-center overflow-hidden">
+        <div className="shrink-0 w-16 h-16 rounded-2xl bg-brand-cream border border-brand-cloud/40 p-2 flex items-center justify-center overflow-hidden">
           {b.logo_path ? (
             <img
               src={b.logo_path}
@@ -30,14 +30,14 @@ export function BusinessCard({ business: b, onArchive }: Props) {
               className="w-full h-full object-contain"
             />
           ) : (
-            <span className="font-display text-2xl text-orika-black/70">
+            <span className="font-display text-2xl text-brand-black/70">
               {b.display_name?.[0]}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-display text-2xl text-orika-cream leading-tight truncate">
+            <h3 className="font-display text-2xl text-brand-cream leading-tight truncate">
               {b.display_name}
             </h3>
             {!b.is_active && (
@@ -46,7 +46,7 @@ export function BusinessCard({ business: b, onArchive }: Props) {
               </Badge>
             )}
           </div>
-          <p className="text-xs text-orika-smoke truncate">{b.legal_name}</p>
+          <p className="text-xs text-brand-smoke truncate">{b.legal_name}</p>
         </div>
 
         <DropdownMenu
@@ -88,7 +88,7 @@ export function BusinessCard({ business: b, onArchive }: Props) {
       </div>
 
       {/* Numbers strip */}
-      <div className="px-6 py-4 border-t border-orika-graphite/70 bg-orika-black/30 grid grid-cols-3 gap-3">
+      <div className="px-6 py-4 border-t border-brand-graphite/70 bg-brand-black/30 grid grid-cols-3 gap-3">
         <Stat label="VAT" value={fmtPercent(b.vat_rate, 1)} />
         <Stat label="WHT" value={fmtPercent(b.wht_rate, 1)} />
         <Stat label="Fiscal" value={`Month ${b.fiscal_year_start}`} />
@@ -97,7 +97,7 @@ export function BusinessCard({ business: b, onArchive }: Props) {
       {/* CTA */}
       <Link
         to={`/settings/business-setup/${b.business_key}`}
-        className="block px-6 py-3 border-t border-orika-graphite/70 text-xs uppercase tracking-widest font-semibold text-orika-gold hover:bg-orika-graphite/40 transition-colors text-center"
+        className="block px-6 py-3 border-t border-brand-graphite/70 text-xs uppercase tracking-widest font-semibold text-brand-accent hover:bg-brand-graphite/40 transition-colors text-center"
       >
         Open business
       </Link>
@@ -119,11 +119,11 @@ function Meta({
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 text-orika-cloud min-w-0",
+        "flex items-center gap-1.5 text-brand-cloud min-w-0",
         className,
       )}
     >
-      <span className="text-orika-smoke shrink-0">{icon}</span>
+      <span className="text-brand-smoke shrink-0">{icon}</span>
       <span className={cn("truncate", mono && "font-mono")}>{text}</span>
     </div>
   );
@@ -132,10 +132,10 @@ function Meta({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[0.55rem] tracking-widest uppercase text-orika-smoke">
+      <div className="text-[0.55rem] tracking-widest uppercase text-brand-smoke">
         {label}
       </div>
-      <div className="text-sm font-mono text-orika-cream mt-0.5">{value}</div>
+      <div className="text-sm font-mono text-brand-cream mt-0.5">{value}</div>
     </div>
   );
 }

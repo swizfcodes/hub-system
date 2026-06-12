@@ -23,14 +23,14 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
     <div className="space-y-6">
       <Card className="p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="shrink-0 w-12 h-12 rounded-xl bg-bejewelled-rose/15 text-bejewelled-rose flex items-center justify-center">
+          <div className="shrink-0 w-12 h-12 rounded-xl bg-accent3/15 text-accent3 flex items-center justify-center">
             <Briefcase className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-display text-xl text-orika-cream">
+            <h3 className="font-display text-xl text-brand-cream">
               {staff.job_title}
             </h3>
-            <div className="text-xs text-orika-smoke mt-0.5">
+            <div className="text-xs text-brand-smoke mt-0.5">
               {staff.department && (
                 <span className="capitalize">{staff.department} · </span>
               )}
@@ -78,7 +78,7 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
       </div>
 
       <section>
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
           Compensation & ID
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -119,7 +119,7 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
             value={staff.tax_id ?? null}
           />
         </div>
-        <p className="mt-3 text-[0.7rem] text-orika-smoke flex items-center gap-1.5">
+        <p className="mt-3 text-[0.7rem] text-brand-smoke flex items-center gap-1.5">
           <MapPin className="w-3 h-3" />
           Restricted fields are visible only to HR and the staff member
           themselves. Reads are audit-logged.
@@ -137,11 +137,11 @@ export function EmploymentTab({ staff }: { staff: StaffProfile }) {
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-3 rounded-xl border border-orika-graphite bg-orika-charcoal/40">
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+    <div className="p-3 rounded-xl border border-brand-graphite bg-brand-charcoal/40">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
-      <div className="text-sm font-medium text-orika-cream mt-0.5">{value}</div>
+      <div className="text-sm font-medium text-brand-cream mt-0.5">{value}</div>
     </div>
   );
 }

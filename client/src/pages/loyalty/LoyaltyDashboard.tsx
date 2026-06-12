@@ -86,9 +86,9 @@ export default function LoyaltyDashboard() {
             ].map((kpi) => (
               <div
                 key={kpi.label}
-                className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3"
+                className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3"
               >
-                <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+                <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
                   {kpi.label}
                 </p>
                 <p
@@ -106,7 +106,7 @@ export default function LoyaltyDashboard() {
           {/* Tier distribution */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-orika-cream">
+              <p className="text-sm font-semibold text-brand-cream">
                 Tier Distribution
               </p>
               <Button
@@ -126,9 +126,9 @@ export default function LoyaltyDashboard() {
                 ))}
               </div>
             ) : !stats?.tier_distribution?.length ? (
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-10 text-center">
-                <Trophy className="mx-auto h-8 w-8 text-orika-smoke/30 mb-2" />
-                <p className="text-sm text-orika-smoke">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-10 text-center">
+                <Trophy className="mx-auto h-8 w-8 text-brand-smoke/30 mb-2" />
+                <p className="text-sm text-brand-smoke">
                   No tiers configured yet
                 </p>
                 <Button
@@ -155,17 +155,17 @@ export default function LoyaltyDashboard() {
                   return (
                     <div
                       key={td.tier_id}
-                      className="flex items-center gap-4 rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3"
+                      className="flex items-center gap-4 rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3"
                     >
                       <div
                         className="h-3 w-3 rounded-full shrink-0"
                         style={{ backgroundColor: td.colour }}
                       />
-                      <p className="text-sm text-orika-cream flex-1">
+                      <p className="text-sm text-brand-cream flex-1">
                         {td.tier_name}
                       </p>
                       <div className="flex items-center gap-3">
-                        <div className="w-24 h-1.5 rounded-full bg-orika-graphite overflow-hidden">
+                        <div className="w-24 h-1.5 rounded-full bg-brand-graphite overflow-hidden">
                           <div
                             className="h-full rounded-full"
                             style={{
@@ -174,7 +174,7 @@ export default function LoyaltyDashboard() {
                             }}
                           />
                         </div>
-                        <p className="text-xs text-orika-smoke w-16 text-right tabular-nums">
+                        <p className="text-xs text-brand-smoke w-16 text-right tabular-nums">
                           {td.member_count.toLocaleString()} members
                         </p>
                       </div>
@@ -187,7 +187,7 @@ export default function LoyaltyDashboard() {
 
           {/* Leaderboard */}
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-orika-cream">
+            <p className="text-sm font-semibold text-brand-cream">
               Top Members by Points
             </p>
 
@@ -198,8 +198,8 @@ export default function LoyaltyDashboard() {
                 ))}
               </div>
             ) : leaderboard.length === 0 ? (
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-10 text-center">
-                <p className="text-sm text-orika-smoke">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-10 text-center">
+                <p className="text-sm text-brand-smoke">
                   No loyalty members yet
                 </p>
               </div>
@@ -223,38 +223,38 @@ export default function LoyaltyDashboard() {
                       onClick={() =>
                         navigate(`/loyalty/contact/${row.contact_id}`)
                       }
-                      className="flex w-full items-center gap-3 rounded-xl border border-white/5 bg-orika-charcoal px-4 py-2.5 text-left hover:border-white/15 hover:bg-orika-graphite/20 transition-all"
+                      className="flex w-full items-center gap-3 rounded-xl border border-white/5 bg-brand-charcoal px-4 py-2.5 text-left hover:border-white/15 hover:bg-brand-graphite/20 transition-all"
                     >
                       {/* Rank */}
                       <span
                         className={cn(
                           "w-6 text-center text-xs font-bold tabular-nums shrink-0",
                           i === 0
-                            ? "text-orika-gold"
+                            ? "text-brand-accent"
                             : i === 1
                               ? "text-[#A8A9AD]"
                               : i === 2
                                 ? "text-[#B87333]"
-                                : "text-orika-smoke/50",
+                                : "text-brand-smoke/50",
                         )}
                       >
                         {i + 1}
                       </span>
 
                       {/* Avatar */}
-                      <div className="h-7 w-7 rounded-full bg-orika-graphite flex items-center justify-center shrink-0">
-                        <span className="text-[10px] font-semibold text-orika-cream">
+                      <div className="h-7 w-7 rounded-full bg-brand-graphite flex items-center justify-center shrink-0">
+                        <span className="text-[10px] font-semibold text-brand-cream">
                           {row.display_name.charAt(0).toUpperCase()}
                         </span>
                       </div>
 
                       {/* Name */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-orika-cream truncate">
+                        <p className="text-sm font-medium text-brand-cream truncate">
                           {row.display_name}
                         </p>
                         {row.primary_phone && (
-                          <p className="text-[10px] text-orika-smoke">
+                          <p className="text-[10px] text-brand-smoke">
                             {row.primary_phone}
                           </p>
                         )}
@@ -264,7 +264,7 @@ export default function LoyaltyDashboard() {
                       {tier && <TierBadge tier={tier} size="xs" />}
 
                       {/* Balance */}
-                      <p className="text-sm font-semibold tabular-nums text-orika-gold shrink-0">
+                      <p className="text-sm font-semibold tabular-nums text-brand-accent shrink-0">
                         {row.balance.toLocaleString()} pts
                       </p>
                     </button>

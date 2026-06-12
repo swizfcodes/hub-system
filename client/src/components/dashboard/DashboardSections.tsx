@@ -42,11 +42,11 @@ function Section({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">{icon}</span>
-          <h3 className="text-sm font-semibold text-orika-cream">{title}</h3>
+          <h3 className="text-sm font-semibold text-brand-cream">{title}</h3>
         </div>
         <button
           onClick={() => navigate(href)}
-          className="flex items-center gap-1 text-xs text-orika-gold hover:underline"
+          className="flex items-center gap-1 text-xs text-brand-accent hover:underline"
         >
           Details <ChevronRight className="h-3.5 w-3.5" />
         </button>
@@ -116,8 +116,8 @@ export function SalesSection({
 
       {/* Top products */}
       {top5.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3 space-y-1">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3 space-y-1">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Top Products
           </p>
           {top5.map((p, i) => (
@@ -125,14 +125,14 @@ export function SalesSection({
               key={i}
               className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
             >
-              <p className="text-xs text-orika-cream truncate max-w-[200px]">
+              <p className="text-xs text-brand-cream truncate max-w-[200px]">
                 {p.description}
               </p>
               <div className="flex items-center gap-4 shrink-0">
-                <span className="text-xs text-orika-smoke">
+                <span className="text-xs text-brand-smoke">
                   {p.units_sold} units
                 </span>
-                <span className="text-xs font-semibold text-orika-cream tabular-nums">
+                <span className="text-xs font-semibold text-brand-cream tabular-nums">
                   {fmtMoney(p.revenue, currency)}
                 </span>
               </div>
@@ -143,8 +143,8 @@ export function SalesSection({
 
       {/* Payment methods */}
       {(data?.payment_methods?.length ?? 0) > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Payment Methods
           </p>
           {data!.payment_methods.map((m, i) => (
@@ -216,8 +216,8 @@ export function FinanceSection({
 
       {/* AR ageing breakdown */}
       {ar && canView && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             AR Ageing
           </p>
           <div className="grid grid-cols-2 gap-x-8 gap-y-1">
@@ -254,8 +254,8 @@ export function FinanceSection({
 
       {/* Bank balances */}
       {banks.length > 0 && canView && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Bank Balances
           </p>
           {banks.map((b) => (
@@ -319,8 +319,8 @@ export function CustomersSection({
 
       {/* Top customers */}
       {top5.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Top Customers
           </p>
           {top5.map((c) => (
@@ -329,12 +329,12 @@ export function CustomersSection({
               className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
             >
               <div>
-                <p className="text-xs text-orika-cream">{c.display_name}</p>
-                <p className="text-[10px] text-orika-smoke">
+                <p className="text-xs text-brand-cream">{c.display_name}</p>
+                <p className="text-[10px] text-brand-smoke">
                   {c.order_count} orders
                 </p>
               </div>
-              <span className="text-xs font-semibold text-orika-cream tabular-nums">
+              <span className="text-xs font-semibold text-brand-cream tabular-nums">
                 {fmtMoney(c.lifetime_value, currency)}
               </span>
             </div>
@@ -344,8 +344,8 @@ export function CustomersSection({
 
       {/* Pipeline health */}
       {pipeline.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Deal Pipeline
           </p>
           {pipeline.map((p) => (
@@ -410,8 +410,8 @@ export function StockSection({
       </div>
 
       {topMov.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Top Moving (Last 30 days)
           </p>
           {topMov.map((p) => (
@@ -419,8 +419,8 @@ export function StockSection({
               key={p.sku}
               className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
             >
-              <p className="text-xs text-orika-cream truncate">{p.name}</p>
-              <span className="text-xs font-semibold text-orika-gold tabular-nums">
+              <p className="text-xs text-brand-cream truncate">{p.name}</p>
+              <span className="text-xs font-semibold text-brand-accent tabular-nums">
                 {p.units_out} units
               </span>
             </div>
@@ -476,8 +476,8 @@ export function LogisticsSection({
       </div>
 
       {active.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-4 py-3">
-          <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-4 py-3">
+          <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-2">
             Active Deliveries
           </p>
           {active.map((d) => (
@@ -486,10 +486,10 @@ export function LogisticsSection({
               className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
             >
               <div>
-                <p className="text-xs text-orika-cream">{d.delivery_number}</p>
-                <p className="text-[10px] text-orika-smoke">{d.contact_name}</p>
+                <p className="text-xs text-brand-cream">{d.delivery_number}</p>
+                <p className="text-[10px] text-brand-smoke">{d.contact_name}</p>
               </div>
-              <span className="text-[10px] rounded-full px-2 py-0.5 bg-orika-graphite text-orika-smoke capitalize">
+              <span className="text-[10px] rounded-full px-2 py-0.5 bg-brand-graphite text-brand-smoke capitalize">
                 {d.status.replace(/_/g, " ")}
               </span>
             </div>

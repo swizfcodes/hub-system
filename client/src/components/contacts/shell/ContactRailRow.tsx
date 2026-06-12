@@ -27,26 +27,26 @@ export function ContactRailRow({
       className={cn(
         "group w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all border",
         active
-          ? "bg-orika-charcoal border-orika-gold/40 shadow-card"
-          : "bg-transparent border-transparent hover:bg-orika-charcoal/50 hover:border-orika-graphite",
+          ? "bg-brand-charcoal border-brand-accent/40 shadow-card"
+          : "bg-transparent border-transparent hover:bg-brand-charcoal/50 hover:border-brand-graphite",
       )}
     >
       <ContactAvatar contact={contact} size="md" emphasiseType={primary} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-medium text-sm text-orika-cream truncate">
+          <span className="font-medium text-sm text-brand-cream truncate">
             {contact.display_name}
           </span>
           {contact.priority_level === "vip" && (
-            <Star className="w-3.5 h-3.5 fill-orika-gold text-orika-gold shrink-0" />
+            <Star className="w-3.5 h-3.5 fill-brand-accent text-brand-accent shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5 text-xs">
           <span className={cn("truncate", meta.textClass)}>{meta.label}</span>
           {contact.company_name && (
             <>
-              <span className="text-orika-smoke">·</span>
-              <span className="text-orika-smoke truncate">
+              <span className="text-brand-smoke">·</span>
+              <span className="text-brand-smoke truncate">
                 {contact.company_name}
               </span>
             </>

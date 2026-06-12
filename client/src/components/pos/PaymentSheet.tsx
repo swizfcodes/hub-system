@@ -154,9 +154,9 @@ export function PaymentSheet({
     >
       <div className="space-y-4">
         {/* Total due */}
-        <div className="rounded-lg bg-orika-graphite/40 px-4 py-3 flex justify-between items-center">
-          <span className="text-sm text-orika-smoke">Total Due</span>
-          <span className="font-display text-xl font-extrabold text-orika-gold">
+        <div className="rounded-lg bg-brand-graphite/40 px-4 py-3 flex justify-between items-center">
+          <span className="text-sm text-brand-smoke">Total Due</span>
+          <span className="font-display text-xl font-extrabold text-brand-accent">
             {symbol}
             {displayTotal.toLocaleString("en-NG", {
               minimumFractionDigits: 2,
@@ -166,7 +166,7 @@ export function PaymentSheet({
 
         {/* Currency selector */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-orika-smoke">Paying in:</span>
+          <span className="text-xs text-brand-smoke">Paying in:</span>
           <div className="flex gap-1">
             {CURRENCIES.map((c) => (
               <button
@@ -176,8 +176,8 @@ export function PaymentSheet({
                 className={cn(
                   "rounded-md px-3 py-1 text-xs font-medium transition-all",
                   saleCurrency === c
-                    ? "bg-orika-gold/10 border border-orika-gold/60 text-orika-gold"
-                    : "border border-black/10 text-orika-smoke hover:border-black/20",
+                    ? "bg-brand-accent/10 border border-brand-accent/60 text-brand-accent"
+                    : "border border-black/10 text-brand-smoke hover:border-black/20",
                 )}
               >
                 {CURRENCY_SYMBOLS[c]} {c}
@@ -188,11 +188,11 @@ export function PaymentSheet({
 
         {/* Exchange rate info */}
         {saleCurrency !== "NGN" && (
-          <div className="rounded-lg border border-orika-gold/20 bg-orika-gold/5 px-3 py-2 text-xs">
+          <div className="rounded-lg border border-brand-accent/20 bg-brand-accent/5 px-3 py-2 text-xs">
             {rateLoading ? (
-              <span className="text-orika-smoke">Fetching rate...</span>
+              <span className="text-brand-smoke">Fetching rate...</span>
             ) : exchangeRate ? (
-              <span className="text-orika-gold">
+              <span className="text-brand-accent">
                 1 {saleCurrency} = ₦
                 {exchangeRate.toLocaleString("en-NG", {
                   maximumFractionDigits: 2,
@@ -213,7 +213,7 @@ export function PaymentSheet({
 
         {/* Loyalty redemption hint */}
         {loyaltyInfo && loyaltyInfo.balance > 0 && customer && (
-          <div className="rounded-lg border border-white/5 bg-orika-graphite/20 px-3 py-2 text-xs text-orika-smoke">
+          <div className="rounded-lg border border-white/5 bg-brand-graphite/20 px-3 py-2 text-xs text-brand-smoke">
             Customer has {loyaltyInfo.balance.toLocaleString()} loyalty points —
             apply via the loyalty discount on checkout before confirming.
           </div>
@@ -239,8 +239,8 @@ export function PaymentSheet({
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all",
                           split.method === method
-                            ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                            : "border-black/10 text-orika-smoke hover:border-black/20",
+                            ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
+                            : "border-black/10 text-brand-smoke hover:border-black/20",
                         )}
                       >
                         <M className="h-4 w-4" />
@@ -255,7 +255,7 @@ export function PaymentSheet({
                 {/* Amount + optional ref */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-orika-smoke">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-brand-smoke">
                       {symbol}
                     </span>
                     <NumberField
@@ -265,7 +265,7 @@ export function PaymentSheet({
                       onValueChange={(v) =>
                         updateSplit(split.id, { amount: v ?? 0 })
                       }
-                      className="w-full rounded border border-black/10 bg-white py-2 pl-5 pr-2 text-right text-sm font-normal text-orika-black tabular-nums shadow-none focus:border-orika-gold/40 focus:ring-0"
+                      className="w-full rounded border border-black/10 bg-white py-2 pl-5 pr-2 text-right text-sm font-normal text-brand-black tabular-nums shadow-none focus:border-brand-accent/40 focus:ring-0"
                     />
                   </div>
                   {POS_PAYMENT_META[split.method].requiresRef && (
@@ -276,13 +276,13 @@ export function PaymentSheet({
                       onChange={(e) =>
                         updateSplit(split.id, { reference: e.target.value })
                       }
-                      className="flex-1 rounded border border-black/10 px-2 py-2 text-sm focus:border-orika-gold/40 focus:outline-none"
+                      className="flex-1 rounded border border-black/10 px-2 py-2 text-sm focus:border-brand-accent/40 focus:outline-none"
                     />
                   )}
                   {splits.length > 1 && (
                     <button
                       onClick={() => removeSplit(split.id)}
-                      className="text-orika-smoke hover:text-red-500 transition-colors"
+                      className="text-brand-smoke hover:text-red-500 transition-colors"
                     >
                       <Trash className="h-4 w-4" />
                     </button>
@@ -298,7 +298,7 @@ export function PaymentSheet({
           <button
             type="button"
             onClick={addSplit}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 py-2 text-xs text-orika-smoke hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-black/20 py-2 text-xs text-brand-smoke hover:border-brand-accent/30 hover:text-brand-accent transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Add payment method — {symbol}

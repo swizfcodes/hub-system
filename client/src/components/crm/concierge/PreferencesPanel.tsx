@@ -56,7 +56,7 @@ export function PreferencesPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <Heart className="w-3.5 h-3.5" /> Concierge preferences
         </h3>
         <Button
@@ -98,18 +98,18 @@ export function PreferencesPanel({
         <div className="grid gap-2 sm:grid-cols-2">
           {visible.map((p) => (
             <Card key={p.preference_id} className="p-3 flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-bejewelled-rose/15 text-bejewelled-rose flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-accent3/15 text-accent3 flex items-center justify-center shrink-0">
                 <Heart className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                   {p.preference_key.replace(/_/g, " ")}
                 </div>
-                <div className="text-sm font-medium text-orika-cream truncate">
+                <div className="text-sm font-medium text-brand-cream truncate">
                   {p.preference_value}
                 </div>
                 {p.notes && (
-                  <p className="text-[0.65rem] text-orika-cloud mt-0.5 italic line-clamp-2">
+                  <p className="text-[0.65rem] text-brand-cloud mt-0.5 italic line-clamp-2">
                     "{p.notes}"
                   </p>
                 )}
@@ -120,13 +120,13 @@ export function PreferencesPanel({
                     setEditing(p);
                     setAdding(true);
                   }}
-                  className="p-1 text-orika-smoke hover:text-orika-cream"
+                  className="p-1 text-brand-smoke hover:text-brand-cream"
                 >
                   <Edit2 className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => remove.mutate(p.preference_key)}
-                  className="p-1 text-orika-smoke hover:text-state-danger"
+                  className="p-1 text-brand-smoke hover:text-state-danger"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>

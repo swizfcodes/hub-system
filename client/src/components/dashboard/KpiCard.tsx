@@ -49,17 +49,17 @@ export function KpiCard({
     <div
       onClick={onClick}
       className={cn(
-        "rounded-2xl border bg-orika-charcoal transition-all",
+        "rounded-2xl border bg-brand-charcoal transition-all",
         size === "sm" ? "px-3 py-3" : size === "lg" ? "px-6 py-5" : "px-4 py-4",
         isAlert ? "border-red-500/30" : "border-white/5",
         onClick &&
-          "cursor-pointer hover:border-white/15 hover:bg-orika-graphite/20",
+          "cursor-pointer hover:border-white/15 hover:bg-brand-graphite/20",
       )}
       style={{ borderLeft: `3px solid ${accentColor}` }}
     >
       <p
         className={cn(
-          "uppercase tracking-widest text-orika-smoke",
+          "uppercase tracking-widest text-brand-smoke",
           size === "sm" ? "text-[0.55rem]" : "text-[0.65rem]",
         )}
       >
@@ -80,14 +80,14 @@ export function KpiCard({
       {(sub || delta != null) && (
         <div className="flex items-center justify-between mt-1 gap-2">
           {sub && (
-            <p className="text-[10px] text-orika-smoke truncate">{sub}</p>
+            <p className="text-[10px] text-brand-smoke truncate">{sub}</p>
           )}
           {delta != null && !restricted && <DeltaChip delta={delta} />}
         </div>
       )}
 
       {restricted && (
-        <p className="text-[10px] text-orika-smoke/50 mt-1">Restricted</p>
+        <p className="text-[10px] text-brand-smoke/50 mt-1">Restricted</p>
       )}
     </div>
   );
@@ -97,7 +97,7 @@ export function KpiCard({
 
 function DeltaChip({ delta }: { delta: number }) {
   if (Math.abs(delta) < 0.1) {
-    return <span className="text-[10px] text-orika-smoke/50">—</span>;
+    return <span className="text-[10px] text-brand-smoke/50">—</span>;
   }
   const up = delta > 0;
   const color = up ? "#2D6A4F" : "#EF4444";
@@ -139,9 +139,9 @@ export function StatRow({
   }
   return (
     <div className="flex items-center justify-between border-b border-white/5 py-2 last:border-0">
-      <span className="text-xs text-orika-smoke">{label}</span>
+      <span className="text-xs text-brand-smoke">{label}</span>
       <span
-        className="text-xs font-semibold tabular-nums text-orika-cream"
+        className="text-xs font-semibold tabular-nums text-brand-cream"
         style={accent ? { color: accent } : undefined}
       >
         {fmt(value)}

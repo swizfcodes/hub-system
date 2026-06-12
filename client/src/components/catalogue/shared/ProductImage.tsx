@@ -27,7 +27,7 @@ export function ProductImage({ product, size = "sm", className }: Props) {
         src={url}
         alt={product?.name ?? "Product"}
         className={cn(
-          "rounded-xl object-cover bg-orika-cream",
+          "rounded-xl object-cover bg-brand-cream",
           SIZES[size],
           className,
         )}
@@ -37,7 +37,7 @@ export function ProductImage({ product, size = "sm", className }: Props) {
   return (
     <div
       className={cn(
-        "rounded-xl bg-orika-graphite border border-orika-graphite/70 text-orika-smoke flex items-center justify-center",
+        "rounded-xl bg-brand-graphite border border-brand-graphite/70 text-brand-smoke flex items-center justify-center",
         SIZES[size],
         className,
       )}

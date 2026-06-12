@@ -28,7 +28,7 @@ interface CampaignSettingsState {
 const DEFAULT_SETTINGS: CampaignSettingsState = {
   approvalThreshold: 50,
   waDailyLimit: 1000,
-  defaultFromName: "Orika Hub",
+  defaultFromName: "",
   unsubscribePageUrl: "",
   autoOptOutOnStop: true,
   requireApprovalAbove: 50,
@@ -72,7 +72,7 @@ export default function CampaignSettings() {
   if (isLoading) {
     return (
       <div className="px-4 sm:px-8 py-10">
-        <p className="text-sm text-orika-smoke">Loading settings...</p>
+        <p className="text-sm text-brand-smoke">Loading settings...</p>
       </div>
     );
   }
@@ -111,11 +111,11 @@ export default function CampaignSettings() {
             <p className="font-semibold text-[#25D366] mb-1">
               Current Tier Limits
             </p>
-            <p className="text-orika-smoke">
+            <p className="text-brand-smoke">
               Tier 1 (new): 1,000 · Tier 2: 10,000 · Tier 3: 100,000 · Tier 4:
               Unlimited
             </p>
-            <p className="text-orika-smoke mt-1">
+            <p className="text-brand-smoke mt-1">
               Check your tier in Meta Business Manager &rarr; WhatsApp &rarr;
               Phone Numbers.
             </p>
@@ -135,7 +135,7 @@ export default function CampaignSettings() {
               onChange={(e) => update({ autoOptOutOnStop: e.target.checked })}
               className="rounded"
             />
-            <span className="text-orika-cloud">
+            <span className="text-brand-cloud">
               Auto opt-out contacts who reply <strong>STOP</strong> to WhatsApp
               messages
             </span>
@@ -153,7 +153,7 @@ export default function CampaignSettings() {
             value={settings.defaultFromName}
             onChange={(e) => update({ defaultFromName: e.target.value })}
             surface="dark"
-            placeholder="e.g. Bejewelled or Orika Living"
+            placeholder="e.g. your brand name"
             hint="Shown in email clients as the sender name. Campaigns can override this."
           />
           <Input
@@ -188,8 +188,8 @@ function SettingsSection({
   return (
     <div className="space-y-4">
       <div className="border-b border-white/5 pb-3">
-        <h3 className="text-sm font-semibold text-orika-cream">{title}</h3>
-        <p className="text-xs text-orika-smoke mt-0.5">{desc}</p>
+        <h3 className="text-sm font-semibold text-brand-cream">{title}</h3>
+        <p className="text-xs text-brand-smoke mt-0.5">{desc}</p>
       </div>
       {children}
     </div>

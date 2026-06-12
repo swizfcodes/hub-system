@@ -66,19 +66,19 @@ export function DealSidebar({ deal }: Props) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-medium text-sm text-orika-cream truncate group-hover:text-orika-gold transition-colors">
+              <span className="font-medium text-sm text-brand-cream truncate group-hover:text-brand-accent transition-colors">
                 {deal.contact_name}
               </span>
               {deal.priority_level === "vip" && (
-                <Star className="w-3 h-3 fill-orika-gold text-orika-gold" />
+                <Star className="w-3 h-3 fill-brand-accent text-brand-accent" />
               )}
             </div>
-            <span className="text-[0.65rem] text-orika-smoke">
+            <span className="text-[0.65rem] text-brand-smoke">
               Open contact <ArrowUpRight className="inline w-2.5 h-2.5" />
             </span>
           </div>
         </Link>
-        <div className="mt-3 pt-3 border-t border-orika-graphite/70">
+        <div className="mt-3 pt-3 border-t border-brand-graphite/70">
           <QuickActions
             contact={{
               primary_phone: deal.primary_phone ?? "",
@@ -92,7 +92,7 @@ export function DealSidebar({ deal }: Props) {
 
       {/* Stage card */}
       <Card className="p-4">
-        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-2">
+        <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-2">
           Stage
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -106,7 +106,7 @@ export function DealSidebar({ deal }: Props) {
                 className={cn(
                   "transition-all",
                   active &&
-                    "ring-2 ring-offset-2 ring-offset-orika-charcoal rounded-full",
+                    "ring-2 ring-offset-2 ring-offset-brand-charcoal rounded-full",
                 )}
                 style={active ? { boxShadow: `0 0 0 2px ${s.colour}` } : {}}
               >
@@ -124,18 +124,18 @@ export function DealSidebar({ deal }: Props) {
       {/* Value card */}
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+          <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
             Value
           </div>
           <button
             onClick={() => setEditingValue(true)}
-            className="text-orika-smoke hover:text-orika-gold transition-colors"
+            className="text-brand-smoke hover:text-brand-accent transition-colors"
             aria-label="Edit"
           >
             <Pencil className="w-3 h-3" />
           </button>
         </div>
-        <div className="text-2xl font-display text-orika-gold tabular-nums">
+        <div className="text-2xl font-display text-brand-accent tabular-nums">
           {fmtMoney(deal.expected_value, "NGN")}
         </div>
       </Card>
@@ -171,7 +171,7 @@ export function DealSidebar({ deal }: Props) {
               icon={<Percent className="w-3 h-3" />}
               label="Won"
               value={fmtDate(deal.won_at)}
-              className="text-living-sage"
+              className="text-accent2"
             />
           )}
           {deal.lost_at && (
@@ -209,13 +209,13 @@ function Row({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-orika-smoke shrink-0 mt-0.5">{icon}</span>
-      <span className="text-orika-smoke shrink-0 w-24">{label}</span>
+      <span className="text-brand-smoke shrink-0 mt-0.5">{icon}</span>
+      <span className="text-brand-smoke shrink-0 w-24">{label}</span>
       <span
         className={cn(
           "flex-1 min-w-0 truncate",
           mono && "font-mono",
-          className ?? "text-orika-cream",
+          className ?? "text-brand-cream",
         )}
       >
         {value}

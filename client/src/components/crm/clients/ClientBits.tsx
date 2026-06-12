@@ -33,7 +33,7 @@ export function VipStar({ isVip }: { isVip?: boolean }) {
   if (!isVip) return null;
   return (
     <span title="VIP client">
-      <Star className="w-3.5 h-3.5 text-orika-gold fill-orika-gold" />
+      <Star className="w-3.5 h-3.5 text-brand-accent fill-brand-accent" />
     </span>
   );
 }
@@ -48,7 +48,7 @@ export function ClientAvatar({
   return (
     <div
       className={cn(
-        "rounded-full bg-orika-gold/15 text-orika-gold flex items-center justify-center font-semibold shrink-0",
+        "rounded-full bg-brand-accent/15 text-brand-accent flex items-center justify-center font-semibold shrink-0",
         size === "sm" && "w-8 h-8 text-[0.65rem]",
         size === "md" && "w-10 h-10 text-xs",
         size === "lg" && "w-14 h-14 text-base",
@@ -74,7 +74,7 @@ export function QuickReach({
         <a
           href={`tel:${phone}`}
           title={`Call ${phone}`}
-          className="p-1.5 rounded-lg text-orika-smoke hover:text-orika-gold hover:bg-orika-gold/10 transition-colors"
+          className="p-1.5 rounded-lg text-brand-smoke hover:text-brand-accent hover:bg-brand-accent/10 transition-colors"
         >
           <Phone className="w-3.5 h-3.5" />
         </a>
@@ -85,7 +85,7 @@ export function QuickReach({
           target="_blank"
           rel="noreferrer"
           title="WhatsApp"
-          className="p-1.5 rounded-lg text-orika-smoke hover:text-living-sage hover:bg-living-sage/10 transition-colors"
+          className="p-1.5 rounded-lg text-brand-smoke hover:text-accent2 hover:bg-accent2/10 transition-colors"
         >
           <MessageCircle className="w-3.5 h-3.5" />
         </a>

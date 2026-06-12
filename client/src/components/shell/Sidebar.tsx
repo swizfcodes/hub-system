@@ -1,3 +1,4 @@
+import { useBranding } from "@/providers/ThemeProvider";
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
@@ -51,6 +52,13 @@ const NAV_GROUPS: { label: string; modules: string[] }[] = [
 ];
 
 export function Sidebar() {
+  const { platform } = useBranding();
+  // Wordmark: last word gets the accent (e.g. "Orika <Hub>").
+  const nameWords = (platform.product_name || "Hub").split(" ");
+  const nameTail = nameWords.length > 1 ? nameWords.pop() : "";
+  const nameHead = nameWords.join(" ");
+  const monogram = (platform.product_name || "H").charAt(0).toUpperCase();
+
   const {
     sidebarCollapsed,
     toggleSidebar,
@@ -107,42 +115,50 @@ export function Sidebar() {
       {/* Mobile backdrop */}
       {!isDesktop && mobileSidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-orika-black/70 backdrop-blur-sm animate-fade-in"
+          className="lg:hidden fixed inset-0 z-40 bg-brand-black/70 backdrop-blur-sm animate-fade-in"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          "fixed top-0 left-0 bottom-0 z-50 flex flex-col bg-orika-black border-r border-orika-graphite transition-all duration-300",
+          "fixed top-0 left-0 bottom-0 z-50 flex flex-col bg-brand-black border-r border-brand-graphite transition-all duration-300",
           collapsed ? "w-[72px]" : "w-[260px]",
           !isDesktop && (visible ? "translate-x-0" : "-translate-x-full"),
         )}
         aria-label="Primary navigation"
       >
         {/* Brand */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-orika-graphite/70 shrink-0">
+        <div className="flex items-center justify-between px-5 py-5 border-b border-brand-graphite/70 shrink-0">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-full border border-orika-gold/40 flex items-center justify-center group-hover:shadow-glow-sm transition-shadow shrink-0">
-              <span className="font-display text-orika-gold text-lg leading-none">
-                O
+            <div className="w-9 h-9 rounded-full border border-brand-accent/40 flex items-center justify-center group-hover:shadow-glow-sm transition-shadow shrink-0">
+              <span className="font-display text-brand-accent text-lg leading-none">
+                {monogram}
               </span>
             </div>
             {!collapsed && (
               <div className="flex flex-col leading-tight">
-                <span className="font-display text-orika-cream text-lg tracking-wide">
-                  Orika <span className="text-orika-gold">Hub</span>
+                <span className="font-display text-brand-cream text-lg tracking-wide">
+                  {nameHead}
+                  {nameTail && (
+                    <>
+                      {" "}
+                      <span className="text-brand-accent">{nameTail}</span>
+                    </>
+                  )}
                 </span>
-                <span className="text-[0.55rem] tracking-[0.18em] uppercase text-orika-smoke">
-                  Luxury · Intelligence
-                </span>
+                {platform.tagline && (
+                  <span className="text-[0.55rem] tracking-[0.18em] uppercase text-brand-smoke truncate max-w-[150px]">
+                    {platform.tagline}
+                  </span>
+                )}
               </div>
             )}
           </Link>
           {!isDesktop && (
             <button
               onClick={() => setMobileSidebarOpen(false)}
-              className="p-2 text-orika-smoke hover:text-orika-cream"
+              className="p-2 text-brand-smoke hover:text-brand-cream"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
@@ -153,7 +169,7 @@ export function Sidebar() {
         {/* Business switcher */}
         {!collapsed && (
           <div className="px-4 pt-4 pb-2">
-            <div className="text-[0.55rem] tracking-[0.18em] uppercase text-orika-smoke mb-2 ml-1">
+            <div className="text-[0.55rem] tracking-[0.18em] uppercase text-brand-smoke mb-2 ml-1">
               Business Line
             </div>
             <BusinessSwitcher variant="sidebar" />
@@ -177,8 +193,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg text-sm font-medium transition-all group relative",
                     matches
-                      ? "bg-orika-charcoal text-orika-gold border-l-2 border-orika-gold pl-[10px]"
-                      : "text-orika-cloud hover:text-orika-cream hover:bg-orika-charcoal/60",
+                      ? "bg-brand-charcoal text-brand-accent border-l-2 border-brand-accent pl-[10px]"
+                      : "text-brand-cloud hover:text-brand-cream hover:bg-brand-charcoal/60",
                     collapsed && "justify-center px-0 mx-0",
                   )}
                   title={collapsed ? m.label : undefined}
@@ -202,7 +218,7 @@ export function Sidebar() {
                 {/* Priority — mirrors the Hub grid's top 10 */}
                 <div className="mb-3">
                   {!collapsed && (
-                    <div className="px-3 py-2 text-[0.55rem] tracking-[0.18em] uppercase text-orika-smoke font-bold">
+                    <div className="px-3 py-2 text-[0.55rem] tracking-[0.18em] uppercase text-brand-smoke font-bold">
                       Priority
                     </div>
                   )}
@@ -216,7 +232,7 @@ export function Sidebar() {
                       onClick={toggleMore}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 mx-1 rounded-lg text-sm font-medium w-[calc(100%-8px)] transition-all",
-                        "text-orika-smoke hover:text-orika-cream hover:bg-orika-charcoal/60",
+                        "text-brand-smoke hover:text-brand-cream hover:bg-brand-charcoal/60",
                         collapsed && "justify-center px-0 mx-0 w-full",
                       )}
                       title={collapsed ? "More" : undefined}
@@ -230,7 +246,7 @@ export function Sidebar() {
                       {!collapsed && (
                         <span className="truncate">
                           More
-                          <span className="ml-1.5 text-[0.6rem] text-orika-smoke/70">
+                          <span className="ml-1.5 text-[0.6rem] text-brand-smoke/70">
                             {moreGroups.reduce(
                               (n, g) => n + g.items.length,
                               0,
@@ -243,7 +259,7 @@ export function Sidebar() {
                       moreGroups.map((g) => (
                         <div key={g.label} className="mb-3">
                           {!collapsed && (
-                            <div className="px-3 py-2 text-[0.55rem] tracking-[0.18em] uppercase text-orika-smoke font-bold">
+                            <div className="px-3 py-2 text-[0.55rem] tracking-[0.18em] uppercase text-brand-smoke font-bold">
                               {g.label}
                             </div>
                           )}
@@ -258,7 +274,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer — Account menu */}
-        <div className="px-3 py-3 border-t border-orika-graphite/70 shrink-0">
+        <div className="px-3 py-3 border-t border-brand-graphite/70 shrink-0">
           <AccountMenu collapsed={collapsed} />
         </div>
 
@@ -266,7 +282,7 @@ export function Sidebar() {
         {isDesktop && (
           <button
             onClick={toggleSidebar}
-            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-orika-graphite border border-orika-graphite text-orika-gold flex items-center justify-center hover:bg-orika-charcoal transition-colors shadow-card"
+            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-brand-graphite border border-brand-graphite text-brand-accent flex items-center justify-center hover:bg-brand-charcoal transition-colors shadow-card"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (

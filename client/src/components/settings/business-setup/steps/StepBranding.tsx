@@ -25,7 +25,7 @@ export function StepBranding({
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="font-display font-light text-3xl text-orika-black">
+        <h2 className="font-display font-light text-3xl text-brand-black">
           Branding
         </h2>
         <p className="text-sm text-text-on-light-muted mt-1.5">

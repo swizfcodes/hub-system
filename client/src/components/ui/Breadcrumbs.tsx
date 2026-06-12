@@ -11,21 +11,21 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center gap-1.5 text-[0.7rem] uppercase tracking-widest text-orika-smoke"
+      className="flex items-center gap-1.5 text-[0.7rem] uppercase tracking-widest text-brand-smoke"
     >
       {items.map((c, i) => (
         <React.Fragment key={i}>
           {c.to ? (
             <Link
               to={c.to}
-              className="hover:text-orika-cream transition-colors"
+              className="hover:text-brand-cream transition-colors"
             >
               {c.label}
             </Link>
           ) : (
             <span
               className={
-                i === items.length - 1 ? "text-orika-gold" : "text-orika-smoke"
+                i === items.length - 1 ? "text-brand-accent" : "text-brand-smoke"
               }
             >
               {c.label}

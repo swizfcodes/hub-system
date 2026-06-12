@@ -69,8 +69,8 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
           "relative cursor-pointer rounded-2xl border-2 border-dashed transition-all",
           "flex flex-col items-center justify-center text-center p-6 sm:p-8",
           dragging
-            ? "border-orika-gold bg-orika-gold/[0.06]"
-            : "border-orika-cloud/60 hover:border-orika-black",
+            ? "border-brand-accent bg-brand-accent/[0.06]"
+            : "border-brand-cloud/60 hover:border-brand-black",
           "bg-white/50",
         )}
       >
@@ -89,7 +89,7 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
             <img
               src={value}
               alt="Logo preview"
-              className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl bg-orika-cream p-2 border border-orika-cloud/40"
+              className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl bg-brand-cream p-2 border border-brand-cloud/40"
             />
             <button
               type="button"
@@ -97,7 +97,7 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
                 e.stopPropagation();
                 onChange(null);
               }}
-              className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-orika-black text-orika-cream hover:bg-state-danger flex items-center justify-center transition-colors"
+              className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-brand-black text-brand-cream hover:bg-state-danger flex items-center justify-center transition-colors"
               aria-label="Remove logo"
             >
               <X className="w-3.5 h-3.5" />
@@ -108,19 +108,19 @@ export function LogoDropZone({ value, onChange, businessKey }: Props) {
           </div>
         ) : uploading ? (
           <>
-            <Loader2 className="w-8 h-8 text-orika-gold animate-spin mb-3" />
-            <p className="text-sm font-medium text-orika-black">Uploading…</p>
+            <Loader2 className="w-8 h-8 text-brand-accent animate-spin mb-3" />
+            <p className="text-sm font-medium text-brand-black">Uploading…</p>
           </>
         ) : (
           <>
-            <div className="w-12 h-12 rounded-xl bg-orika-cream border border-orika-cloud/40 text-orika-black/60 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl bg-brand-cream border border-brand-cloud/40 text-brand-black/60 flex items-center justify-center mb-3">
               {dragging ? (
                 <Upload className="w-5 h-5" />
               ) : (
                 <ImageIcon className="w-5 h-5" />
               )}
             </div>
-            <p className="text-sm font-medium text-orika-black">
+            <p className="text-sm font-medium text-brand-black">
               {dragging ? "Release to upload" : "Drop your logo here"}
             </p>
             <p className="mt-1 text-xs text-text-on-light-muted">

@@ -100,13 +100,13 @@ export default function LogisticsHome() {
             variant="underline"
           />
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke/50" />
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke/50" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search number, customer, driver…"
-              className="w-64 rounded-xl border border-white/5 bg-orika-charcoal py-2 pl-8 pr-3 text-xs text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/30 focus:outline-none"
+              className="w-64 rounded-xl border border-white/5 bg-brand-charcoal py-2 pl-8 pr-3 text-xs text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/30 focus:outline-none"
             />
           </div>
         </div>
@@ -120,8 +120,8 @@ export default function LogisticsHome() {
           </div>
         ) : deliveries.length === 0 ? (
           <div className="py-16 text-center">
-            <Package className="mx-auto h-10 w-10 text-orika-smoke/40 mb-3" />
-            <p className="text-sm text-orika-smoke">
+            <Package className="mx-auto h-10 w-10 text-brand-smoke/40 mb-3" />
+            <p className="text-sm text-brand-smoke">
               {search
                 ? "No deliveries match your search."
                 : activeTab === "pending"
@@ -142,7 +142,7 @@ export default function LogisticsHome() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Delivery",
                     "Customer",
@@ -153,7 +153,7 @@ export default function LogisticsHome() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -165,19 +165,19 @@ export default function LogisticsHome() {
                   <tr
                     key={delivery.delivery_id}
                     onClick={() => navigate(`/logistics/${delivery.delivery_id}`)}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors cursor-pointer"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs font-semibold text-orika-gold">
+                      <span className="font-mono text-xs font-semibold text-brand-accent">
                         {delivery.delivery_number}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-orika-cream">
+                      <p className="font-medium text-brand-cream">
                         {delivery.contact_name}
                       </p>
                       {delivery.primary_phone && (
-                        <p className="text-xs text-orika-smoke">
+                        <p className="text-xs text-brand-smoke">
                           {delivery.primary_phone}
                         </p>
                       )}
@@ -185,11 +185,11 @@ export default function LogisticsHome() {
                     <td className="px-4 py-3">
                       {delivery.courier_company ? (
                         <>
-                          <p className="text-orika-cream text-xs font-medium">
+                          <p className="text-brand-cream text-xs font-medium">
                             {delivery.courier_company}
                           </p>
                           {delivery.driver_name && (
-                            <p className="text-xs text-orika-smoke">
+                            <p className="text-xs text-brand-smoke">
                               {delivery.driver_name}
                               {delivery.driver_phone
                                 ? ` · ${delivery.driver_phone}`
@@ -201,7 +201,7 @@ export default function LogisticsHome() {
                         <CourierBadge courier={delivery.courier} />
                       )}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke">
+                    <td className="px-4 py-3 text-brand-smoke">
                       {fmtDateTime(delivery.created_at)}
                     </td>
                     <td className="px-4 py-3">
@@ -217,7 +217,7 @@ export default function LogisticsHome() {
                           onClick={() =>
                             navigate(`/logistics/${delivery.delivery_id}`)
                           }
-                          className="text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke hover:text-brand-accent transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -225,7 +225,7 @@ export default function LogisticsHome() {
                           <button
                             title="Dispatch"
                             onClick={() => setDispatching(delivery)}
-                            className="text-orika-smoke hover:text-green-400 transition-colors"
+                            className="text-brand-smoke hover:text-green-400 transition-colors"
                           >
                             <Rocket className="h-4 w-4" />
                           </button>
@@ -238,7 +238,7 @@ export default function LogisticsHome() {
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Packing Slip"
-                            className="text-orika-smoke hover:text-orika-gold transition-colors"
+                            className="text-brand-smoke hover:text-brand-accent transition-colors"
                           >
                             <Package className="h-4 w-4" />
                           </a>

@@ -86,7 +86,7 @@ export function QuickReceiveModal({ open, onClose, po, onReceived }: Props) {
         title="Nothing to receive"
         footer={<Button variant="primary" onClick={onClose}>OK</Button>}
       >
-        <p className="text-sm text-orika-black/80">
+        <p className="text-sm text-brand-black/80">
           All lines on this PO have already been fully received.
         </p>
       </Modal>
@@ -119,10 +119,10 @@ export function QuickReceiveModal({ open, onClose, po, onReceived }: Props) {
     >
       <div className="space-y-4">
         {/* Summary */}
-        <div className="rounded-xl border border-orika-cloud/40 bg-white/40 divide-y divide-orika-cloud/30">
+        <div className="rounded-xl border border-brand-cloud/40 bg-white/40 divide-y divide-brand-cloud/30">
           {openLines.map((l) => (
             <div key={l.line_id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-              <span className="text-orika-black font-medium truncate mr-4">
+              <span className="text-brand-black font-medium truncate mr-4">
                 {l.product_name ?? "Product"}
               </span>
               <span className="text-text-on-light-muted shrink-0 tabular-nums">
@@ -134,9 +134,9 @@ export function QuickReceiveModal({ open, onClose, po, onReceived }: Props) {
               </span>
             </div>
           ))}
-          <div className="flex items-center justify-between px-4 py-2.5 text-sm font-semibold bg-orika-cream/20">
-            <span className="text-orika-black">Total</span>
-            <span className="text-orika-black tabular-nums">{totalUnits} units</span>
+          <div className="flex items-center justify-between px-4 py-2.5 text-sm font-semibold bg-brand-cream/20">
+            <span className="text-brand-black">Total</span>
+            <span className="text-brand-black tabular-nums">{totalUnits} units</span>
           </div>
         </div>
 
@@ -149,8 +149,8 @@ export function QuickReceiveModal({ open, onClose, po, onReceived }: Props) {
           options={warehouses.map((l) => ({ value: l.location_id, label: l.name }))}
         />
 
-        <div className="flex items-start gap-2 rounded-lg bg-orika-gold/5 border border-orika-gold/20 px-3 py-2.5 text-xs text-orika-black/70">
-          <Zap className="w-3.5 h-3.5 text-orika-gold mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2 rounded-lg bg-brand-accent/5 border border-brand-accent/20 px-3 py-2.5 text-xs text-brand-black/70">
+          <Zap className="w-3.5 h-3.5 text-brand-accent mt-0.5 shrink-0" />
           <p>
             All lines will be accepted in full. If some items are damaged or
             short, use{" "}

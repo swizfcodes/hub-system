@@ -47,18 +47,18 @@ export function PermissionGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <div className="max-w-sm w-full rounded-2xl border border-white/10 bg-orika-charcoal px-8 py-10 text-center space-y-4">
-        <ShieldOff className="mx-auto h-10 w-10 text-orika-smoke" />
-        <h1 className="text-lg font-semibold text-orika-cream">
+      <div className="max-w-sm w-full rounded-2xl border border-white/10 bg-brand-charcoal px-8 py-10 text-center space-y-4">
+        <ShieldOff className="mx-auto h-10 w-10 text-brand-smoke" />
+        <h1 className="text-lg font-semibold text-brand-cream">
           No access to {module.label}
         </h1>
-        <p className="text-sm text-orika-smoke">
+        <p className="text-sm text-brand-smoke">
           Your role doesn't include the {module.label} module. If you need
           it, ask an administrator to update your role in Security → Roles.
         </p>
         <Link
           to="/"
-          className="inline-block rounded-xl bg-orika-gold px-5 py-2.5 text-sm font-medium text-orika-black hover:opacity-90 transition-opacity"
+          className="inline-block rounded-xl bg-brand-accent px-5 py-2.5 text-sm font-medium text-brand-black hover:opacity-90 transition-opacity"
         >
           Back to Hub
         </Link>

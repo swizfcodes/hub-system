@@ -45,7 +45,7 @@ export function MovementLogView({ filters }: Props) {
   }
 
   return (
-    <ol className="relative pl-6 border-l border-orika-graphite space-y-3">
+    <ol className="relative pl-6 border-l border-brand-graphite space-y-3">
       {movements.map((m) => {
         // Fall back gracefully for any movement_type not in the meta map
         // (e.g. older/extended types like received_from_supplier) — use the
@@ -62,14 +62,14 @@ export function MovementLogView({ filters }: Props) {
             <span className="absolute -left-[34px] top-3">
               <MovementTypeIcon type={m.movement_type} size="sm" />
             </span>
-            <div className="rounded-xl border border-orika-graphite bg-orika-charcoal/50 p-3.5">
+            <div className="rounded-xl border border-brand-graphite bg-brand-charcoal/50 p-3.5">
               <div className="flex items-start justify-between gap-2 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-orika-cream truncate">
+                    <span className="text-sm text-brand-cream truncate">
                       {m.product_name ?? "—"}
                     </span>
-                    <span className="text-[0.6rem] font-mono text-orika-smoke">
+                    <span className="text-[0.6rem] font-mono text-brand-smoke">
                       {m.product_sku}
                     </span>
                   </div>
@@ -77,7 +77,7 @@ export function MovementLogView({ filters }: Props) {
                     <span
                       className={
                         meta.direction === 1
-                          ? "text-living-sage inline-flex items-center gap-0.5"
+                          ? "text-accent2 inline-flex items-center gap-0.5"
                           : "text-state-danger inline-flex items-center gap-0.5"
                       }
                     >
@@ -89,20 +89,20 @@ export function MovementLogView({ filters }: Props) {
                       {meta.direction === 1 ? "+" : "−"}
                       {m.quantity}
                     </span>
-                    <span className="text-orika-smoke">·</span>
-                    <span className="text-orika-cloud">{meta.label}</span>
+                    <span className="text-brand-smoke">·</span>
+                    <span className="text-brand-cloud">{meta.label}</span>
                     {m.to_location_name && meta.direction === 1 && (
                       <>
-                        <span className="text-orika-smoke">→</span>{" "}
-                        <span className="text-orika-cloud">
+                        <span className="text-brand-smoke">→</span>{" "}
+                        <span className="text-brand-cloud">
                           {m.to_location_name}
                         </span>
                       </>
                     )}
                     {m.from_location_name && meta.direction === -1 && (
                       <>
-                        <span className="text-orika-smoke">from</span>{" "}
-                        <span className="text-orika-cloud">
+                        <span className="text-brand-smoke">from</span>{" "}
+                        <span className="text-brand-cloud">
                           {m.from_location_name}
                         </span>
                       </>
@@ -110,17 +110,17 @@ export function MovementLogView({ filters }: Props) {
                   </div>
                 </div>
                 {m.unit_cost != null && (
-                  <span className="font-mono text-xs text-orika-gold">
+                  <span className="font-mono text-xs text-brand-accent">
                     {fmtMoney(totalValue, "NGN")}
                   </span>
                 )}
               </div>
               {m.notes && (
-                <p className="text-xs text-orika-cloud mt-2 italic">
+                <p className="text-xs text-brand-cloud mt-2 italic">
                   "{m.notes}"
                 </p>
               )}
-              <div className="text-[0.6rem] text-orika-smoke mt-2">
+              <div className="text-[0.6rem] text-brand-smoke mt-2">
                 {fmtDateTime(m.performed_at)} · {fmtRelative(m.performed_at)}
                 {m.performed_by_name && ` · ${m.performed_by_name}`}
                 {m.reference_type && ` · ref ${m.reference_type}`}

@@ -165,8 +165,8 @@ export default function ExpensesHome() {
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   statusFilter === tab.key
-                    ? "bg-orika-gold text-orika-black"
-                    : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/70",
+                    ? "bg-brand-accent text-brand-black"
+                    : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/70",
                 )}
               >
                 {tab.label}
@@ -185,7 +185,7 @@ export default function ExpensesHome() {
             </div>
           ) : expenses.length === 0 ? (
             <div className="py-16 text-center">
-              <p className="text-sm text-orika-smoke">
+              <p className="text-sm text-brand-smoke">
                 {mainTab === "pending"
                   ? "No expenses awaiting approval."
                   : "No expenses in this filter."}
@@ -195,7 +195,7 @@ export default function ExpensesHome() {
             <div className="overflow-x-auto rounded-2xl border border-white/5">
               <table className="w-full min-w-[700px] text-sm">
                 <thead>
-                  <tr className="border-b border-white/5 bg-orika-charcoal">
+                  <tr className="border-b border-white/5 bg-brand-charcoal">
                     {[
                       "#",
                       "Payee",
@@ -209,7 +209,7 @@ export default function ExpensesHome() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                       >
                         {h}
                       </th>
@@ -220,30 +220,30 @@ export default function ExpensesHome() {
                   {expenses.map((expense) => (
                     <tr
                       key={expense.expense_id}
-                      className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                      className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <button
                           onClick={() =>
                             navigate(`/expenses/${expense.expense_id}`)
                           }
-                          className="font-mono text-xs text-orika-gold hover:underline"
+                          className="font-mono text-xs text-brand-accent hover:underline"
                         >
                           {expense.expense_number}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-orika-cream font-medium">
+                      <td className="px-4 py-3 text-brand-cream font-medium">
                         {expense.staff_name ?? expense.vendor_name ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-orika-cloud">
+                      <td className="px-4 py-3 text-brand-cloud">
                         {CATEGORY_OPTIONS.find(
                           (c) => c.value === expense.category,
                         )?.label ?? expense.category}
                       </td>
-                      <td className="px-4 py-3 text-orika-smoke text-xs">
+                      <td className="px-4 py-3 text-brand-smoke text-xs">
                         {EXPENSE_TYPE_LABEL[expense.expense_type]}
                       </td>
-                      <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
+                      <td className="px-4 py-3 tabular-nums font-medium text-brand-cream">
                         {fmtMoney(expense.amount, currency)}
                       </td>
                       <td
@@ -253,7 +253,7 @@ export default function ExpensesHome() {
                             expense.status !== "pending" &&
                             expense.status !== "rejected"
                             ? "text-amber-400 font-medium"
-                            : "text-orika-smoke",
+                            : "text-brand-smoke",
                         )}
                       >
                         {expense.status === "rejected"
@@ -263,7 +263,7 @@ export default function ExpensesHome() {
                               currency,
                             )}
                       </td>
-                      <td className="px-4 py-3 text-orika-smoke">
+                      <td className="px-4 py-3 text-brand-smoke">
                         {fmtDate(expense.expense_date)}
                       </td>
                       <td className="px-4 py-3">
@@ -276,7 +276,7 @@ export default function ExpensesHome() {
                               navigate(`/expenses/${expense.expense_id}`)
                             }
                             title="View"
-                            className="text-orika-smoke hover:text-orika-gold transition-colors"
+                            className="text-brand-smoke hover:text-brand-accent transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -287,14 +287,14 @@ export default function ExpensesHome() {
                                   approveMutation.mutate(expense.expense_id)
                                 }
                                 title="Approve"
-                                className="text-orika-smoke hover:text-green-400 transition-colors"
+                                className="text-brand-smoke hover:text-green-400 transition-colors"
                               >
                                 <CheckCircle className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => setRejectTarget(expense)}
                                 title="Reject"
-                                className="text-orika-smoke hover:text-red-400 transition-colors"
+                                className="text-brand-smoke hover:text-red-400 transition-colors"
                               >
                                 <XCircle className="h-4 w-4" />
                               </button>
@@ -307,7 +307,7 @@ export default function ExpensesHome() {
                                 paidMutation.mutate(expense.expense_id)
                               }
                               title="Pay Remaining Balance"
-                              className="text-orika-smoke hover:text-orika-gold transition-colors"
+                              className="text-brand-smoke hover:text-brand-accent transition-colors"
                             >
                               <DollarSign className="h-4 w-4" />
                             </button>
@@ -333,7 +333,7 @@ export default function ExpensesHome() {
             <div className="overflow-x-auto rounded-2xl border border-white/5">
               <table className="w-full min-w-[600px] text-sm">
                 <thead>
-                  <tr className="border-b border-white/5 bg-orika-charcoal">
+                  <tr className="border-b border-white/5 bg-brand-charcoal">
                     {[
                       "Staff",
                       "Purpose",
@@ -345,7 +345,7 @@ export default function ExpensesHome() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                        className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                       >
                         {h}
                       </th>
@@ -354,22 +354,22 @@ export default function ExpensesHome() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {advances.map((adv) => (
-                    <tr key={adv.advance_id} className="bg-orika-charcoal">
-                      <td className="px-4 py-3 text-orika-cream">
+                    <tr key={adv.advance_id} className="bg-brand-charcoal">
+                      <td className="px-4 py-3 text-brand-cream">
                         {adv.staff_name}
                       </td>
-                      <td className="px-4 py-3 text-orika-cloud max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-brand-cloud max-w-[200px] truncate">
                         {adv.purpose}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                      <td className="px-4 py-3 tabular-nums text-brand-smoke">
                         {fmtMoney(adv.amount_requested, currency)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                      <td className="px-4 py-3 tabular-nums text-brand-smoke">
                         {adv.amount_approved
                           ? fmtMoney(adv.amount_approved, currency)
                           : "—"}
                       </td>
-                      <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
+                      <td className="px-4 py-3 tabular-nums font-medium text-brand-cream">
                         {fmtMoney(adv.outstanding_balance, currency)}
                       </td>
                       <td className="px-4 py-3">
@@ -379,7 +379,7 @@ export default function ExpensesHome() {
                         {adv.status === "pending" && (
                           <button
                             onClick={() => setApproveAdv(adv)}
-                            className="text-xs text-orika-gold hover:underline"
+                            className="text-xs text-brand-accent hover:underline"
                           >
                             Approve
                           </button>
@@ -391,7 +391,7 @@ export default function ExpensesHome() {
                     <tr>
                       <td
                         colSpan={7}
-                        className="px-4 py-8 text-center text-sm text-orika-smoke"
+                        className="px-4 py-8 text-center text-sm text-brand-smoke"
                       >
                         No cash advances yet.
                       </td>

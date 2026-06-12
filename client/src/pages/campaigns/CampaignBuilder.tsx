@@ -4,6 +4,7 @@
  * Settings tab (Q9: C) for approval threshold, daily limits, defaults.
  * Route: /campaigns/new and /campaigns/:id/edit
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -50,6 +51,7 @@ type Step = "details" | "audience" | "content" | "schedule" | "review";
 type ContentMode = "studio" | "html";
 
 export default function CampaignBuilder() {
+  const { platform } = useBranding();
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const qc = useQueryClient();
@@ -78,7 +80,7 @@ export default function CampaignBuilder() {
       campaign_name: "",
       campaign_type: "email",
       subject_line: "",
-      from_name: "Orika Hub",
+      from_name: platform.product_name,
       html_content: "",
       // Shape must match what compileFilter() in builder.service.js expects
       audience_filter: {
@@ -257,7 +259,7 @@ export default function CampaignBuilder() {
   const stepIndex = CAMPAIGN_STEPS.findIndex((s) => s.key === step);
 
   return (
-    <div className="min-h-screen bg-orika-black">
+    <div className="min-h-screen bg-brand-black">
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         {/* Step indicator */}
         <div className="flex items-center gap-2">
@@ -267,10 +269,10 @@ export default function CampaignBuilder() {
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all",
                   i < stepIndex
-                    ? "bg-orika-gold text-orika-black"
+                    ? "bg-brand-accent text-brand-black"
                     : i === stepIndex
-                      ? "border-2 border-orika-gold text-orika-gold bg-transparent"
-                      : "border border-white/10 text-orika-smoke/40",
+                      ? "border-2 border-brand-accent text-brand-accent bg-transparent"
+                      : "border border-white/10 text-brand-smoke/40",
                 )}
               >
                 {i < stepIndex ? <Check className="h-3.5 w-3.5" /> : i + 1}
@@ -279,24 +281,24 @@ export default function CampaignBuilder() {
                 className={cn(
                   "text-xs hidden sm:block",
                   i === stepIndex
-                    ? "text-orika-cream font-medium"
-                    : "text-orika-smoke/40",
+                    ? "text-brand-cream font-medium"
+                    : "text-brand-smoke/40",
                 )}
               >
                 {s.label}
               </span>
               {i < CAMPAIGN_STEPS.length - 1 && (
-                <ChevronRight className="h-3.5 w-3.5 text-orika-smoke/20" />
+                <ChevronRight className="h-3.5 w-3.5 text-brand-smoke/20" />
               )}
             </div>
           ))}
           {saving && (
-            <span className="ml-auto text-xs text-orika-smoke/60">Saving…</span>
+            <span className="ml-auto text-xs text-brand-smoke/60">Saving…</span>
           )}
         </div>
 
         {/* Step content */}
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-5">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-5">
           {/* Step 1: Details */}
           {step === "details" && (
             <>
@@ -361,7 +363,7 @@ export default function CampaignBuilder() {
                               shouldDirty: true,
                             });
                           }}
-                          className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-orika-smoke hover:text-orika-gold hover:border-orika-gold/30 transition-colors font-mono"
+                          className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors font-mono"
                         >
                           {v.token}
                         </button>
@@ -375,7 +377,7 @@ export default function CampaignBuilder() {
                       <Input
                         {...field}
                         label="From Name"
-                        placeholder="e.g. Bejewelled"
+                        placeholder="e.g. your brand name"
                         surface="dark"
                       />
                     )}
@@ -431,8 +433,8 @@ export default function CampaignBuilder() {
                       className={cn(
                         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                         contentMode === m.key
-                          ? "bg-orika-gold text-orika-black"
-                          : "text-orika-smoke hover:text-orika-cream",
+                          ? "bg-brand-accent text-brand-black"
+                          : "text-brand-smoke hover:text-brand-cream",
                       )}
                     >
                       {m.label}
@@ -447,7 +449,7 @@ export default function CampaignBuilder() {
                 <>
                   {/* Variable reference */}
                   <div className="flex flex-wrap gap-1.5">
-                    <p className="w-full text-xs text-orika-smoke/60 mb-1">
+                    <p className="w-full text-xs text-brand-smoke/60 mb-1">
                       Available variables:
                     </p>
                     {TEMPLATE_VARIABLES.map((v) => (
@@ -458,7 +460,7 @@ export default function CampaignBuilder() {
                           const current = form.getValues("html_content");
                           form.setValue("html_content", current + v.token);
                         }}
-                        className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-orika-smoke hover:text-orika-gold hover:border-orika-gold/30 transition-colors font-mono"
+                        className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors font-mono"
                       >
                         {v.token}
                       </button>
@@ -470,7 +472,7 @@ export default function CampaignBuilder() {
                     control={form.control}
                     render={({ field, fieldState }) => (
                       <div>
-                        <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-orika-smoke mb-2">
+                        <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-brand-smoke mb-2">
                           {campaignType === "email"
                             ? "HTML Content *"
                             : "Message *"}
@@ -480,9 +482,9 @@ export default function CampaignBuilder() {
                           placeholder={
                             campaignType === "email"
                               ? "<html>...</html> or paste your email builder output here"
-                              : "Hi {{customer_name}}, we have something special for you at Bejewelled..."
+                              : "Hi {{customer_name}}, we have something special for you..."
                           }
-                          className="w-full rounded-xl border border-white/10 bg-orika-graphite/30 p-4 text-sm text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none font-mono"
+                          className="w-full rounded-xl border border-white/10 bg-brand-graphite/30 p-4 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none font-mono"
                           rows={12}
                         />
                         {fieldState.error && (
@@ -512,7 +514,7 @@ export default function CampaignBuilder() {
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-2xl border p-5 transition-all",
                     scheduleMode === "now"
-                      ? "border-orika-gold/60 bg-orika-gold/5"
+                      ? "border-brand-accent/60 bg-brand-accent/5"
                       : "border-white/5 hover:border-white/15",
                   )}
                 >
@@ -520,21 +522,21 @@ export default function CampaignBuilder() {
                     className={cn(
                       "h-6 w-6",
                       scheduleMode === "now"
-                        ? "text-orika-gold"
-                        : "text-orika-smoke",
+                        ? "text-brand-accent"
+                        : "text-brand-smoke",
                     )}
                   />
                   <p
                     className={cn(
                       "text-sm font-medium",
                       scheduleMode === "now"
-                        ? "text-orika-gold"
-                        : "text-orika-cream",
+                        ? "text-brand-accent"
+                        : "text-brand-cream",
                     )}
                   >
                     Send Now
                   </p>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     Goes out immediately
                   </p>
                 </button>
@@ -544,7 +546,7 @@ export default function CampaignBuilder() {
                   className={cn(
                     "flex flex-col items-center gap-2 rounded-2xl border p-5 transition-all",
                     scheduleMode === "later"
-                      ? "border-orika-gold/60 bg-orika-gold/5"
+                      ? "border-brand-accent/60 bg-brand-accent/5"
                       : "border-white/5 hover:border-white/15",
                   )}
                 >
@@ -552,21 +554,21 @@ export default function CampaignBuilder() {
                     className={cn(
                       "h-6 w-6",
                       scheduleMode === "later"
-                        ? "text-orika-gold"
-                        : "text-orika-smoke",
+                        ? "text-brand-accent"
+                        : "text-brand-smoke",
                     )}
                   />
                   <p
                     className={cn(
                       "text-sm font-medium",
                       scheduleMode === "later"
-                        ? "text-orika-gold"
-                        : "text-orika-cream",
+                        ? "text-brand-accent"
+                        : "text-brand-cream",
                     )}
                   >
                     Schedule
                   </p>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     Pick a date and time
                   </p>
                 </button>
@@ -623,11 +625,11 @@ export default function CampaignBuilder() {
                 />
               </div>
               {campaignType === "email" && (
-                <div className="rounded-xl border border-white/5 bg-orika-graphite/30 p-4 space-y-3">
-                  <p className="text-sm text-orika-cream font-medium">
+                <div className="rounded-xl border border-white/5 bg-brand-graphite/30 p-4 space-y-3">
+                  <p className="text-sm text-brand-cream font-medium">
                     Send yourself a test first
                   </p>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     Variables are filled with sample data. The subject is
                     prefixed with [TEST]. No recipients are touched.
                   </p>
@@ -700,8 +702,8 @@ export default function CampaignBuilder() {
 function StepHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="border-b border-white/5 pb-4">
-      <h2 className="text-lg font-semibold text-orika-cream">{title}</h2>
-      <p className="text-sm text-orika-smoke mt-1">{subtitle}</p>
+      <h2 className="text-lg font-semibold text-brand-cream">{title}</h2>
+      <p className="text-sm text-brand-smoke mt-1">{subtitle}</p>
     </div>
   );
 }
@@ -717,11 +719,11 @@ function ReviewRow({
 }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 pb-2 text-sm">
-      <span className="text-orika-smoke">{label}</span>
+      <span className="text-brand-smoke">{label}</span>
       <span
         className={cn(
           "font-medium",
-          highlight ? "text-orika-gold" : "text-orika-cream",
+          highlight ? "text-brand-accent" : "text-brand-cream",
         )}
       >
         {value}

@@ -20,7 +20,7 @@ export const CONTACT_TYPE_META: Record<ContactType, ContactTypeMeta> = {
     icon: User,
     ringColor: "#C9A86C",
     bgColor: "rgba(201,168,108,0.10)",
-    textClass: "text-orika-gold",
+    textClass: "text-brand-accent",
     tone: "gold",
   },
   supplier: {
@@ -30,7 +30,7 @@ export const CONTACT_TYPE_META: Record<ContactType, ContactTypeMeta> = {
     icon: Truck,
     ringColor: "#8B9D77",
     bgColor: "rgba(139,157,119,0.10)",
-    textClass: "text-living-sage",
+    textClass: "text-accent2",
     tone: "sage",
   },
   staff: {
@@ -40,7 +40,7 @@ export const CONTACT_TYPE_META: Record<ContactType, ContactTypeMeta> = {
     icon: Briefcase,
     ringColor: "#B76E79",
     bgColor: "rgba(183,110,121,0.10)",
-    textClass: "text-bejewelled-rose",
+    textClass: "text-accent3",
     tone: "rose",
   },
   retail_partner: {

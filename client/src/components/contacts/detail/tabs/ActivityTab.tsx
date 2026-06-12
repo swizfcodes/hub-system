@@ -53,14 +53,14 @@ const KIND_META: Record<
     label: string;
   }
 > = {
-  call: { icon: Phone, color: "text-orika-gold", label: "Call" },
+  call: { icon: Phone, color: "text-brand-accent", label: "Call" },
   sms: { icon: MessageSquare, color: "text-state-info", label: "Message" },
   email: { icon: MessageSquare, color: "text-state-info", label: "Email" },
-  meeting: { icon: Calendar, color: "text-orika-gold", label: "Meeting" },
-  task: { icon: CheckSquare, color: "text-bejewelled-rose", label: "Task" },
-  deal: { icon: TrendingUp, color: "text-living-sage", label: "Deal" },
-  invoice: { icon: Receipt, color: "text-orika-gold", label: "Invoice" },
-  system: { icon: History, color: "text-orika-smoke", label: "System" },
+  meeting: { icon: Calendar, color: "text-brand-accent", label: "Meeting" },
+  task: { icon: CheckSquare, color: "text-accent3", label: "Task" },
+  deal: { icon: TrendingUp, color: "text-accent2", label: "Deal" },
+  invoice: { icon: Receipt, color: "text-brand-accent", label: "Invoice" },
+  system: { icon: History, color: "text-brand-smoke", label: "System" },
 };
 
 const FILTERS: Array<{ key: "all" | ActivityKind; label: string }> = [
@@ -184,14 +184,14 @@ export function ActivityTab({ contactId }: Props) {
           ))}
         </div>
       ) : merged.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-orika-graphite bg-orika-charcoal/40 p-10 text-center">
-          <History className="w-7 h-7 mx-auto text-orika-smoke mb-3" />
-          <p className="text-sm text-orika-smoke">
+        <div className="rounded-2xl border border-dashed border-brand-graphite bg-brand-charcoal/40 p-10 text-center">
+          <History className="w-7 h-7 mx-auto text-brand-smoke mb-3" />
+          <p className="text-sm text-brand-smoke">
             No activity to show with this filter.
           </p>
         </div>
       ) : (
-        <ol className="relative pl-5 sm:pl-7 border-l border-orika-graphite space-y-4">
+        <ol className="relative pl-5 sm:pl-7 border-l border-brand-graphite space-y-4">
           {merged.map((e) => {
             const meta = KIND_META[e.kind];
             const Icon = meta.icon;
@@ -199,22 +199,22 @@ export function ActivityTab({ contactId }: Props) {
               <li key={e.id} className="relative">
                 <span
                   className={cn(
-                    "absolute -left-[28px] sm:-left-[34px] top-3 w-6 h-6 rounded-full bg-orika-charcoal border border-orika-graphite flex items-center justify-center",
+                    "absolute -left-[28px] sm:-left-[34px] top-3 w-6 h-6 rounded-full bg-brand-charcoal border border-brand-graphite flex items-center justify-center",
                     meta.color,
                   )}
                 >
                   <Icon className="w-3 h-3" />
                 </span>
-                <div className="rounded-xl border border-orika-graphite bg-orika-charcoal/50 p-3.5">
+                <div className="rounded-xl border border-brand-graphite bg-brand-charcoal/50 p-3.5">
                   <div className="flex items-start justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 min-w-0">
                       {e.direction === "in" && (
-                        <ArrowDownRight className="w-3 h-3 text-living-sage shrink-0" />
+                        <ArrowDownRight className="w-3 h-3 text-accent2 shrink-0" />
                       )}
                       {e.direction === "out" && (
-                        <ArrowUpRight className="w-3 h-3 text-orika-gold shrink-0" />
+                        <ArrowUpRight className="w-3 h-3 text-brand-accent shrink-0" />
                       )}
-                      <span className="text-sm text-orika-cream truncate">
+                      <span className="text-sm text-brand-cream truncate">
                         {e.title}
                       </span>
                     </div>
@@ -223,16 +223,16 @@ export function ActivityTab({ contactId }: Props) {
                     </Badge>
                   </div>
                   {e.detail && (
-                    <div className="text-xs text-orika-cloud mt-1">
+                    <div className="text-xs text-brand-cloud mt-1">
                       {e.detail}
                     </div>
                   )}
                   {e.amount && (e.kind === "invoice" || e.kind === "deal") && (
-                    <div className="text-xs font-mono text-orika-gold mt-1">
+                    <div className="text-xs font-mono text-brand-accent mt-1">
                       {fmtMoney(e.amount, "NGN")}
                     </div>
                   )}
-                  <div className="text-[0.65rem] text-orika-smoke mt-1.5">
+                  <div className="text-[0.65rem] text-brand-smoke mt-1.5">
                     {fmtDateTime(e.at)} · {fmtRelative(e.at)}
                   </div>
                 </div>

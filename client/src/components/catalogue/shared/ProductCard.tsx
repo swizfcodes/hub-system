@@ -16,9 +16,9 @@ export function ProductCard({ product, index = 0 }: Props) {
     <article
       onClick={() => navigate(`/catalogue/${product.product_id}`)}
       style={{ animationDelay: `${index * 30}ms` }}
-      className="group cursor-pointer rounded-2xl border border-orika-graphite bg-orika-charcoal/70 overflow-hidden hover:border-orika-gold/40 hover:shadow-card-lg hover:-translate-y-1 transition-all animate-tile-in"
+      className="group cursor-pointer rounded-2xl border border-brand-graphite bg-brand-charcoal/70 overflow-hidden hover:border-brand-accent/40 hover:shadow-card-lg hover:-translate-y-1 transition-all animate-tile-in"
     >
-      <div className="aspect-square overflow-hidden bg-orika-black/40">
+      <div className="aspect-square overflow-hidden bg-brand-black/40">
         <ProductImage
           product={product}
           size="xl"
@@ -27,7 +27,7 @@ export function ProductCard({ product, index = 0 }: Props) {
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="font-medium text-sm text-orika-cream truncate flex-1">
+          <h3 className="font-medium text-sm text-brand-cream truncate flex-1">
             {product.name}
           </h3>
           {!product.is_active && (
@@ -36,7 +36,7 @@ export function ProductCard({ product, index = 0 }: Props) {
             </Badge>
           )}
         </div>
-        <div className="text-[0.65rem] text-orika-smoke font-mono mb-2 truncate">
+        <div className="text-[0.65rem] text-brand-smoke font-mono mb-2 truncate">
           {product.sku}
         </div>
         <ProductPrice
@@ -45,7 +45,7 @@ export function ProductCard({ product, index = 0 }: Props) {
           currency={product.currency}
         />
         {product.category_name && (
-          <div className="mt-2 inline-flex items-center gap-1 text-[0.6rem] text-orika-smoke">
+          <div className="mt-2 inline-flex items-center gap-1 text-[0.6rem] text-brand-smoke">
             <Tag className="w-2.5 h-2.5" />
             {product.category_name}
           </div>

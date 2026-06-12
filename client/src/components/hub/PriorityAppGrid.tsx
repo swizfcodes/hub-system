@@ -126,7 +126,7 @@ export function PriorityAppGrid({ badges = {} }: Props) {
                 onClick={() => unpin(m.key)}
                 title="Move to More"
                 aria-label={`Move ${m.label} to More`}
-                className="absolute top-2 left-2 p-1.5 rounded-lg bg-orika-black/70 text-orika-smoke opacity-0 group-hover/slot:opacity-100 hover:text-orika-gold transition-all z-10"
+                className="absolute top-2 left-2 p-1.5 rounded-lg bg-brand-black/70 text-brand-smoke opacity-0 group-hover/slot:opacity-100 hover:text-brand-accent transition-all z-10"
               >
                 <PinOff className="w-3.5 h-3.5" />
               </button>
@@ -140,17 +140,17 @@ export function PriorityAppGrid({ badges = {} }: Props) {
             onClick={() => setMoreOpen((o) => !o)}
             className={cn(
               "group relative flex flex-col items-center justify-center text-center gap-3 p-5 sm:p-6 rounded-2xl",
-              "bg-orika-charcoal/30 border border-dashed border-orika-graphite transition-all duration-300",
-              "hover:-translate-y-1 hover:border-orika-gold/40 animate-tile-in",
+              "bg-brand-charcoal/30 border border-dashed border-brand-graphite transition-all duration-300",
+              "hover:-translate-y-1 hover:border-brand-accent/40 animate-tile-in",
             )}
             aria-expanded={moreOpen}
           >
             {moreBadge > 0 && (
-              <span className="absolute -top-2 -right-2 min-w-[24px] h-6 px-2 rounded-full text-[0.65rem] font-bold flex items-center justify-center border-2 border-orika-charcoal bg-orika-cream text-orika-black">
+              <span className="absolute -top-2 -right-2 min-w-[24px] h-6 px-2 rounded-full text-[0.65rem] font-bold flex items-center justify-center border-2 border-brand-charcoal bg-brand-cream text-brand-black">
                 {moreBadge > 99 ? "99+" : moreBadge}
               </span>
             )}
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-orika-black/40 flex items-center justify-center text-orika-smoke group-hover:text-orika-gold transition-colors">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-brand-black/40 flex items-center justify-center text-brand-smoke group-hover:text-brand-accent transition-colors">
               {moreOpen ? (
                 <ChevronUp className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.5} />
               ) : (
@@ -158,10 +158,10 @@ export function PriorityAppGrid({ badges = {} }: Props) {
               )}
             </div>
             <div className="space-y-0.5">
-              <div className="font-semibold text-xs sm:text-sm text-orika-cream">
+              <div className="font-semibold text-xs sm:text-sm text-brand-cream">
                 {moreOpen ? "Less" : "More"}
               </div>
-              <div className="text-[0.65rem] sm:text-xs text-orika-smoke">
+              <div className="text-[0.65rem] sm:text-xs text-brand-smoke">
                 {moreModules.length} more app
                 {moreModules.length > 1 ? "s" : ""}
               </div>
@@ -179,10 +179,10 @@ export function PriorityAppGrid({ badges = {} }: Props) {
             return (
               <div key={g} className="mb-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="text-[0.6rem] tracking-[0.18em] uppercase text-orika-smoke">
+                  <div className="text-[0.6rem] tracking-[0.18em] uppercase text-brand-smoke">
                     {GROUP_LABELS[g]}
                   </div>
-                  <div className="flex-1 h-px bg-orika-graphite/60" />
+                  <div className="flex-1 h-px bg-brand-graphite/60" />
                 </div>
                 <div className="grid gap-4 sm:gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {items.map((m, i) => (
@@ -196,7 +196,7 @@ export function PriorityAppGrid({ badges = {} }: Props) {
                         onClick={() => handlePin(m.key)}
                         title="Pin to top grid"
                         aria-label={`Pin ${m.label} to top grid`}
-                        className="absolute top-2 left-2 p-1.5 rounded-lg bg-orika-black/70 text-orika-smoke opacity-0 group-hover/slot:opacity-100 hover:text-orika-gold transition-all z-10"
+                        className="absolute top-2 left-2 p-1.5 rounded-lg bg-brand-black/70 text-brand-smoke opacity-0 group-hover/slot:opacity-100 hover:text-brand-accent transition-all z-10"
                       >
                         <Pin className="w-3.5 h-3.5" />
                       </button>
@@ -213,7 +213,7 @@ export function PriorityAppGrid({ badges = {} }: Props) {
                 resetToDefault();
                 showToast.info("Navigation reset to your role's default");
               }}
-              className="flex items-center gap-1.5 text-[0.7rem] text-orika-smoke hover:text-orika-gold transition-colors"
+              className="flex items-center gap-1.5 text-[0.7rem] text-brand-smoke hover:text-brand-accent transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
               Reset to default layout

@@ -19,10 +19,10 @@ export function AppMenuFab() {
   return (
     <Link
       to="/"
-      className="hidden lg:inline-flex fixed bottom-8 left-1/2 -translate-x-1/2 z-40 items-center gap-2 px-5 py-3 rounded-full bg-orika-cream text-orika-black font-semibold text-xs uppercase tracking-widest shadow-lift hover:shadow-glow-md hover:-translate-y-0.5 transition-all group"
+      className="hidden lg:inline-flex fixed bottom-8 left-1/2 -translate-x-1/2 z-40 items-center gap-2 px-5 py-3 rounded-full bg-brand-cream text-brand-black font-semibold text-xs uppercase tracking-widest shadow-lift hover:shadow-glow-md hover:-translate-y-0.5 transition-all group"
       aria-label="Return to App Menu"
     >
-      <LayoutGrid className="w-4 h-4 text-orika-gold-dim group-hover:text-orika-gold transition-colors" />
+      <LayoutGrid className="w-4 h-4 text-brand-accent-dim group-hover:text-brand-accent transition-colors" />
       <span>App Menu</span>
     </Link>
   );

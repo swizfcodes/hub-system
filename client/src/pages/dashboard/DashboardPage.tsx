@@ -247,7 +247,7 @@ export default function DashboardPage() {
   const greeting = getGreeting(user?.display_name);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-orika-black">
+    <div className="flex h-screen flex-col overflow-hidden bg-brand-black">
       {/* Top nav — stacks into two breathing rows on mobile, inline on desktop */}
       <div className="flex flex-col gap-2 border-b border-white/5 px-4 sm:px-8 py-3 flex-shrink-0 sm:flex-row sm:items-center sm:justify-between">
         {/* Row 1: menu + tabs */}
@@ -256,14 +256,14 @@ export default function DashboardPage() {
           {!isDesktop && (
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="p-2 -ml-2 text-orika-cream hover:bg-orika-graphite rounded-lg transition-colors mr-2"
+              className="p-2 -ml-2 text-brand-cream hover:bg-brand-graphite rounded-lg transition-colors mr-2"
               aria-label="Open menu"
             >
               <Menu className="w-5 h-5" />
             </button>
           )}
           {/* Tabs */}
-          <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-orika-charcoal p-1">
+          <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-brand-charcoal p-1">
             {(
               [
                 {
@@ -292,8 +292,8 @@ export default function DashboardPage() {
                 className={cn(
                   "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                   activeTab === key
-                    ? "bg-orika-gold text-orika-black"
-                    : "text-orika-smoke hover:text-orika-cream",
+                    ? "bg-brand-accent text-brand-black"
+                    : "text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -303,8 +303,8 @@ export default function DashboardPage() {
                     className={cn(
                       "flex h-4 min-w-4 items-center justify-center rounded-full text-[9px] font-bold px-1",
                       activeTab === key
-                        ? "bg-orika-black text-orika-gold"
-                        : "bg-orika-gold text-orika-black",
+                        ? "bg-brand-black text-brand-accent"
+                        : "bg-brand-accent text-brand-black",
                     )}
                   >
                     {badge > 99 ? "99+" : badge}
@@ -324,7 +324,7 @@ export default function DashboardPage() {
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
-                className="rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                className="rounded-lg border border-white/10 bg-brand-charcoal px-2.5 py-1.5 text-xs text-brand-cream focus:border-brand-accent/40 focus:outline-none"
               >
                 {PERIOD_OPTIONS.map((p) => (
                   <option key={p.value} value={p.value}>
@@ -340,19 +340,19 @@ export default function DashboardPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowSectionPicker((s) => !s)}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-orika-charcoal px-2.5 py-1.5 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-brand-charcoal px-2.5 py-1.5 text-xs text-brand-smoke hover:text-brand-cream transition-colors"
                 >
                   <Settings2 className="h-3.5 w-3.5" />
                   <span className="hidden sm:block">Sections</span>
                 </button>
                 {showSectionPicker && (
-                  <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-orika-charcoal shadow-xl p-2">
+                  <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-xl border border-white/10 bg-brand-charcoal shadow-xl p-2">
                     {DASHBOARD_SECTIONS.filter((s) =>
                       permittedSections.includes(s.key),
                     ).map((s) => (
                       <label
                         key={s.key}
-                        className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-orika-graphite/30"
+                        className="flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer hover:bg-brand-graphite/30"
                       >
                         <input
                           type="checkbox"
@@ -360,13 +360,13 @@ export default function DashboardPage() {
                           onChange={() => toggleSection(s.key)}
                           className="rounded"
                         />
-                        <span className="text-xs text-orika-cream">
+                        <span className="text-xs text-brand-cream">
                           {s.icon} {s.label}
                         </span>
                       </label>
                     ))}
                     {permittedSections.length === 0 && (
-                      <p className="text-[10px] text-orika-smoke px-2 py-2">
+                      <p className="text-[10px] text-brand-smoke px-2 py-2">
                         No sections permitted
                       </p>
                     )}
@@ -378,13 +378,13 @@ export default function DashboardPage() {
             {/* Refresh */}
             <button
               onClick={handleRefresh}
-              className="text-orika-smoke hover:text-orika-gold transition-colors"
+              className="text-brand-smoke hover:text-brand-accent transition-colors"
               title="Refresh"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
 
-            <p className="text-[10px] text-orika-smoke/40 hidden sm:block">
+            <p className="text-[10px] text-brand-smoke/40 hidden sm:block">
               Updated{" "}
               {lastRefresh.toLocaleTimeString("en-NG", {
                 hour: "2-digit",
@@ -405,7 +405,7 @@ export default function DashboardPage() {
             {/* ── Cashier layout — today's number, quick actions, own sales ── */}
             {isCashierView && (
               <>
-                <p className="text-sm text-orika-smoke">{greeting}</p>
+                <p className="text-sm text-brand-smoke">{greeting}</p>
                 <TodayHeroCard currency={currency} />
                 <QuickActions />
                 <MyRecentSales currency={currency} />
@@ -415,7 +415,7 @@ export default function DashboardPage() {
             {/* ── Manager layout — today hero + quick actions above curated sections ── */}
             {isManagerView && (
               <>
-                <p className="text-sm text-orika-smoke">{greeting}</p>
+                <p className="text-sm text-brand-smoke">{greeting}</p>
                 <TodayHeroCard currency={currency} />
                 <QuickActions />
               </>
@@ -423,45 +423,45 @@ export default function DashboardPage() {
 
             {/* ── Owner layout — yesterday briefing + quick actions ── */}
             {isOwnerView && yesterday && (
-              <div className="rounded-2xl border border-orika-gold/20 bg-orika-gold/5 px-5 py-4">
+              <div className="rounded-2xl border border-brand-accent/20 bg-brand-accent/5 px-5 py-4">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
-                    <p className="text-sm text-orika-smoke">{greeting}</p>
-                    <p className="text-lg font-semibold text-orika-cream mt-0.5">
+                    <p className="text-sm text-brand-smoke">{greeting}</p>
+                    <p className="text-lg font-semibold text-brand-cream mt-0.5">
                       Yesterday ({fmtDate(yesterday.date)})
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-6">
                     <div className="text-center">
-                      <p className="font-display text-2xl font-light text-orika-gold tabular-nums">
+                      <p className="font-display text-2xl font-light text-brand-accent tabular-nums">
                         {fmtMoney(yesterday.revenue, currency)}
                       </p>
-                      <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+                      <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
                         Revenue
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+                      <p className="font-display text-2xl font-light text-brand-cream tabular-nums">
                         {yesterday.invoice_count}
                       </p>
-                      <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+                      <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
                         Invoices
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="font-display text-2xl font-light text-orika-cream tabular-nums">
+                      <p className="font-display text-2xl font-light text-brand-cream tabular-nums">
                         {yesterday.new_customers}
                       </p>
-                      <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+                      <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
                         New Customers
                       </p>
                     </div>
                     {yesterday.top_product && (
                       <div className="text-center">
-                        <p className="text-sm font-semibold text-orika-cream truncate max-w-[140px]">
+                        <p className="text-sm font-semibold text-brand-cream truncate max-w-[140px]">
                           {yesterday.top_product.name}
                         </p>
-                        <p className="text-[10px] text-orika-smoke uppercase tracking-widest">
+                        <p className="text-[10px] text-brand-smoke uppercase tracking-widest">
                           Top Product · {yesterday.top_product.units} units
                         </p>
                       </div>

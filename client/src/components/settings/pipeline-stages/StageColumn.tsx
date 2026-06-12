@@ -29,8 +29,8 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "rounded-2xl border bg-orika-charcoal border-orika-graphite min-w-[240px] max-w-[260px] flex-shrink-0 overflow-hidden transition-all",
-        isDragging && "opacity-50 ring-2 ring-orika-gold",
+        "rounded-2xl border bg-brand-charcoal border-brand-graphite min-w-[240px] max-w-[260px] flex-shrink-0 overflow-hidden transition-all",
+        isDragging && "opacity-50 ring-2 ring-brand-accent",
       )}
     >
       {/* Coloured header */}
@@ -42,17 +42,17 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
           <button
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 text-orika-smoke hover:text-orika-cream"
+            className="cursor-grab active:cursor-grabbing p-1 text-brand-smoke hover:text-brand-cream"
             aria-label="Reorder"
           >
             <GripVertical className="w-4 h-4" />
           </button>
-          <span className="text-[0.6rem] tracking-widest uppercase text-orika-smoke flex-1">
+          <span className="text-[0.6rem] tracking-widest uppercase text-brand-smoke flex-1">
             Stage {stage.display_order + 1}
           </span>
           <button
             onClick={onDelete}
-            className="p-1 text-orika-smoke hover:text-state-danger transition-colors"
+            className="p-1 text-brand-smoke hover:text-state-danger transition-colors"
             aria-label="Delete stage"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -69,7 +69,7 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
 
         {/* Colour swatches */}
         <div>
-          <div className="text-[0.6rem] tracking-widest uppercase text-orika-smoke mb-1.5">
+          <div className="text-[0.6rem] tracking-widest uppercase text-brand-smoke mb-1.5">
             Colour
           </div>
           <div className="flex gap-1 flex-wrap">
@@ -81,7 +81,7 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
                 className={cn(
                   "w-6 h-6 rounded transition-transform hover:scale-110",
                   stage.colour.toUpperCase() === sw.hex.toUpperCase() &&
-                    "ring-2 ring-orika-cream ring-offset-1 ring-offset-orika-charcoal",
+                    "ring-2 ring-brand-cream ring-offset-1 ring-offset-brand-charcoal",
                 )}
                 style={{ background: sw.hex }}
                 title={sw.name}
@@ -112,8 +112,8 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
                 className={cn(
                   "flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[0.6rem] font-semibold uppercase tracking-wide transition-all",
                   stage.is_positive_terminal
-                    ? "bg-living-sage/20 text-living-sage border border-living-sage/40"
-                    : "bg-orika-graphite text-orika-smoke hover:text-orika-cream",
+                    ? "bg-accent2/20 text-accent2 border border-accent2/40"
+                    : "bg-brand-graphite text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 <Check className="w-3 h-3" /> Won
@@ -124,7 +124,7 @@ export function StageColumn({ stage, onUpdate, onDelete }: Props) {
                   "flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[0.6rem] font-semibold uppercase tracking-wide transition-all",
                   stage.is_positive_terminal === false
                     ? "bg-state-danger/20 text-state-danger border border-state-danger/40"
-                    : "bg-orika-graphite text-orika-smoke hover:text-orika-cream",
+                    : "bg-brand-graphite text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 <XCircle className="w-3 h-3" /> Lost

@@ -89,7 +89,7 @@ export const SignatureCapture = forwardRef<
     <div className={cn("space-y-2", className)}>
       {label && (
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-orika-smoke">{label}</p>
+          <p className="text-sm font-medium text-brand-smoke">{label}</p>
           {!isEmpty && (
             <Button
               variant="ghost"

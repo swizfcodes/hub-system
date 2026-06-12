@@ -470,7 +470,7 @@ export function SendConsignmentModal({
           {fields.map((field, i) => (
             <div
               key={field.id}
-              className="grid grid-cols-3 gap-3 items-end rounded-xl border border-orika-cloud/30 p-3"
+              className="grid grid-cols-3 gap-3 items-end rounded-xl border border-brand-cloud/30 p-3"
             >
               <Controller
                 name={`items.${i}.quantity`}
@@ -589,8 +589,8 @@ export function RecallConsignmentModal({
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm space-y-1">
-          <p className="font-medium text-orika-black">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 text-sm space-y-1">
+          <p className="font-medium text-brand-black">
             {consignment.product_name ?? "Product"}
           </p>
           <p className="text-text-on-light-muted">
@@ -878,16 +878,16 @@ export function GenerateSettlementModal({
       }
     >
       <div className="space-y-4">
-        <div className="rounded-xl bg-orika-cloud/20 px-4 py-3 text-sm">
+        <div className="rounded-xl bg-brand-cloud/20 px-4 py-3 text-sm">
           <p className="text-text-on-light-muted">
             Margin:{" "}
-            <strong className="text-orika-black">
+            <strong className="text-brand-black">
               {partner.consignment_margin_pct}%
             </strong>
           </p>
           <p className="text-text-on-light-muted mt-0.5">
             Cycle:{" "}
-            <strong className="text-orika-black capitalize">
+            <strong className="text-brand-black capitalize">
               {partner.settlement_cycle}
             </strong>
           </p>

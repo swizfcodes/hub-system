@@ -95,7 +95,7 @@ export default function ClientProfile() {
         {/* ── Header ── */}
         <button
           onClick={() => navigate("/crm")}
-          className="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-widest text-orika-smoke hover:text-orika-cream mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-widest text-brand-smoke hover:text-brand-cream mb-4 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Clients
         </button>
@@ -104,7 +104,7 @@ export default function ClientProfile() {
           <ClientAvatar name={client.display_name} size="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-display text-orika-cream">
+              <h1 className="text-2xl font-display text-brand-cream">
                 {client.display_name}
               </h1>
               <VipStar isVip={client.is_vip} />
@@ -115,7 +115,7 @@ export default function ClientProfile() {
                 </Badge>
               ))}
             </div>
-            <div className="text-[0.7rem] text-orika-smoke mt-1">
+            <div className="text-[0.7rem] text-brand-smoke mt-1">
               {client.company_name && `${client.company_name} · `}
               {client.source && `via ${client.source.replace(/_/g, " ")} · `}
               client since {fmtDate(client.created_at)}
@@ -295,23 +295,23 @@ function Kpi({
   warn?: boolean;
 }) {
   return (
-    <div className="p-4 rounded-2xl border border-orika-graphite bg-orika-charcoal/60">
+    <div className="p-4 rounded-2xl border border-brand-graphite bg-brand-charcoal/60">
       <div
         className={
           warn
             ? "inline-flex items-center justify-center w-8 h-8 rounded-lg bg-state-warn/15 text-state-warn"
-            : "inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orika-gold/15 text-orika-gold"
+            : "inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-accent/15 text-brand-accent"
         }
       >
         {icon}
       </div>
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mt-2">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mt-2">
         {label}
       </div>
-      <div className="text-lg font-display text-orika-cream mt-0.5 tabular-nums truncate">
+      <div className="text-lg font-display text-brand-cream mt-0.5 tabular-nums truncate">
         {value}
       </div>
-      {hint && <div className="text-[0.6rem] text-orika-smoke mt-0.5">{hint}</div>}
+      {hint && <div className="text-[0.6rem] text-brand-smoke mt-0.5">{hint}</div>}
     </div>
   );
 }
@@ -324,9 +324,9 @@ function InsightChip({
   tone?: "gold" | "warn" | "rose";
 }) {
   const cls = {
-    gold: "border-orika-gold/30 text-orika-gold bg-orika-gold/10",
+    gold: "border-brand-accent/30 text-brand-accent bg-brand-accent/10",
     warn: "border-state-warn/30 text-state-warn bg-state-warn/10",
-    rose: "border-bejewelled-rose/30 text-bejewelled-rose bg-bejewelled-rose/10",
+    rose: "border-accent3/30 text-accent3 bg-accent3/10",
   }[tone];
   return (
     <span
@@ -351,13 +351,13 @@ function OverviewTab({ client }: { client: ClientProfileData }) {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="p-4 lg:col-span-2">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
           Recent purchases
         </h3>
         {isLoading ? (
           <Skeleton className="h-32" />
         ) : (purchases?.data ?? []).length === 0 ? (
-          <p className="text-xs text-orika-smoke italic">
+          <p className="text-xs text-brand-smoke italic">
             Nothing yet — their first purchase will appear here automatically.
           </p>
         ) : (
@@ -372,14 +372,14 @@ function OverviewTab({ client }: { client: ClientProfileData }) {
       <div className="space-y-4">
         {pinned.length > 0 && (
           <Card className="p-4">
-            <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+            <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
               Pinned notes
             </h3>
             <ul className="space-y-2">
               {pinned.map((n) => (
                 <li
                   key={n.note_id}
-                  className="text-xs text-orika-cloud border-l-2 border-orika-gold/50 pl-2.5"
+                  className="text-xs text-brand-cloud border-l-2 border-brand-accent/50 pl-2.5"
                 >
                   {n.content}
                 </li>
@@ -388,48 +388,48 @@ function OverviewTab({ client }: { client: ClientProfileData }) {
           </Card>
         )}
         <Card className="p-4">
-          <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+          <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
             Preferences
           </h3>
           {client.preferences.length === 0 ? (
-            <p className="text-xs text-orika-smoke italic">
+            <p className="text-xs text-brand-smoke italic">
               None recorded — capture sizes, metals, scents in Concierge.
             </p>
           ) : (
             <ul className="space-y-1.5">
               {client.preferences.slice(0, 6).map((p) => (
                 <li key={p.preference_id} className="flex justify-between text-xs">
-                  <span className="text-orika-smoke">
+                  <span className="text-brand-smoke">
                     {p.preference_key.replace(/_/g, " ")}
                   </span>
-                  <span className="text-orika-cream">{p.preference_value}</span>
+                  <span className="text-brand-cream">{p.preference_value}</span>
                 </li>
               ))}
             </ul>
           )}
         </Card>
         <Card className="p-4">
-          <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+          <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
             Important dates
           </h3>
           {client.milestones.length === 0 && !client.next_birthday ? (
-            <p className="text-xs text-orika-smoke italic">None recorded.</p>
+            <p className="text-xs text-brand-smoke italic">None recorded.</p>
           ) : (
             <ul className="space-y-1.5 text-xs">
               {client.next_birthday && (
                 <li className="flex justify-between">
-                  <span className="text-orika-smoke">birthday</span>
-                  <span className="text-orika-cream">
+                  <span className="text-brand-smoke">birthday</span>
+                  <span className="text-brand-cream">
                     {fmtDate(client.next_birthday)}
                   </span>
                 </li>
               )}
               {client.milestones.slice(0, 5).map((m) => (
                 <li key={m.milestone_id} className="flex justify-between">
-                  <span className="text-orika-smoke">
+                  <span className="text-brand-smoke">
                     {m.milestone_type.replace(/_/g, " ")}
                   </span>
-                  <span className="text-orika-cream">
+                  <span className="text-brand-cream">
                     {fmtDate(m.milestone_date)}
                   </span>
                 </li>
@@ -451,19 +451,19 @@ function PurchaseRow({
     p.invoice_type === "pos_sale" ? "In store" : "Invoice";
   return (
     <li className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03]">
-      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-orika-gold/10 text-orika-gold shrink-0">
+      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-accent/10 text-brand-accent shrink-0">
         <Receipt className="w-3.5 h-3.5" />
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-xs text-orika-cream truncate">
+        <span className="block text-xs text-brand-cream truncate">
           {p.summary || p.invoice_number}
         </span>
-        <span className="block text-[0.6rem] text-orika-smoke">
+        <span className="block text-[0.6rem] text-brand-smoke">
           {typeLabel} · {fmtDate(p.issue_date)} · {p.invoice_number}
         </span>
       </span>
       <span className="text-right">
-        <span className="block text-xs font-mono text-orika-gold tabular-nums">
+        <span className="block text-xs font-mono text-brand-accent tabular-nums">
           {fmtMoney(Number(p.total_amount), p.currency || "NGN")}
         </span>
         <Badge
@@ -534,7 +534,7 @@ function DealsTab({
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <p className="text-[0.65rem] text-orika-smoke">
+        <p className="text-[0.65rem] text-brand-smoke">
           For larger sales — corporate gifting, hotels, wholesale.
         </p>
         <Button
@@ -555,19 +555,19 @@ function DealsTab({
       ) : (
         client.deals.map((d) => (
           <Link key={d.deal_id} to={`/crm/${d.deal_id}`} className="block">
-            <Card className="p-4 flex items-center gap-3 hover:border-orika-gold/40 transition-colors">
+            <Card className="p-4 flex items-center gap-3 hover:border-brand-accent/40 transition-colors">
               <span className="flex-1 min-w-0">
-                <span className="block text-sm text-orika-cream truncate">
+                <span className="block text-sm text-brand-cream truncate">
                   {d.title}
                 </span>
-                <span className="block text-[0.6rem] text-orika-smoke mt-0.5">
+                <span className="block text-[0.6rem] text-brand-smoke mt-0.5">
                   opened {fmtDate(d.created_at)}
                   {d.expected_close_date &&
                     ` · closes ${fmtDate(d.expected_close_date)}`}
                 </span>
               </span>
               {d.expected_value != null && (
-                <span className="text-sm font-mono text-orika-gold tabular-nums">
+                <span className="text-sm font-mono text-brand-accent tabular-nums">
                   {fmtMoney(Number(d.expected_value), "NGN")}
                 </span>
               )}
@@ -613,7 +613,7 @@ function NotesTab({ contactId }: { contactId: string }) {
           <button
             onClick={() => setPin((v) => !v)}
             className={`inline-flex items-center gap-1.5 text-[0.65rem] uppercase tracking-wide transition-colors ${
-              pin ? "text-orika-gold" : "text-orika-smoke hover:text-orika-cream"
+              pin ? "text-brand-accent" : "text-brand-smoke hover:text-brand-cream"
             }`}
           >
             <Pin className="w-3.5 h-3.5" /> {pin ? "Pinned" : "Pin to profile"}
@@ -633,7 +633,7 @@ function NotesTab({ contactId }: { contactId: string }) {
       {isLoading ? (
         <Skeleton className="h-32" />
       ) : (notes ?? []).length === 0 ? (
-        <p className="text-xs text-orika-smoke italic px-1">
+        <p className="text-xs text-brand-smoke italic px-1">
           No notes yet — the first one sets the tone.
         </p>
       ) : (
@@ -642,13 +642,13 @@ function NotesTab({ contactId }: { contactId: string }) {
             <Card key={n.note_id} className="p-4">
               <div className="flex items-start gap-2">
                 {n.is_pinned && (
-                  <Pin className="w-3.5 h-3.5 text-orika-gold mt-0.5 shrink-0" />
+                  <Pin className="w-3.5 h-3.5 text-brand-accent mt-0.5 shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-orika-cloud whitespace-pre-wrap">
+                  <p className="text-sm text-brand-cloud whitespace-pre-wrap">
                     {n.content}
                   </p>
-                  <p className="text-[0.6rem] text-orika-smoke mt-2">
+                  <p className="text-[0.6rem] text-brand-smoke mt-2">
                     {n.created_by_email || "team"} · {fmtRelative(n.created_at)}
                   </p>
                 </div>

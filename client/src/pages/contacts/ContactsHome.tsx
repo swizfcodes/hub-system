@@ -116,7 +116,7 @@ export default function ContactsHome() {
               <button
                 title="Walk-in registration QR"
                 onClick={() => setWalkinQROpen(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-orika-graphite px-3 py-2 text-xs text-orika-cloud hover:border-orika-gold/40 hover:text-orika-gold transition"
+                className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-brand-graphite px-3 py-2 text-xs text-brand-cloud hover:border-brand-accent/40 hover:text-brand-accent transition"
               >
                 <QrCode className="w-4 h-4" />
                 <span className="hidden sm:inline">Walk-in QR</span>
@@ -236,9 +236,9 @@ export default function ContactsHome() {
               {selected ? (
                 <SelectedPreview contactId={selected.contact_id} />
               ) : (
-                <div className="rounded-2xl border border-dashed border-orika-graphite bg-orika-charcoal/30 p-12 text-center">
-                  <BookUser className="w-10 h-10 text-orika-smoke mx-auto mb-3" />
-                  <p className="text-sm text-orika-smoke">
+                <div className="rounded-2xl border border-dashed border-brand-graphite bg-brand-charcoal/30 p-12 text-center">
+                  <BookUser className="w-10 h-10 text-brand-smoke mx-auto mb-3" />
+                  <p className="text-sm text-brand-smoke">
                     Pick someone from the list to preview them here.
                   </p>
                 </div>
@@ -250,21 +250,21 @@ export default function ContactsHome() {
         {/* Pagination controls */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-4">
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               {total} total · page {page} of {totalPages}
             </p>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-brand-charcoal px-3 py-1.5 text-xs text-brand-smoke hover:border-white/20 disabled:opacity-40"
               >
                 <ChevronLeft className="h-3.5 w-3.5" /> Prev
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="flex items-center gap-1 rounded-lg border border-white/10 bg-orika-charcoal px-3 py-1.5 text-xs text-orika-smoke hover:border-white/20 disabled:opacity-40"
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-brand-charcoal px-3 py-1.5 text-xs text-brand-smoke hover:border-white/20 disabled:opacity-40"
               >
                 Next <ChevronRightIcon className="h-3.5 w-3.5" />
               </button>
@@ -313,30 +313,30 @@ function SelectedPreview({ contactId }: { contactId: string }) {
   });
   if (!c) return <Skeleton className="h-96" />;
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/50 p-6">
-      <div className="text-[0.65rem] tracking-widest uppercase text-orika-smoke mb-1">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/50 p-6">
+      <div className="text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-1">
         Preview
       </div>
-      <h2 className="font-display text-3xl text-orika-cream">
+      <h2 className="font-display text-3xl text-brand-cream">
         {c.display_name}
       </h2>
       {c.company_name && (
-        <p className="text-sm text-orika-smoke mt-1">{c.company_name}</p>
+        <p className="text-sm text-brand-smoke mt-1">{c.company_name}</p>
       )}
       <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
         <div>
-          <span className="text-orika-smoke">Phone</span>
-          <div className="text-orika-cream mt-0.5">{c.primary_phone}</div>
+          <span className="text-brand-smoke">Phone</span>
+          <div className="text-brand-cream mt-0.5">{c.primary_phone}</div>
         </div>
         {c.email && (
           <div>
-            <span className="text-orika-smoke">Email</span>
-            <div className="text-orika-cream mt-0.5 truncate">{c.email}</div>
+            <span className="text-brand-smoke">Email</span>
+            <div className="text-brand-cream mt-0.5 truncate">{c.email}</div>
           </div>
         )}
       </div>
       {c.notes && (
-        <p className="text-xs text-orika-cloud mt-4 italic line-clamp-3">
+        <p className="text-xs text-brand-cloud mt-4 italic line-clamp-3">
           "{c.notes}"
         </p>
       )}

@@ -21,20 +21,20 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const base =
-  "relative inline-flex items-center justify-center gap-2 font-semibold tracking-wide rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-orika-gold whitespace-nowrap";
+  "relative inline-flex items-center justify-center gap-2 font-semibold tracking-wide rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-brand-accent whitespace-nowrap";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-orika-cream text-orika-black hover:bg-orika-cloud shadow-card hover:shadow-glow-md shimmer-trigger overflow-hidden",
+    "bg-brand-cream text-brand-black hover:bg-brand-cloud shadow-card hover:shadow-glow-md shimmer-trigger overflow-hidden",
   secondary:
-    "bg-orika-charcoal text-orika-cream border border-orika-graphite hover:border-orika-gold/40 hover:bg-orika-graphite",
+    "bg-brand-charcoal text-brand-cream border border-brand-graphite hover:border-brand-accent/40 hover:bg-brand-graphite",
   ghost:
-    "bg-transparent text-orika-cloud hover:text-orika-cream hover:bg-white/5",
+    "bg-transparent text-brand-cloud hover:text-brand-cream hover:bg-white/5",
   danger:
     "bg-state-danger/15 text-state-danger border border-state-danger/30 hover:bg-state-danger/25",
-  gold: "bg-orika-gold text-orika-black hover:bg-orika-gold-glow shadow-glow-sm hover:shadow-glow-md",
+  gold: "bg-brand-accent text-brand-black hover:bg-brand-accent-glow shadow-glow-sm hover:shadow-glow-md",
   "outline-light":
-    "bg-transparent text-orika-black border border-orika-cloud/40 hover:border-orika-black hover:bg-white/40",
+    "bg-transparent text-brand-black border border-brand-cloud/40 hover:border-brand-black hover:bg-white/40",
 };
 
 const sizes: Record<Size, string> = {

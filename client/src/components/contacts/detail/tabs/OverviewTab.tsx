@@ -140,26 +140,26 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
             ))}
           </div>
         ) : upcomingEvents.length === 0 ? (
-          <p className="text-xs text-orika-smoke">No upcoming events.</p>
+          <p className="text-xs text-brand-smoke">No upcoming events.</p>
         ) : (
           <ul className="space-y-2">
             {upcomingEvents.map((e) => (
               <li
                 key={e.event_id}
-                className="flex items-start gap-3 p-3 rounded-xl bg-orika-black/30 border border-orika-graphite"
+                className="flex items-start gap-3 p-3 rounded-xl bg-brand-black/30 border border-brand-graphite"
               >
-                <div className="shrink-0 w-10 h-10 rounded-lg bg-orika-gold/15 text-orika-gold flex items-center justify-center">
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-brand-accent/15 text-brand-accent flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm text-orika-cream truncate">
+                  <div className="font-medium text-sm text-brand-cream truncate">
                     {e.title}
                   </div>
-                  <div className="text-[0.65rem] text-orika-smoke mt-0.5">
+                  <div className="text-[0.65rem] text-brand-smoke mt-0.5">
                     {fmtDateTime(e.start_at)}
                   </div>
                   {e.location && (
-                    <div className="text-[0.65rem] text-orika-smoke">
+                    <div className="text-[0.65rem] text-brand-smoke">
                       {e.location}
                     </div>
                   )}
@@ -184,7 +184,7 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
             ))}
           </div>
         ) : (timeline?.activities ?? []).length === 0 ? (
-          <p className="text-xs text-orika-smoke">No activity recorded yet.</p>
+          <p className="text-xs text-brand-smoke">No activity recorded yet.</p>
         ) : (
           <ul className="space-y-2">
             {(timeline?.activities ?? []).slice(0, 4).map((a) => (
@@ -192,10 +192,10 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
                 key={a.activity_id}
                 className="flex items-start gap-3 text-xs"
               >
-                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-orika-gold mt-1.5" />
+                <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-brand-accent mt-1.5" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-orika-cream truncate">{a.summary}</div>
-                  <div className="text-[0.65rem] text-orika-smoke">
+                  <div className="text-brand-cream truncate">{a.summary}</div>
+                  <div className="text-[0.65rem] text-brand-smoke">
                     {fmtRelative(a.performed_at)} · {a.activity_type}
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
             ))}
           </div>
         ) : (timeline?.invoices ?? []).length === 0 ? (
-          <p className="text-xs text-orika-smoke">
+          <p className="text-xs text-brand-smoke">
             No invoices yet in {active}.
           </p>
         ) : (
@@ -227,15 +227,15 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
             {(timeline?.invoices ?? []).slice(0, 4).map((inv) => (
               <li
                 key={inv.invoice_id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-orika-black/30 border border-orika-graphite"
+                className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-brand-black/30 border border-brand-graphite"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-orika-gold shrink-0" />
+                  <FileText className="w-3.5 h-3.5 text-brand-accent shrink-0" />
                   <div className="min-w-0">
-                    <div className="font-mono text-xs text-orika-cream truncate">
+                    <div className="font-mono text-xs text-brand-cream truncate">
                       {inv.invoice_number}
                     </div>
-                    <div className="text-[0.6rem] text-orika-smoke">
+                    <div className="text-[0.6rem] text-brand-smoke">
                       {fmtDate(inv.issue_date)}
                     </div>
                   </div>
@@ -253,7 +253,7 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
                   >
                     {inv.status}
                   </Badge>
-                  <span className="text-xs font-medium text-orika-cream">
+                  <span className="text-xs font-medium text-brand-cream">
                     {fmtMoney(inv.total_amount, "NGN")}
                   </span>
                 </div>
@@ -271,16 +271,16 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
           onJump={() => onJumpTab("properties")}
         />
         {(contact.addresses ?? []).length === 0 ? (
-          <p className="text-xs text-orika-smoke">No address on file.</p>
+          <p className="text-xs text-brand-smoke">No address on file.</p>
         ) : (
           (() => {
             const def =
               (contact.addresses ?? []).find((a) => a.is_default) ??
               (contact.addresses ?? [])[0];
             return (
-              <div className="text-sm text-orika-cream space-y-0.5">
+              <div className="text-sm text-brand-cream space-y-0.5">
                 {def.recipient_name && (
-                  <div className="text-xs text-orika-smoke">
+                  <div className="text-xs text-brand-smoke">
                     {def.recipient_name}
                   </div>
                 )}
@@ -292,7 +292,7 @@ export function OverviewTab({ contact, onJumpTab }: Props) {
                   {[def.area, def.city, def.state].filter(Boolean).join(", ")}
                 </div>
                 {def.landmark && (
-                  <div className="text-xs text-orika-smoke">
+                  <div className="text-xs text-brand-smoke">
                     Near {def.landmark}
                   </div>
                 )}
@@ -316,13 +316,13 @@ function Header({
 }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <div className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-orika-gold">
+      <div className="inline-flex items-center gap-2 text-[0.65rem] tracking-widest uppercase text-brand-accent">
         {icon}
         {title}
       </div>
       <button
         onClick={onJump}
-        className="text-[0.65rem] text-orika-smoke hover:text-orika-cream inline-flex items-center gap-1 transition-colors"
+        className="text-[0.65rem] text-brand-smoke hover:text-brand-cream inline-flex items-center gap-1 transition-colors"
       >
         See all <ArrowRight className="w-3 h-3" />
       </button>
@@ -344,18 +344,18 @@ function KpiCard({
   onClick?: () => void;
 }) {
   const accentBg = {
-    gold: "bg-orika-gold/15 text-orika-gold",
-    rose: "bg-bejewelled-rose/15 text-bejewelled-rose",
-    sage: "bg-living-sage/15 text-living-sage",
+    gold: "bg-brand-accent/15 text-brand-accent",
+    rose: "bg-accent3/15 text-accent3",
+    sage: "bg-accent2/15 text-accent2",
   }[accent];
   return (
     <button
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        "p-4 rounded-2xl border border-orika-graphite bg-orika-charcoal/60 text-left transition-all",
+        "p-4 rounded-2xl border border-brand-graphite bg-brand-charcoal/60 text-left transition-all",
         onClick &&
-          "hover:border-orika-gold/40 hover:-translate-y-0.5 cursor-pointer",
+          "hover:border-brand-accent/40 hover:-translate-y-0.5 cursor-pointer",
       )}
     >
       <div
@@ -366,10 +366,10 @@ function KpiCard({
       >
         {icon}
       </div>
-      <div className="mt-2 text-[0.6rem] tracking-widest uppercase text-orika-smoke">
+      <div className="mt-2 text-[0.6rem] tracking-widest uppercase text-brand-smoke">
         {label}
       </div>
-      <div className="text-xl font-display text-orika-cream mt-0.5 tabular-nums">
+      <div className="text-xl font-display text-brand-cream mt-0.5 tabular-nums">
         {value}
       </div>
     </button>
@@ -400,40 +400,40 @@ function EmployeeSnapshot({
         className="w-full text-left"
       >
         <div className="flex items-center gap-2 mb-3">
-          <Briefcase className="w-4 h-4 text-orika-gold" />
-          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+          <Briefcase className="w-4 h-4 text-brand-accent" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
             Employment
           </span>
-          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+          <ArrowRight className="w-3.5 h-3.5 text-brand-smoke ml-auto" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Role
             </div>
-            <div className="text-orika-cream mt-0.5">{staff.job_title}</div>
+            <div className="text-brand-cream mt-0.5">{staff.job_title}</div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Employee #
             </div>
-            <div className="text-orika-cream mt-0.5 font-mono text-xs">
+            <div className="text-brand-cream mt-0.5 font-mono text-xs">
               {staff.employee_number}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Department
             </div>
-            <div className="text-orika-cream mt-0.5 capitalize">
+            <div className="text-brand-cream mt-0.5 capitalize">
               {staff.department ?? "—"}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               With us for
             </div>
-            <div className="text-orika-cream mt-0.5">
+            <div className="text-brand-cream mt-0.5">
               {tenure ?? "—"}
               {staff.end_date ? " (ended)" : ""}
             </div>
@@ -485,37 +485,37 @@ function SupplierSnapshot({
         className="w-full text-left"
       >
         <div className="flex items-center gap-2 mb-3">
-          <ShoppingCart className="w-4 h-4 text-orika-gold" />
-          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+          <ShoppingCart className="w-4 h-4 text-brand-accent" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
             Supplier · {supplier.supplier_code}
           </span>
-          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+          <ArrowRight className="w-3.5 h-3.5 text-brand-smoke ml-auto" />
         </div>
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Open POs
             </div>
-            <div className="text-orika-cream mt-0.5 tabular-nums">{openPOs}</div>
+            <div className="text-brand-cream mt-0.5 tabular-nums">{openPOs}</div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               We owe them
             </div>
             <div
               className={cn(
                 "mt-0.5 tabular-nums",
-                owed > 0 ? "text-state-warn" : "text-living-sage",
+                owed > 0 ? "text-state-warn" : "text-accent2",
               )}
             >
               {fmtMoney(owed, "NGN")}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Payment terms
             </div>
-            <div className="text-orika-cream mt-0.5">
+            <div className="text-brand-cream mt-0.5">
               {supplier.payment_terms_days ?? 30} days
             </div>
           </div>
@@ -546,23 +546,23 @@ function PartnerSnapshot({
         className="w-full text-left"
       >
         <div className="flex items-center gap-2 mb-3">
-          <Handshake className="w-4 h-4 text-orika-gold" />
-          <span className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+          <Handshake className="w-4 h-4 text-brand-accent" />
+          <span className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
             Retail partner · {partner.partner_code}
           </span>
-          <ArrowRight className="w-3.5 h-3.5 text-orika-smoke ml-auto" />
+          <ArrowRight className="w-3.5 h-3.5 text-brand-smoke ml-auto" />
         </div>
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Arrangement
             </div>
-            <div className="text-orika-cream mt-0.5 capitalize">
+            <div className="text-brand-cream mt-0.5 capitalize">
               {partner.arrangement_type}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Balance owed to us
             </div>
             <div
@@ -570,17 +570,17 @@ function PartnerSnapshot({
                 "mt-0.5 tabular-nums",
                 Number(partner.current_balance) > 0
                   ? "text-state-warn"
-                  : "text-living-sage",
+                  : "text-accent2",
               )}
             >
               {fmtMoney(partner.current_balance ?? 0, "NGN")}
             </div>
           </div>
           <div>
-            <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+            <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
               Settlement cycle
             </div>
-            <div className="text-orika-cream mt-0.5 capitalize">
+            <div className="text-brand-cream mt-0.5 capitalize">
               {partner.settlement_cycle ?? "monthly"}
             </div>
           </div>

@@ -75,11 +75,11 @@ export default function DealDetail() {
         ) : (
           <>
             <header className="mb-6">
-              <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
+              <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
                 {deal.title}
               </h1>
               {deal.contact_name && (
-                <p className="text-sm text-orika-smoke mt-1">
+                <p className="text-sm text-brand-smoke mt-1">
                   for {deal.contact_name}
                 </p>
               )}

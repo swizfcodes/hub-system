@@ -62,20 +62,20 @@ export function ByLocationView({ rows, locations, loading }: Props) {
               className={cn(
                 "w-full text-left p-3 rounded-xl border transition-all",
                 active
-                  ? "bg-orika-charcoal border-orika-gold/40"
-                  : "bg-transparent border-orika-graphite hover:bg-orika-charcoal/60",
+                  ? "bg-brand-charcoal border-brand-accent/40"
+                  : "bg-transparent border-brand-graphite hover:bg-brand-charcoal/60",
               )}
             >
               <div className="flex items-center gap-2 mb-1">
-                <MapPin className="w-3.5 h-3.5 text-orika-gold" />
-                <span className="font-medium text-sm text-orika-cream truncate">
+                <MapPin className="w-3.5 h-3.5 text-brand-accent" />
+                <span className="font-medium text-sm text-brand-cream truncate">
                   {loc.name}
                 </span>
               </div>
-              <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+              <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                 {loc.location_type.replace("_", " ")}
               </div>
-              <div className="text-[0.65rem] text-orika-cloud mt-1">
+              <div className="text-[0.65rem] text-brand-cloud mt-1">
                 {items.length} SKU · {totalUnits} units
               </div>
             </button>
@@ -86,8 +86,8 @@ export function ByLocationView({ rows, locations, loading }: Props) {
       <section>
         {!activeLocation ? (
           <Card className="p-12 text-center">
-            <MapPin className="w-7 h-7 text-orika-smoke mx-auto mb-3" />
-            <p className="text-sm text-orika-smoke">
+            <MapPin className="w-7 h-7 text-brand-smoke mx-auto mb-3" />
+            <p className="text-sm text-brand-smoke">
               Pick a location to see what's there.
             </p>
           </Card>
@@ -106,10 +106,10 @@ export function ByLocationView({ rows, locations, loading }: Props) {
                   size="sm"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-orika-cream truncate">
+                  <div className="text-sm text-brand-cream truncate">
                     {row.product_name}
                   </div>
-                  <div className="text-[0.6rem] font-mono text-orika-smoke">
+                  <div className="text-[0.6rem] font-mono text-brand-smoke">
                     {row.product_sku}
                   </div>
                 </div>

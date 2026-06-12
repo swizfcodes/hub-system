@@ -120,23 +120,23 @@ export function ContactSearchInput({
     return (
       <div className={cn("contact-search-root", className)}>
         {label && (
-          <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+          <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
             {label}
             {required && <span className="ml-0.5 text-red-400">*</span>}
           </label>
         )}
-        <div className="flex items-center gap-3 rounded-lg border border-orika-gold/40 bg-orika-gold/5 px-3 py-2.5">
-          <User className="h-4 w-4 shrink-0 text-orika-gold" />
+        <div className="flex items-center gap-3 rounded-lg border border-brand-accent/40 bg-brand-accent/5 px-3 py-2.5">
+          <User className="h-4 w-4 shrink-0 text-brand-accent" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-orika-cream">
+            <p className="truncate text-sm font-medium text-brand-cream">
               {value.display_name}
             </p>
-            <p className="text-xs text-orika-smoke">{value.primary_phone}</p>
+            <p className="text-xs text-brand-smoke">{value.primary_phone}</p>
           </div>
           <button
             type="button"
             onClick={clear}
-            className="text-orika-smoke hover:text-orika-cream transition-colors"
+            className="text-brand-smoke hover:text-brand-cream transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -148,7 +148,7 @@ export function ContactSearchInput({
   return (
     <div className={cn("contact-search-root relative", className)}>
       {label && (
-        <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+        <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
           {label}
           {required && <span className="ml-0.5 text-red-400">*</span>}
         </label>
@@ -158,7 +158,7 @@ export function ContactSearchInput({
         className="relative"
         ref={inputRef as React.RefObject<HTMLDivElement>}
       >
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke" />
         <input
           type="text"
           ref={inputRef}
@@ -169,13 +169,13 @@ export function ContactSearchInput({
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 pl-8 pr-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none"
+          className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 pl-8 pr-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none"
         />
       </div>
 
       {/* Dropdown */}
       {open && (query.length >= 2 || results.length > 0) && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-orika-charcoal shadow-xl">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-brand-charcoal shadow-xl">
           {loading ? (
             <div className="p-3 space-y-2">
               <Skeleton className="h-8" />
@@ -188,14 +188,14 @@ export function ContactSearchInput({
                   <button
                     type="button"
                     onClick={() => select(contact)}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-orika-graphite/40 transition-colors"
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-brand-graphite/40 transition-colors"
                   >
-                    <User className="h-4 w-4 shrink-0 text-orika-smoke" />
+                    <User className="h-4 w-4 shrink-0 text-brand-smoke" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-orika-cream">
+                      <p className="truncate text-sm font-medium text-brand-cream">
                         {contact.display_name}
                       </p>
-                      <p className="text-xs text-orika-smoke">
+                      <p className="text-xs text-brand-smoke">
                         {contact.primary_phone}
                       </p>
                     </div>
@@ -204,7 +204,7 @@ export function ContactSearchInput({
               ))}
             </ul>
           ) : query.length >= 2 ? (
-            <p className="px-3 py-3 text-xs text-orika-smoke">
+            <p className="px-3 py-3 text-xs text-brand-smoke">
               No contacts found for "{query}"
             </p>
           ) : null}
@@ -218,7 +218,7 @@ export function ContactSearchInput({
                 setOpen(false);
                 form.setValue("display_name", query);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs text-orika-gold hover:bg-orika-gold/5 transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-xs text-brand-accent hover:bg-brand-accent/5 transition-colors"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Add new contact{query ? ` "${query}"` : ""}
@@ -254,7 +254,7 @@ export function ContactSearchInput({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Name *
                 </label>
                 <Input
@@ -271,7 +271,7 @@ export function ContactSearchInput({
               control={form.control}
               render={({ field, fieldState }) => (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                     Phone *
                   </label>
                   <Input
@@ -288,7 +288,7 @@ export function ContactSearchInput({
               control={form.control}
               render={({ field }) => (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                  <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                     WhatsApp
                   </label>
                   <Input {...field} type="tel" placeholder="+234..." />
@@ -301,7 +301,7 @@ export function ContactSearchInput({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Email
                 </label>
                 <Input
@@ -313,7 +313,7 @@ export function ContactSearchInput({
               </div>
             )}
           />
-          <p className="text-xs text-orika-smoke/60">
+          <p className="text-xs text-brand-smoke/60">
             Phone is required for WhatsApp receipts. Email is required for email
             receipts.
           </p>

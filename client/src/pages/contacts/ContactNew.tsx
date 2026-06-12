@@ -163,25 +163,25 @@ export default function ContactNew() {
         </div>
 
         <header className="mb-8">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             New contact · Full form
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            Add a <span className="italic text-orika-gold">contact</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            Add a <span className="italic text-brand-accent">contact</span>
           </h1>
         </header>
 
         {isStaffType && (
-          <div className="mb-6 rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.05] p-4 flex items-start gap-3">
-            <Sparkles className="w-4 h-4 text-orika-gold mt-0.5 shrink-0" />
-            <div className="text-sm text-orika-cream">
+          <div className="mb-6 rounded-2xl border border-brand-accent/30 bg-brand-accent/[0.05] p-4 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-brand-accent mt-0.5 shrink-0" />
+            <div className="text-sm text-brand-cream">
               <p>
                 You're adding a contact with the <strong>Employee</strong> type.
                 For full HR onboarding (employee number, salary, login, etc.)
                 use the dedicated{" "}
                 <Link
                   to="/contacts/staff/new"
-                  className="text-orika-gold underline hover:text-orika-cream"
+                  className="text-brand-accent underline hover:text-brand-cream"
                 >
                   Staff Onboarding
                 </Link>{" "}
@@ -192,7 +192,7 @@ export default function ContactNew() {
           </div>
         )}
 
-        <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-10 border border-orika-cloud/30 shadow-lift">
+        <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-10 border border-brand-cloud/30 shadow-lift">
           <form className="space-y-6">
             {/* Type chips */}
             <div>
@@ -221,8 +221,8 @@ export default function ContactNew() {
                           className={cn(
                             "inline-flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold transition-all",
                             selected
-                              ? "bg-orika-black text-orika-cream border-orika-black"
-                              : "bg-white border-orika-cloud/40 text-orika-black/70 hover:border-orika-black/40",
+                              ? "bg-brand-black text-brand-cream border-brand-black"
+                              : "bg-white border-brand-cloud/40 text-brand-black/70 hover:border-brand-black/40",
                           )}
                           style={
                             selected

@@ -68,7 +68,7 @@ export function CourierSuggestPanel({
     <div className="space-y-3">
       {/* Zone indicator */}
       {zone && (
-        <div className="flex items-center gap-2 text-xs text-orika-smoke">
+        <div className="flex items-center gap-2 text-xs text-brand-smoke">
           <ZoneIcon className="h-3.5 w-3.5" />
           <span>{ZONE_LABEL[zone as keyof typeof ZONE_LABEL] ?? zone}</span>
         </div>
@@ -80,7 +80,7 @@ export function CourierSuggestPanel({
           {[1, 2].map((i) => (
             <div
               key={i}
-              className="h-14 rounded-xl bg-orika-graphite/30 animate-pulse"
+              className="h-14 rounded-xl bg-brand-graphite/30 animate-pulse"
             />
           ))}
         </div>
@@ -98,8 +98,8 @@ export function CourierSuggestPanel({
                 className={cn(
                   "flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all",
                   isSelected
-                    ? "border-orika-gold/60 bg-orika-gold/5"
-                    : "border-white/10 bg-orika-charcoal hover:border-white/20",
+                    ? "border-brand-accent/60 bg-brand-accent/5"
+                    : "border-white/10 bg-brand-charcoal hover:border-white/20",
                 )}
               >
                 {/* Courier colour chip */}
@@ -111,16 +111,16 @@ export function CourierSuggestPanel({
                 {/* Courier info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-orika-cream">
+                    <span className="text-sm font-medium text-brand-cream">
                       {opt.label}
                     </span>
                     {opt.recommended && (
-                      <span className="rounded-full bg-orika-gold/15 px-1.5 py-0.5 text-[10px] font-semibold text-orika-gold">
+                      <span className="rounded-full bg-brand-accent/15 px-1.5 py-0.5 text-[10px] font-semibold text-brand-accent">
                         Recommended
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     Est. {opt.estimated_hours} hours
                     {opt.note ? ` · ${opt.note}` : ""}
                   </p>
@@ -131,7 +131,7 @@ export function CourierSuggestPanel({
         </div>
       )}
 
-      <p className="flex items-start gap-1.5 text-[0.65rem] text-orika-smoke/60">
+      <p className="flex items-start gap-1.5 text-[0.65rem] text-brand-smoke/60">
         <Info className="h-3 w-3 shrink-0 mt-px" />
         Book the ride or carrier yourself, then enter the fee here and the
         driver's details at dispatch.

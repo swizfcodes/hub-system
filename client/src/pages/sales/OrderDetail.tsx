@@ -58,7 +58,7 @@ export default function OrderDetail() {
   if (!order) {
     return (
       <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto text-center">
-        <p className="text-orika-smoke">Order not found.</p>
+        <p className="text-brand-smoke">Order not found.</p>
       </div>
     );
   }
@@ -98,8 +98,8 @@ export default function OrderDetail() {
         {/* Left */}
         <div className="space-y-6">
           {/* Order meta */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Order Details
             </h2>
             <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
@@ -127,8 +127,8 @@ export default function OrderDetail() {
 
           {/* Lines */}
           {order.lines && order.lines.length > 0 && (
-            <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-              <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                 Line Items
               </h2>
               <LineItemsTable
@@ -146,9 +146,9 @@ export default function OrderDetail() {
           )}
 
           {/* Invoice section */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                 Invoice
               </h2>
               {hasInvoice && (
@@ -163,7 +163,7 @@ export default function OrderDetail() {
             {hasInvoice ? (
               <a
                 href={`/sales/invoices/${order.invoice_id}`}
-                className="flex items-center gap-2 text-sm text-orika-gold hover:underline"
+                className="flex items-center gap-2 text-sm text-brand-accent hover:underline"
               >
                 <ExternalLink className="h-4 w-4" />
                 {order.invoice_number}
@@ -171,14 +171,14 @@ export default function OrderDetail() {
             ) : canGenerateInvoice ? (
               <div className="flex items-end gap-3">
                 <div>
-                  <label className="mb-1 block text-xs text-orika-smoke">
+                  <label className="mb-1 block text-xs text-brand-smoke">
                     Invoice Due Date
                   </label>
                   <input
                     type="date"
                     value={invoiceDueDate}
                     onChange={(e) => setInvoiceDueDate(e.target.value)}
-                    className="rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+                    className="rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
                   />
                 </div>
                 <Button
@@ -192,7 +192,7 @@ export default function OrderDetail() {
                 </Button>
               </div>
             ) : (
-              <p className="text-sm text-orika-smoke">
+              <p className="text-sm text-brand-smoke">
                 Invoice cannot be generated for this order status.
               </p>
             )}
@@ -202,30 +202,30 @@ export default function OrderDetail() {
         {/* Right — actions rail */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Payment summary */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Payment
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-orika-smoke">Total</span>
-                <span className="font-medium text-orika-cream">
+                <span className="text-brand-smoke">Total</span>
+                <span className="font-medium text-brand-cream">
                   {fmtMoney(order.total_amount, currency)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-orika-smoke">Paid</span>
+                <span className="text-brand-smoke">Paid</span>
                 <span className="font-medium text-green-400">
                   {fmtMoney(order.amount_paid, currency)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-white/10 pt-2">
-                <span className="text-orika-smoke">Outstanding</span>
+                <span className="text-brand-smoke">Outstanding</span>
                 <span
                   className={
                     order.amount_outstanding > 0
                       ? "font-semibold text-amber-400"
-                      : "font-medium text-orika-smoke"
+                      : "font-medium text-brand-smoke"
                   }
                 >
                   {fmtMoney(order.amount_outstanding, currency)}
@@ -235,8 +235,8 @@ export default function OrderDetail() {
           </div>
 
           {/* Actions */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Actions
             </h3>
 
@@ -253,7 +253,7 @@ export default function OrderDetail() {
             {order.quotation_id && (
               <a
                 href={`/sales/quotations/${order.quotation_id}`}
-                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-brand-cloud hover:border-brand-accent/30 hover:text-brand-accent transition-colors"
               >
                 <ExternalLink className="h-4 w-4" />
                 Source Quotation
@@ -290,9 +290,9 @@ function MetaField({
 }) {
   return (
     <div>
-      <dt className="text-xs text-orika-smoke">{label}</dt>
+      <dt className="text-xs text-brand-smoke">{label}</dt>
       <dd
-        className={`mt-0.5 font-medium truncate ${highlight ? "text-amber-400" : "text-orika-cream"}`}
+        className={`mt-0.5 font-medium truncate ${highlight ? "text-amber-400" : "text-brand-cream"}`}
       >
         {value}
       </dd>

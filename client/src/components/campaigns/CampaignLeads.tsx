@@ -55,10 +55,10 @@ export default function CampaignLeads({ campaignId }: Props) {
 
   if (!leads.length) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-orika-graphite p-10 text-center space-y-3">
-        <Users className="h-10 w-10 text-orika-smoke mx-auto opacity-40" />
-        <p className="text-sm text-orika-cloud font-medium">No leads yet</p>
-        <p className="text-xs text-orika-smoke">
+      <div className="rounded-2xl border border-white/8 bg-brand-graphite p-10 text-center space-y-3">
+        <Users className="h-10 w-10 text-brand-smoke mx-auto opacity-40" />
+        <p className="text-sm text-brand-cloud font-medium">No leads yet</p>
+        <p className="text-xs text-brand-smoke">
           Leads will appear here as people scan the QR code or submit the
           inquiry form.
         </p>
@@ -70,11 +70,11 @@ export default function CampaignLeads({ campaignId }: Props) {
     <div className="space-y-4">
       {/* Summary bar */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-orika-cloud">
-          <span className="font-semibold text-orika-cream">{total}</span>{" "}
+        <p className="text-sm text-brand-cloud">
+          <span className="font-semibold text-brand-cream">{total}</span>{" "}
           {total === 1 ? "lead" : "leads"} captured
         </p>
-        <span className="text-[10px] text-orika-smoke flex items-center gap-1.5">
+        <span className="text-[10px] text-brand-smoke flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
           Live
         </span>
@@ -93,11 +93,11 @@ export default function CampaignLeads({ campaignId }: Props) {
           return (
             <div
               key={lead.lead_id}
-              className="rounded-2xl border border-white/8 bg-orika-graphite p-4 space-y-2"
+              className="rounded-2xl border border-white/8 bg-brand-graphite p-4 space-y-2"
             >
               {/* Row 1: name + type badge + time */}
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-orika-cream leading-snug">
+                <p className="text-sm font-semibold text-brand-cream leading-snug">
                   {displayName}
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -107,7 +107,7 @@ export default function CampaignLeads({ campaignId }: Props) {
                       meta.dot,
                     )}
                   />
-                  <span className="text-[10px] text-orika-smoke">
+                  <span className="text-[10px] text-brand-smoke">
                     {meta.label}
                   </span>
                 </div>
@@ -116,20 +116,20 @@ export default function CampaignLeads({ campaignId }: Props) {
               {/* Row 2: contact chips */}
               <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {lead.phone && (
-                  <span className="flex items-center gap-1 text-xs text-orika-cloud">
-                    <Phone className="h-3 w-3 text-orika-smoke shrink-0" />
+                  <span className="flex items-center gap-1 text-xs text-brand-cloud">
+                    <Phone className="h-3 w-3 text-brand-smoke shrink-0" />
                     {lead.phone}
                   </span>
                 )}
                 {lead.email && (
-                  <span className="flex items-center gap-1 text-xs text-orika-cloud">
-                    <Mail className="h-3 w-3 text-orika-smoke shrink-0" />
+                  <span className="flex items-center gap-1 text-xs text-brand-cloud">
+                    <Mail className="h-3 w-3 text-brand-smoke shrink-0" />
                     {lead.email}
                   </span>
                 )}
                 {(lead.address_city || lead.address_state) && (
-                  <span className="flex items-center gap-1 text-xs text-orika-cloud">
-                    <MapPin className="h-3 w-3 text-orika-smoke shrink-0" />
+                  <span className="flex items-center gap-1 text-xs text-brand-cloud">
+                    <MapPin className="h-3 w-3 text-brand-smoke shrink-0" />
                     {[lead.address_city, lead.address_state]
                       .filter(Boolean)
                       .join(", ")}
@@ -138,15 +138,15 @@ export default function CampaignLeads({ campaignId }: Props) {
                 {lead.wants_birthday &&
                   lead.birthday_month &&
                   lead.birthday_day && (
-                    <span className="flex items-center gap-1 text-xs text-orika-cloud">
-                      <Cake className="h-3 w-3 text-orika-smoke shrink-0" />
+                    <span className="flex items-center gap-1 text-xs text-brand-cloud">
+                      <Cake className="h-3 w-3 text-brand-smoke shrink-0" />
                       {MONTHS_SHORT[lead.birthday_month]} {lead.birthday_day}
                     </span>
                   )}
               </div>
 
               {/* Row 3: timestamp */}
-              <p className="text-[10px] text-orika-smoke/60">
+              <p className="text-[10px] text-brand-smoke/60">
                 {fmtDateTime(lead.created_at)}
               </p>
             </div>

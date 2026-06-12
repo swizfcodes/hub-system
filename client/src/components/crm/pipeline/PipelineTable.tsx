@@ -57,9 +57,9 @@ export function PipelineTable({ pipeline, loading }: Props) {
   const sortIcon = (k: SortKey) => {
     if (sortBy !== k) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
     return sortDir === "asc" ? (
-      <ArrowUp className="w-3 h-3 text-orika-gold" />
+      <ArrowUp className="w-3 h-3 text-brand-accent" />
     ) : (
-      <ArrowDown className="w-3 h-3 text-orika-gold" />
+      <ArrowDown className="w-3 h-3 text-brand-accent" />
     );
   };
 
@@ -90,10 +90,10 @@ export function PipelineTable({ pipeline, loading }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/60 overflow-hidden">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/60 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-orika-charcoal border-b border-orika-graphite">
+          <thead className="bg-brand-charcoal border-b border-brand-graphite">
             <tr>
               <Th onClick={() => toggle("title")} sort={sortIcon("title")}>
                 Title
@@ -136,19 +136,19 @@ export function PipelineTable({ pipeline, loading }: Props) {
                 <tr
                   key={r.deal_id}
                   onClick={() => navigate(`/crm/${r.deal_id}`)}
-                  className="border-b border-orika-graphite/40 hover:bg-orika-charcoal cursor-pointer transition-colors"
+                  className="border-b border-brand-graphite/40 hover:bg-brand-charcoal cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-orika-cream truncate">
+                      <span className="text-brand-cream truncate">
                         {r.title}
                       </span>
                       {r.priority_level === "vip" && (
-                        <Star className="w-3 h-3 fill-orika-gold text-orika-gold" />
+                        <Star className="w-3 h-3 fill-brand-accent text-brand-accent" />
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud truncate max-w-[180px]">
+                  <td className="px-4 py-3 text-brand-cloud truncate max-w-[180px]">
                     {r.contact_name}
                   </td>
                   <td className="px-4 py-3">
@@ -158,7 +158,7 @@ export function PipelineTable({ pipeline, loading }: Props) {
                       colour={stage.colour}
                     />
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-orika-gold">
+                  <td className="px-4 py-3 text-right font-mono text-brand-accent">
                     {fmtMoney(r.expected_value, "NGN")}
                   </td>
                   <td
@@ -171,7 +171,7 @@ export function PipelineTable({ pipeline, loading }: Props) {
                       ? fmtDate(r.expected_close_date)
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-orika-smoke text-xs">
+                  <td className="px-4 py-3 text-brand-smoke text-xs">
                     {fmtRelative(r.updated_at)}
                   </td>
                 </tr>
@@ -199,8 +199,8 @@ function Th({
     <th
       onClick={onClick}
       className={cn(
-        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-orika-smoke font-semibold",
-        onClick && "cursor-pointer hover:text-orika-cream",
+        "px-4 py-2.5 text-left text-[0.6rem] tracking-widest uppercase text-brand-smoke font-semibold",
+        onClick && "cursor-pointer hover:text-brand-cream",
         className,
       )}
     >

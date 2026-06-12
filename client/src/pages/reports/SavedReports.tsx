@@ -166,10 +166,10 @@ export default function SavedReports() {
             ))}
           </div>
         ) : reports.length === 0 ? (
-          <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-16 text-center">
-            <BarChart2 className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">No saved reports yet</p>
-            <p className="text-xs text-orika-smoke/50 mt-1">
+          <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-16 text-center">
+            <BarChart2 className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">No saved reports yet</p>
+            <p className="text-xs text-brand-smoke/50 mt-1">
               Run a report and click "Save" to save it here.
             </p>
             <Button
@@ -190,7 +190,7 @@ export default function SavedReports() {
               return (
                 <div
                   key={r.report_id}
-                  className="flex items-center gap-4 rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4 hover:border-white/10 transition-colors"
+                  className="flex items-center gap-4 rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4 hover:border-white/10 transition-colors"
                 >
                   {/* Family icon */}
                   <span className="text-2xl shrink-0">
@@ -200,7 +200,7 @@ export default function SavedReports() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-orika-cream">
+                      <p className="font-medium text-brand-cream">
                         {r.report_name}
                       </p>
                       {r.is_shared ? (
@@ -223,7 +223,7 @@ export default function SavedReports() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-orika-smoke mt-0.5">
+                    <p className="text-xs text-brand-smoke mt-0.5">
                       {familyDef?.label} ·{" "}
                       {familyDef?.types.find((t) => t.key === type)?.label ??
                         type}
@@ -236,21 +236,21 @@ export default function SavedReports() {
                     <button
                       onClick={() => runNow(r)}
                       title="Run now"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Play className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => openSchedule(r)}
                       title="Schedule delivery"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Calendar className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => openEdit(r)}
                       title="Edit"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
@@ -260,7 +260,7 @@ export default function SavedReports() {
                           deleteMutation.mutate(r.report_id);
                       }}
                       title="Delete"
-                      className="text-orika-smoke hover:text-state-danger transition-colors"
+                      className="text-brand-smoke hover:text-state-danger transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -413,7 +413,7 @@ export default function SavedReports() {
                       className={cn(
                         "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-all",
                         selected
-                          ? "border-orika-gold/60 bg-orika-gold/10 text-orika-gold"
+                          ? "border-brand-accent/60 bg-brand-accent/10 text-brand-accent"
                           : "border-gray-200 text-gray-500",
                       )}
                     >
@@ -443,7 +443,7 @@ export default function SavedReports() {
                       }
                     }}
                     placeholder="name@example.com"
-                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-orika-gold/40 focus:outline-none"
+                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-accent/40 focus:outline-none"
                   />
                   <Button
                     size="sm"
@@ -494,7 +494,7 @@ export default function SavedReports() {
                       }
                     }}
                     placeholder="+2348012345678"
-                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-orika-gold/40 focus:outline-none"
+                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-accent/40 focus:outline-none"
                   />
                   <Button size="sm" type="button" onClick={addRecipient}>
                     Add

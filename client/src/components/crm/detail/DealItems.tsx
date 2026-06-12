@@ -36,7 +36,7 @@ export function DealItems({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold inline-flex items-center gap-2">
+        <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent inline-flex items-center gap-2">
           <Package className="w-3.5 h-3.5" /> Items & Quotations
         </h3>
         <Button
@@ -74,11 +74,11 @@ export function DealItems({
         <div className="overflow-x-auto rounded-xl border border-white/5">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-graphite/40">
+              <tr className="border-b border-white/5 bg-brand-graphite/40">
                 {["Number", "Amount", "Valid Until", "Status", ""].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -92,15 +92,15 @@ export function DealItems({
                   onClick={() =>
                     navigate(`/sales/quotations/${q.quotation_id}`)
                   }
-                  className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
+                  className="cursor-pointer bg-brand-charcoal transition-colors hover:bg-brand-graphite/30"
                 >
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
+                  <td className="px-4 py-3 font-mono text-xs font-medium text-brand-accent">
                     {q.quotation_number}
                   </td>
-                  <td className="px-4 py-3 tabular-nums text-orika-cream">
+                  <td className="px-4 py-3 tabular-nums text-brand-cream">
                     {fmtMoney(q.total_amount, q.currency ?? currency)}
                   </td>
-                  <td className="px-4 py-3 text-orika-cloud">
+                  <td className="px-4 py-3 text-brand-cloud">
                     {fmtDate(q.valid_until)}
                   </td>
                   <td className="px-4 py-3">
@@ -111,7 +111,7 @@ export function DealItems({
                     />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <ArrowUpRight className="w-3.5 h-3.5 text-orika-smoke inline" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-brand-smoke inline" />
                   </td>
                 </tr>
               ))}

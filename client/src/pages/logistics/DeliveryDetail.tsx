@@ -152,7 +152,7 @@ export default function DeliveryDetail() {
   if (!delivery) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Delivery not found.</p>
+        <p className="text-brand-smoke">Delivery not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -223,13 +223,13 @@ export default function DeliveryDetail() {
 
       {/* Signature status banner */}
       {inTransit && !isSigned && (
-        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-orika-gold/30 bg-orika-gold/5 px-5 py-4">
-          <PenLine className="h-5 w-5 shrink-0 text-orika-gold mt-0.5" />
+        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent/5 px-5 py-4">
+          <PenLine className="h-5 w-5 shrink-0 text-brand-accent mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-orika-gold">
+            <p className="text-sm font-medium text-brand-accent">
               Awaiting proof-of-delivery signature
             </p>
-            <p className="mt-0.5 text-xs text-orika-gold/70">
+            <p className="mt-0.5 text-xs text-brand-accent/70">
               {delivery.contact_email
                 ? `The signing link was emailed to ${delivery.contact_email}. On arrival the customer signs, then hands the phone to the driver to counter-sign.`
                 : "This customer has no email on file — add one to their contact and resend, or open the signing page from this device for the driver."}
@@ -249,19 +249,19 @@ export default function DeliveryDetail() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Delivery info */}
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Delivery Details
           </p>
 
           {/* Customer */}
           <div className="flex items-start gap-3">
-            <Phone className="h-4 w-4 shrink-0 text-orika-smoke mt-0.5" />
+            <Phone className="h-4 w-4 shrink-0 text-brand-smoke mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-orika-cream">
+              <p className="text-sm font-medium text-brand-cream">
                 {delivery.contact_name}
               </p>
-              <p className="text-xs text-orika-smoke">
+              <p className="text-xs text-brand-smoke">
                 {delivery.primary_phone}
                 {delivery.contact_email ? ` · ${delivery.contact_email}` : ""}
               </p>
@@ -270,15 +270,15 @@ export default function DeliveryDetail() {
 
           {/* Address */}
           <div className="flex items-start gap-3">
-            <MapPin className="h-4 w-4 shrink-0 text-orika-smoke mt-0.5" />
-            <div className="text-sm text-orika-cloud">
+            <MapPin className="h-4 w-4 shrink-0 text-brand-smoke mt-0.5" />
+            <div className="text-sm text-brand-cloud">
               {addr.line1 && <p>{addr.line1}</p>}
               {addr.area && <p>{addr.area}</p>}
               {(addr.city || addr.state) && (
                 <p>{[addr.city, addr.state].filter(Boolean).join(", ")}</p>
               )}
               {addr.landmark && (
-                <p className="text-xs text-orika-smoke">Near {addr.landmark}</p>
+                <p className="text-xs text-brand-smoke">Near {addr.landmark}</p>
               )}
             </div>
           </div>
@@ -289,14 +289,14 @@ export default function DeliveryDetail() {
               {(delivery.courier_company ||
                 delivery.driver_name ||
                 delivery.driver_phone) && (
-                <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2.5">
-                  <Truck className="h-4 w-4 shrink-0 text-orika-gold mt-0.5" />
+                <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2.5">
+                  <Truck className="h-4 w-4 shrink-0 text-brand-accent mt-0.5" />
                   <div className="text-sm">
-                    <p className="text-orika-cream font-medium">
+                    <p className="text-brand-cream font-medium">
                       {delivery.courier_company || "Courier"}
                     </p>
                     {(delivery.driver_name || delivery.driver_phone) && (
-                      <p className="text-xs text-orika-smoke">
+                      <p className="text-xs text-brand-smoke">
                         {[delivery.driver_name, delivery.driver_phone]
                           .filter(Boolean)
                           .join(" · ")}
@@ -307,18 +307,18 @@ export default function DeliveryDetail() {
               )}
               {delivery.waybill_number && (
                 <div className="text-sm">
-                  <span className="text-orika-smoke">Waybill / ref: </span>
-                  <span className="font-mono text-orika-cream">
+                  <span className="text-brand-smoke">Waybill / ref: </span>
+                  <span className="font-mono text-brand-cream">
                     {delivery.waybill_number}
                   </span>
                 </div>
               )}
               <div className="flex justify-between text-sm border-t border-white/5 pt-3">
-                <span className="text-orika-smoke">Delivery Fee</span>
-                <span className="text-orika-cream tabular-nums">
+                <span className="text-brand-smoke">Delivery Fee</span>
+                <span className="text-brand-cream tabular-nums">
                   {fmtMoney(delivery.delivery_fee, currency)}
                   {delivery.fee_borne_by !== "customer" && (
-                    <span className="ml-1 text-xs text-orika-smoke">
+                    <span className="ml-1 text-xs text-brand-smoke">
                       (
                       {delivery.fee_borne_by === "business"
                         ? "absorbed"
@@ -332,7 +332,7 @@ export default function DeliveryDetail() {
                 <button
                   type="button"
                   onClick={openEditMode}
-                  className="text-xs text-orika-gold hover:underline mt-1"
+                  className="text-xs text-brand-accent hover:underline mt-1"
                 >
                   Edit driver / waybill / fee
                 </button>
@@ -342,52 +342,52 @@ export default function DeliveryDetail() {
             <div className="space-y-3 border-t border-white/5 pt-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-orika-smoke mb-1">
+                  <label className="block text-xs text-brand-smoke mb-1">
                     Courier company
                   </label>
                   <input
                     value={courierCompany}
                     onChange={(e) => setCourierCompany(e.target.value)}
                     placeholder="Uber, Bolt, GIG…"
-                    className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream placeholder:text-brand-smoke/40 focus:border-brand-accent/50 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-orika-smoke mb-1">
+                  <label className="block text-xs text-brand-smoke mb-1">
                     Waybill / booking ref
                   </label>
                   <input
                     value={waybill}
                     onChange={(e) => setWaybill(e.target.value)}
                     placeholder="e.g. GIGL-12345"
-                    className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream placeholder:text-brand-smoke/40 focus:border-brand-accent/50 focus:outline-none"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-orika-smoke mb-1">
+                  <label className="block text-xs text-brand-smoke mb-1">
                     Driver name
                   </label>
                   <input
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-orika-smoke mb-1">
+                  <label className="block text-xs text-brand-smoke mb-1">
                     Driver phone
                   </label>
                   <input
                     value={driverPhone}
                     onChange={(e) => setDriverPhone(e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+                    className="w-full rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-orika-smoke mb-1">
+                <label className="block text-xs text-brand-smoke mb-1">
                   Delivery Fee (₦)
                 </label>
                 <input
@@ -397,7 +397,7 @@ export default function DeliveryDetail() {
                   onChange={(e) =>
                     setEditFee(e.target.value.replace(/[^\d.]/g, ""))
                   }
-                  className="w-full rounded-lg border border-white/10 bg-orika-graphite px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-brand-graphite px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
                 />
               </div>
               <div className="flex gap-2">
@@ -422,7 +422,7 @@ export default function DeliveryDetail() {
 
           {/* Timestamps */}
           {delivery.dispatched_at && (
-            <div className="text-xs text-orika-smoke flex items-center gap-1.5">
+            <div className="text-xs text-brand-smoke flex items-center gap-1.5">
               <Clock className="h-3 w-3" />
               Dispatched: {fmtDateTime(delivery.dispatched_at)}
             </div>
@@ -436,8 +436,8 @@ export default function DeliveryDetail() {
         </div>
 
         {/* Items */}
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Items
           </p>
           {(delivery.items ?? []).map((item) => (
@@ -445,33 +445,33 @@ export default function DeliveryDetail() {
               key={item.item_id}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-orika-cream">{item.description}</span>
-              <span className="text-orika-smoke">× {item.quantity}</span>
+              <span className="text-brand-cream">{item.description}</span>
+              <span className="text-brand-smoke">× {item.quantity}</span>
             </div>
           ))}
           {(!delivery.items || delivery.items.length === 0) && (
-            <p className="text-sm text-orika-smoke">No items recorded</p>
+            <p className="text-sm text-brand-smoke">No items recorded</p>
           )}
         </div>
       </div>
 
       {/* Signatures — shown when delivery is signed */}
       {isSigned && hasBothSigs && (
-        <div className="rounded-2xl border border-green-500/20 bg-orika-charcoal p-6 space-y-4">
+        <div className="rounded-2xl border border-green-500/20 bg-brand-charcoal p-6 space-y-4">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-green-400" />
             <p className="text-sm font-semibold text-green-400">
               Proof of Delivery — Signed
             </p>
             {delivery.signed_at && (
-              <span className="ml-auto text-xs text-orika-smoke">
+              <span className="ml-auto text-xs text-brand-smoke">
                 {fmtDateTime(delivery.signed_at)}
               </span>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="mb-2 text-xs text-orika-smoke">
+              <p className="mb-2 text-xs text-brand-smoke">
                 Customer
                 {delivery.customer_signed_name
                   ? ` — ${delivery.customer_signed_name}`
@@ -484,7 +484,7 @@ export default function DeliveryDetail() {
               />
             </div>
             <div>
-              <p className="mb-2 text-xs text-orika-smoke">
+              <p className="mb-2 text-xs text-brand-smoke">
                 Driver
                 {delivery.driver_signed_name
                   ? ` — ${delivery.driver_signed_name}`
@@ -497,7 +497,7 @@ export default function DeliveryDetail() {
               />
             </div>
           </div>
-          <p className="flex items-center gap-1.5 text-xs text-orika-smoke">
+          <p className="flex items-center gap-1.5 text-xs text-brand-smoke">
             <FileText className="h-3.5 w-3.5" />
             The signed delivery note was emailed to the customer and archived
             in Documents.
@@ -507,18 +507,18 @@ export default function DeliveryDetail() {
 
       {/* Tracking timeline */}
       {trackingData.length > 0 && (
-        <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-6 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-6 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Tracking
           </p>
           <ol className="relative border-l border-white/10 space-y-4 pl-5">
             {trackingData.map((entry) => (
               <li key={entry.track_id ?? entry.tracking_id} className="relative">
-                <div className="absolute -left-[21px] top-1 h-3 w-3 rounded-full border border-white/20 bg-orika-graphite" />
-                <p className="text-sm font-medium text-orika-cream">
+                <div className="absolute -left-[21px] top-1 h-3 w-3 rounded-full border border-white/20 bg-brand-graphite" />
+                <p className="text-sm font-medium text-brand-cream">
                   {entry.message}
                 </p>
-                <p className="text-xs text-orika-smoke">
+                <p className="text-xs text-brand-smoke">
                   {fmtDateTime(entry.occurred_at)}
                 </p>
               </li>

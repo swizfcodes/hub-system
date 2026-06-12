@@ -101,7 +101,7 @@ export default function PayrollRunDetail() {
   if (!run) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Payroll run not found.</p>
+        <p className="text-brand-smoke">Payroll run not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -177,7 +177,7 @@ export default function PayrollRunDetail() {
 
       {/* Payslips table */}
       <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Payslips — {payslips.length} staff
         </p>
 
@@ -191,7 +191,7 @@ export default function PayrollRunDetail() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[600px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Employee",
                     "Title",
@@ -202,7 +202,7 @@ export default function PayrollRunDetail() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -213,22 +213,22 @@ export default function PayrollRunDetail() {
                 {payslips.map((slip) => (
                   <tr
                     key={slip.payslip_id}
-                    className="bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors"
+                    className="bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <p className="font-medium text-orika-cream">
+                      <p className="font-medium text-brand-cream">
                         {slip.display_name}
                       </p>
                       {slip.employee_number && (
-                        <p className="text-xs text-orika-smoke">
+                        <p className="text-xs text-brand-smoke">
                           {slip.employee_number}
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke">
+                    <td className="px-4 py-3 text-brand-smoke">
                       {slip.job_title ?? "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums text-brand-cream">
                       {fmtMoney(slip.gross_salary, currency)}
                     </td>
                     {isFull && (
@@ -236,7 +236,7 @@ export default function PayrollRunDetail() {
                         <td className="px-4 py-3 tabular-nums text-red-400">
                           {fmtMoney(slip.paye_deduction, currency)}
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                        <td className="px-4 py-3 tabular-nums text-brand-smoke">
                           {fmtMoney(slip.pension_employee, currency)}
                         </td>
                       </>
@@ -251,7 +251,7 @@ export default function PayrollRunDetail() {
                             navigate(`/payroll/payslips/${slip.payslip_id}`)
                           }
                           title="View payslip"
-                          className="text-orika-smoke hover:text-orika-gold transition-colors"
+                          className="text-brand-smoke hover:text-brand-accent transition-colors"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -270,7 +270,7 @@ export default function PayrollRunDetail() {
                             }}
                             disabled={sendingId === slip.payslip_id}
                             title="Email payslip"
-                            className="text-orika-smoke hover:text-orika-gold transition-colors disabled:opacity-40"
+                            className="text-brand-smoke hover:text-brand-accent transition-colors disabled:opacity-40"
                           >
                             <Send className="h-4 w-4" />
                           </button>

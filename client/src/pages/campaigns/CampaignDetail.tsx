@@ -124,7 +124,7 @@ export default function CampaignDetail() {
   if (!campaign) {
     return (
       <div className="px-8 py-16 text-center">
-        <p className="text-orika-smoke">Campaign not found.</p>
+        <p className="text-brand-smoke">Campaign not found.</p>
         <Button
           variant="ghost"
           className="mt-4"
@@ -209,9 +209,9 @@ export default function CampaignDetail() {
       {/* Stats tab */}
       {activeTab === "stats" &&
         (campaign.status !== "sent" ? (
-          <div className="py-12 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-            <BarChart2 className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-            <p className="text-sm text-orika-smoke">
+          <div className="py-12 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+            <BarChart2 className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+            <p className="text-sm text-brand-smoke">
               Stats will appear once the campaign has been sent.
             </p>
           </div>
@@ -236,8 +236,8 @@ export default function CampaignDetail() {
                 className={cn(
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize",
                   recipientFilter === f
-                    ? "bg-orika-gold text-orika-black"
-                    : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/70",
+                    ? "bg-brand-accent text-brand-black"
+                    : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/70",
                 )}
               >
                 {f === "all"
@@ -250,7 +250,7 @@ export default function CampaignDetail() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full min-w-[500px] text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Name",
                     "Channel",
@@ -261,7 +261,7 @@ export default function CampaignDetail() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -270,11 +270,11 @@ export default function CampaignDetail() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {recipients.map((r: any) => (
-                  <tr key={r.recipient_id} className="bg-orika-charcoal">
-                    <td className="px-4 py-3 font-medium text-orika-cream">
+                  <tr key={r.recipient_id} className="bg-brand-charcoal">
+                    <td className="px-4 py-3 font-medium text-brand-cream">
                       {r.display_name}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {r.email || r.whatsapp_number || "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -289,13 +289,13 @@ export default function CampaignDetail() {
                           ?.label ?? r.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {r.sent_at ? fmtDate(r.sent_at) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {r.opened_at ? fmtDate(r.opened_at) : "—"}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke text-xs">
+                    <td className="px-4 py-3 text-brand-smoke text-xs">
                       {r.clicked_at ? fmtDate(r.clicked_at) : "—"}
                     </td>
                   </tr>
@@ -304,7 +304,7 @@ export default function CampaignDetail() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-8 text-center text-sm text-orika-smoke"
+                      className="px-4 py-8 text-center text-sm text-brand-smoke"
                     >
                       No recipients in this filter.
                     </td>
@@ -323,9 +323,9 @@ export default function CampaignDetail() {
       {activeTab === "ab" && abResults && (
         <div className="space-y-4">
           {abResults.winner && (
-            <div className="flex items-center gap-2 rounded-xl border border-orika-gold/30 bg-orika-gold/5 px-4 py-3">
-              <GitBranch className="h-4 w-4 text-orika-gold" />
-              <p className="text-sm text-orika-gold">
+            <div className="flex items-center gap-2 rounded-xl border border-brand-accent/30 bg-brand-accent/5 px-4 py-3">
+              <GitBranch className="h-4 w-4 text-brand-accent" />
+              <p className="text-sm text-brand-accent">
                 Winner:{" "}
                 <strong>
                   {
@@ -341,7 +341,7 @@ export default function CampaignDetail() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5 bg-orika-charcoal">
+                <tr className="border-b border-white/5 bg-brand-charcoal">
                   {[
                     "Variant",
                     "Subject Line",
@@ -352,7 +352,7 @@ export default function CampaignDetail() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                      className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                     >
                       {h}
                     </th>
@@ -364,11 +364,11 @@ export default function CampaignDetail() {
                   <tr
                     key={v.campaign_id}
                     className={cn(
-                      "bg-orika-charcoal",
-                      v.campaign_id === abResults.winner && "bg-orika-gold/5",
+                      "bg-brand-charcoal",
+                      v.campaign_id === abResults.winner && "bg-brand-accent/5",
                     )}
                   >
-                    <td className="px-4 py-3 text-orika-cream font-medium">
+                    <td className="px-4 py-3 text-brand-cream font-medium">
                       {v.campaign_name}
                       {v.campaign_id === abResults.winner && (
                         <Badge tone="gold" size="xs" className="ml-2">
@@ -376,19 +376,19 @@ export default function CampaignDetail() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-orika-smoke">
+                    <td className="px-4 py-3 text-brand-smoke">
                       {v.subject_line ?? "—"}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                    <td className="px-4 py-3 tabular-nums text-brand-smoke">
                       {v.recipient_count}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                    <td className="px-4 py-3 tabular-nums text-brand-smoke">
                       {v.delivered_count}
                     </td>
-                    <td className="px-4 py-3 tabular-nums font-medium text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums font-medium text-brand-cream">
                       {v.open_rate_pct}%
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-smoke">
+                    <td className="px-4 py-3 tabular-nums text-brand-smoke">
                       {v.click_rate_pct}%
                     </td>
                   </tr>
@@ -404,11 +404,11 @@ export default function CampaignDetail() {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3">
-      <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+    <div className="rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3">
+      <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
         {label}
       </p>
-      <p className="text-sm font-semibold text-orika-cream">{value}</p>
+      <p className="text-sm font-semibold text-brand-cream">{value}</p>
     </div>
   );
 }

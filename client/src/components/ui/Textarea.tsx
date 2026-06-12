@@ -19,7 +19,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             htmlFor={inputId}
             className={cn(
               "block font-medium text-[0.7rem] tracking-widest uppercase mb-2 ml-1",
-              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+              isDark ? "text-brand-smoke" : "text-text-on-light-muted",
             )}
           >
             {label}
@@ -32,8 +32,8 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             "w-full rounded-xl py-3 px-4 text-sm font-medium transition-all resize-vertical min-h-[100px]",
             "focus:outline-none focus:ring-1",
             isDark
-              ? "bg-orika-charcoal text-orika-cream border border-orika-graphite focus:border-orika-gold focus:ring-orika-gold placeholder-orika-smoke/60"
-              : "bg-white text-orika-black border border-orika-cloud/40 focus:border-orika-black focus:ring-orika-black placeholder-orika-cloud/70 shadow-sm",
+              ? "bg-brand-charcoal text-brand-cream border border-brand-graphite focus:border-brand-accent focus:ring-brand-accent placeholder-brand-smoke/60"
+              : "bg-white text-brand-black border border-brand-cloud/40 focus:border-brand-black focus:ring-brand-black placeholder-brand-cloud/70 shadow-sm",
             error && "border-state-danger focus:border-state-danger",
             className,
           )}
@@ -48,7 +48,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           <p
             className={cn(
               "mt-1.5 text-[0.7rem] ml-1",
-              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+              isDark ? "text-brand-smoke" : "text-text-on-light-muted",
             )}
           >
             {hint}

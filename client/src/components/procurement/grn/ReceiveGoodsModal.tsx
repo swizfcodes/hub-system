@@ -124,7 +124,7 @@ export function ReceiveGoodsModal({ open, onClose, po, onReceived }: Props) {
           </Button>
         }
       >
-        <p className="text-sm text-orika-black/80">
+        <p className="text-sm text-brand-black/80">
           Every line on this PO has been fully received. Nothing more to log.
         </p>
       </Modal>
@@ -208,12 +208,12 @@ export function ReceiveGoodsModal({ open, onClose, po, onReceived }: Props) {
                   "rounded-xl border p-3 sm:p-4 transition-colors",
                   isPartial
                     ? "border-state-warn/40 bg-state-warn/[0.05]"
-                    : "border-orika-cloud/40 bg-white/40",
+                    : "border-brand-cloud/40 bg-white/40",
                 )}
               >
                 <div className="flex items-start gap-3 flex-wrap">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-orika-black">
+                    <div className="font-medium text-sm text-brand-black">
                       {line.product_name ?? "Product"}
                     </div>
                     <div className="text-[0.65rem] font-mono text-text-on-light-muted mt-0.5">
@@ -300,8 +300,8 @@ export function ReceiveGoodsModal({ open, onClose, po, onReceived }: Props) {
           })}
         </div>
 
-        <div className="rounded-xl bg-orika-cream/40 border border-orika-cloud/40 p-3 flex items-start gap-2 text-xs text-orika-black/70">
-          <Check className="w-3.5 h-3.5 text-living-sage mt-0.5 shrink-0" />
+        <div className="rounded-xl bg-brand-cream/40 border border-brand-cloud/40 p-3 flex items-start gap-2 text-xs text-brand-black/70">
+          <Check className="w-3.5 h-3.5 text-accent2 mt-0.5 shrink-0" />
           <p>
             Accepted quantities are added to stock immediately. Rejected lines
             stay with the supplier.
@@ -328,7 +328,7 @@ function QuickChip({
       className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] uppercase tracking-widest font-medium cursor-pointer transition-opacity hover:opacity-80",
         tone === "sage"
-          ? "bg-living-sage/15 text-living-sage"
+          ? "bg-accent2/15 text-accent2"
           : "bg-state-danger/15 text-state-danger",
       )}
     >

@@ -129,25 +129,25 @@ export default function StorefrontContent() {
         />
 
         {isLoading ? (
-          <p className="text-sm text-orika-smoke py-12 text-center">Loading…</p>
+          <p className="text-sm text-brand-smoke py-12 text-center">Loading…</p>
         ) : (
           <>
             {/* ── Hero ── */}
-            <section className="rounded-2xl border border-white/5 bg-orika-charcoal p-5 space-y-4">
-              <h3 className="font-display text-lg text-orika-cream">Hero</h3>
+            <section className="rounded-2xl border border-white/5 bg-brand-charcoal p-5 space-y-4">
+              <h3 className="font-display text-lg text-brand-cream">Hero</h3>
 
               <label className="block">
-                <span className="text-xs text-orika-smoke">Eyebrow</span>
+                <span className="text-xs text-brand-smoke">Eyebrow</span>
                 <Input
                   value={form.hero_eyebrow}
                   onChange={(e) => set("hero_eyebrow", e.target.value)}
-                  placeholder="Orika Living · Lagos, Nigeria"
+                  placeholder="Your brand · Lagos, Nigeria"
                 />
               </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-xs text-orika-smoke">
+                  <span className="text-xs text-brand-smoke">
                     Headline (first line)
                   </span>
                   <Input
@@ -157,7 +157,7 @@ export default function StorefrontContent() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs text-orika-smoke">
+                  <span className="text-xs text-brand-smoke">
                     Headline accent (italic word)
                   </span>
                   <Input
@@ -171,19 +171,19 @@ export default function StorefrontContent() {
               </div>
 
               <label className="block">
-                <span className="text-xs text-orika-smoke">Note</span>
+                <span className="text-xs text-brand-smoke">Note</span>
                 <textarea
                   value={form.hero_note}
                   onChange={(e) => set("hero_note", e.target.value)}
                   rows={3}
-                  className="w-full mt-1 rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                  className="w-full mt-1 rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
                   placeholder="Premium reed diffusers crafted to transform a room…"
                 />
               </label>
 
               {/* Background image — upload OR paste a URL */}
               <div>
-                <span className="text-xs text-orika-smoke">
+                <span className="text-xs text-brand-smoke">
                   Background image
                 </span>
                 <div className="flex flex-col gap-2 mt-1 sm:flex-row sm:items-center">
@@ -201,7 +201,7 @@ export default function StorefrontContent() {
                     className="flex-1"
                   />
                   <label className="cursor-pointer">
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-orika-smoke hover:border-orika-gold/40 hover:text-orika-gold transition-all">
+                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent transition-all">
                       <Upload className="h-3.5 w-3.5" />
                       {uploading ? "Uploading…" : "Upload"}
                     </span>
@@ -217,20 +217,20 @@ export default function StorefrontContent() {
                     />
                   </label>
                 </div>
-                <span className="text-[0.65rem] text-orika-smoke/70">
+                <span className="text-[0.65rem] text-brand-smoke/70">
                   Leave blank to use the bundled banner.
                 </span>
               </div>
             </section>
 
             {/* ── Range section header ── */}
-            <section className="rounded-2xl border border-white/5 bg-orika-charcoal p-5 space-y-4">
-              <h3 className="font-display text-lg text-orika-cream">
+            <section className="rounded-2xl border border-white/5 bg-brand-charcoal p-5 space-y-4">
+              <h3 className="font-display text-lg text-brand-cream">
                 “Range” section
               </h3>
 
               <label className="block">
-                <span className="text-xs text-orika-smoke">Eyebrow</span>
+                <span className="text-xs text-brand-smoke">Eyebrow</span>
                 <Input
                   value={form.range_eyebrow}
                   onChange={(e) => set("range_eyebrow", e.target.value)}
@@ -238,7 +238,7 @@ export default function StorefrontContent() {
                 />
               </label>
               <label className="block">
-                <span className="text-xs text-orika-smoke">Title</span>
+                <span className="text-xs text-brand-smoke">Title</span>
                 <Input
                   value={form.range_title}
                   onChange={(e) => set("range_title", e.target.value)}
@@ -246,12 +246,12 @@ export default function StorefrontContent() {
                 />
               </label>
               <label className="block">
-                <span className="text-xs text-orika-smoke">Subtitle</span>
+                <span className="text-xs text-brand-smoke">Subtitle</span>
                 <textarea
                   value={form.range_subtitle}
                   onChange={(e) => set("range_subtitle", e.target.value)}
                   rows={2}
-                  className="w-full mt-1 rounded-xl border border-white/10 bg-orika-graphite/30 px-3 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                  className="w-full mt-1 rounded-xl border border-white/10 bg-brand-graphite/30 px-3 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
                   placeholder="From flagship statement pieces to the compact car diffuser…"
                 />
               </label>

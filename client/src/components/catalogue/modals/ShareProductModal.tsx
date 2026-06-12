@@ -89,17 +89,17 @@ export function ShareProductModal({ open, onClose, productId }: Props) {
               <img
                 src={data.image_url}
                 alt={data.name}
-                className="w-16 h-16 rounded-xl object-cover bg-orika-cloud/30 shrink-0"
+                className="w-16 h-16 rounded-xl object-cover bg-brand-cloud/30 shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-xl bg-orika-cloud/30 shrink-0" />
+              <div className="w-16 h-16 rounded-xl bg-brand-cloud/30 shrink-0" />
             )}
             <div className="min-w-0">
-              <div className="text-sm font-medium text-orika-charcoal truncate">
+              <div className="text-sm font-medium text-brand-charcoal truncate">
                 {data.name}
               </div>
               {data.price != null && data.price > 0 && (
-                <div className="text-xs text-orika-smoke">
+                <div className="text-xs text-brand-smoke">
                   {data.currency} {Number(data.price).toLocaleString()}
                 </div>
               )}
@@ -108,12 +108,12 @@ export function ShareProductModal({ open, onClose, productId }: Props) {
 
           {/* Link row */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+            <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
               Link
             </label>
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 rounded-xl border border-orika-cloud/40 bg-white px-3 py-2.5 text-sm text-orika-charcoal min-w-0">
-                <Link2 className="w-3.5 h-3.5 text-orika-smoke shrink-0" />
+              <div className="flex-1 flex items-center gap-2 rounded-xl border border-brand-cloud/40 bg-white px-3 py-2.5 text-sm text-brand-charcoal min-w-0">
+                <Link2 className="w-3.5 h-3.5 text-brand-smoke shrink-0" />
                 <span className="truncate">{url}</span>
               </div>
               <Button
@@ -134,14 +134,14 @@ export function ShareProductModal({ open, onClose, productId }: Props) {
 
           {/* Editable message */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+            <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
               Message
             </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={5}
-              className="w-full rounded-xl border border-orika-cloud/40 bg-white px-3 py-2.5 text-sm text-orika-charcoal resize-y"
+              className="w-full rounded-xl border border-brand-cloud/40 bg-white px-3 py-2.5 text-sm text-brand-charcoal resize-y"
             />
           </div>
 
@@ -157,13 +157,13 @@ export function ShareProductModal({ open, onClose, productId }: Props) {
             </a>
             <a
               href={mailHref}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-orika-charcoal text-orika-cream text-sm font-medium py-2.5 hover:opacity-90 transition-opacity"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-charcoal text-brand-cream text-sm font-medium py-2.5 hover:opacity-90 transition-opacity"
             >
               <Mail className="w-4 h-4" /> Email
             </a>
             <button
               onClick={() => copy(shareText, "msg")}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-orika-cloud/50 text-orika-charcoal text-sm font-medium py-2.5 hover:bg-orika-cloud/10 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-cloud/50 text-brand-charcoal text-sm font-medium py-2.5 hover:bg-brand-cloud/10 transition-colors"
             >
               {copied === "msg" ? (
                 <Check className="w-4 h-4 text-emerald-500" />
@@ -176,7 +176,7 @@ export function ShareProductModal({ open, onClose, productId }: Props) {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-orika-cloud/50 text-orika-charcoal text-sm font-medium py-2.5 hover:bg-orika-cloud/10 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-cloud/50 text-brand-charcoal text-sm font-medium py-2.5 hover:bg-brand-cloud/10 transition-colors"
             >
               <ExternalLink className="w-4 h-4" /> Open
             </a>

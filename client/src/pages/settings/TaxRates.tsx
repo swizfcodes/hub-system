@@ -110,14 +110,14 @@ export default function TaxRates() {
           <div className="space-y-3">
             {rates.map((r) => (
               <Card key={r.tax_id} className="p-5 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-orika-black/40 flex items-center justify-center shrink-0">
-                  <span className="font-mono text-xl text-orika-gold">
+                <div className="w-14 h-14 rounded-xl bg-brand-black/40 flex items-center justify-center shrink-0">
+                  <span className="font-mono text-xl text-brand-accent">
                     {(r.rate * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-medium text-orika-cream">
+                    <span className="font-medium text-brand-cream">
                       {r.tax_name}
                     </span>
                     <Badge
@@ -131,7 +131,7 @@ export default function TaxRates() {
                       {r.applies_to}
                     </Badge>
                   </div>
-                  <div className="text-xs text-orika-smoke">
+                  <div className="text-xs text-brand-smoke">
                     Effective {fmtDate(r.effective_from)}
                     {r.effective_to
                       ? ` → ${fmtDate(r.effective_to)}`

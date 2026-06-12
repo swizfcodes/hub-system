@@ -74,13 +74,13 @@ export function RoleNavEditor({ roleId, initial }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-orika-graphite bg-orika-charcoal/40 p-4">
+    <div className="rounded-2xl border border-brand-graphite bg-brand-charcoal/40 p-4">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div>
-          <h4 className="text-sm font-semibold text-orika-cream">
+          <h4 className="text-sm font-semibold text-brand-cream">
             Default Navigation
           </h4>
-          <p className="text-[0.7rem] text-orika-smoke mt-0.5">
+          <p className="text-[0.7rem] text-brand-smoke mt-0.5">
             The top-{NAV_PRIORITY_MAX} grid users on this role see until they
             pin their own. Drag to reorder.
           </p>
@@ -90,7 +90,7 @@ export function RoleNavEditor({ roleId, initial }: Props) {
             <button
               onClick={() => save.mutate(null)}
               disabled={save.isPending}
-              className="flex items-center gap-1 text-[0.7rem] text-orika-smoke hover:text-orika-cream transition-colors"
+              className="flex items-center gap-1 text-[0.7rem] text-brand-smoke hover:text-brand-cream transition-colors"
               title="Clear role default (fall back to global order)"
             >
               <RotateCcw className="w-3 h-3" /> Clear
@@ -102,8 +102,8 @@ export function RoleNavEditor({ roleId, initial }: Props) {
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               dirty
-                ? "bg-orika-gold text-orika-black hover:bg-orika-gold/90"
-                : "bg-orika-graphite text-orika-smoke cursor-not-allowed",
+                ? "bg-brand-accent text-brand-black hover:bg-brand-accent/90"
+                : "bg-brand-graphite text-brand-smoke cursor-not-allowed",
             )}
           >
             <Save className="w-3.5 h-3.5" /> Save
@@ -131,21 +131,21 @@ export function RoleNavEditor({ roleId, initial }: Props) {
               className={cn(
                 "inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[0.7rem]",
                 locked
-                  ? "border-orika-gold/30 bg-orika-gold/10 text-orika-gold"
-                  : "border-white/10 bg-orika-black/40 text-orika-cream cursor-grab",
+                  ? "border-brand-accent/30 bg-brand-accent/10 text-brand-accent"
+                  : "border-white/10 bg-brand-black/40 text-brand-cream cursor-grab",
                 dragKey === k && "opacity-40",
               )}
             >
               {!locked && (
-                <GripVertical className="w-3 h-3 text-orika-smoke" />
+                <GripVertical className="w-3 h-3 text-brand-smoke" />
               )}
-              <span className="text-orika-smoke tabular-nums">{i + 1}.</span>
+              <span className="text-brand-smoke tabular-nums">{i + 1}.</span>
               {m.label}
               {!locked && (
                 <button
                   onClick={() => remove(k)}
                   aria-label={`Remove ${m.label}`}
-                  className="ml-0.5 text-orika-smoke hover:text-orika-cream"
+                  className="ml-0.5 text-brand-smoke hover:text-brand-cream"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -162,7 +162,7 @@ export function RoleNavEditor({ roleId, initial }: Props) {
             <button
               key={m.key}
               onClick={() => add(m.key)}
-              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-white/10 px-2 py-1 text-[0.7rem] text-orika-smoke hover:text-orika-cream hover:border-orika-gold/40 transition-colors"
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-white/10 px-2 py-1 text-[0.7rem] text-brand-smoke hover:text-brand-cream hover:border-brand-accent/40 transition-colors"
             >
               <Plus className="w-3 h-3" /> {m.label}
             </button>

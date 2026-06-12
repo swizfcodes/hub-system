@@ -78,8 +78,8 @@ export function OrdersView() {
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                 status === opt.value
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/80",
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/80",
               )}
             >
               {opt.label}
@@ -89,7 +89,7 @@ export function OrdersView() {
 
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-orika-smoke" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-smoke" />
             <Input
               placeholder="Search orders..."
               value={search}
@@ -117,8 +117,8 @@ export function OrdersView() {
             className={cn(
               "rounded-full px-3 py-1 text-[10px] font-medium transition-colors border",
               source === opt.value
-                ? "border-orika-gold/50 bg-orika-gold/10 text-orika-gold"
-                : "border-white/5 bg-orika-charcoal text-orika-smoke hover:border-white/10",
+                ? "border-brand-accent/50 bg-brand-accent/10 text-brand-accent"
+                : "border-white/5 bg-brand-charcoal text-brand-smoke hover:border-white/10",
             )}
           >
             {opt.label}
@@ -132,8 +132,8 @@ export function OrdersView() {
             className={cn(
               "rounded-full px-3 py-1 text-[10px] font-medium transition-colors border",
               fulfilmentType === opt.value
-                ? "border-orika-gold/50 bg-orika-gold/10 text-orika-gold"
-                : "border-white/5 bg-orika-charcoal text-orika-smoke hover:border-white/10",
+                ? "border-brand-accent/50 bg-brand-accent/10 text-brand-accent"
+                : "border-white/5 bg-brand-charcoal text-brand-smoke hover:border-white/10",
             )}
           >
             {opt.label}
@@ -162,7 +162,7 @@ export function OrdersView() {
         <div className="overflow-x-auto rounded-xl border border-white/5">
           <table className="w-full min-w-[800px] text-sm">
             <thead>
-              <tr className="border-b border-white/5 bg-orika-graphite/40">
+              <tr className="border-b border-white/5 bg-brand-graphite/40">
                 {[
                   "Order",
                   "Customer",
@@ -176,7 +176,7 @@ export function OrdersView() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -195,34 +195,34 @@ export function OrdersView() {
                   <tr
                     key={o.order_id}
                     onClick={() => navigate(`/sales/orders/${o.order_id}`)}
-                    className="cursor-pointer bg-orika-charcoal transition-colors hover:bg-orika-graphite/30"
+                    className="cursor-pointer bg-brand-charcoal transition-colors hover:bg-brand-graphite/30"
                   >
-                    <td className="px-4 py-3 font-mono text-xs font-medium text-orika-gold">
+                    <td className="px-4 py-3 font-mono text-xs font-medium text-brand-accent">
                       {o.order_number}
                     </td>
-                    <td className="px-4 py-3 font-medium text-orika-cream">
+                    <td className="px-4 py-3 font-medium text-brand-cream">
                       {o.contact_name ?? "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-orika-graphite/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-orika-smoke">
+                      <span className="inline-flex items-center rounded-full bg-brand-graphite/60 px-2 py-0.5 text-[10px] font-medium tracking-wide text-brand-smoke">
                         {sourceLabel}
                       </span>
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cream">
+                    <td className="px-4 py-3 tabular-nums text-brand-cream">
                       {fmtMoney(o.total_amount, currency)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-orika-cloud">
+                    <td className="px-4 py-3 tabular-nums text-brand-cloud">
                       {fmtMoney(o.amount_paid, currency)}
                     </td>
                     <td
                       className={cn(
                         "px-4 py-3 tabular-nums font-medium",
-                        isOverdue ? "text-red-400" : "text-orika-cloud",
+                        isOverdue ? "text-red-400" : "text-brand-cloud",
                       )}
                     >
                       {fmtMoney(o.amount_outstanding, currency)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-orika-smoke">
+                    <td className="px-4 py-3 text-xs text-brand-smoke">
                       {FULFILMENT_LABELS[o.fulfilment_type]}
                     </td>
                     <td className="px-4 py-3">
@@ -247,7 +247,7 @@ export function OrdersView() {
                             Approve
                           </button>
                         )}
-                        <span className="text-xs text-orika-smoke">
+                        <span className="text-xs text-brand-smoke">
                           {fmtDate(o.created_at)}
                         </span>
                       </div>
@@ -271,7 +271,7 @@ export function OrdersView() {
           >
             Previous
           </Button>
-          <span className="flex items-center text-xs text-orika-smoke">
+          <span className="flex items-center text-xs text-brand-smoke">
             Page {page}
           </span>
           <Button

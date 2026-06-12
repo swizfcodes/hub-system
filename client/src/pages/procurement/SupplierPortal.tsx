@@ -1,3 +1,4 @@
+import { useBranding } from "@/providers/ThemeProvider";
 import { useParams } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -31,6 +32,10 @@ import { showToast } from "@hooks/useToast";
  * here; the parse happens on submit.
  */
 export default function SupplierPortal() {
+  const { platform } = useBranding();
+  const nameWords = (platform.product_name || "Hub").split(" ");
+  const nameTail = nameWords.length > 1 ? nameWords.pop() : "";
+  const nameHead = nameWords.join(" ");
   const { token } = useParams();
   const [submitted, setSubmitted] = useState(false);
   // Per-line quote inputs keyed by line index. Boxes start empty (undefined).
@@ -69,26 +74,27 @@ export default function SupplierPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-orika-black text-orika-cream bg-grid-noise font-body">
+    <div className="min-h-screen bg-brand-black text-brand-cream bg-grid-noise font-body">
       {/* Header */}
-      <header className="border-b border-orika-graphite">
+      <header className="border-b border-brand-graphite">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full border border-orika-gold/40 flex items-center justify-center">
-              <span className="font-display text-orika-gold">O</span>
+            <div className="w-10 h-10 rounded-full border border-brand-accent/40 flex items-center justify-center">
+              <span className="font-display text-brand-accent">O</span>
             </div>
             <div>
-              <div className="font-display text-orika-cream text-lg">
-                Orika <span className="text-orika-gold">Hub</span>
+              <div className="font-display text-brand-cream text-lg">
+                {nameHead}{" "}
+                {nameTail && <span className="text-brand-accent">{nameTail}</span>}
               </div>
-              <div className="text-[0.6rem] text-orika-smoke uppercase tracking-widest">
+              <div className="text-[0.6rem] text-brand-smoke uppercase tracking-widest">
                 Supplier Portal
               </div>
             </div>
           </div>
-          <div className="text-right text-[0.65rem] text-orika-smoke font-mono">
+          <div className="text-right text-[0.65rem] text-brand-smoke font-mono">
             Token:{" "}
-            <span className="text-orika-gold">{token?.slice(0, 8)}…</span>
+            <span className="text-brand-accent">{token?.slice(0, 8)}…</span>
           </div>
         </div>
       </header>
@@ -96,13 +102,13 @@ export default function SupplierPortal() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {submitted ? (
           <Card className="p-8 sm:p-10 text-center">
-            <div className="w-16 h-16 rounded-full bg-living-sage/20 text-living-sage flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 rounded-full bg-accent2/20 text-accent2 flex items-center justify-center mx-auto mb-5">
               <Check className="w-7 h-7" />
             </div>
-            <h1 className="font-display text-3xl text-orika-cream mb-2">
+            <h1 className="font-display text-3xl text-brand-cream mb-2">
               Thank you
             </h1>
-            <p className="text-sm text-orika-cloud max-w-md mx-auto">
+            <p className="text-sm text-brand-cloud max-w-md mx-auto">
               Your quote has been received. The buyer will be in touch within{" "}
               {rfq.response_deadline
                 ? `before ${rfq.response_deadline}`
@@ -113,17 +119,17 @@ export default function SupplierPortal() {
         ) : (
           <>
             <div className="mb-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orika-charcoal border border-orika-graphite text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-charcoal border border-brand-graphite text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-3">
                 <Building2 className="w-2.5 h-2.5" /> {rfq.business_name}
               </div>
-              <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
+              <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
                 {rfq.title}
               </h1>
-              <div className="text-xs text-orika-smoke font-mono mt-2">
+              <div className="text-xs text-brand-smoke font-mono mt-2">
                 {rfq.rfq_number}
               </div>
               {rfq.notes && (
-                <p className="mt-4 text-sm text-orika-cloud">{rfq.notes}</p>
+                <p className="mt-4 text-sm text-brand-cloud">{rfq.notes}</p>
               )}
               {rfq.response_deadline && (
                 <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-state-warn">
@@ -133,10 +139,10 @@ export default function SupplierPortal() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-orika-gold/30 bg-orika-gold/[0.04] p-4 mb-6 flex items-start gap-3">
-              <Sparkles className="w-4 h-4 text-orika-gold shrink-0 mt-0.5" />
-              <div className="text-sm text-orika-cloud">
-                <strong className="text-orika-cream">How this works:</strong>{" "}
+            <div className="rounded-2xl border border-brand-accent/30 bg-brand-accent/[0.04] p-4 mb-6 flex items-start gap-3">
+              <Sparkles className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
+              <div className="text-sm text-brand-cloud">
+                <strong className="text-brand-cream">How this works:</strong>{" "}
                 fill in your unit price, lead time, and any notes for each line.
                 Submit when ready. You can also upload an XLSX with the same
                 structure if you prefer.
@@ -162,18 +168,18 @@ export default function SupplierPortal() {
                 <Card key={line.line_id} className="p-4 sm:p-5">
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[0.6rem] uppercase tracking-widest text-orika-smoke font-mono">
+                      <span className="text-[0.6rem] uppercase tracking-widest text-brand-smoke font-mono">
                         Line {i + 1}
                       </span>
-                      <span className="text-[0.6rem] uppercase tracking-widest text-orika-gold">
+                      <span className="text-[0.6rem] uppercase tracking-widest text-brand-accent">
                         Need {line.quantity_needed} units
                       </span>
                     </div>
-                    <h3 className="font-medium text-orika-cream">
+                    <h3 className="font-medium text-brand-cream">
                       {line.description}
                     </h3>
                     {line.notes && (
-                      <p className="text-xs text-orika-smoke mt-1">
+                      <p className="text-xs text-brand-smoke mt-1">
                         {line.notes}
                       </p>
                     )}
@@ -219,15 +225,15 @@ export default function SupplierPortal() {
               ))}
 
               <Card className="p-4 sm:p-5">
-                <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke mb-2">
+                <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke mb-2">
                   Or upload an XLSX
                 </div>
-                <label className="rounded-xl border-2 border-dashed border-orika-graphite p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-orika-gold/40 transition-colors">
-                  <ArrowDown className="w-5 h-5 text-orika-smoke" />
-                  <span className="text-sm text-orika-cream">
+                <label className="rounded-xl border-2 border-dashed border-brand-graphite p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-brand-accent/40 transition-colors">
+                  <ArrowDown className="w-5 h-5 text-brand-smoke" />
+                  <span className="text-sm text-brand-cream">
                     Drop an XLSX file or click to browse
                   </span>
-                  <span className="text-[0.65rem] text-orika-smoke">
+                  <span className="text-[0.65rem] text-brand-smoke">
                     We'll parse it and pre-fill the line items above
                   </span>
                   <input type="file" accept=".xlsx,.csv" hidden />
@@ -249,9 +255,9 @@ export default function SupplierPortal() {
         )}
       </div>
 
-      <footer className="border-t border-orika-graphite mt-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 text-[0.6rem] text-orika-smoke text-center">
-          Powered by Orika Hub · Secure supplier portal
+      <footer className="border-t border-brand-graphite mt-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 text-[0.6rem] text-brand-smoke text-center">
+          Powered by {platform.product_name} · Secure supplier portal
         </div>
       </footer>
     </div>

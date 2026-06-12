@@ -26,7 +26,7 @@ export function ExpiryChip({
     danger: "bg-state-danger/15 text-state-danger border-state-danger/30",
     warn: "bg-state-warn/15 text-state-warn border-state-warn/30",
     info: "bg-state-info/15 text-state-info border-state-info/30",
-    sage: "bg-living-sage/15 text-living-sage border-living-sage/30",
+    sage: "bg-accent2/15 text-accent2 border-accent2/30",
   }[tone];
 
   const label =

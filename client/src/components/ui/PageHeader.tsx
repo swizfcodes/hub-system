@@ -18,11 +18,11 @@ export function PageHeader({
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="space-y-2">
         {crumbs && crumbs.length > 0 && <Breadcrumbs items={crumbs} />}
-        <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream leading-tight">
+        <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream leading-tight">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm text-orika-cloud max-w-2xl">{subtitle}</p>
+          <p className="text-sm text-brand-cloud max-w-2xl">{subtitle}</p>
         )}
       </div>
       {actions && (

@@ -34,7 +34,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             htmlFor={inputId}
             className={cn(
               "block font-medium text-[0.7rem] tracking-widest uppercase mb-2 ml-1",
-              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+              isDark ? "text-brand-smoke" : "text-text-on-light-muted",
             )}
           >
             {label}
@@ -42,7 +42,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orika-smoke/70 pointer-events-none">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 pointer-events-none">
               {leftIcon}
             </span>
           )}
@@ -55,8 +55,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               leftIcon && "pl-11",
               rightSlot && "pr-12",
               isDark
-                ? "bg-orika-charcoal text-orika-cream border border-orika-graphite focus:border-orika-gold focus:ring-orika-gold placeholder-orika-smoke/60"
-                : "bg-white text-orika-black border border-orika-cloud/40 focus:border-orika-black focus:ring-orika-black placeholder-orika-cloud/70 shadow-sm",
+                ? "bg-brand-charcoal text-brand-cream border border-brand-graphite focus:border-brand-accent focus:ring-brand-accent placeholder-brand-smoke/60"
+                : "bg-white text-brand-black border border-brand-cloud/40 focus:border-brand-black focus:ring-brand-black placeholder-brand-cloud/70 shadow-sm",
               error &&
                 "border-state-danger focus:border-state-danger focus:ring-state-danger",
               className,
@@ -85,7 +85,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={`${inputId}-hint`}
             className={cn(
               "mt-1.5 text-[0.7rem] ml-1",
-              isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+              isDark ? "text-brand-smoke" : "text-text-on-light-muted",
             )}
           >
             {hint}

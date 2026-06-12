@@ -103,7 +103,7 @@ export function COATable({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search accounts…"
-          className="rounded-xl border border-white/10 bg-orika-charcoal px-3 py-2 text-sm text-orika-cream placeholder:text-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none"
+          className="rounded-xl border border-white/10 bg-brand-charcoal px-3 py-2 text-sm text-brand-cream placeholder:text-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none"
         />
         <div className="flex gap-1.5 flex-wrap">
           {typeButtons.map((t) => (
@@ -113,8 +113,8 @@ export function COATable({
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors",
                 typeFilter === t
-                  ? "bg-orika-gold text-orika-black"
-                  : "bg-orika-graphite text-orika-cloud hover:bg-orika-graphite/70",
+                  ? "bg-brand-accent text-brand-black"
+                  : "bg-brand-graphite text-brand-cloud hover:bg-brand-graphite/70",
               )}
             >
               {t === "all" ? "All" : ACCOUNT_TYPE_META[t as AccountType].label}
@@ -126,12 +126,12 @@ export function COATable({
       <div className="overflow-x-auto rounded-2xl border border-white/5">
         <table className="w-full min-w-[600px] text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-orika-charcoal">
+            <tr className="border-b border-white/5 bg-brand-charcoal">
               {["Code", "Account Name", "Type", "Subtype", "Status", ""].map(
                 (h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                    className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                   >
                     {h}
                   </th>
@@ -144,19 +144,19 @@ export function COATable({
               <tr
                 key={acc.account_id}
                 className={cn(
-                  "bg-orika-charcoal hover:bg-orika-graphite/20 transition-colors",
+                  "bg-brand-charcoal hover:bg-brand-graphite/20 transition-colors",
                   !acc.is_active && "opacity-50",
                 )}
               >
-                <td className="px-4 py-3 font-mono text-xs text-orika-gold">
+                <td className="px-4 py-3 font-mono text-xs text-brand-accent">
                   {acc.account_code}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-orika-cream">{acc.account_name}</span>
+                    <span className="text-brand-cream">{acc.account_name}</span>
                     {acc.is_system && (
                       <span title="System account">
-                        <Lock className="h-3 w-3 text-orika-smoke/50" />
+                        <Lock className="h-3 w-3 text-brand-smoke/50" />
                       </span>
                     )}
                   </div>
@@ -164,7 +164,7 @@ export function COATable({
                 <td className="px-4 py-3">
                   <AccountTypeBadge type={acc.account_type} />
                 </td>
-                <td className="px-4 py-3 text-orika-smoke text-xs capitalize">
+                <td className="px-4 py-3 text-brand-smoke text-xs capitalize">
                   {acc.account_subtype?.replace(/_/g, " ") ?? "—"}
                 </td>
                 <td className="px-4 py-3">
@@ -177,14 +177,14 @@ export function COATable({
                     <button
                       onClick={() => onLedger(acc)}
                       title="View Ledger"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onEdit(acc)}
                       title="Edit"
-                      className="text-orika-smoke hover:text-orika-gold transition-colors"
+                      className="text-brand-smoke hover:text-brand-accent transition-colors"
                     >
                       <svg
                         className="h-4 w-4"
@@ -208,7 +208,7 @@ export function COATable({
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-8 text-center text-sm text-orika-smoke"
+                  className="px-4 py-8 text-center text-sm text-brand-smoke"
                 >
                   No accounts match your filter.
                 </td>
@@ -516,7 +516,7 @@ export function ManualJournalModal({
 
         {/* Journal lines */}
         <div className="space-y-2">
-          <div className="grid grid-cols-12 gap-2 text-[0.65rem] uppercase tracking-widest text-orika-smoke px-1">
+          <div className="grid grid-cols-12 gap-2 text-[0.65rem] uppercase tracking-widest text-brand-smoke px-1">
             <div className="col-span-4">Account</div>
             <div className="col-span-2">Debit (₦)</div>
             <div className="col-span-2">Credit (₦)</div>
@@ -588,7 +588,7 @@ export function ManualJournalModal({
                   <button
                     type="button"
                     onClick={() => remove(i)}
-                    className="text-orika-smoke hover:text-red-400 transition-colors"
+                    className="text-brand-smoke hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -602,19 +602,19 @@ export function ManualJournalModal({
             onClick={() =>
               append({ account_id: "", debit: 0, credit: 0, description: "" })
             }
-            className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-gold transition-colors mt-1"
+            className="flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-accent transition-colors mt-1"
           >
             <Plus className="h-3.5 w-3.5" /> Add line
           </button>
         </div>
 
         {/* Totals row */}
-        <div className="grid grid-cols-12 gap-2 border-t border-orika-graphite pt-2 text-sm font-semibold">
-          <div className="col-span-4 text-orika-smoke">Totals</div>
+        <div className="grid grid-cols-12 gap-2 border-t border-brand-graphite pt-2 text-sm font-semibold">
+          <div className="col-span-4 text-brand-smoke">Totals</div>
           <div
             className={cn(
               "col-span-2 tabular-nums",
-              totalDebit > 0 ? "text-orika-cream" : "text-orika-smoke/40",
+              totalDebit > 0 ? "text-brand-cream" : "text-brand-smoke/40",
             )}
           >
             {fmtMoney(totalDebit, currency)}
@@ -622,7 +622,7 @@ export function ManualJournalModal({
           <div
             className={cn(
               "col-span-2 tabular-nums",
-              totalCredit > 0 ? "text-orika-cream" : "text-orika-smoke/40",
+              totalCredit > 0 ? "text-brand-cream" : "text-brand-smoke/40",
             )}
           >
             {fmtMoney(totalCredit, currency)}
@@ -670,21 +670,21 @@ export function JournalDetail({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <p className="text-orika-smoke text-xs">Entry Number</p>
-          <p className="font-mono text-orika-gold">{entry.entry_number}</p>
+          <p className="text-brand-smoke text-xs">Entry Number</p>
+          <p className="font-mono text-brand-accent">{entry.entry_number}</p>
         </div>
         <div>
-          <p className="text-orika-smoke text-xs">Date</p>
-          <p className="text-orika-cream">{fmtDate(entry.entry_date)}</p>
+          <p className="text-brand-smoke text-xs">Date</p>
+          <p className="text-brand-cream">{fmtDate(entry.entry_date)}</p>
         </div>
         <div>
-          <p className="text-orika-smoke text-xs">Reference</p>
-          <p className="text-orika-cream">
+          <p className="text-brand-smoke text-xs">Reference</p>
+          <p className="text-brand-cream">
             {REFERENCE_TYPE_LABEL[entry.reference_type] ?? entry.reference_type}
           </p>
         </div>
         <div>
-          <p className="text-orika-smoke text-xs">Status</p>
+          <p className="text-brand-smoke text-xs">Status</p>
           {entry.is_reversed ? (
             <Badge tone="neutral" size="xs">
               Reversed
@@ -700,11 +700,11 @@ export function JournalDetail({
       <div className="overflow-x-auto rounded-xl border border-white/5">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-orika-graphite/30">
+            <tr className="border-b border-white/5 bg-brand-graphite/30">
               {["Account", "Narration", "Debit", "Credit"].map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2 text-left text-[0.65rem] uppercase tracking-widest text-orika-smoke"
+                  className="px-3 py-2 text-left text-[0.65rem] uppercase tracking-widest text-brand-smoke"
                 >
                   {h}
                 </th>
@@ -713,35 +713,35 @@ export function JournalDetail({
           </thead>
           <tbody className="divide-y divide-white/5">
             {(entry.lines ?? []).map((line, i) => (
-              <tr key={i} className="bg-orika-charcoal">
+              <tr key={i} className="bg-brand-charcoal">
                 <td className="px-3 py-2">
-                  <p className="font-mono text-xs text-orika-gold">
+                  <p className="font-mono text-xs text-brand-accent">
                     {line.account_code}
                   </p>
-                  <p className="text-orika-cloud">{line.account_name}</p>
+                  <p className="text-brand-cloud">{line.account_name}</p>
                 </td>
-                <td className="px-3 py-2 text-orika-smoke">
+                <td className="px-3 py-2 text-brand-smoke">
                   {line.description ?? "—"}
                 </td>
-                <td className="px-3 py-2 tabular-nums text-orika-cream">
+                <td className="px-3 py-2 tabular-nums text-brand-cream">
                   {line.debit > 0 ? fmtMoney(line.debit, currency) : "—"}
                 </td>
-                <td className="px-3 py-2 tabular-nums text-orika-cream">
+                <td className="px-3 py-2 tabular-nums text-brand-cream">
                   {line.credit > 0 ? fmtMoney(line.credit, currency) : "—"}
                 </td>
               </tr>
             ))}
-            <tr className="border-t border-white/10 bg-orika-graphite/20 font-semibold">
+            <tr className="border-t border-white/10 bg-brand-graphite/20 font-semibold">
               <td
                 colSpan={2}
-                className="px-3 py-2 text-orika-smoke text-xs uppercase tracking-wide"
+                className="px-3 py-2 text-brand-smoke text-xs uppercase tracking-wide"
               >
                 Totals
               </td>
-              <td className="px-3 py-2 tabular-nums text-orika-cream">
+              <td className="px-3 py-2 tabular-nums text-brand-cream">
                 {fmtMoney(totalDebit, currency)}
               </td>
-              <td className="px-3 py-2 tabular-nums text-orika-cream">
+              <td className="px-3 py-2 tabular-nums text-brand-cream">
                 {fmtMoney(totalCredit, currency)}
               </td>
             </tr>

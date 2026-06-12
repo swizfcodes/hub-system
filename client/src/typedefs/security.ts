@@ -243,7 +243,5 @@ export const MODULE_LABELS: Record<string, string> = {
   tax: "Tax",
 };
 
-export const BUSINESS_LABELS: Record<string, string> = {
-  jewelry: "Bejewelled",
-  diffusers: "Orika Living",
-};
+// Business display names now come from GET /api/branding
+// (useBranding().businessLabel) — never hardcode them.

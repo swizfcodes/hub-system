@@ -33,11 +33,11 @@ export default function ContactLoyaltyPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="text-orika-smoke hover:text-orika-cream transition-colors"
+          className="text-brand-smoke hover:text-brand-cream transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-semibold text-orika-cream">
+        <h1 className="text-lg font-semibold text-brand-cream">
           Customer Loyalty
         </h1>
       </div>
@@ -83,7 +83,7 @@ export function ContactLoyaltyPanel({
   if (!data) {
     return (
       <div className="py-8 text-center rounded-2xl border border-white/5">
-        <p className="text-sm text-orika-smoke">
+        <p className="text-sm text-brand-smoke">
           No loyalty data for this customer.
         </p>
       </div>
@@ -113,8 +113,8 @@ export function ContactLoyaltyPanel({
 
       {/* Next tier nudge */}
       {ptsToNextTier !== null && nextTier && (
-        <div className="rounded-xl border border-orika-gold/15 bg-orika-gold/5 px-4 py-3 text-sm">
-          <span className="text-orika-smoke">
+        <div className="rounded-xl border border-brand-accent/15 bg-brand-accent/5 px-4 py-3 text-sm">
+          <span className="text-brand-smoke">
             {ptsToNextTier.toLocaleString()} more points to reach{" "}
           </span>
           <TierBadge tier={nextTier} size="xs" />
@@ -123,8 +123,8 @@ export function ContactLoyaltyPanel({
 
       {/* Benefits */}
       {tier && Object.keys(tier.benefits ?? {}).length > 0 && (
-        <div className="rounded-xl border border-white/5 bg-orika-charcoal px-4 py-3 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <div className="rounded-xl border border-white/5 bg-brand-charcoal px-4 py-3 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
             Current Benefits
           </p>
           <div className="space-y-1">
@@ -133,10 +133,10 @@ export function ContactLoyaltyPanel({
                 key={key}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-orika-cloud capitalize">
+                <span className="text-brand-cloud capitalize">
                   {key.replace(/_/g, " ")}
                 </span>
-                <span className="text-orika-cream font-medium">
+                <span className="text-brand-cream font-medium">
                   {typeof val === "boolean" ? (val ? "✓" : "✗") : String(val)}
                 </span>
               </div>
@@ -147,7 +147,7 @@ export function ContactLoyaltyPanel({
 
       {/* Transaction history */}
       <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+        <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
           Transaction History
         </p>
         <TransactionList transactions={transactions} />

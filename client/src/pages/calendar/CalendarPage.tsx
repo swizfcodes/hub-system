@@ -116,27 +116,27 @@ export default function CalendarPage() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigate(-1)}
-              className="rounded-lg p-2 text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+              className="rounded-lg p-2 text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
             >
               Today
             </button>
             <button
               onClick={() => navigate(1)}
-              className="rounded-lg p-2 text-orika-smoke hover:text-orika-cream hover:bg-orika-graphite/30 transition-colors"
+              className="rounded-lg p-2 text-brand-smoke hover:text-brand-cream hover:bg-brand-graphite/30 transition-colors"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <h2 className="text-lg font-semibold text-orika-cream">{title}</h2>
+          <h2 className="text-lg font-semibold text-brand-cream">{title}</h2>
 
-          <div className="ml-auto flex items-center gap-1 rounded-xl border border-white/5 bg-orika-charcoal p-1">
+          <div className="ml-auto flex items-center gap-1 rounded-xl border border-white/5 bg-brand-charcoal p-1">
             {(
               [
                 { key: "month", icon: LayoutGrid, label: "Month" },
@@ -150,8 +150,8 @@ export default function CalendarPage() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                   view === key
-                    ? "bg-orika-gold text-orika-black"
-                    : "text-orika-smoke hover:text-orika-cream",
+                    ? "bg-brand-accent text-brand-black"
+                    : "text-brand-smoke hover:text-brand-cream",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -210,7 +210,7 @@ export default function CalendarPage() {
           {/* Event detail panel */}
           {detailEvent && (
             <div className="w-full lg:w-72 shrink-0">
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5 sticky top-6">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5 sticky top-6">
                 <EventDetailPanel
                   event={detailEvent}
                   onEdit={() => {
@@ -226,8 +226,8 @@ export default function CalendarPage() {
           {/* Selected day panel (month view) */}
           {view === "month" && selectedDay && !detailEvent && (
             <div className="w-full lg:w-64 shrink-0">
-              <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4 sticky top-6 space-y-3">
-                <p className="text-sm font-semibold text-orika-cream">
+              <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4 sticky top-6 space-y-3">
+                <p className="text-sm font-semibold text-brand-cream">
                   {selectedDay.toLocaleDateString("en-NG", {
                     weekday: "long",
                     month: "long",
@@ -235,18 +235,18 @@ export default function CalendarPage() {
                   })}
                 </p>
                 {selectedEvents.length === 0 ? (
-                  <p className="text-xs text-orika-smoke">No events</p>
+                  <p className="text-xs text-brand-smoke">No events</p>
                 ) : (
                   selectedEvents.map((e) => (
                     <button
                       key={e.event_id}
                       onClick={() => setDetailEvent(e)}
-                      className="w-full text-left rounded-lg border border-white/5 bg-orika-graphite/30 px-3 py-2 hover:border-white/15 transition-colors"
+                      className="w-full text-left rounded-lg border border-white/5 bg-brand-graphite/30 px-3 py-2 hover:border-white/15 transition-colors"
                     >
-                      <p className="text-xs font-medium text-orika-cream truncate">
+                      <p className="text-xs font-medium text-brand-cream truncate">
                         {e.title}
                       </p>
-                      <p className="text-[10px] text-orika-smoke">
+                      <p className="text-[10px] text-brand-smoke">
                         {fmtTime(e.start_at)}
                       </p>
                     </button>
@@ -311,13 +311,13 @@ function MonthView({
   const currentMonth = currentDate.getMonth();
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden">
       {/* Day headers */}
       <div className="grid grid-cols-7 border-b border-white/5">
         {DAY_NAMES.map((d) => (
           <div
             key={d}
-            className="px-2 py-2 text-center text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+            className="px-2 py-2 text-center text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
           >
             {d}
           </div>
@@ -345,10 +345,10 @@ function MonthView({
                   onDoubleClick={() => onDayDoubleClick(day)}
                   className={cn(
                     "min-h-24 p-1.5 cursor-pointer transition-colors",
-                    isThisMonth ? "bg-transparent" : "bg-orika-graphite/10",
+                    isThisMonth ? "bg-transparent" : "bg-brand-graphite/10",
                     isSelected
-                      ? "bg-orika-gold/5"
-                      : "hover:bg-orika-graphite/20",
+                      ? "bg-brand-accent/5"
+                      : "hover:bg-brand-graphite/20",
                   )}
                 >
                   {/* Day number */}
@@ -356,9 +356,9 @@ function MonthView({
                     className={cn(
                       "mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
                       _isToday
-                        ? "bg-orika-gold text-orika-black font-bold"
+                        ? "bg-brand-accent text-brand-black font-bold"
                         : "",
-                      !isThisMonth ? "text-orika-smoke/40" : "text-orika-cloud",
+                      !isThisMonth ? "text-brand-smoke/40" : "text-brand-cloud",
                     )}
                   >
                     {day.getDate()}
@@ -374,7 +374,7 @@ function MonthView({
                       />
                     ))}
                     {dayEvents.length > 3 && (
-                      <p className="text-[9px] text-orika-smoke pl-1">
+                      <p className="text-[9px] text-brand-smoke pl-1">
                         +{dayEvents.length - 3} more
                       </p>
                     )}
@@ -415,25 +415,25 @@ function WeekView({
   const hours = Array.from({ length: 13 }, (_, i) => i + 7); // 7am – 7pm
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal overflow-hidden overflow-x-auto">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal overflow-hidden overflow-x-auto">
       {/* Day headers */}
       <div className="grid grid-cols-8 border-b border-white/5">
-        <div className="px-3 py-3 text-xs text-orika-smoke"></div>
+        <div className="px-3 py-3 text-xs text-brand-smoke"></div>
         {days.map((d, i) => (
           <div
             key={i}
             className={cn(
               "px-2 py-3 text-center",
-              isToday(d) && "bg-orika-gold/5",
+              isToday(d) && "bg-brand-accent/5",
             )}
           >
-            <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke">
+            <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke">
               {DAY_NAMES[d.getDay()]}
             </p>
             <p
               className={cn(
                 "text-sm font-semibold",
-                isToday(d) ? "text-orika-gold" : "text-orika-cream",
+                isToday(d) ? "text-brand-accent" : "text-brand-cream",
               )}
             >
               {d.getDate()}
@@ -450,7 +450,7 @@ function WeekView({
             className="grid grid-cols-8"
             style={{ minHeight: 48 }}
           >
-            <div className="px-3 py-1 text-[0.65rem] text-orika-smoke/60">
+            <div className="px-3 py-1 text-[0.65rem] text-brand-smoke/60">
               {hour % 12 === 0 ? 12 : hour % 12}
               {hour < 12 ? "am" : "pm"}
             </div>
@@ -466,7 +466,7 @@ function WeekView({
                 <div
                   key={di}
                   onClick={() => onSlotClick(slotDt.toISOString())}
-                  className="border-l border-white/5 p-0.5 cursor-pointer hover:bg-orika-graphite/10 transition-colors"
+                  className="border-l border-white/5 p-0.5 cursor-pointer hover:bg-brand-graphite/10 transition-colors"
                 >
                   {slotEvents.map((e) => {
                     const meta =
@@ -514,9 +514,9 @@ function ListView({
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/5 bg-orika-charcoal py-16 text-center">
-        <Calendar className="mx-auto h-10 w-10 text-orika-smoke/30 mb-3" />
-        <p className="text-sm text-orika-smoke">No events in this period</p>
+      <div className="rounded-2xl border border-white/5 bg-brand-charcoal py-16 text-center">
+        <Calendar className="mx-auto h-10 w-10 text-brand-smoke/30 mb-3" />
+        <p className="text-sm text-brand-smoke">No events in this period</p>
       </div>
     );
   }
@@ -529,17 +529,17 @@ function ListView({
           <button
             key={event.event_id}
             onClick={() => onEventClick(event)}
-            className="w-full flex items-start gap-4 rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4 text-left hover:border-white/15 hover:bg-orika-graphite/20 transition-all"
+            className="w-full flex items-start gap-4 rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4 text-left hover:border-white/15 hover:bg-brand-graphite/20 transition-all"
           >
             <div
               className="mt-1 h-3 w-3 rounded-full shrink-0"
               style={{ backgroundColor: meta.color }}
             />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-orika-cream truncate">
+              <p className="font-medium text-brand-cream truncate">
                 {event.title}
               </p>
-              <p className="text-xs text-orika-smoke mt-0.5">
+              <p className="text-xs text-brand-smoke mt-0.5">
                 {new Date(event.start_at).toLocaleDateString("en-NG", {
                   weekday: "short",
                   month: "short",
@@ -551,7 +551,7 @@ function ListView({
                   : `${fmtTime(event.start_at)} – ${fmtTime(event.end_at)}`}
               </p>
               {event.location && (
-                <p className="text-xs text-orika-smoke/60 mt-0.5">
+                <p className="text-xs text-brand-smoke/60 mt-0.5">
                   {event.location}
                 </p>
               )}

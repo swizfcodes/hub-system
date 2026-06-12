@@ -90,13 +90,13 @@ export default function BusinessSetupDetail() {
         ) : (
           <>
             {/* Header with accent stripe */}
-            <header className="relative mb-8 rounded-3xl overflow-hidden bg-orika-charcoal border border-orika-graphite">
+            <header className="relative mb-8 rounded-3xl overflow-hidden bg-brand-charcoal border border-brand-graphite">
               <div
                 className="absolute top-0 inset-x-0 h-1.5"
                 style={{ background: business.accent_colour }}
               />
               <div className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-5">
-                <div className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-orika-cream border border-orika-cloud/40 p-2 flex items-center justify-center">
+                <div className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-brand-cream border border-brand-cloud/40 p-2 flex items-center justify-center">
                   {business.logo_path ? (
                     <img
                       src={business.logo_path}
@@ -104,14 +104,14 @@ export default function BusinessSetupDetail() {
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    <span className="font-display text-4xl text-orika-black/70">
+                    <span className="font-display text-4xl text-brand-black/70">
                       {business.display_name[0]}
                     </span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream truncate">
+                    <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream truncate">
                       {business.display_name}
                     </h1>
                     {business.is_active ? (
@@ -124,10 +124,10 @@ export default function BusinessSetupDetail() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-orika-smoke truncate mt-1">
+                  <p className="text-sm text-brand-smoke truncate mt-1">
                     {business.legal_name}
                   </p>
-                  <p className="text-xs text-orika-smoke mt-0.5 font-mono">
+                  <p className="text-xs text-brand-smoke mt-0.5 font-mono">
                     {business.business_key}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export default function BusinessSetupDetail() {
             <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-6" />
 
             {/* Tab body — on cream surface */}
-            <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-8 border border-orika-cloud/30 shadow-lift">
+            <div className="bg-surface-light surface-light rounded-3xl p-6 sm:p-8 border border-brand-cloud/30 shadow-lift">
               {tab === "profile" && <ProfileTab business={business} />}
               {tab === "branding" && <BrandingTab business={business} />}
               {tab === "financial" && <FinancialTab business={business} />}

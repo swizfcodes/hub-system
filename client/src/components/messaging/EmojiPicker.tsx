@@ -38,7 +38,7 @@ export function EmojiPicker({ open, onClose, onPick, className }: Props) {
     <div
       ref={ref}
       className={cn(
-        "absolute z-20 grid grid-cols-8 gap-1 rounded-2xl border border-white/10 bg-orika-charcoal p-2.5 shadow-xl",
+        "absolute z-20 grid grid-cols-8 gap-1 rounded-2xl border border-white/10 bg-brand-charcoal p-2.5 shadow-xl",
         className,
       )}
     >

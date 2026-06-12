@@ -8,6 +8,7 @@
  *   · Formats     — the "Four formats" cards (store.signatures), full CRUD
  *   · Content     — homepage hero + section copy + background image
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles, Layers, LayoutTemplate } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
@@ -46,6 +47,7 @@ const STOREFRONT_AREAS: AppModule[] = [
 ];
 
 export default function StorefrontHome() {
+  const { businessLabel } = useBranding();
   return (
     <>
       <Topbar title="Storefront" subtitle="Settings · Storefront" />
@@ -60,7 +62,7 @@ export default function StorefrontHome() {
           />
           <Link
             to="/settings"
-            className="hidden sm:inline-flex items-center gap-2 text-xs text-orika-smoke hover:text-orika-cream transition-colors"
+            className="hidden sm:inline-flex items-center gap-2 text-xs text-brand-smoke hover:text-brand-cream transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Settings
@@ -68,13 +70,13 @@ export default function StorefrontHome() {
         </div>
 
         <header className="mb-10 animate-app-in">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
-            Orika Living
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
+            {businessLabel("diffusers") || "Storefront"}
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-5xl text-orika-cream leading-tight">
-            Storefront <span className="italic text-orika-gold">Content</span>
+          <h1 className="font-display font-light text-3xl sm:text-5xl text-brand-cream leading-tight">
+            Storefront <span className="italic text-brand-accent">Content</span>
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-orika-cloud max-w-2xl">
+          <p className="mt-3 text-sm sm:text-base text-brand-cloud max-w-2xl">
             Everything on the public storefront that's driven from the ERP —
             the homepage hero and section copy, the "Four formats" cards, and
             how each scent is presented. Product prices, stock and galleries
@@ -84,10 +86,10 @@ export default function StorefrontHome() {
 
         <section>
           <div className="flex items-center gap-4 mb-5">
-            <div className="text-[0.65rem] tracking-[0.18em] uppercase text-orika-gold">
+            <div className="text-[0.65rem] tracking-[0.18em] uppercase text-brand-accent">
               Areas
             </div>
-            <div className="flex-1 h-px bg-gradient-to-r from-orika-gold/30 to-transparent" />
+            <div className="flex-1 h-px bg-gradient-to-r from-brand-accent/30 to-transparent" />
           </div>
           <AppGrid modules={STOREFRONT_AREAS} />
         </section>

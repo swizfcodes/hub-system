@@ -114,11 +114,11 @@ export default function RFQNew() {
         </div>
 
         <header className="mb-6">
-          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-orika-gold mb-2">
+          <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
             New request for quote
           </p>
-          <h1 className="font-display font-light text-3xl sm:text-4xl text-orika-cream">
-            Source <span className="italic text-orika-gold">best value</span>
+          <h1 className="font-display font-light text-3xl sm:text-4xl text-brand-cream">
+            Source <span className="italic text-brand-accent">best value</span>
           </h1>
         </header>
 
@@ -148,7 +148,7 @@ export default function RFQNew() {
           {/* Line items */}
           <Card className="p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+              <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
                 Line items
               </h3>
               <Button
@@ -165,10 +165,10 @@ export default function RFQNew() {
               {fields.map((f, i) => (
                 <div
                   key={f.id}
-                  className="rounded-xl border border-orika-graphite bg-orika-black/30 p-3.5"
+                  className="rounded-xl border border-brand-graphite bg-brand-black/30 p-3.5"
                 >
                   <div className="flex items-start gap-2 mb-2">
-                    <span className="text-[0.6rem] text-orika-smoke font-mono uppercase tracking-widest mt-2 w-7">
+                    <span className="text-[0.6rem] text-brand-smoke font-mono uppercase tracking-widest mt-2 w-7">
                       L{i + 1}
                     </span>
                     <div className="flex-1 grid gap-3 sm:grid-cols-[2fr_2fr_auto_auto] items-end">
@@ -193,7 +193,7 @@ export default function RFQNew() {
                                 setQuickAddLineIndex(i);
                                 setQuickAddOpen(true);
                               }}
-                              className="px-2 py-2 rounded-xl bg-orika-gold/20 text-orika-gold hover:bg-orika-gold/30 transition-colors shrink-0"
+                              className="px-2 py-2 rounded-xl bg-brand-accent/20 text-brand-accent hover:bg-brand-accent/30 transition-colors shrink-0"
                               title="Quick-add new product"
                             >
                               <Plus className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function RFQNew() {
                       <button
                         type="button"
                         onClick={() => remove(i)}
-                        className="p-2 mt-6 text-orika-smoke hover:text-state-danger"
+                        className="p-2 mt-6 text-brand-smoke hover:text-state-danger"
                         aria-label="Remove line"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -267,12 +267,12 @@ export default function RFQNew() {
           {/* Invited suppliers */}
           <Card className="p-5 sm:p-6">
             <div className="flex items-start gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-orika-gold shrink-0 mt-0.5" />
+              <Sparkles className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent">
                   Invited suppliers
                 </h3>
-                <p className="text-xs text-orika-cloud mt-1">
+                <p className="text-xs text-brand-cloud mt-1">
                   Each will get a unique tokenised URL to submit their quote.
                   Pick at least one — pick many for competitive pricing.
                 </p>
@@ -284,11 +284,11 @@ export default function RFQNew() {
               render={({ field }) => (
                 <div className="grid gap-2 sm:grid-cols-2">
                   {suppliers.length === 0 ? (
-                    <p className="text-sm text-orika-smoke italic col-span-full">
+                    <p className="text-sm text-brand-smoke italic col-span-full">
                       No suppliers yet.{" "}
                       <Link
                         to="/procurement/suppliers"
-                        className="text-orika-gold underline"
+                        className="text-brand-accent underline"
                       >
                         Add one
                       </Link>{" "}
@@ -314,10 +314,10 @@ export default function RFQNew() {
                           }}
                           label={
                             <span>
-                              <strong className="text-orika-cream">
+                              <strong className="text-brand-cream">
                                 {s.display_name}
                               </strong>{" "}
-                              <span className="text-orika-smoke text-[0.6rem]">
+                              <span className="text-brand-smoke text-[0.6rem]">
                                 · {s.preferred_currency} · Net{" "}
                                 {s.payment_terms_days}d
                               </span>
@@ -336,7 +336,7 @@ export default function RFQNew() {
               </p>
             )}
             {invitedIds.length > 0 && (
-              <p className="mt-3 text-[0.65rem] text-orika-gold">
+              <p className="mt-3 text-[0.65rem] text-brand-accent">
                 {invitedIds.length} supplier{invitedIds.length > 1 ? "s" : ""}{" "}
                 will be invited
               </p>

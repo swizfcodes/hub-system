@@ -208,23 +208,23 @@ export default function CountSession() {
             active={stage === "setup"}
             done={stage !== "setup"}
           />
-          <span className="text-orika-graphite">─</span>
+          <span className="text-brand-graphite">─</span>
           <StageStep
             label="Count"
             active={stage === "count"}
             done={stage === "review"}
           />
-          <span className="text-orika-graphite">─</span>
+          <span className="text-brand-graphite">─</span>
           <StageStep label="Review" active={stage === "review"} done={false} />
         </div>
 
         {/* ── STAGE 1: SETUP ── */}
         {stage === "setup" && (
           <Card className="p-6 sm:p-8">
-            <h2 className="font-display text-2xl text-orika-cream mb-2">
+            <h2 className="font-display text-2xl text-brand-cream mb-2">
               Start a count
             </h2>
-            <p className="text-sm text-orika-cloud mb-6">
+            <p className="text-sm text-brand-cloud mb-6">
               Pick the location you'll walk. The system loads every product
               expected there. You count, system records the variances as a
               single batch of adjustments.
@@ -248,8 +248,8 @@ export default function CountSession() {
                 rows={3}
                 placeholder="What's the context? Quarterly count, post-event reconciliation, etc."
               />
-              <div className="rounded-xl bg-orika-charcoal/40 border border-orika-graphite p-3 text-[0.7rem] text-orika-cloud">
-                <strong className="text-orika-cream block mb-1">Tips</strong>
+              <div className="rounded-xl bg-brand-charcoal/40 border border-brand-graphite p-3 text-[0.7rem] text-brand-cloud">
+                <strong className="text-brand-cream block mb-1">Tips</strong>
                 <ul className="list-disc pl-4 space-y-0.5">
                   <li>
                     Use a phone — the layout reformats and the camera button
@@ -282,7 +282,7 @@ export default function CountSession() {
         {/* ── STAGE 2: COUNT ── */}
         {stage === "count" && (
           <>
-            <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end sticky top-16 z-20 bg-orika-black/70 backdrop-blur-md py-2 -mx-4 sm:-mx-8 px-4 sm:px-8 border-b border-orika-graphite">
+            <div className="mb-5 grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end sticky top-16 z-20 bg-brand-black/70 backdrop-blur-md py-2 -mx-4 sm:-mx-8 px-4 sm:px-8 border-b border-brand-graphite">
               <Input
                 ref={searchRef as React.Ref<HTMLInputElement>}
                 surface="dark"
@@ -323,7 +323,7 @@ export default function CountSession() {
                       "p-3",
                       counted &&
                         variance === 0 &&
-                        "border-living-sage/40 bg-living-sage/[0.04]",
+                        "border-accent2/40 bg-accent2/[0.04]",
                       counted &&
                         variance !== 0 &&
                         "border-state-warn/40 bg-state-warn/[0.05]",
@@ -338,18 +338,18 @@ export default function CountSession() {
                         size="sm"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-orika-cream truncate">
+                        <div className="text-sm text-brand-cream truncate">
                           {r.product_name}
                         </div>
-                        <div className="text-[0.6rem] font-mono text-orika-smoke">
+                        <div className="text-[0.6rem] font-mono text-brand-smoke">
                           {r.product_sku}
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+                        <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
                           System
                         </div>
-                        <div className="font-mono text-orika-cream">
+                        <div className="font-mono text-brand-cream">
                           {r.system_count}
                         </div>
                       </div>
@@ -363,9 +363,9 @@ export default function CountSession() {
                       <div
                         className={cn(
                           "w-16 text-center font-mono text-sm rounded-lg py-2",
-                          !counted && "text-orika-smoke",
-                          counted && variance === 0 && "text-living-sage",
-                          counted && variance > 0 && "text-living-sage",
+                          !counted && "text-brand-smoke",
+                          counted && variance === 0 && "text-accent2",
+                          counted && variance > 0 && "text-accent2",
                           counted && variance < 0 && "text-state-danger",
                         )}
                       >
@@ -420,7 +420,7 @@ export default function CountSession() {
               />
             ) : (
               <>
-                <h3 className="text-[0.65rem] tracking-widest uppercase text-orika-gold mb-3">
+                <h3 className="text-[0.65rem] tracking-widest uppercase text-brand-accent mb-3">
                   Variances to submit · {variances.length}
                 </h3>
                 <div className="space-y-2 mb-6">
@@ -439,16 +439,16 @@ export default function CountSession() {
                           size="sm"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-orika-cream truncate">
+                          <div className="text-sm text-brand-cream truncate">
                             {r.product_name}
                           </div>
-                          <div className="text-[0.6rem] font-mono text-orika-smoke">
+                          <div className="text-[0.6rem] font-mono text-brand-smoke">
                             {r.product_sku}
                           </div>
                         </div>
-                        <div className="text-xs text-orika-smoke">
+                        <div className="text-xs text-brand-smoke">
                           {r.system_count} →{" "}
-                          <span className="text-orika-cream font-mono">
+                          <span className="text-brand-cream font-mono">
                             {r.counted}
                           </span>
                         </div>
@@ -456,7 +456,7 @@ export default function CountSession() {
                           className={cn(
                             "font-mono text-sm",
                             variance > 0
-                              ? "text-living-sage"
+                              ? "text-accent2"
                               : "text-state-danger",
                           )}
                         >
@@ -546,20 +546,20 @@ function StageStep({
       className={cn(
         "inline-flex items-center gap-1.5",
         active
-          ? "text-orika-gold"
+          ? "text-brand-accent"
           : done
-            ? "text-living-sage"
-            : "text-orika-smoke",
+            ? "text-accent2"
+            : "text-brand-smoke",
       )}
     >
       <span
         className={cn(
           "w-1.5 h-1.5 rounded-full",
           active
-            ? "bg-orika-gold"
+            ? "bg-brand-accent"
             : done
-              ? "bg-living-sage"
-              : "bg-orika-graphite",
+              ? "bg-accent2"
+              : "bg-brand-graphite",
         )}
       />
       {label}
@@ -578,7 +578,7 @@ function Stat({
 }) {
   return (
     <div>
-      <div className="text-[0.6rem] uppercase tracking-widest text-orika-smoke">
+      <div className="text-[0.6rem] uppercase tracking-widest text-brand-smoke">
         {label}
       </div>
       <div
@@ -587,8 +587,8 @@ function Stat({
           tone === "warn"
             ? "text-state-warn"
             : tone === "sage"
-              ? "text-living-sage"
-              : "text-orika-cream",
+              ? "text-accent2"
+              : "text-brand-cream",
         )}
       >
         {value}

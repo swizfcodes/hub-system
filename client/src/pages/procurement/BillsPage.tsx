@@ -64,24 +64,24 @@ export default function BillsPage() {
                 key={b.sup_invoice_id}
                 to={`/procurement/bills/${b.sup_invoice_id}`}
               >
-                <Card className="p-4 hover:border-orika-gold/40 transition-all">
+                <Card className="p-4 hover:border-brand-accent/40 transition-all">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs text-orika-smoke">
+                        <span className="font-mono text-xs text-brand-smoke">
                           {b.supplier_invoice_number}
                         </span>
-                        <span className="text-sm text-orika-cream truncate">
+                        <span className="text-sm text-brand-cream truncate">
                           {b.supplier_name}
                         </span>
                       </div>
-                      <div className="text-[0.65rem] text-orika-smoke mt-1">
+                      <div className="text-[0.65rem] text-brand-smoke mt-1">
                         Due {fmtDate(b.due_date)}
                         {b.po_number && ` · PO ${b.po_number}`}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-orika-gold">
+                      <span className="font-mono text-brand-accent">
                         {fmtMoney(b.amount, b.currency)}
                       </span>
                       <Badge

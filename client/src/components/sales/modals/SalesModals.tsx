@@ -85,7 +85,7 @@ export function SendQuoteModal({
         </div>
       }
     >
-      <p className="mb-5 text-sm text-orika-smoke/80">
+      <p className="mb-5 text-sm text-brand-smoke/80">
         Choose how to deliver this quotation to the customer.
       </p>
 
@@ -104,14 +104,14 @@ export function SendQuoteModal({
                   "flex flex-col items-center gap-2 rounded-xl border px-4 py-5 transition-all",
                   disabled && "cursor-not-allowed opacity-40",
                   field.value === value && !disabled
-                    ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                    : "border-black/10 text-orika-smoke hover:border-black/20",
+                    ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
+                    : "border-black/10 text-brand-smoke hover:border-black/20",
                 )}
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-sm font-medium">{label}</span>
                 {disabled && (
-                  <span className="text-[10px] text-orika-smoke">
+                  <span className="text-[10px] text-brand-smoke">
                     Not on file
                   </span>
                 )}
@@ -121,7 +121,7 @@ export function SendQuoteModal({
         )}
       />
 
-      <p className="mt-4 text-xs text-orika-smoke/60">
+      <p className="mt-4 text-xs text-brand-smoke/60">
         A branded PDF will be attached. The quote will be marked as "Sent" upon
         delivery.
       </p>
@@ -235,7 +235,7 @@ export function ConfirmQuoteModal({
         </div>
       )}
 
-      <p className="mb-5 text-sm text-orika-smoke/80">
+      <p className="mb-5 text-sm text-brand-smoke/80">
         How will the customer receive the items?
       </p>
 
@@ -252,8 +252,8 @@ export function ConfirmQuoteModal({
                 className={cn(
                   "flex flex-col items-center gap-1.5 rounded-xl border px-4 py-4 text-center transition-all",
                   field.value === value
-                    ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                    : "border-black/10 text-orika-smoke hover:border-black/20",
+                    ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
+                    : "border-black/10 text-brand-smoke hover:border-black/20",
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -272,7 +272,7 @@ export function ConfirmQuoteModal({
             control={form.control}
             render={({ field, fieldState }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Delivery Address *
                 </label>
                 <Textarea
@@ -289,7 +289,7 @@ export function ConfirmQuoteModal({
             control={form.control}
             render={({ field }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Delivery Notes
                 </label>
                 <Input
@@ -399,9 +399,9 @@ export function RecordPaymentModal({
         </div>
       }
     >
-      <p className="mb-5 text-sm text-orika-smoke/80">
+      <p className="mb-5 text-sm text-brand-smoke/80">
         Outstanding:{" "}
-        <span className="font-semibold text-orika-gold">
+        <span className="font-semibold text-brand-accent">
           {fmtMoney(amountOutstanding, currency)}
         </span>
       </p>
@@ -429,7 +429,7 @@ export function RecordPaymentModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Payment Method *
               </label>
               <Select
@@ -450,7 +450,7 @@ export function RecordPaymentModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Payment Date
               </label>
               <Input {...field} type="date" placeholder="Defaults to today" />
@@ -463,7 +463,7 @@ export function RecordPaymentModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Reference{" "}
                 {paymentMethod === "bank_transfer"
                   ? "(bank ref / teller number)"
@@ -483,7 +483,7 @@ export function RecordPaymentModal({
             control={form.control}
             render={({ field }) => (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Paystack Reference
                 </label>
                 <Input {...field} placeholder="PSK_xxx..." />
@@ -497,7 +497,7 @@ export function RecordPaymentModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Notes
               </label>
               <Input {...field} placeholder="Optional payment notes" />
@@ -506,7 +506,7 @@ export function RecordPaymentModal({
         />
       </div>
 
-      <p className="mt-4 text-xs text-orika-smoke/60">
+      <p className="mt-4 text-xs text-brand-smoke/60">
         A receipt will be generated automatically and linked to this payment.
       </p>
     </Modal>
@@ -602,9 +602,9 @@ export function HandToLogisticsModal({
         </div>
       }
     >
-      <p className="mb-5 text-sm text-orika-smoke/80">
+      <p className="mb-5 text-sm text-brand-smoke/80">
         This will create a Logistics record for order{" "}
-        <span className="font-medium text-orika-gold">{orderNumber}</span> and
+        <span className="font-medium text-brand-accent">{orderNumber}</span> and
         mark it <span className="font-medium">Awaiting Dispatch</span>.
       </p>
 
@@ -614,7 +614,7 @@ export function HandToLogisticsModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-2 block text-xs font-medium text-orika-smoke">
+              <label className="mb-2 block text-xs font-medium text-brand-smoke">
                 Courier *
               </label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -626,8 +626,8 @@ export function HandToLogisticsModal({
                     className={cn(
                       "rounded-lg border px-3 py-3 text-left transition-all",
                       field.value === opt.value
-                        ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                        : "border-black/10 text-orika-smoke hover:border-black/20",
+                        ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
+                        : "border-black/10 text-brand-smoke hover:border-black/20",
                     )}
                   >
                     <p className="text-sm font-medium">{opt.label}</p>
@@ -644,7 +644,7 @@ export function HandToLogisticsModal({
           control={form.control}
           render={({ field, fieldState }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Contact Phone *
               </label>
               <Input
@@ -661,7 +661,7 @@ export function HandToLogisticsModal({
           control={form.control}
           render={({ field, fieldState }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Delivery Address *
               </label>
               <TextareaLog
@@ -679,7 +679,7 @@ export function HandToLogisticsModal({
           control={form.control}
           render={({ field, fieldState }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Delivery Fee
               </label>
               <Input
@@ -691,7 +691,7 @@ export function HandToLogisticsModal({
                 onChange={(e) => field.onChange(Number(e.target.value))}
                 error={fieldState.error?.message}
               />
-              <p className="mt-1 text-[10px] text-orika-smoke/60">
+              <p className="mt-1 text-[10px] text-brand-smoke/60">
                 Enter the delivery cost charged to the client (₦). Leave 0 if unknown.
               </p>
             </div>
@@ -703,7 +703,7 @@ export function HandToLogisticsModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Delivery Notes
               </label>
               <Input
@@ -829,14 +829,14 @@ export function DiscountApprovalModal({
 
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-xs text-orika-smoke">Requested Price</dt>
-            <dd className="font-semibold text-orika-cream">
+            <dt className="text-xs text-brand-smoke">Requested Price</dt>
+            <dd className="font-semibold text-brand-cream">
               {fmtMoneyApproval(approval.requested_price, currency)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-orika-smoke">Floor Price</dt>
-            <dd className="font-semibold text-orika-cream">
+            <dt className="text-xs text-brand-smoke">Floor Price</dt>
+            <dd className="font-semibold text-brand-cream">
               {fmtMoneyApproval(approval.min_price, currency)}
             </dd>
           </div>
@@ -847,7 +847,7 @@ export function DiscountApprovalModal({
           control={form.control}
           render={({ field }) => (
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+              <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                 Notes{" "}
                 {rejectMutation.isPending
                   ? "(required for rejection)"

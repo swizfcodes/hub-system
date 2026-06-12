@@ -91,7 +91,7 @@ export default function ReservationsPage() {
             <button
               key={s.key}
               onClick={() => setStatus(s.key as ReservationStatus | "")}
-              className={`px-3 py-1.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-widest transition-all ${status === s.key ? "bg-orika-gold text-orika-black" : "bg-orika-charcoal border border-orika-graphite text-orika-smoke hover:text-orika-cream"}`}
+              className={`px-3 py-1.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-widest transition-all ${status === s.key ? "bg-brand-accent text-brand-black" : "bg-brand-charcoal border border-brand-graphite text-brand-smoke hover:text-brand-cream"}`}
             >
               {s.label}
             </button>
@@ -131,31 +131,31 @@ export default function ReservationsPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-orika-cream truncate">
+                          <span className="text-sm font-medium text-brand-cream truncate">
                             {r.product_name ?? r.product_id}
                           </span>
                           <Badge tone={STATUS_TONE[r.status]} size="xs" dot>
                             {r.status.replace(/_/g, " ")}
                           </Badge>
-                          <span className="font-mono text-xs text-orika-gold">
+                          <span className="font-mono text-xs text-brand-accent">
                             ×{r.quantity}
                           </span>
                         </div>
-                        <div className="text-[0.65rem] text-orika-smoke mt-1 flex items-center gap-3 flex-wrap">
+                        <div className="text-[0.65rem] text-brand-smoke mt-1 flex items-center gap-3 flex-wrap">
                           {r.reserved_for_name && (
                             <span>For {r.reserved_for_name}</span>
                           )}
                           {r.crm_deal_id && (
                             <Link
                               to={`/crm/${r.crm_deal_id}`}
-                              className="inline-flex items-center gap-0.5 text-orika-gold hover:text-orika-cream"
+                              className="inline-flex items-center gap-0.5 text-brand-accent hover:text-brand-cream"
                             >
                               Open deal <ArrowUpRight className="w-2.5 h-2.5" />
                             </Link>
                           )}
                         </div>
                         {r.notes && (
-                          <p className="text-xs text-orika-cloud mt-1 italic">
+                          <p className="text-xs text-brand-cloud mt-1 italic">
                             "{r.notes}"
                           </p>
                         )}
@@ -163,14 +163,14 @@ export default function ReservationsPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <div
-                        className={`inline-flex items-center gap-1 text-[0.65rem] ${expired ? "text-state-danger" : expiringSoon ? "text-state-warn" : "text-orika-smoke"}`}
+                        className={`inline-flex items-center gap-1 text-[0.65rem] ${expired ? "text-state-danger" : expiringSoon ? "text-state-warn" : "text-brand-smoke"}`}
                       >
                         <Clock className="w-3 h-3" />
                         {expired
                           ? `Expired ${fmtRelative(r.expires_at)}`
                           : `Expires ${fmtRelative(r.expires_at)}`}
                       </div>
-                      <div className="text-[0.6rem] text-orika-smoke mt-1">
+                      <div className="text-[0.6rem] text-brand-smoke mt-1">
                         {fmtDateTime(r.expires_at)}
                       </div>
                       {r.status === "active" && (
@@ -185,7 +185,7 @@ export default function ReservationsPage() {
                         </Button>
                       )}
                       {r.status === "converted_to_sale" && (
-                        <div className="inline-flex items-center gap-1 mt-2 text-[0.6rem] text-living-sage">
+                        <div className="inline-flex items-center gap-1 mt-2 text-[0.6rem] text-accent2">
                           <ShoppingBag className="w-2.5 h-2.5" />
                           Became a sale
                         </div>

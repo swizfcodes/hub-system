@@ -61,12 +61,12 @@ export function CustomerPanel({ currency = "NGN" }: CustomerPanelProps) {
             >
               {loyaltyInfo.tier?.tier_name ?? "No Tier"}
             </p>
-            <p className="text-xs text-orika-smoke">
+            <p className="text-xs text-brand-smoke">
               {loyaltyInfo.balance.toLocaleString()} points
             </p>
           </div>
           {loyaltyInfo.balance > 0 && (
-            <span className="ml-auto text-xs text-orika-smoke">
+            <span className="ml-auto text-xs text-brand-smoke">
               ≈ {fmtMoney(loyaltyInfo.balance, currency)}
             </span>
           )}

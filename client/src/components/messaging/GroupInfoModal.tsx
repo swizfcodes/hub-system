@@ -147,11 +147,11 @@ export function GroupInfoModal({
           </>
         ) : (
           <div>
-            <p className="text-sm font-medium text-orika-black">
+            <p className="text-sm font-medium text-brand-black">
               {channel.name ?? "Group"}
             </p>
             {channel.description && (
-              <p className="mt-1 text-xs text-orika-black/60">
+              <p className="mt-1 text-xs text-brand-black/60">
                 {channel.description}
               </p>
             )}
@@ -160,7 +160,7 @@ export function GroupInfoModal({
 
         {/* Members */}
         <div>
-          <p className="mb-2 text-xs font-medium text-orika-black/70">
+          <p className="mb-2 text-xs font-medium text-brand-black/70">
             {members.length} member{members.length === 1 ? "" : "s"}
           </p>
           <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -175,14 +175,14 @@ export function GroupInfoModal({
                 >
                   {getInitials(m.display_name)}
                 </div>
-                <span className="flex-1 truncate text-sm text-orika-black">
+                <span className="flex-1 truncate text-sm text-brand-black">
                   {m.display_name ?? "Unknown"}
                   {m.user_id === userId && (
-                    <span className="text-orika-black/40"> (you)</span>
+                    <span className="text-brand-black/40"> (you)</span>
                   )}
                 </span>
                 {m.role === "admin" && (
-                  <span className="flex items-center gap-1 rounded-full bg-orika-gold/15 px-1.5 py-0.5 text-[10px] font-medium text-orika-gold">
+                  <span className="flex items-center gap-1 rounded-full bg-brand-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-accent">
                     <Crown className="h-2.5 w-2.5" />
                     Admin
                   </span>
@@ -198,7 +198,7 @@ export function GroupInfoModal({
                           role: m.role === "admin" ? "member" : "admin",
                         })
                       }
-                      className="text-orika-black/30 hover:text-orika-gold"
+                      className="text-brand-black/30 hover:text-brand-accent"
                     >
                       <Crown className="h-3.5 w-3.5" />
                     </button>
@@ -208,7 +208,7 @@ export function GroupInfoModal({
                       onClick={() =>
                         removeMutation.mutate(m.user_id as string)
                       }
-                      className="text-orika-black/30 hover:text-red-500"
+                      className="text-brand-black/30 hover:text-red-500"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -222,7 +222,7 @@ export function GroupInfoModal({
         {/* Add members (admins only) */}
         {isAdmin && (
           <div>
-            <p className="mb-1.5 text-xs font-medium text-orika-black/70">
+            <p className="mb-1.5 text-xs font-medium text-brand-black/70">
               Add members
             </p>
             <div className="flex items-start gap-2">

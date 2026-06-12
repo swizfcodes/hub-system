@@ -41,8 +41,8 @@ export function ActivityIcon({
           className={cn(
             "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full text-[0.5rem] font-bold flex items-center justify-center border-2",
             direction === "inbound"
-              ? "bg-living-sage text-orika-black border-orika-charcoal"
-              : "bg-orika-gold text-orika-black border-orika-charcoal",
+              ? "bg-accent2 text-brand-black border-brand-charcoal"
+              : "bg-brand-accent text-brand-black border-brand-charcoal",
           )}
         >
           {direction === "inbound" ? "↓" : "↑"}

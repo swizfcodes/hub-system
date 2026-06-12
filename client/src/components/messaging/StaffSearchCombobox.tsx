@@ -129,11 +129,11 @@ export function StaffSearchCombobox({
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
                 isDark
-                  ? "bg-orika-graphite text-orika-cream"
-                  : "bg-orika-gold/10 border border-orika-gold/30 text-orika-black/80",
+                  ? "bg-brand-graphite text-brand-cream"
+                  : "bg-brand-accent/10 border border-brand-accent/30 text-brand-black/80",
               )}
             >
-              <UserCircle2 className="h-3.5 w-3.5 shrink-0 text-orika-gold" />
+              <UserCircle2 className="h-3.5 w-3.5 shrink-0 text-brand-accent" />
               {s.display_name}
               {!s.user_id && (
                 <span title="No login account — cannot receive messages">
@@ -158,14 +158,14 @@ export function StaffSearchCombobox({
           className={cn(
             "flex items-center gap-2 rounded-xl border px-3 py-2.5",
             isDark
-              ? "border-white/10 bg-orika-charcoal text-orika-cream"
-              : "border-orika-graphite/60 bg-white/80 text-orika-black",
+              ? "border-white/10 bg-brand-charcoal text-brand-cream"
+              : "border-brand-graphite/60 bg-white/80 text-brand-black",
           )}
         >
           {loading ? (
-            <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-orika-smoke/40 border-t-orika-gold" />
+            <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand-smoke/40 border-t-brand-accent" />
           ) : (
-            <Search className="h-3.5 w-3.5 shrink-0 text-orika-smoke/60" />
+            <Search className="h-3.5 w-3.5 shrink-0 text-brand-smoke/60" />
           )}
           <input
             ref={inputRef}
@@ -173,14 +173,14 @@ export function StaffSearchCombobox({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 bg-transparent text-sm placeholder-orika-smoke/40 focus:outline-none"
+            className="flex-1 bg-transparent text-sm placeholder-brand-smoke/40 focus:outline-none"
           />
         </div>
       )}
 
       {/* Dropdown */}
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-white/10 bg-orika-black shadow-2xl overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-white/10 bg-brand-black shadow-2xl overflow-hidden">
           {results.map((s) => (
             <button
               key={s.profile_id}
@@ -190,16 +190,16 @@ export function StaffSearchCombobox({
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
                 s.user_id
-                  ? "hover:bg-orika-graphite/40 text-orika-cream"
-                  : "opacity-50 cursor-not-allowed text-orika-smoke",
+                  ? "hover:bg-brand-graphite/40 text-brand-cream"
+                  : "opacity-50 cursor-not-allowed text-brand-smoke",
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orika-graphite">
-                <UserCircle2 className="h-4 w-4 text-orika-gold" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-graphite">
+                <UserCircle2 className="h-4 w-4 text-brand-accent" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{s.display_name}</p>
-                <p className="text-[11px] text-orika-smoke/60 truncate">
+                <p className="text-[11px] text-brand-smoke/60 truncate">
                   {s.job_title || s.department || "Staff"}
                   {!s.user_id && " · No login account"}
                 </p>
@@ -210,11 +210,11 @@ export function StaffSearchCombobox({
       )}
 
       {open && query.trim() && results.length === 0 && !loading && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-white/10 bg-orika-black shadow-2xl px-4 py-4 text-center">
-          <p className="text-sm text-orika-smoke">
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-white/10 bg-brand-black shadow-2xl px-4 py-4 text-center">
+          <p className="text-sm text-brand-smoke">
             No staff found for "{query}"
           </p>
-          <p className="text-xs text-orika-smoke/40 mt-0.5">
+          <p className="text-xs text-brand-smoke/40 mt-0.5">
             Only active team members with a login appear here
           </p>
         </div>

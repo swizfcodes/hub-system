@@ -109,8 +109,8 @@ function VoiceAttachment({
       className={cn(
         "flex items-center gap-2 rounded-full px-3 py-1.5 text-xs transition-colors",
         isOwn
-          ? "bg-orika-black/15 text-orika-black hover:bg-orika-black/25"
-          : "bg-white/10 text-orika-cream hover:bg-white/15",
+          ? "bg-brand-black/15 text-brand-black hover:bg-brand-black/25"
+          : "bg-white/10 text-brand-cream hover:bg-white/15",
       )}
     >
       <Play className="h-3.5 w-3.5" />
@@ -154,8 +154,8 @@ function DocumentAttachment({
       className={cn(
         "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-colors",
         isOwn
-          ? "bg-orika-black/15 text-orika-black hover:bg-orika-black/25"
-          : "bg-white/10 text-orika-cream hover:bg-white/15",
+          ? "bg-brand-black/15 text-brand-black hover:bg-brand-black/25"
+          : "bg-white/10 text-brand-cream hover:bg-white/15",
       )}
     >
       <FileText className="h-4 w-4 shrink-0" />

@@ -59,7 +59,7 @@ export function DateRangeFilter({
         surface="dark"
         className="w-40"
       />
-      <span className="text-orika-smoke mt-4">—</span>
+      <span className="text-brand-smoke mt-4">—</span>
       <Input
         label="To"
         type="date"
@@ -87,14 +87,14 @@ export function ReportSummaryCard({
 }) {
   const isGood = positive ? value >= 0 : value <= 0;
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal px-5 py-4">
-      <p className="text-[0.65rem] uppercase tracking-widest text-orika-smoke mb-1">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal px-5 py-4">
+      <p className="text-[0.65rem] uppercase tracking-widest text-brand-smoke mb-1">
         {label}
       </p>
       <p
         className={cn(
           "font-display text-2xl font-light tabular-nums",
-          isGood ? "text-orika-gold" : "text-red-400",
+          isGood ? "text-brand-accent" : "text-red-400",
         )}
       >
         {fmtMoney(Math.abs(value), currency)}
@@ -271,11 +271,11 @@ export function TrialBalanceView({
       <div className="overflow-x-auto rounded-2xl border border-white/5">
         <table className="w-full min-w-[500px] text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-orika-charcoal">
+            <tr className="border-b border-white/5 bg-brand-charcoal">
               {["Code", "Account", "Type", "Debit", "Credit"].map((h) => (
                 <th
                   key={h}
-                  className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-orika-smoke"
+                  className="px-4 py-3 text-left text-[0.65rem] font-semibold uppercase tracking-widest text-brand-smoke"
                 >
                   {h}
                 </th>
@@ -286,40 +286,40 @@ export function TrialBalanceView({
             {report.data.map((row) => (
               <tr
                 key={row.account_code}
-                className="bg-orika-charcoal hover:bg-orika-graphite/20"
+                className="bg-brand-charcoal hover:bg-brand-graphite/20"
               >
-                <td className="px-4 py-2.5 font-mono text-xs text-orika-gold">
+                <td className="px-4 py-2.5 font-mono text-xs text-brand-accent">
                   {row.account_code}
                 </td>
-                <td className="px-4 py-2.5 text-orika-cream">
+                <td className="px-4 py-2.5 text-brand-cream">
                   {row.account_name}
                 </td>
-                <td className="px-4 py-2.5 text-orika-smoke capitalize text-xs">
+                <td className="px-4 py-2.5 text-brand-smoke capitalize text-xs">
                   {row.account_type}
                 </td>
-                <td className="px-4 py-2.5 tabular-nums text-orika-cream">
+                <td className="px-4 py-2.5 tabular-nums text-brand-cream">
                   {row.total_debit > 0
                     ? fmtMoney(row.total_debit, currency)
                     : "—"}
                 </td>
-                <td className="px-4 py-2.5 tabular-nums text-orika-cream">
+                <td className="px-4 py-2.5 tabular-nums text-brand-cream">
                   {row.total_credit > 0
                     ? fmtMoney(row.total_credit, currency)
                     : "—"}
                 </td>
               </tr>
             ))}
-            <tr className="border-t-2 border-white/20 bg-orika-graphite/30 font-semibold">
+            <tr className="border-t-2 border-white/20 bg-brand-graphite/30 font-semibold">
               <td
                 colSpan={3}
-                className="px-4 py-3 text-orika-smoke uppercase text-xs tracking-wide"
+                className="px-4 py-3 text-brand-smoke uppercase text-xs tracking-wide"
               >
                 Totals
               </td>
-              <td className="px-4 py-3 tabular-nums text-orika-cream">
+              <td className="px-4 py-3 tabular-nums text-brand-cream">
                 {fmtMoney(totalDebit, currency)}
               </td>
-              <td className="px-4 py-3 tabular-nums text-orika-cream">
+              <td className="px-4 py-3 tabular-nums text-brand-cream">
                 {fmtMoney(totalCredit, currency)}
               </td>
             </tr>
@@ -406,18 +406,18 @@ function CashFlowSection({
   currency: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-4">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-5">
+      <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-4">
         {title}
       </p>
       <div className="space-y-2">
         {items.map((item, i) => (
           <div key={i} className="flex justify-between text-sm">
-            <span className="text-orika-cloud">{item.label}</span>
+            <span className="text-brand-cloud">{item.label}</span>
             <span
               className={cn(
                 "tabular-nums",
-                item.amount >= 0 ? "text-orika-cream" : "text-red-400",
+                item.amount >= 0 ? "text-brand-cream" : "text-red-400",
               )}
             >
               {item.amount >= 0 ? "" : "("}
@@ -427,11 +427,11 @@ function CashFlowSection({
           </div>
         ))}
         <div className="flex justify-between text-sm font-semibold border-t border-white/10 pt-2">
-          <span className="text-orika-smoke">Net {title.split(" ")[0]}</span>
+          <span className="text-brand-smoke">Net {title.split(" ")[0]}</span>
           <span
             className={cn(
               "tabular-nums",
-              net >= 0 ? "text-orika-gold" : "text-red-400",
+              net >= 0 ? "text-brand-accent" : "text-red-400",
             )}
           >
             {fmtMoney(Math.abs(net), currency)}
@@ -459,27 +459,27 @@ function ReportSection({
   totalLabel: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-orika-charcoal p-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-orika-smoke mb-3">
+    <div className="rounded-2xl border border-white/5 bg-brand-charcoal p-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-brand-smoke mb-3">
         {title}
       </p>
       <div className="space-y-2">
         {rows.map((row) => (
           <div key={row.account_code} className="flex justify-between text-sm">
-            <span className="text-orika-cloud truncate">
+            <span className="text-brand-cloud truncate">
               {row.account_name}
             </span>
-            <span className="tabular-nums text-orika-cream ml-4 shrink-0">
+            <span className="tabular-nums text-brand-cream ml-4 shrink-0">
               {fmtMoney(parseFloat(String(row.balance)), currency)}
             </span>
           </div>
         ))}
         {rows.length === 0 && (
-          <p className="text-xs text-orika-smoke/50">No entries</p>
+          <p className="text-xs text-brand-smoke/50">No entries</p>
         )}
         <div className="flex justify-between text-sm font-semibold border-t border-white/10 pt-2">
-          <span className="text-orika-smoke">{totalLabel}</span>
-          <span className="tabular-nums text-orika-gold">
+          <span className="text-brand-smoke">{totalLabel}</span>
+          <span className="tabular-nums text-brand-accent">
             {fmtMoney(total, currency)}
           </span>
         </div>
@@ -503,8 +503,8 @@ function ReportSkeleton() {
 
 function ReportEmpty({ text }: { text: string }) {
   return (
-    <div className="py-16 text-center rounded-2xl border border-white/5 bg-orika-charcoal">
-      <p className="text-sm text-orika-smoke">{text}</p>
+    <div className="py-16 text-center rounded-2xl border border-white/5 bg-brand-charcoal">
+      <p className="text-sm text-brand-smoke">{text}</p>
     </div>
   );
 }

@@ -193,7 +193,7 @@ export default function SalesCampaignsHome() {
             </div>
           }
         >
-          <p className="text-sm text-orika-cloud">
+          <p className="text-sm text-brand-cloud">
             {confirmModal?.action === "publish"
               ? `This will make "${confirmModal?.campaign.campaign_name}" publicly accessible${confirmModal?.campaign.start_date ? ` from ${fmtDate(confirmModal.campaign.start_date)}` : " immediately"}.`
               : `The campaign page will be taken offline and visitors will be redirected to your shop.`}
@@ -235,12 +235,12 @@ function CampaignCard({
 
   return (
     <div
-      className="relative rounded-2xl border border-white/8 bg-orika-graphite overflow-hidden
-                 hover:border-orika-gold/30 transition-all duration-200 cursor-pointer group"
+      className="relative rounded-2xl border border-white/8 bg-brand-graphite overflow-hidden
+                 hover:border-brand-accent/30 transition-all duration-200 cursor-pointer group"
       onClick={onEdit}
     >
       {/* Hero thumbnail */}
-      <div className="relative h-32 bg-orika-charcoal overflow-hidden">
+      <div className="relative h-32 bg-brand-charcoal overflow-hidden">
         {campaign.hero_image_url ? (
           <img
             src={campaign.hero_image_url}
@@ -277,10 +277,10 @@ function CampaignCard({
       <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-semibold text-orika-cream truncate">
+            <p className="font-semibold text-brand-cream truncate">
               {campaign.campaign_name}
             </p>
-            <p className="text-xs text-orika-smoke mt-0.5 truncate">
+            <p className="text-xs text-brand-smoke mt-0.5 truncate">
               /{campaign.slug}
             </p>
           </div>
@@ -291,12 +291,12 @@ function CampaignCard({
           >
             <button
               onClick={onMenuToggle}
-              className="p-1.5 rounded-lg text-orika-smoke hover:text-orika-cream hover:bg-white/5 transition-colors"
+              className="p-1.5 rounded-lg text-brand-smoke hover:text-brand-cream hover:bg-white/5 transition-colors"
             >
               <MoreVertical className="h-4 w-4" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-8 z-20 min-w-[160px] rounded-xl border border-white/10 bg-orika-charcoal shadow-2xl py-1">
+              <div className="absolute right-0 top-8 z-20 min-w-[160px] rounded-xl border border-white/10 bg-brand-charcoal shadow-2xl py-1">
                 {["draft", "scheduled", "expired"].includes(
                   campaign.status,
                 ) && (
@@ -334,7 +334,7 @@ function CampaignCard({
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 text-xs text-orika-smoke hover:text-orika-cream hover:bg-white/5"
+                  className="flex items-center gap-2 px-3 py-2 text-xs text-brand-smoke hover:text-brand-cream hover:bg-white/5"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Open page
@@ -356,14 +356,14 @@ function CampaignCard({
 
         {/* Dates */}
         {(campaign.start_date || campaign.end_date) && (
-          <p className="text-xs text-orika-smoke/60">
+          <p className="text-xs text-brand-smoke/60">
             {campaign.start_date && `From ${fmtDate(campaign.start_date)}`}
             {campaign.start_date && campaign.end_date && " → "}
             {campaign.end_date && fmtDate(campaign.end_date)}
           </p>
         )}
         {campaign.is_evergreen && (
-          <p className="text-xs text-orika-gold/60">Evergreen — no expiry</p>
+          <p className="text-xs text-brand-accent/60">Evergreen — no expiry</p>
         )}
       </div>
     </div>
@@ -373,8 +373,8 @@ function CampaignCard({
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="text-center">
-      <p className="text-sm font-semibold text-orika-cream">{value}</p>
-      <p className="text-[10px] text-orika-smoke/60 uppercase tracking-wide">
+      <p className="text-sm font-semibold text-brand-cream">{value}</p>
+      <p className="text-[10px] text-brand-smoke/60 uppercase tracking-wide">
         {label}
       </p>
     </div>
@@ -393,7 +393,7 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-orika-smoke hover:text-orika-cream hover:bg-white/5 text-left"
+      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-brand-smoke hover:text-brand-cream hover:bg-white/5 text-left"
     >
       {icon} {label}
     </button>
@@ -403,11 +403,11 @@ function MenuItem({
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="h-16 w-16 rounded-2xl bg-orika-graphite border border-white/8 flex items-center justify-center mb-4">
-        <Share2 className="h-7 w-7 text-orika-gold/50" />
+      <div className="h-16 w-16 rounded-2xl bg-brand-graphite border border-white/8 flex items-center justify-center mb-4">
+        <Share2 className="h-7 w-7 text-brand-accent/50" />
       </div>
-      <p className="font-semibold text-orika-cream mb-1">No campaigns yet</p>
-      <p className="text-sm text-orika-smoke max-w-sm mb-6">
+      <p className="font-semibold text-brand-cream mb-1">No campaigns yet</p>
+      <p className="text-sm text-brand-smoke max-w-sm mb-6">
         Create a shareable campaign page in minutes. Add products, set a
         deadline, and share the link.
       </p>

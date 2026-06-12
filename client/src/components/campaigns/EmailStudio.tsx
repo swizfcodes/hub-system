@@ -112,7 +112,7 @@ export function EmailStudio({
         ))}
 
         <div className="rounded-xl border border-dashed border-white/10 p-3">
-          <p className="mb-2 text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke/60">
+          <p className="mb-2 text-[0.65rem] font-medium uppercase tracking-widest text-brand-smoke/60">
             Add block
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -121,7 +121,7 @@ export function EmailStudio({
                 key={a.type}
                 type="button"
                 onClick={() => addBlock(a.type)}
-                className="flex items-center gap-1 rounded border border-white/10 px-2 py-1 text-xs text-orika-smoke hover:text-orika-gold hover:border-orika-gold/30 transition-colors"
+                className="flex items-center gap-1 rounded border border-white/10 px-2 py-1 text-xs text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors"
               >
                 <Plus className="h-3 w-3" />
                 {a.label}
@@ -134,7 +134,7 @@ export function EmailStudio({
       {/* ── Right: live preview ── */}
       <div className="min-w-0">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke/60">
+          <p className="text-[0.65rem] font-medium uppercase tracking-widest text-brand-smoke/60">
             Live preview · sample data
           </p>
           <div className="flex gap-1">
@@ -144,8 +144,8 @@ export function EmailStudio({
               className={cn(
                 "rounded p-1.5 transition-colors",
                 previewWidth === "desktop"
-                  ? "text-orika-gold"
-                  : "text-orika-smoke/50 hover:text-orika-smoke",
+                  ? "text-brand-accent"
+                  : "text-brand-smoke/50 hover:text-brand-smoke",
               )}
               title="Desktop preview"
             >
@@ -157,8 +157,8 @@ export function EmailStudio({
               className={cn(
                 "rounded p-1.5 transition-colors",
                 previewWidth === "mobile"
-                  ? "text-orika-gold"
-                  : "text-orika-smoke/50 hover:text-orika-smoke",
+                  ? "text-brand-accent"
+                  : "text-brand-smoke/50 hover:text-brand-smoke",
               )}
               title="Mobile preview"
             >
@@ -200,9 +200,9 @@ function BlockCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-orika-graphite/30 p-3 space-y-2.5">
+    <div className="rounded-xl border border-white/5 bg-brand-graphite/30 p-3 space-y-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-[0.65rem] font-medium uppercase tracking-widest text-orika-gold/80">
+        <span className="text-[0.65rem] font-medium uppercase tracking-widest text-brand-accent/80">
           {BLOCK_LABEL[block.type]}
         </span>
         <div className="flex items-center gap-0.5">
@@ -361,14 +361,14 @@ function TextWithVariables({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[0.65rem] font-medium uppercase tracking-widest text-orika-smoke">
+      <label className="mb-1.5 block text-[0.65rem] font-medium uppercase tracking-widest text-brand-smoke">
         {label}
       </label>
       <textarea
         value={value}
         rows={rows}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/10 bg-orika-black/40 p-2.5 text-sm text-orika-cream placeholder-orika-smoke/40 focus:border-orika-gold/40 focus:outline-none"
+        className="w-full rounded-lg border border-white/10 bg-brand-black/40 p-2.5 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none"
       />
       <div className="mt-1 flex flex-wrap gap-1">
         {TEMPLATE_VARIABLES.map((v) => (
@@ -380,7 +380,7 @@ function TextWithVariables({
               const sep = value && !value.endsWith(" ") ? " " : "";
               onChange(value + sep + v.token);
             }}
-            className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-orika-smoke hover:text-orika-gold hover:border-orika-gold/30 transition-colors"
+            className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors"
           >
             {v.token}
           </button>
@@ -412,8 +412,8 @@ function IconBtn({
       className={cn(
         "rounded p-1 transition-colors disabled:opacity-25",
         danger
-          ? "text-orika-smoke/60 hover:text-state-danger"
-          : "text-orika-smoke/60 hover:text-orika-cream",
+          ? "text-brand-smoke/60 hover:text-state-danger"
+          : "text-brand-smoke/60 hover:text-brand-cream",
       )}
     >
       {children}

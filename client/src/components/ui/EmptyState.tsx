@@ -24,8 +24,8 @@ export function EmptyState({
       className={cn(
         "rounded-2xl border-2 border-dashed py-12 sm:py-16 px-6 flex flex-col items-center justify-center text-center",
         isDark
-          ? "border-orika-graphite bg-orika-charcoal/40"
-          : "border-orika-cloud/60 bg-surface-light-soft surface-light",
+          ? "border-brand-graphite bg-brand-charcoal/40"
+          : "border-brand-cloud/60 bg-surface-light-soft surface-light",
         className,
       )}
     >
@@ -34,8 +34,8 @@ export function EmptyState({
           className={cn(
             "w-14 h-14 rounded-full flex items-center justify-center mb-4",
             isDark
-              ? "bg-orika-graphite text-orika-gold"
-              : "bg-white text-orika-gold border border-orika-cloud/40",
+              ? "bg-brand-graphite text-brand-accent"
+              : "bg-white text-brand-accent border border-brand-cloud/40",
           )}
         >
           {icon}
@@ -44,7 +44,7 @@ export function EmptyState({
       <h3
         className={cn(
           "font-display font-light text-xl sm:text-2xl mb-1.5",
-          isDark ? "text-orika-cream" : "text-orika-black",
+          isDark ? "text-brand-cream" : "text-brand-black",
         )}
       >
         {title}
@@ -53,7 +53,7 @@ export function EmptyState({
         <p
           className={cn(
             "text-xs sm:text-sm max-w-md mb-5",
-            isDark ? "text-orika-smoke" : "text-text-on-light-muted",
+            isDark ? "text-brand-smoke" : "text-text-on-light-muted",
           )}
         >
           {description}

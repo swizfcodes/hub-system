@@ -84,7 +84,7 @@ export default function InvoiceDetail() {
   if (!invoice) {
     return (
       <div className="px-4 sm:px-8 py-6 max-w-7xl mx-auto text-center">
-        <p className="text-orika-smoke">Invoice not found.</p>
+        <p className="text-brand-smoke">Invoice not found.</p>
       </div>
     );
   }
@@ -114,14 +114,14 @@ export default function InvoiceDetail() {
           {/* Payment links */}
           {(invoice.paystack_payment_url || invoice.stripe_payment_url) &&
             !isPaid && (
-              <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
+              <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                     Payment Links
                   </h2>
                   <button
                     onClick={() => refreshLinksMutation.mutate()}
-                    className="flex items-center gap-1.5 text-xs text-orika-smoke hover:text-orika-gold transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-brand-smoke hover:text-brand-accent transition-colors"
                     disabled={refreshLinksMutation.isPending}
                   >
                     <RefreshCw className="h-3 w-3" />
@@ -148,7 +148,7 @@ export default function InvoiceDetail() {
                     />
                   )}
                 </div>
-                <p className="mt-3 text-xs text-orika-smoke/60">
+                <p className="mt-3 text-xs text-brand-smoke/60">
                   Share these links directly with the customer for secure online
                   payment.
                 </p>
@@ -157,8 +157,8 @@ export default function InvoiceDetail() {
 
           {/* Lines */}
           {invoice.lines && invoice.lines.length > 0 && (
-            <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-              <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+            <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+              <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                 Line Items
               </h2>
               <LineItemsTable
@@ -175,8 +175,8 @@ export default function InvoiceDetail() {
           )}
 
           {/* Payment ledger */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5">
+            <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Payment History
             </h2>
             <PaymentLedger
@@ -188,21 +188,21 @@ export default function InvoiceDetail() {
 
           {/* Notes */}
           {(invoice.notes || invoice.payment_instructions) && (
-            <div className="rounded-xl border border-white/5 bg-orika-charcoal p-5 space-y-3">
+            <div className="rounded-xl border border-white/5 bg-brand-charcoal p-5 space-y-3">
               {invoice.notes && (
                 <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                     Notes
                   </h3>
-                  <p className="text-sm text-orika-cloud">{invoice.notes}</p>
+                  <p className="text-sm text-brand-cloud">{invoice.notes}</p>
                 </div>
               )}
               {invoice.payment_instructions && (
                 <div>
-                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+                  <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
                     Payment Instructions
                   </h3>
-                  <p className="text-sm text-orika-cloud whitespace-pre-line">
+                  <p className="text-sm text-brand-cloud whitespace-pre-line">
                     {invoice.payment_instructions}
                   </p>
                 </div>
@@ -214,30 +214,30 @@ export default function InvoiceDetail() {
         {/* Right — rail */}
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {/* Payment summary */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Payment Summary
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-orika-smoke">Total</span>
-                <span className="font-medium text-orika-cream">
+                <span className="text-brand-smoke">Total</span>
+                <span className="font-medium text-brand-cream">
                   {fmtMoney(invoice.total_amount, invoice.currency ?? currency)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-orika-smoke">Paid</span>
+                <span className="text-brand-smoke">Paid</span>
                 <span className="font-medium text-green-400">
                   {fmtMoney(invoice.amount_paid, invoice.currency ?? currency)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-white/10 pt-2">
-                <span className="text-orika-smoke">Outstanding</span>
+                <span className="text-brand-smoke">Outstanding</span>
                 <span
                   className={
                     invoice.amount_outstanding > 0
                       ? "font-semibold text-amber-400"
-                      : "font-medium text-orika-smoke"
+                      : "font-medium text-brand-smoke"
                   }
                 >
                   {fmtMoney(
@@ -250,8 +250,8 @@ export default function InvoiceDetail() {
           </div>
 
           {/* Actions */}
-          <div className="rounded-xl border border-white/5 bg-orika-charcoal p-4 space-y-2">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-orika-smoke">
+          <div className="rounded-xl border border-white/5 bg-brand-charcoal p-4 space-y-2">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-smoke">
               Actions
             </h3>
 
@@ -292,7 +292,7 @@ export default function InvoiceDetail() {
 
             <button
               onClick={() => openInvoicePdf(invoice.invoice_id)}
-              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
+              className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-brand-cloud hover:border-brand-accent/30 hover:text-brand-accent transition-colors"
             >
               <FileDown className="h-4 w-4" />
               Download PDF
@@ -301,7 +301,7 @@ export default function InvoiceDetail() {
             {invoice.order_id && (
               <a
                 href={`/sales/orders/${invoice.order_id}`}
-                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-orika-cloud hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
+                className="flex w-full items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-brand-cloud hover:border-brand-accent/30 hover:text-brand-accent transition-colors"
               >
                 View Order
               </a>
@@ -355,14 +355,14 @@ function PaymentLinkRow({
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-sm font-medium text-orika-cream truncate">
+        <span className="text-sm font-medium text-brand-cream truncate">
           {label}
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onCopy}
-          className="text-orika-smoke hover:text-orika-gold transition-colors"
+          className="text-brand-smoke hover:text-brand-accent transition-colors"
           title="Copy link"
         >
           <Copy className="h-3.5 w-3.5" />

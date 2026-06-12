@@ -234,7 +234,7 @@ export default function QuickSaleForm() {
 
         {/* ── Customer ───────────────────────────────────────────── */}
         <Card className="p-5 overflow-visible">
-          <h3 className="text-xs font-medium uppercase tracking-widest text-orika-smoke mb-3">
+          <h3 className="text-xs font-medium uppercase tracking-widest text-brand-smoke mb-3">
             Customer
           </h3>
           <ContactSearchInput
@@ -247,7 +247,7 @@ export default function QuickSaleForm() {
 
         {/* ── Products ───────────────────────────────────────────── */}
         <Card className="p-5">
-          <h3 className="text-xs font-medium uppercase tracking-widest text-orika-smoke mb-3">
+          <h3 className="text-xs font-medium uppercase tracking-widest text-brand-smoke mb-3">
             Products
           </h3>
           <CatalogueSearchInput
@@ -262,14 +262,14 @@ export default function QuickSaleForm() {
               {lines.map((line) => (
                 <div
                   key={line.id}
-                  className="flex items-center gap-3 rounded-lg border border-white/5 bg-orika-black/20 px-3 py-2"
+                  className="flex items-center gap-3 rounded-lg border border-white/5 bg-brand-black/20 px-3 py-2"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-orika-cream truncate">
+                    <p className="text-sm font-medium text-brand-cream truncate">
                       {line.name}
                     </p>
                     {line.sku && (
-                      <p className="text-[10px] text-orika-smoke">{line.sku}</p>
+                      <p className="text-[10px] text-brand-smoke">{line.sku}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function QuickSaleForm() {
                       placeholder="1"
                       className="w-14 text-center"
                     />
-                    <span className="text-xs text-orika-smoke">×</span>
+                    <span className="text-xs text-brand-smoke">×</span>
                     <NumberField
                       surface="dark"
                       decimal
@@ -293,13 +293,13 @@ export default function QuickSaleForm() {
                       placeholder="0.00"
                       className="w-24 text-right"
                     />
-                    <span className="text-xs font-semibold text-orika-gold tabular-nums w-24 text-right">
+                    <span className="text-xs font-semibold text-brand-accent tabular-nums w-24 text-right">
                       {fmtMoney(line.unit_price * line.quantity, baseCurrency)}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeLine(line.id)}
-                      className="text-orika-smoke hover:text-red-400 transition-colors"
+                      className="text-brand-smoke hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -312,7 +312,7 @@ export default function QuickSaleForm() {
 
         {/* ── Toggles ────────────────────────────────────────────── */}
         <Card className="p-5 space-y-4">
-          <h3 className="text-xs font-medium uppercase tracking-widest text-orika-smoke mb-1">
+          <h3 className="text-xs font-medium uppercase tracking-widest text-brand-smoke mb-1">
             Options
           </h3>
 
@@ -326,13 +326,13 @@ export default function QuickSaleForm() {
 
           {/* Currency toggle */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+            <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
               Payment Currency
             </label>
             <select
               value={foreignCurrency}
               onChange={(e) => setForeignCurrency(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 px-3 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
             >
               {FOREIGN_CURRENCIES.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -341,16 +341,16 @@ export default function QuickSaleForm() {
               ))}
             </select>
             {foreignCurrency && (
-              <div className="mt-2 rounded-lg bg-orika-black/30 px-3 py-2 border border-white/5">
+              <div className="mt-2 rounded-lg bg-brand-black/30 px-3 py-2 border border-white/5">
                 {exchangeRate > 0 ? (
-                  <p className="text-xs text-orika-smoke">
+                  <p className="text-xs text-brand-smoke">
                     Today's rate:{" "}
-                    <span className="font-semibold text-orika-gold tabular-nums">
+                    <span className="font-semibold text-brand-accent tabular-nums">
                       1 {foreignCurrency} = ₦{exchangeRate.toLocaleString("en-NG", { maximumFractionDigits: 2 })}
                     </span>
                     {" · "}
                     Customer pays{" "}
-                    <span className="font-semibold text-orika-cream tabular-nums">
+                    <span className="font-semibold text-brand-cream tabular-nums">
                       {(grandTotal / exchangeRate).toLocaleString("en-NG", { maximumFractionDigits: 2 })}{" "}
                       {foreignCurrency}
                     </span>
@@ -375,25 +375,25 @@ export default function QuickSaleForm() {
           {isDelivery && (
             <div className="ml-13 space-y-3 pl-1">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Delivery Address *
                 </label>
                 <textarea
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream placeholder-orika-smoke/50 focus:border-orika-gold/50 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 px-3 text-sm text-brand-cream placeholder-brand-smoke/50 focus:border-brand-accent/50 focus:outline-none resize-none"
                   placeholder="Street address, city, state..."
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-orika-smoke">
+                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
                   Courier
                 </label>
                 <select
                   value={courierPreference}
                   onChange={(e) => setCourierPreference(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-orika-graphite py-2 px-3 text-sm text-orika-cream focus:border-orika-gold/50 focus:outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 px-3 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
                 >
                   {COURIER_OPTIONS.map((c) => (
                     <option key={c.value} value={c.value}>
@@ -408,26 +408,26 @@ export default function QuickSaleForm() {
 
         {/* ── Payment ────────────────────────────────────────────── */}
         <Card className="p-5">
-          <h3 className="text-xs font-medium uppercase tracking-widest text-orika-smoke mb-3">
+          <h3 className="text-xs font-medium uppercase tracking-widest text-brand-smoke mb-3">
             Payment
           </h3>
 
           {/* Total due bar */}
-          <div className="rounded-lg bg-orika-black/30 px-4 py-3 flex justify-between items-center mb-4 border border-white/5">
+          <div className="rounded-lg bg-brand-black/30 px-4 py-3 flex justify-between items-center mb-4 border border-white/5">
             <div>
-              <span className="text-xs text-orika-smoke">Subtotal</span>
-              <span className="ml-3 text-sm text-orika-cream tabular-nums">
+              <span className="text-xs text-brand-smoke">Subtotal</span>
+              <span className="ml-3 text-sm text-brand-cream tabular-nums">
                 {fmtMoney(subtotal, baseCurrency)}
               </span>
               {applyVat && (
                 <>
-                  <span className="ml-3 text-xs text-orika-smoke">
+                  <span className="ml-3 text-xs text-brand-smoke">
                     + VAT {fmtMoney(vatAmount, baseCurrency)}
                   </span>
                 </>
               )}
             </div>
-            <span className="font-display text-xl font-extrabold text-orika-gold tabular-nums">
+            <span className="font-display text-xl font-extrabold text-brand-accent tabular-nums">
               {fmtMoney(grandTotal, baseCurrency)}
             </span>
           </div>
@@ -448,8 +448,8 @@ export default function QuickSaleForm() {
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-center transition-all",
                           split.method === pm.key
-                            ? "border-orika-gold/60 bg-orika-gold/5 text-orika-gold"
-                            : "border-white/10 text-orika-smoke hover:border-white/20",
+                            ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
+                            : "border-white/10 text-brand-smoke hover:border-white/20",
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -481,14 +481,14 @@ export default function QuickSaleForm() {
                       onChange={(e) =>
                         updatePayment(split.id, { reference: e.target.value })
                       }
-                      className="flex-1 rounded border border-white/10 bg-orika-graphite px-2 py-2 text-sm text-orika-cream focus:border-orika-gold/40 focus:outline-none"
+                      className="flex-1 rounded border border-white/10 bg-brand-graphite px-2 py-2 text-sm text-brand-cream focus:border-brand-accent/40 focus:outline-none"
                     />
                   )}
                   {payments.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removePayment(split.id)}
-                      className="text-orika-smoke hover:text-red-500 transition-colors"
+                      className="text-brand-smoke hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -503,7 +503,7 @@ export default function QuickSaleForm() {
             <button
               type="button"
               onClick={addPaymentSplit}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 py-2 text-xs text-orika-smoke hover:border-orika-gold/30 hover:text-orika-gold transition-colors"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 py-2 text-xs text-brand-smoke hover:border-brand-accent/30 hover:text-brand-accent transition-colors"
             >
               <Plus className="h-3.5 w-3.5" />
               Add payment method — {fmtMoney(shortfall, baseCurrency)} remaining
