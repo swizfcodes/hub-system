@@ -4,6 +4,7 @@ const { withSharedContext } = require("../../config/db");
 const businesses = require("../../config/businesses");
 const auditService = require("../../shared/audit/audit.service");
 const repo = require("./settings.repository");
+const { emitToAll } = require("../../config/sockets");
 
 // ─────────────────────────────────────────────────────────────
 // BUSINESS CONFIG
@@ -799,6 +800,8 @@ async function updatePlatformSettings(fields, user) {
       before,
       after,
     });
+    // Every open session re-themes instantly (ThemeProvider listens).
+    emitToAll("branding:updated", { updated_at: after.updated_at });
     return after;
   });
 }

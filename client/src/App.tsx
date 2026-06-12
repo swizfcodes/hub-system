@@ -8,6 +8,7 @@ import { StorefrontGuard } from "@pages/settings/storefront/StorefrontGuard";
 const Login = lazy(() => import("@pages/Login"));
 const HubHome = lazy(() => import("@pages/HubHome"));
 const SettingsHome = lazy(() => import("@pages/settings/SettingsHome"));
+const Appearance = lazy(() => import("@pages/settings/Appearance"));
 const BusinessSetupList = lazy(
   () => import("@pages/settings/business-setup/BusinessSetupList"),
 );
@@ -282,6 +283,7 @@ export default function App() {
 
           {/* Settings */}
           <Route path="/settings" element={<SettingsHome />} />
+          <Route path="/settings/appearance" element={<Appearance />} />
           <Route
             path="/settings/business-setup"
             element={<BusinessSetupList />}
