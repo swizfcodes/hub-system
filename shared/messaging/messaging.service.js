@@ -2,6 +2,7 @@
 
 const { withSharedContext } = require("../../config/db");
 const { emitToUser, emitToBusiness } = require("../../config/sockets");
+const logger = require("../../config/logger");
 // EXTERNAL-COMMS-DISABLED: the integrations layer dispatched replies to
 // WhatsApp / Instagram / Facebook via the Meta Graph API. Re-enable the
 // require (and the dispatch block in sendMessage) once API access exists.
@@ -405,7 +406,7 @@ async function listMessages(channelId, query, user) {
  * Send a message to a channel.
  */
 async function sendMessage(channelId, data, user) {
-  return withSharedContext(async (client) => {
+  const { message, channel } = await withSharedContext(async (client) => {
     const channel = await repo.findChannelById(client, channelId);
     if (!channel) {
       throw Object.assign(new Error("Channel not found"), { status: 404 });
@@ -504,7 +505,72 @@ async function sendMessage(channelId, data, user) {
     };
     emitNewMessage(channel, payload);
 
-    return message;
+    return { message, channel };
+  });
+
+  // Post-commit, fire-and-forget: backlog bell nudges (and web push, once
+  // configured). Best-effort — a failure here must never fail or slow the
+  // send itself.
+  setImmediate(() => {
+    dispatchMessageAlerts(channel, message, user).catch((err) =>
+      logger.warn(`Post-send alert dispatch failed: ${err.message}`),
+    );
+  });
+
+  return message;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Post-send alerts — run AFTER the send transaction commits.
+//
+// The bell stays out of everyday chat, but when someone's unread pile
+// crosses an urgency threshold (10, then 30) they get ONE bell
+// notification pulling them back to Messaging. Deduped per level: skipped
+// while an unread nudge of that level exists or one was created in the
+// last 24h, so steady chatter doesn't re-nudge on every message.
+// ─────────────────────────────────────────────────────────────
+
+const BACKLOG_NUDGE_LEVELS = [30, 10];
+
+async function dispatchMessageAlerts(channel, message, sender) {
+  const recipients = (channel.members || []).filter(
+    (m) => m.user_id && m.user_id !== sender.user_id && !m.is_muted,
+  );
+  if (!recipients.length) return;
+  const notifService = require("../notifications/notifications.service");
+  await withSharedContext(async (client) => {
+    for (const member of recipients) {
+      const total = await repo.getUnreadCountForUser(client, member.user_id);
+      const level = BACKLOG_NUDGE_LEVELS.find((l) => total > l);
+      if (!level) continue;
+      const refType = `messaging_backlog_${level}`;
+      const { rows: existing } = await client.query(
+        `SELECT 1 FROM shared.notifications
+         WHERE user_id = $1 AND reference_type = $2
+           AND (is_read = false OR created_at > now() - interval '24 hours')
+         LIMIT 1`,
+        [member.user_id, refType],
+      );
+      if (existing.length) continue;
+      const {
+        rows: [u],
+      } = await client.query(
+        `SELECT default_business FROM shared.users WHERE user_id = $1`,
+        [member.user_id],
+      );
+      await notifService.create(client, {
+        userId: member.user_id,
+        business: channel.business || u?.default_business || "jewelry",
+        type: "message",
+        title:
+          level === 30
+            ? "30+ unread messages — your team is waiting"
+            : "Unread messages are piling up",
+        body: `You have ${total} unread message${total === 1 ? "" : "s"} in Messaging`,
+        referenceType: refType,
+        actionUrl: "/messaging",
+      });
+    }
   });
 }
 
