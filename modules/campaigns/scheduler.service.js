@@ -62,6 +62,7 @@ async function schedule(business, campaignId, scheduledAt, user) {
         { status: 400 },
       );
     }
+    assertSendableContent(campaign);
 
     const when = new Date(scheduledAt);
     if (Number.isNaN(when.getTime())) {
@@ -95,6 +96,7 @@ async function sendNow(business, campaignId, user) {
     }
     return c;
   });
+  assertSendableContent(campaign);
 
   // If no audience built yet, build it now.
   if (!campaign.recipient_count) {
@@ -135,6 +137,43 @@ async function sendNow(business, campaignId, user) {
     campaign_id: campaignId,
     message: "Campaign is sending in batches. Poll /stats for progress.",
   };
+}
+
+/**
+ * Send a single test email — no recipients touched, no tracking pixel,
+ * no status change. Works on any status so users can re-test sent
+ * campaigns. Variables are filled with sample values via a fake
+ * recipient so the test looks like the real thing.
+ */
+async function sendTest(business, campaignId, email, user) {
+  const campaign = await withBusinessContext(business, async (client) => {
+    const c = await repo.findById(client, campaignId);
+    if (!c) {
+      throw Object.assign(new Error("Campaign not found"), { status: 404 });
+    }
+    return c;
+  });
+  if (campaign.campaign_type !== "email") {
+    throw Object.assign(
+      new Error("Test sends are only available for email campaigns"),
+      { status: 400 },
+    );
+  }
+  assertSendableContent(campaign);
+
+  const sampleRecipient = {
+    display_name: user?.display_name || "Adaeze Obi",
+    tracking_token: null, // unsubscribe link renders as '#' in tests
+  };
+  await sendEmail({
+    to: email,
+    subject: `[TEST] ${personaliseSubject(campaign.subject_line, sampleRecipient)}`,
+    html: personaliseContent(campaign.html_content, sampleRecipient),
+    from: campaign.from_name,
+    business,
+  });
+  logger.info(`Campaign ${campaignId} test email sent to ${email}`);
+  return { sent: true, to: email };
 }
 
 /**
@@ -397,16 +436,52 @@ async function runScheduledSweep() {
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Guard shared by schedule() and sendNow(): a campaign must have real
+ * content (and a subject line, for email) before it can leave 'draft'.
+ * Drafts are allowed to be empty — the wizard saves progressively.
+ */
+function assertSendableContent(campaign) {
+  if (!campaign.html_content || !campaign.html_content.trim()) {
+    throw Object.assign(
+      new Error("Campaign content is empty — complete the Content step first"),
+      { status: 400 },
+    );
+  }
+  if (
+    campaign.campaign_type === "email" &&
+    !(campaign.subject_line || "").trim()
+  ) {
+    throw Object.assign(
+      new Error("Email campaigns need a subject line before sending"),
+      { status: 400 },
+    );
+  }
+}
+
+// Used when a contact has no display_name. Deliberately the FULL phrase
+// for first-name tokens too — "Hi Valued" (split fallback) reads broken.
+const FALLBACK_NAME = "Valued Customer";
+
 function personalise(text, recipient) {
   if (!text) return text || "";
-  const name      = recipient.display_name || "Valued Customer";
-  const firstName = name.split(" ")[0];
+  const rawName   = (recipient.display_name || "").trim();
+  const name      = rawName || FALLBACK_NAME;
+  const firstName = rawName ? rawName.split(/\s+/)[0] : FALLBACK_NAME;
+  // Per-recipient unsubscribe link (design-studio footer blocks emit
+  // {{unsubscribe_url}}). Falls back to '#' for test sends.
+  const baseUrl = config.app?.hubBaseUrl || "";
+  const unsubscribeUrl =
+    recipient.tracking_token && baseUrl
+      ? `${baseUrl}/api/campaigns/unsubscribe/${recipient.tracking_token}`
+      : "#";
   return text
-    .replace(/\{\{name\}\}/g,           name)
-    .replace(/\{\{full_name\}\}/g,       name)
-    .replace(/\{\{first_name\}\}/g,      firstName)
-    .replace(/\{\{customer_name\}\}/g,   firstName)   // advertised in UI — must work
-    .replace(/\{\{display_name\}\}/g,    name);
+    .replace(/\{\{name\}\}/g,            name)
+    .replace(/\{\{full_name\}\}/g,        name)
+    .replace(/\{\{first_name\}\}/g,       firstName)
+    .replace(/\{\{customer_name\}\}/g,    name)   // advertised in UI as "full name" — must match
+    .replace(/\{\{display_name\}\}/g,     name)
+    .replace(/\{\{unsubscribe_url\}\}/g,  unsubscribeUrl);
 }
 
 function personaliseContent(html, recipient) {
@@ -447,6 +522,7 @@ function sleep(ms) {
 module.exports = {
   schedule,
   sendNow,
+  sendTest,
   cancel,
   processSend,
   runScheduledSweep,

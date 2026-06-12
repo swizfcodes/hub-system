@@ -22,7 +22,10 @@ router.post(
   "/",
   body("campaign_name").notEmpty(),
   body("campaign_type").isIn(["email", "whatsapp"]),
-  body("html_content").notEmpty(),
+  // html_content is OPTIONAL at creation — the wizard saves a draft after
+  // the Details step, before content exists. Content presence is enforced
+  // at send time (scheduler.service.js schedule/sendNow guards).
+  body("html_content").optional().isString(),
   validate,
   can("campaigns", "create"),
   async (req, res, next) => {
@@ -313,6 +316,30 @@ router.post(
           req.business,
           req.params.id,
           req.body.scheduled_at,
+          req.user,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Test send — single email to the requester, no recipients touched.
+// Gated on 'edit' (not 'approve') so staff can test before approval.
+router.post(
+  "/:id/test-send",
+  param("id").isUUID(),
+  body("email").isEmail(),
+  validate,
+  can("campaigns", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.sendTest(
+          req.business,
+          req.params.id,
+          req.body.email,
           req.user,
         ),
       );

@@ -46,6 +46,57 @@ export interface AudienceFilter {
   channel_requirements: "email" | "whatsapp" | "auto";
 }
 
+// ── Email design studio (block-based builder) ────────────────────────────────
+// Source design for the in-app studio. html_content is ALWAYS the compiled,
+// send-ready output (lib/emailStudio.ts compileEmailHtml); design_json only
+// exists so a draft can be re-opened in the studio. NULL = raw-HTML mode.
+
+export type EmailBlockType =
+  | "header"
+  | "hero"
+  | "heading"
+  | "text"
+  | "button"
+  | "image"
+  | "divider"
+  | "spacer"
+  | "footer";
+
+export interface EmailBlock {
+  id: string;
+  type: EmailBlockType;
+  /** heading / text / footer body. Newlines become <br>. */
+  text?: string;
+  /** button label */
+  label?: string;
+  /** link target for button / hero / image */
+  href?: string;
+  /** hero / image / header-logo source URL */
+  imageUrl?: string;
+  /** image alt text */
+  alt?: string;
+  align?: "left" | "center" | "right";
+  /** spacer height in px */
+  height?: number;
+}
+
+export interface EmailTheme {
+  /** page background behind the card */
+  background: string;
+  /** card background */
+  content: string;
+  /** buttons, links, accents */
+  accent: string;
+  /** body text */
+  text: string;
+}
+
+export interface EmailDesign {
+  version: 1;
+  theme: EmailTheme;
+  blocks: EmailBlock[];
+}
+
 // ── Core campaign record ─────────────────────────────────────────────────────
 
 export interface Campaign {
@@ -56,6 +107,7 @@ export interface Campaign {
   subject_line?: string | null;
   from_name?: string | null;
   html_content: string;
+  design_json?: EmailDesign | null;
   audience_filter?: AudienceFilter;
   scheduled_at?: string | null;
   sent_at?: string | null;

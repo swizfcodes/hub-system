@@ -80,6 +80,7 @@ router.post(
   body("business").optional({ nullable: true }).isString(),
   body("description").optional().isString(),
   body("clone_from_role_id").optional({ checkFalsy: true }).isUUID(),
+  body("default_nav").optional({ nullable: true }).isArray(),
   validate,
   canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
   async (req, res, next) => {
@@ -103,6 +104,31 @@ router.patch(
   async (req, res, next) => {
     try {
       res.json(await service.updateRole(req.user, req.params.roleId, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── ROLE DEFAULT NAVIGATION ──────────────────────────────────
+// PUT /roles/:roleId/default-nav — body { default_nav: string[]|null }
+// Allowed on system roles too (nav preference, not a privilege change).
+
+router.put(
+  "/roles/:roleId/default-nav",
+  param("roleId").isUUID(),
+  body("default_nav").optional({ nullable: true }).isArray(),
+  validate,
+  canAny([{ module: "security", action: "approve" }, { module: "settings", action: "approve" }]),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.setRoleDefaultNav(
+          req.user,
+          req.params.roleId,
+          req.body?.default_nav ?? null,
+        ),
+      );
     } catch (err) {
       next(err);
     }

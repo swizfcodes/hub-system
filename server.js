@@ -12,7 +12,12 @@ const http = require("http");
 
 const server = http.createServer(app);
 
-initSockets(server);
+// init() handles Redis failures internally (in-memory fallback), but a
+// rejection here must never become an unhandled promise rejection —
+// realtime is optional, the API must boot regardless.
+initSockets(server).catch((err) =>
+  logger.error("Socket.io initialisation failed — realtime disabled", err),
+);
 
 // Load the active business list BEFORE the listener binds. Hot-path
 // validators (db.js withBusinessContext, middleware/businessContext,

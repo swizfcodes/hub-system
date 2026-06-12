@@ -27,14 +27,14 @@
 async function listRoles(client, { business = null } = {}) {
   if (business === null) {
     const { rows } = await client.query(
-      `SELECT role_id, role_name, business, is_system, description, created_at
+      `SELECT role_id, role_name, business, is_system, description, default_nav, created_at
        FROM shared.roles
        ORDER BY is_system DESC, business NULLS FIRST, role_name ASC`,
     );
     return rows;
   }
   const { rows } = await client.query(
-    `SELECT role_id, role_name, business, is_system, description, created_at
+    `SELECT role_id, role_name, business, is_system, description, default_nav, created_at
      FROM shared.roles
      WHERE business IS NULL OR business = $1
      ORDER BY is_system DESC, business NULLS FIRST, role_name ASC`,
@@ -47,7 +47,7 @@ async function findRoleById(client, roleId) {
   const {
     rows: [row],
   } = await client.query(
-    `SELECT role_id, role_name, business, is_system, description, created_at
+    `SELECT role_id, role_name, business, is_system, description, default_nav, created_at
      FROM shared.roles
      WHERE role_id = $1`,
     [roleId],
@@ -59,7 +59,7 @@ async function findRoleByName(client, roleName, business = null) {
   const {
     rows: [row],
   } = await client.query(
-    `SELECT role_id, role_name, business, is_system, description, created_at
+    `SELECT role_id, role_name, business, is_system, description, default_nav, created_at
      FROM shared.roles
      WHERE role_name = $1 AND business IS NOT DISTINCT FROM $2
      LIMIT 1`,
@@ -68,14 +68,14 @@ async function findRoleByName(client, roleName, business = null) {
   return row || null;
 }
 
-async function insertRole(client, { roleName, business, description }) {
+async function insertRole(client, { roleName, business, description, defaultNav }) {
   const {
     rows: [row],
   } = await client.query(
-    `INSERT INTO shared.roles (role_name, business, is_system, description)
-     VALUES ($1, $2, false, $3)
-     RETURNING role_id, role_name, business, is_system, description, created_at`,
-    [roleName, business || null, description || null],
+    `INSERT INTO shared.roles (role_name, business, is_system, description, default_nav)
+     VALUES ($1, $2, false, $3, $4)
+     RETURNING role_id, role_name, business, is_system, description, default_nav, created_at`,
+    [roleName, business || null, description || null, defaultNav || null],
   );
   return row;
 }
@@ -88,8 +88,23 @@ async function updateRole(client, roleId, { roleName, description }) {
      SET role_name   = COALESCE($2, role_name),
          description = COALESCE($3, description)
      WHERE role_id = $1 AND is_system = false
-     RETURNING role_id, role_name, business, is_system, description, created_at`,
+     RETURNING role_id, role_name, business, is_system, description, default_nav, created_at`,
     [roleId, roleName ?? null, description ?? null],
+  );
+  return row || null;
+}
+
+// default_nav may be set on ANY role, including system roles —
+// it's a navigation preference, not a privilege change.
+async function setRoleDefaultNav(client, roleId, defaultNav) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `UPDATE shared.roles
+     SET default_nav = $2
+     WHERE role_id = $1
+     RETURNING role_id, role_name, business, is_system, description, default_nav, created_at`,
+    [roleId, defaultNav],
   );
   return row || null;
 }
@@ -317,6 +332,7 @@ module.exports = {
   findRoleByName,
   insertRole,
   updateRole,
+  setRoleDefaultNav,
   deleteRole,
   countUsersForRole,
   listPermissionsForRole,

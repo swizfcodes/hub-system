@@ -6,6 +6,8 @@ export interface Role {
   business: string | null;
   is_system: boolean;
   description: string | null;
+  /** Ordered top-10 navigation default for users on this role (or null). */
+  default_nav?: string[] | null;
   created_at: string;
 }
 

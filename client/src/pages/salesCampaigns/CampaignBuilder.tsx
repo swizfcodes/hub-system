@@ -606,7 +606,7 @@ export default function CampaignBuilder() {
               error={errors.headline?.message}
               surface="dark"
               {...register("headline")}
-              placeholder="The Easter Edit — Bejewelled"
+              placeholder="e.g. The Easter Edit"
             />
           </div>
 

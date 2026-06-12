@@ -10,13 +10,34 @@ const logger = require("./logger");
 let io;
 
 async function init(httpServer) {
-  const pubClient = createClient({ url: config.redis.url });
-  const subClient = pubClient.duplicate();
-  await Promise.all([pubClient.connect(), subClient.connect()]);
+  // Redis adapter is OPTIONAL. With a single fork-mode instance
+  // (ecosystem.config.js) the in-memory adapter is fully functional, so a
+  // Redis outage must never take realtime down — previously a failed
+  // connect() rejected init() (io never attached → clients saw errors on
+  // /socket.io) and a post-boot 'error' event had no handler, which
+  // crashes the node process.
+  let adapter;
+  try {
+    const pubClient = createClient({ url: config.redis.url });
+    const subClient = pubClient.duplicate();
+    pubClient.on("error", (err) =>
+      logger.error("Socket.io Redis pub client error", err),
+    );
+    subClient.on("error", (err) =>
+      logger.error("Socket.io Redis sub client error", err),
+    );
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    adapter = createAdapter(pubClient, subClient);
+  } catch (err) {
+    logger.error(
+      "Socket.io Redis adapter unavailable — falling back to in-memory adapter",
+      err,
+    );
+  }
 
   io = new Server(httpServer, {
     cors: { origin: config.app.allowedOrigins, credentials: true },
-    adapter: createAdapter(pubClient, subClient),
+    ...(adapter ? { adapter } : {}),
   });
 
   // ── Auth middleware ───────────────────────────────────────
@@ -125,7 +146,9 @@ async function init(httpServer) {
     });
   });
 
-  logger.info("Socket.io initialised with Redis adapter");
+  logger.info(
+    `Socket.io initialised with ${adapter ? "Redis" : "in-memory"} adapter`,
+  );
 }
 
 // ── Emit helpers ──────────────────────────────────────────

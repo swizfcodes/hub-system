@@ -18,6 +18,12 @@ import {
   AudienceBuilder,
   CampaignTypePill,
 } from "@components/campaigns/CampaignComponents";
+import { EmailStudio } from "@components/campaigns/EmailStudio";
+import {
+  compileEmailHtml,
+  defaultDesign,
+  designHasContent,
+} from "@lib/emailStudio";
 import {
   createCampaign,
   updateCampaign,
@@ -25,6 +31,7 @@ import {
   buildAudience,
   scheduleCampaign,
   sendNow,
+  sendTestEmail,
 } from "@services/campaigns";
 import {
   createCampaignSchema,
@@ -38,9 +45,10 @@ import {
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { cn } from "@lib/cn";
-import type { AudienceFilter } from "@typedefs/campaigns";
+import type { AudienceFilter, EmailDesign } from "@typedefs/campaigns";
 
 type Step = "details" | "audience" | "content" | "schedule" | "review";
+type ContentMode = "studio" | "html";
 
 export default function CampaignBuilder() {
   const { platform } = useBranding();
@@ -54,6 +62,11 @@ export default function CampaignBuilder() {
   const [scheduleMode, setScheduleMode] = useState<"now" | "later">("now");
   const [scheduledAt, setScheduledAt] = useState("");
   const [saving, setSaving] = useState(false);
+  // Email content authoring: in-app block studio (default) or raw HTML.
+  const [contentMode, setContentMode] = useState<ContentMode>("studio");
+  const [design, setDesign] = useState<EmailDesign>(() => defaultDesign());
+  const [testEmail, setTestEmail] = useState("");
+  const [testSending, setTestSending] = useState(false);
 
   const { data: existing } = useQuery({
     queryKey: ["campaign", id],
@@ -88,14 +101,28 @@ export default function CampaignBuilder() {
         html_content: existing.html_content,
         audience_filter: existing.audience_filter,
       });
+      // Re-open the studio for studio-built campaigns; legacy campaigns
+      // with hand-written HTML stay in raw mode so we never clobber them.
+      if (existing.design_json) {
+        setDesign(existing.design_json);
+        setContentMode("studio");
+      } else if (existing.html_content?.trim()) {
+        setContentMode("html");
+      }
     }
   }, [existing]);
 
   const campaignType = form.watch("campaign_type");
   const audienceFilter = form.watch("audience_filter") as AudienceFilter;
 
-  // Save draft on each step transition
-  async function saveProgress(values: Partial<CreateCampaignValues>) {
+  // Save draft on each step transition. Returns true on success so the
+  // wizard NEVER advances past a failed save (which previously left
+  // campaignId null and dead-ended the Audience step).
+  async function saveProgress(
+    values: Partial<CreateCampaignValues> & {
+      design_json?: EmailDesign | null;
+    },
+  ): Promise<boolean> {
     setSaving(true);
     try {
       if (!campaignId) {
@@ -104,8 +131,10 @@ export default function CampaignBuilder() {
       } else {
         await updateCampaign(campaignId, values);
       }
+      return true;
     } catch (err) {
       showToast.error(errMsg(err));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -116,27 +145,67 @@ export default function CampaignBuilder() {
     if (step === "details") {
       const valid = await form.trigger(["campaign_name", "campaign_type"]);
       if (!valid) return;
-      await saveProgress({
+      const saved = await saveProgress({
         campaign_name: values.campaign_name,
         campaign_type: values.campaign_type,
         subject_line: values.subject_line,
         from_name: values.from_name,
       });
+      if (!saved) return;
       setStep("audience");
     } else if (step === "audience") {
-      if (!campaignId) return;
-      await saveProgress({ audience_filter: values.audience_filter });
-      const result = await buildAudience(campaignId);
-      setAudienceCount(result.recipient_count);
+      if (!campaignId) {
+        // Defensive — should be unreachable now that Details can't be
+        // passed without a successful save.
+        showToast.error("Complete the Details step first");
+        setStep("details");
+        return;
+      }
+      const saved = await saveProgress({
+        audience_filter: values.audience_filter,
+      });
+      if (!saved) return;
+      try {
+        const result = await buildAudience(campaignId);
+        setAudienceCount(result.recipient_count);
+      } catch (err) {
+        showToast.error(errMsg(err));
+        return;
+      }
       setStep("content");
     } else if (step === "content") {
+      if (campaignType === "email" && contentMode === "studio") {
+        if (!designHasContent(design)) {
+          showToast.error("Add at least one content block before continuing");
+          return;
+        }
+        // Compile blocks → email-safe HTML. design_json is saved alongside
+        // so the studio re-opens exactly as left.
+        const html = compileEmailHtml(design);
+        form.setValue("html_content", html);
+        const saved = await saveProgress({
+          html_content: html,
+          design_json: design,
+        });
+        if (!saved) return;
+        setStep("schedule");
+        return;
+      }
       if (!values.html_content.trim()) {
         form.setError("html_content", { message: "Content required" });
         return;
       }
-      await saveProgress({ html_content: values.html_content });
+      const saved = await saveProgress({
+        html_content: values.html_content,
+        design_json: null, // raw-HTML mode clears any stale studio design
+      });
+      if (!saved) return;
       setStep("schedule");
     } else if (step === "schedule") {
+      if (scheduleMode === "later" && !scheduledAt) {
+        showToast.error("Pick a send date and time, or choose Send Now");
+        return;
+      }
       setStep("review");
     }
   }
@@ -151,6 +220,23 @@ export default function CampaignBuilder() {
     ];
     const idx = steps.indexOf(step);
     if (idx > 0) setStep(steps[idx - 1]);
+  }
+
+  async function handleTestSend() {
+    if (!campaignId) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail.trim())) {
+      showToast.error("Enter a valid email address for the test");
+      return;
+    }
+    setTestSending(true);
+    try {
+      await sendTestEmail(campaignId, testEmail.trim());
+      showToast.success(`Test email sent to ${testEmail.trim()}`);
+    } catch (err) {
+      showToast.error(errMsg(err));
+    } finally {
+      setTestSending(false);
+    }
   }
 
   async function handleLaunch() {
@@ -248,19 +334,42 @@ export default function CampaignBuilder() {
               />
               {campaignType === "email" && (
                 <>
-                  <Controller
-                    name="subject_line"
-                    control={form.control}
-                    render={({ field }) => (
-                      <Input
-                        {...field}
-                        label="Email Subject Line"
-                        placeholder="e.g. ✨ New Arrivals — Just for You, {{customer_name}}"
-                        surface="dark"
-                        hint="Use {{customer_name}} for personalisation"
-                      />
-                    )}
-                  />
+                  <div>
+                    <Controller
+                      name="subject_line"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          label="Email Subject Line"
+                          placeholder="e.g. ✨ New Arrivals — Just for You, {{customer_name}}"
+                          surface="dark"
+                          hint='Click a variable below to insert it. Contacts without a name get "Valued Customer".'
+                        />
+                      )}
+                    />
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {TEMPLATE_VARIABLES.map((v) => (
+                        <button
+                          key={v.token}
+                          type="button"
+                          title={`${v.label} — e.g. ${v.example}`}
+                          onClick={() => {
+                            const current =
+                              form.getValues("subject_line") ?? "";
+                            const sep =
+                              current && !current.endsWith(" ") ? " " : "";
+                            form.setValue("subject_line", current + sep + v.token, {
+                              shouldDirty: true,
+                            });
+                          }}
+                          className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors font-mono"
+                        >
+                          {v.token}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Controller
                     name="from_name"
                     control={form.control}
@@ -301,59 +410,93 @@ export default function CampaignBuilder() {
                 title="Campaign Content"
                 subtitle={
                   campaignType === "email"
-                    ? "Write your email HTML or paste from your email tool."
+                    ? contentMode === "studio"
+                      ? "Design your email with blocks — no HTML needed."
+                      : "Paste or write raw email HTML."
                     : "Write your WhatsApp message. Templates must be pre-approved by Meta."
                 }
               />
 
-              {/* Variable reference */}
-              <div className="flex flex-wrap gap-1.5">
-                <p className="w-full text-xs text-brand-smoke/60 mb-1">
-                  Available variables:
-                </p>
-                {TEMPLATE_VARIABLES.map((v) => (
-                  <button
-                    key={v.token}
-                    type="button"
-                    onClick={() => {
-                      const current = form.getValues("html_content");
-                      form.setValue("html_content", current + v.token);
-                    }}
-                    className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors font-mono"
-                  >
-                    {v.token}
-                  </button>
-                ))}
-              </div>
+              {/* Mode toggle — email only */}
+              {campaignType === "email" && (
+                <div className="flex gap-1 rounded-lg border border-white/10 p-1 w-fit">
+                  {(
+                    [
+                      { key: "studio", label: "✨ Studio" },
+                      { key: "html", label: "</> Raw HTML" },
+                    ] as { key: ContentMode; label: string }[]
+                  ).map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => setContentMode(m.key)}
+                      className={cn(
+                        "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                        contentMode === m.key
+                          ? "bg-brand-accent text-brand-black"
+                          : "text-brand-smoke hover:text-brand-cream",
+                      )}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              <Controller
-                name="html_content"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <div>
-                    <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-brand-smoke mb-2">
-                      {campaignType === "email"
-                        ? "HTML Content *"
-                        : "Message *"}
-                    </label>
-                    <textarea
-                      {...field}
-                      placeholder={
-                        campaignType === "email"
-                          ? "<html>...</html> or paste your email builder output here"
-                          : "Hi {{customer_name}}, we have something special for you..."
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-brand-graphite/30 p-4 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none font-mono"
-                      rows={12}
-                    />
-                    {fieldState.error && (
-                      <p className="mt-1 text-xs text-state-danger">
-                        {fieldState.error.message}
-                      </p>
-                    )}
+              {campaignType === "email" && contentMode === "studio" ? (
+                <EmailStudio value={design} onChange={setDesign} />
+              ) : (
+                <>
+                  {/* Variable reference */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <p className="w-full text-xs text-brand-smoke/60 mb-1">
+                      Available variables:
+                    </p>
+                    {TEMPLATE_VARIABLES.map((v) => (
+                      <button
+                        key={v.token}
+                        type="button"
+                        onClick={() => {
+                          const current = form.getValues("html_content");
+                          form.setValue("html_content", current + v.token);
+                        }}
+                        className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-brand-smoke hover:text-brand-accent hover:border-brand-accent/30 transition-colors font-mono"
+                      >
+                        {v.token}
+                      </button>
+                    ))}
                   </div>
-                )}
-              />
+
+                  <Controller
+                    name="html_content"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div>
+                        <label className="block text-[0.7rem] font-medium uppercase tracking-widest text-brand-smoke mb-2">
+                          {campaignType === "email"
+                            ? "HTML Content *"
+                            : "Message *"}
+                        </label>
+                        <textarea
+                          {...field}
+                          placeholder={
+                            campaignType === "email"
+                              ? "<html>...</html> or paste your email builder output here"
+                              : "Hi {{customer_name}}, we have something special for you..."
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-brand-graphite/30 p-4 text-sm text-brand-cream placeholder-brand-smoke/40 focus:border-brand-accent/40 focus:outline-none font-mono"
+                          rows={12}
+                        />
+                        {fieldState.error && (
+                          <p className="mt-1 text-xs text-state-danger">
+                            {fieldState.error.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  />
+                </>
+              )}
             </>
           )}
 
@@ -481,6 +624,36 @@ export default function CampaignBuilder() {
                   }
                 />
               </div>
+              {campaignType === "email" && (
+                <div className="rounded-xl border border-white/5 bg-brand-graphite/30 p-4 space-y-3">
+                  <p className="text-sm text-brand-cream font-medium">
+                    Send yourself a test first
+                  </p>
+                  <p className="text-xs text-brand-smoke">
+                    Variables are filled with sample data. The subject is
+                    prefixed with [TEST]. No recipients are touched.
+                  </p>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        surface="dark"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      onClick={handleTestSend}
+                      loading={testSending}
+                    >
+                      <Send className="h-4 w-4" />
+                      Send test
+                    </Button>
+                  </div>
+                </div>
+              )}
               {audienceCount === 0 && (
                 <div className="rounded-xl border border-amber-500/30 bg-amber-900/10 px-4 py-3 text-sm text-amber-300">
                   Audience not built yet — go back to Audience step and click

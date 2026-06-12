@@ -24,6 +24,7 @@ import {
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { cn } from "@lib/cn";
+import { RoleNavEditor } from "./RoleNavEditor";
 import type { Role, ModuleCatalogue } from "@typedefs/security";
 
 // ── PermissionMatrix ──────────────────────────────────────────────────────────
@@ -247,6 +248,14 @@ export function RoleEditor({ roleId }: RoleEditorProps) {
           </Badge>
         )}
       </div>
+
+      {/* Default top-10 navigation for this role (editable on system
+          roles too — it's a UX preference, not a privilege). */}
+      <RoleNavEditor
+        key={roleId}
+        roleId={roleId}
+        initial={role.default_nav ?? null}
+      />
 
       <div className="space-y-1">
         {catalogue.map((cat) => {

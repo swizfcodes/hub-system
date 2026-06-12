@@ -68,6 +68,17 @@ export async function scheduleCampaign(
   return data;
 }
 
+export async function sendTestEmail(
+  id: string,
+  email: string,
+): Promise<{ sent: boolean; to: string }> {
+  const { data } = await api.post<{ sent: boolean; to: string }>(
+    `/campaigns/${id}/test-send`,
+    { email },
+  );
+  return data;
+}
+
 export async function sendNow(
   id: string,
 ): Promise<{ sent: number; campaign?: Campaign }> {

@@ -130,9 +130,35 @@ async function getRoleWithPermissions(roleId) {
  * then customise from there." Saves the frontend from issuing dozens
  * of grant calls one at a time.
  */
+// Validate a role's default navigation list: deduped string keys, max 10.
+// (Module keys live in the frontend HUB_MODULES catalogue; unknown keys
+// are ignored at render time, so only shape is enforced here.)
+function sanitizeDefaultNav(list) {
+  if (list == null) return null;
+  if (!Array.isArray(list)) {
+    throw Object.assign(
+      new Error("default_nav must be an array of module keys"),
+      { status: 400 },
+    );
+  }
+  const cleaned = [
+    ...new Set(
+      list.filter(
+        (k) => typeof k === "string" && k.length > 0 && k.length <= 40,
+      ),
+    ),
+  ];
+  if (cleaned.length > 10) {
+    throw Object.assign(new Error("default_nav cannot exceed 10 modules"), {
+      status: 400,
+    });
+  }
+  return cleaned.length ? cleaned : null;
+}
+
 async function createRole(
   user,
-  { role_name, business, description, clone_from_role_id },
+  { role_name, business, description, clone_from_role_id, default_nav },
 ) {
   if (!role_name || typeof role_name !== "string") {
     throw Object.assign(new Error("role_name is required"), { status: 400 });
@@ -142,6 +168,7 @@ async function createRole(
       status: 400,
     });
   }
+  const defaultNav = sanitizeDefaultNav(default_nav);
 
   return withSharedContext(async (client) => {
     // Reject duplicates: same role_name + same business scope
@@ -177,6 +204,9 @@ async function createRole(
         roleName: role_name,
         business,
         description,
+        // Explicit default_nav wins; otherwise inherit the template's
+        // when cloning, so cloned roles navigate like their parent.
+        defaultNav: defaultNav ?? template?.default_nav ?? null,
       });
 
       // Clone permissions from template if requested
@@ -227,6 +257,34 @@ async function createRole(
       await client.query("ROLLBACK");
       throw err;
     }
+  });
+}
+
+// Set a role's default navigation. Unlike rename, this IS allowed on
+// system roles — it's a UX preference, not a privilege change.
+async function setRoleDefaultNav(user, roleId, default_nav) {
+  const defaultNav = sanitizeDefaultNav(default_nav);
+  return withSharedContext(async (client) => {
+    const existing = await repo.findRoleById(client, roleId);
+    if (!existing) {
+      throw Object.assign(new Error("Role not found"), { status: 404 });
+    }
+
+    const updated = await repo.setRoleDefaultNav(client, roleId, defaultNav);
+
+    await auditService.log(client, {
+      userId: user.user_id,
+      userName: user.display_name || "admin",
+      business: existing.business || "*",
+      module: "settings",
+      action: "edit",
+      table: "shared.roles",
+      recordId: roleId,
+      before: { default_nav: existing.default_nav },
+      after: { default_nav: defaultNav },
+    });
+
+    return updated;
   });
 }
 
@@ -938,6 +996,7 @@ module.exports = {
   getRoleWithPermissions,
   createRole,
   updateRole,
+  setRoleDefaultNav,
   deleteRole,
   grant,
   revoke,

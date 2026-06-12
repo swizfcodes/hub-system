@@ -63,7 +63,14 @@ export const CONTACT_TYPE_OPTIONS = [
 export const WA_DAILY_LIMIT_DEFAULT = 1_000;
 export const WA_WARN_THRESHOLD_PCT = 0.8; // warn at 80%
 
-// Template variables for personalisation
+// Template variables for personalisation.
+//
+// SOURCE OF TRUTH: personalise() in modules/campaigns/scheduler.service.js.
+// Only list tokens the backend actually substitutes — anything else goes
+// out to customers as literal "{{...}}" text. Order/product/amount tokens
+// were removed: bulk campaigns have no order context to fill them from.
+// Contacts without a display_name fall back to "Valued Customer" (both
+// tokens — never a bare "Valued").
 export const TEMPLATE_VARIABLES = [
   {
     token: "{{customer_name}}",
@@ -71,20 +78,6 @@ export const TEMPLATE_VARIABLES = [
     example: "Adaeze Obi",
   },
   { token: "{{first_name}}", label: "First name only", example: "Adaeze" },
-  { token: "{{order_number}}", label: "Order number", example: "ORD-2025-001" },
-  { token: "{{amount}}", label: "Amount", example: "₦250,000" },
-  {
-    token: "{{product_name}}",
-    label: "Product name",
-    example: "Gold Bangle Set",
-  },
-  {
-    token: "{{delivery_date}}",
-    label: "Delivery date",
-    example: "15 Jan 2026",
-  },
-  { token: "{{business_name}}", label: "Business name", example: "Your brand" },
-  { token: "{{staff_name}}", label: "Staff / sender name", example: "Tola" },
 ];
 
 export const LAST_PURCHASE_OPTIONS: SelectOption[] = [

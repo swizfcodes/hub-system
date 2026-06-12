@@ -24,6 +24,7 @@ async function insert(
     from_name,
     html_content,
     audience_filter,
+    design_json,
     userId,
   },
 ) {
@@ -32,16 +33,19 @@ async function insert(
   } = await client.query(
     `INSERT INTO campaigns
        (campaign_name, campaign_type, subject_line, from_name,
-        html_content, audience_filter, status, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6,'draft',$7)
+        html_content, audience_filter, design_json, status, created_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,'draft',$8)
      RETURNING *`,
     [
       campaign_name,
       campaign_type,
       subject_line || null,
       from_name || null,
-      html_content,
+      // Column is NOT NULL — drafts created before the Content step
+      // store an empty string. Send-time guards reject empty content.
+      html_content || "",
       JSON.stringify(audience_filter || {}),
+      design_json ? JSON.stringify(design_json) : null,
       userId,
     ],
   );
@@ -71,7 +75,8 @@ async function findStatusById(client, campaignId) {
   const {
     rows: [c],
   } = await client.query(
-    `SELECT status, recipient_count FROM campaigns WHERE campaign_id=$1`,
+    `SELECT status, recipient_count, campaign_type, subject_line, html_content
+     FROM campaigns WHERE campaign_id=$1`,
     [campaignId],
   );
   return c || null;

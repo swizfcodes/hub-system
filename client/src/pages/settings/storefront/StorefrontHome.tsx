@@ -8,6 +8,7 @@
  *   · Formats     — the "Four formats" cards (store.signatures), full CRUD
  *   · Content     — homepage hero + section copy + background image
  */
+import { useBranding } from "@/providers/ThemeProvider";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles, Layers, LayoutTemplate } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
@@ -46,6 +47,7 @@ const STOREFRONT_AREAS: AppModule[] = [
 ];
 
 export default function StorefrontHome() {
+  const { businessLabel } = useBranding();
   return (
     <>
       <Topbar title="Storefront" subtitle="Settings · Storefront" />
@@ -69,7 +71,7 @@ export default function StorefrontHome() {
 
         <header className="mb-10 animate-app-in">
           <p className="text-[0.7rem] tracking-[0.18em] uppercase text-brand-accent mb-2">
-            Orika Living
+            {businessLabel("diffusers") || "Storefront"}
           </p>
           <h1 className="font-display font-light text-3xl sm:text-5xl text-brand-cream leading-tight">
             Storefront <span className="italic text-brand-accent">Content</span>

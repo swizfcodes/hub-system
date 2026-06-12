@@ -144,14 +144,98 @@ async function uploadDocument(input, user) {
 
   return withSharedContext(async (client) => {
     // Dedupe — if the exact same bytes already exist for this business,
-    // return the existing record rather than creating a duplicate.
+    // avoid storing the blob twice. BUT the reference link must still be
+    // honoured: previously this returned the existing record unchanged,
+    // so uploading a known file against a contact/invoice silently
+    // dropped the link and the record never appeared on that entity.
     const existing = await repo.findByContentHash(
       client,
       contentHash,
       input.business,
     );
     if (existing) {
-      return { ...existing, deduplicated: true };
+      const sameRef =
+        existing.reference_type === (input.referenceType || null) &&
+        existing.reference_id === (input.referenceId || null);
+
+      // No reference requested, or it already points at the same record →
+      // true duplicate, return as before.
+      if (!input.referenceType || !input.referenceId || sameRef) {
+        return { ...existing, deduplicated: true };
+      }
+
+      // Existing copy is unlinked → attach it to the requested record.
+      if (!existing.reference_type && !existing.reference_id) {
+        const linked = await repo.updateReference(client, {
+          documentId: existing.document_id,
+          referenceType: input.referenceType,
+          referenceId: input.referenceId,
+        });
+        await auditService.log(client, {
+          userId: user?.user_id || null,
+          userName: user?.display_name || "system",
+          business: input.business,
+          module: "documents",
+          action: "edit",
+          table: "shared.documents",
+          recordId: existing.document_id,
+          before: { reference_type: null, reference_id: null },
+          after: {
+            reference_type: input.referenceType,
+            reference_id: input.referenceId,
+          },
+        });
+        return { ...linked, deduplicated: true };
+      }
+
+      // Existing copy is linked to a DIFFERENT record → create a new
+      // document row for this reference, reusing the stored blob (same
+      // file_path + hash, no second copy on disk). Falls through to the
+      // insert below with reused storage metadata.
+      const reused = existing;
+      let documentNumber;
+      try {
+        documentNumber = await nextDocumentNumber(
+          client,
+          input.business,
+          input.documentType,
+        );
+      } catch {
+        const prefix = input.business.slice(0, 3).toUpperCase();
+        documentNumber = `${prefix}-DOC-${Date.now().toString(36).toUpperCase()}`;
+      }
+      const doc = await repo.insert(client, {
+        document_number: documentNumber,
+        business: input.business,
+        document_type: input.documentType,
+        title: input.title || reused.title,
+        file_path: reused.file_path,
+        file_size_bytes: reused.file_size_bytes,
+        mime_type: reused.mime_type,
+        content_hash: contentHash,
+        reference_type: input.referenceType,
+        reference_id: input.referenceId,
+        uploaded_by: user?.user_id || null,
+      });
+      await auditService.log(client, {
+        userId: user?.user_id || null,
+        userName: user?.display_name || "system",
+        business: input.business,
+        module: "documents",
+        action: "upload",
+        table: "shared.documents",
+        recordId: doc.document_id,
+        after: {
+          document_number: doc.document_number,
+          document_type: doc.document_type,
+          title: doc.title,
+          content_hash: contentHash,
+          reference_type: doc.reference_type,
+          reference_id: doc.reference_id,
+          reused_blob_of: reused.document_id,
+        },
+      });
+      return doc;
     }
 
     // PATCH: Provide a robust fallback filename so lib/storage.js never crashes

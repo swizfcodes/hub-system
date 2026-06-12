@@ -321,7 +321,7 @@ function BankAccountFormModal({
           <Input
             {...register("account_name")}
             label="Account name"
-            placeholder="Orika Bejewelled Ltd"
+            placeholder="e.g. My Brand Ltd"
             className="sm:col-span-2"
             error={errors.account_name?.message}
           />

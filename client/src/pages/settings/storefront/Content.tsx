@@ -141,7 +141,7 @@ export default function StorefrontContent() {
                 <Input
                   value={form.hero_eyebrow}
                   onChange={(e) => set("hero_eyebrow", e.target.value)}
-                  placeholder="Orika Living · Lagos, Nigeria"
+                  placeholder="Your brand · Lagos, Nigeria"
                 />
               </label>
 

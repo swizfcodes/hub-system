@@ -26,8 +26,8 @@ export function StorefrontGuard({ children }: { children: ReactNode }) {
           No storefront for this business <span className="italic text-brand-accent">yet</span>
         </h1>
         <p className="text-sm text-brand-cloud mb-6">
-          The online storefront is currently exclusive to Orika Living. Switch
-          to that business to manage its homepage content, formats and scents.
+          The online storefront is enabled for one business only. Switch to
+          that business to manage its homepage content, formats and scents.
           A storefront for this business is coming soon.
         </p>
         <Link

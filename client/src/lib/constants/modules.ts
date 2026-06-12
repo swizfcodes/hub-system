@@ -45,11 +45,20 @@ export interface AppModule {
   permissionModule?: string | string[];
   // Personal-workspace tiles every signed-in user may see.
   alwaysVisible?: boolean;
+  // Global default rank for the top-10 grid (1 = first). Modules
+  // without a defaultPriority live in the "More" section unless a
+  // role default or user pin promotes them. The daily-touch test:
+  // "does someone at Orika open this daily or several times a week?"
+  defaultPriority?: number;
 }
+
+/** Maximum modules in the priority grid / sidebar priority group. */
+export const NAV_PRIORITY_MAX = 10;
 
 export const HUB_MODULES: AppModule[] = [
   {
     key: "dashboard",
+    defaultPriority: 1,
     permissionModule: "dashboards",
     label: "Dashboard",
     description: "Live metrics across all businesses",
@@ -60,6 +69,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "crm",
+    defaultPriority: 4,
     permissionModule: "crm",
     label: "CRM",
     description: "Customer relationships",
@@ -71,6 +81,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "sales",
+    defaultPriority: 3,
     permissionModule: "sales",
     label: "Sales",
     description: "Orders & quotations",
@@ -81,6 +92,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "pos",
+    defaultPriority: 2,
     permissionModule: "pos",
     label: "POS",
     description: "In-store point of sale",
@@ -91,6 +103,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "logistics",
+    defaultPriority: 7,
     permissionModule: "logistics",
     label: "Logistics",
     description: "Deliveries & shipping",
@@ -102,6 +115,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "stock",
+    defaultPriority: 6,
     permissionModule: "stock",
     label: "Stock & Inv",
     description: "Inventory across locations",
@@ -123,6 +137,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "invoicing",
+    defaultPriority: 8,
     permissionModule: "invoicing",
     label: "Invoices",
     description: "Issue & track invoices",
@@ -154,6 +169,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "expenses",
+    defaultPriority: 9,
     permissionModule: "expenses",
     label: "Expenses",
     description: "Submissions & approvals",
@@ -256,6 +272,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "catalogue",
+    defaultPriority: 5,
     permissionModule: "catalogue",
     label: "Catalogue",
     description: "Products · Categories · Locations",
@@ -298,6 +315,7 @@ export const HUB_MODULES: AppModule[] = [
   },
   {
     key: "reports",
+    defaultPriority: 10,
     permissionModule: "reports",
     label: "Reports",
     description: "Standard & custom reports",

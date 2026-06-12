@@ -101,11 +101,6 @@ export function getNotificationMeta(type: string) {
   );
 }
 
-// ── Brand toggle options ──────────────────────────────────────────────────────
-
-// Brand toggle options are built dynamically from useBranding()
-// (GET /api/branding) — see DashboardPage. Never hardcode them.
-
 // ── Period options ────────────────────────────────────────────────────────────
 
 export const PERIOD_OPTIONS = [
@@ -115,25 +110,46 @@ export const PERIOD_OPTIONS = [
   { value: "this_year", label: "This year" },
 ];
 
-export function getPeriodParams(period: string): {
-  year: number;
-  month?: number;
-} {
+export interface PeriodParams {
+  start_date: string;
+  end_date: string;
+}
+
+const ymd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// Returns explicit start/end dates. We send start_date/end_date (which the
+// backend's getPeriodDates honours directly) instead of {year, month} —
+// the old params could only describe a single month, so "this quarter"
+// showed one month and "this year" fell back to the current month.
+export function getPeriodParams(period: string): PeriodParams {
   const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
   switch (period) {
-    case "last_month": {
-      const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return { year: d.getFullYear(), month: d.getMonth() + 1 };
-    }
+    case "last_month":
+      return {
+        start_date: ymd(new Date(y, m - 1, 1)),
+        end_date: ymd(new Date(y, m, 0)),
+      };
     case "this_quarter": {
-      const q = Math.floor(now.getMonth() / 3);
-      return { year: now.getFullYear(), month: q * 3 + 1 };
+      const qStart = Math.floor(m / 3) * 3;
+      return {
+        start_date: ymd(new Date(y, qStart, 1)),
+        end_date: ymd(new Date(y, qStart + 3, 0)),
+      };
     }
     case "this_year":
-      return { year: now.getFullYear() };
+      return {
+        start_date: ymd(new Date(y, 0, 1)),
+        end_date: ymd(new Date(y, 11, 31)),
+      };
     case "this_month":
     default:
-      return { year: now.getFullYear(), month: now.getMonth() + 1 };
+      return {
+        start_date: ymd(new Date(y, m, 1)),
+        end_date: ymd(new Date(y, m + 1, 0)),
+      };
   }
 }
 
