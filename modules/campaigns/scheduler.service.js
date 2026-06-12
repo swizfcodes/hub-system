@@ -167,7 +167,9 @@ async function sendTest(business, campaignId, email, user) {
   };
   await sendEmail({
     to: email,
-    subject: `[TEST] ${personaliseSubject(campaign.subject_line, sampleRecipient)}`,
+    // No [TEST] prefix — the test must be byte-identical to the real
+    // send so it exercises the same spam-filter path the customers see.
+    subject: personaliseSubject(campaign.subject_line, sampleRecipient),
     html: personaliseContent(campaign.html_content, sampleRecipient),
     from: campaign.from_name,
     business,

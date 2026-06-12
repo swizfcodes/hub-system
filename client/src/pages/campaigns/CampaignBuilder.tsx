@@ -630,8 +630,8 @@ export default function CampaignBuilder() {
                     Send yourself a test first
                   </p>
                   <p className="text-xs text-brand-smoke">
-                    Variables are filled with sample data. The subject is
-                    prefixed with [TEST]. No recipients are touched.
+                    Sent exactly like the real campaign, with sample data in
+                    the variables. No recipients are touched.
                   </p>
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
