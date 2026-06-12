@@ -176,18 +176,12 @@ const config = {
     // missing or empty.
     brands: {
       jewelry: {
-        fromName:
-          process.env.SMTP_FROM_NAME_JEWELRY ||
-          process.env.SMTP_FROM_NAME ||
-          "Orika Living",
+        fromName: process.env.SMTP_FROM_NAME_JEWELRY || null,
         fromEmail:
           process.env.SMTP_FROM_EMAIL_JEWELRY || process.env.SMTP_FROM_EMAIL,
       },
       diffusers: {
-        fromName:
-          process.env.SMTP_FROM_NAME_DIFFUSERS ||
-          process.env.SMTP_FROM_NAME ||
-          "Bejewelled",
+        fromName: process.env.SMTP_FROM_NAME_DIFFUSERS || null,
         fromEmail:
           process.env.SMTP_FROM_EMAIL_DIFFUSERS || process.env.SMTP_FROM_EMAIL,
       },

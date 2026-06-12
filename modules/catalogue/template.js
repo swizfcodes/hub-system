@@ -111,7 +111,8 @@ function cellBorder(bottomColor = BORDER_GREY) {
 
 async function buildTemplate() {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Orika Hub";
+  const { getPlatformBrand } = require("../../lib/branding");
+  wb.creator = (await getPlatformBrand()).product_name;
   wb.created = new Date();
 
   // ── Products sheet ─────────────────────────────────────────────────────────
@@ -187,7 +188,7 @@ async function buildTemplate() {
   // Row 4 — Sample product (styled differently so users understand it's an example)
   const sample = [
     "ORL-TRIO-001",
-    "Orika Refined Luxury Trio Gift Set",
+    "Refined Luxury Trio Gift Set",
     15000,
     25000,
     20000,
@@ -196,7 +197,7 @@ async function buildTemplate() {
     250,
     5,
     10,
-    "Premium gift set featuring three signature Orika scents.",
+    "Premium gift set featuring three signature scents.",
   ];
   ws.getRow(4).height = 22;
   sample.forEach((value, i) => {

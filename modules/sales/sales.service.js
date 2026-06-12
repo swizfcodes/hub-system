@@ -1,5 +1,7 @@
 "use strict";
 
+const config = require("../../config/config");
+
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
 const { getVatRate } = require("../../config/businesses");
 const { renderToPDF } = require("../../lib/pdf/generator");
@@ -888,7 +890,8 @@ async function generateInvoiceFromOrder(
         `SELECT email FROM shared.contacts WHERE contact_id = $1`,
         [order.contact_id],
       );
-      const email = contact?.email || "noreply@orikaliving.com";
+      const email =
+        contact?.email || config.smtp.fromEmail || "noreply@localhost";
       const { authorizationUrl, reference } =
         await paystackService.initializePayment({
           email,
