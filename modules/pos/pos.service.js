@@ -350,8 +350,12 @@ async function createTransaction(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
+    // VAT toggle: when the cashier turns VAT off for this sale we record
+    // it zero-rated. The flag is persisted on the transaction so any
+    // document generated from it later (e.g. an invoice) stays consistent.
+    const vatExempt = data.apply_vat === false || data.vat_exempt === true;
     // VAT rate from business_config (cached) — see config/businesses.
-    const vatRate = getVatRate(business);
+    const vatRate = vatExempt ? 0 : getVatRate(business);
     for (const l of data.lines) {
       const net = Math.round((l.unit_price * l.quantity - (l.discount_amount || 0)) * 100) / 100;
       discountTotal = Math.round((discountTotal + (l.discount_amount || 0)) * 100) / 100;
@@ -392,6 +396,7 @@ async function createTransaction(business, data, user) {
       offline_id: data.offline_id, // set only by offline-sync replay
       currency,
       exchange_rate: currency !== "NGN" ? exchangeRate : null,
+      vat_exempt: vatExempt,
     });
 
     for (let i = 0; i < data.lines.length; i++) {
@@ -463,6 +468,7 @@ async function createTransaction(business, data, user) {
       data.lines,
       exchangeRate,
       changeHandling,
+      vatExempt,
     );
     await postPosCOGSJournal(client, business, tx, data.lines);
 
@@ -688,6 +694,7 @@ async function postPosRevenueJournal(
   lines,
   exchangeRate = 1,
   changeHandling = "return",
+  vatExempt = false,
 ) {
   // Sum subtotal and VAT across the sale lines. We recompute here rather
   // than relying on the transaction header so the journal numbers match
@@ -702,7 +709,9 @@ async function postPosRevenueJournal(
   // double-counts the rate and throws "Journal out of balance".
   let subtotal = 0;
   let vatTotal = 0;
-  const vatRate = getVatRate(business);
+  // Honour the per-sale VAT toggle so the journal's VAT matches what was
+  // booked to the transaction (zero when the sale is VAT-exempt).
+  const vatRate = vatExempt ? 0 : getVatRate(business);
   for (const l of lines) {
     const net =
       parseFloat(l.unit_price) * parseInt(l.quantity) -
@@ -995,7 +1004,9 @@ async function createInvoiceFromTransaction(business, transactionId, { due_date 
 
     // 4. Create the invoice record
     const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
-    const vatRate = getVatRate(business);
+    // Mirror the sale's VAT treatment — a VAT-exempt POS sale must not have
+    // VAT re-added on its invoice.
+    const vatRate = tx.vat_exempt ? 0 : getVatRate(business);
     let subtotal = 0, vatTotal = 0;
     for (const l of tx.lines || []) {
       const net =

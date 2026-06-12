@@ -58,6 +58,7 @@ export default function POSSession() {
     setSession,
     isOnline,
     parked,
+    applyVat,
   } = usePOSStore((s) => ({
     session: s.session,
     lines: s.lines,
@@ -68,6 +69,7 @@ export default function POSSession() {
     setSession: s.setSession,
     isOnline: s.isOnline,
     parked: s.parked,
+    applyVat: s.applyVat,
   }));
 
   const customer = usePOSStore((s) => s.customer);
@@ -186,6 +188,7 @@ export default function POSSession() {
       currency: saleCurrency,
       exchange_rate: exchangeRate,
       change_handling: changeHandling,
+      apply_vat: applyVat,
       lines: lines.map((l) => ({
         product_id: l.product_id,
         description: l.description,
@@ -221,6 +224,7 @@ export default function POSSession() {
         session_id: sessionId,
         contact_id: customer?.contact_id,
         change_handling: changeHandling,
+        apply_vat: applyVat,
         lines: lines.map((l) => ({
           product_id: l.product_id,
           description: l.description,

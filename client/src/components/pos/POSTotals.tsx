@@ -12,20 +12,29 @@ interface POSTotalsProps {
 }
 
 export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
-  const { lines, orderDiscount, loyaltyDisc, setOrderDiscount } = usePOSStore(
-    (s) => ({
-      lines: s.lines,
-      orderDiscount: s.orderDiscount,
-      loyaltyDisc: s.loyaltyDisc,
-      setOrderDiscount: s.setOrderDiscount,
-    }),
-  );
+  const {
+    lines,
+    orderDiscount,
+    loyaltyDisc,
+    setOrderDiscount,
+    applyVat,
+    setApplyVat,
+  } = usePOSStore((s) => ({
+    lines: s.lines,
+    orderDiscount: s.orderDiscount,
+    loyaltyDisc: s.loyaltyDisc,
+    setOrderDiscount: s.setOrderDiscount,
+    applyVat: s.applyVat,
+    setApplyVat: s.setApplyVat,
+  }));
 
   // vatRate comes from /settings/businesses/:key via the active-business
   // react-query cache; 0.075 fallback applies until the record loads or
-  // if vat_rate is unset on the business config.
+  // if vat_rate is unset on the business config. When the cashier turns
+  // VAT off for this sale, compute totals zero-rated.
   const { vatRate } = useActiveBusiness();
-  const totals = computeTotals(lines, orderDiscount, loyaltyDisc, vatRate);
+  const effectiveVatRate = applyVat ? vatRate : 0;
+  const totals = computeTotals(lines, orderDiscount, loyaltyDisc, effectiveVatRate);
   const hasApproval = lines.some((l) => l.needs_approval);
 
   return (
@@ -83,11 +92,33 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
             muted
           />
         )}
-        <Row
-          label={`VAT (${(vatRate * 100).toFixed(1)}%)`}
-          value={fmtMoneyTotals(totals.vat, currency)}
-          muted
-        />
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setApplyVat(!applyVat)}
+            className="flex items-center gap-1.5 text-brand-smoke hover:text-brand-cream transition-colors"
+            title="Toggle VAT for this sale"
+          >
+            <span
+              className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                applyVat ? "bg-brand-accent" : "bg-brand-graphite"
+              }`}
+            >
+              <span
+                className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                  applyVat ? "translate-x-3.5" : "translate-x-0.5"
+                }`}
+              />
+            </span>
+            {`VAT (${(vatRate * 100).toFixed(1)}%)`}
+            {!applyVat && (
+              <span className="text-brand-smoke/60">— exempt</span>
+            )}
+          </button>
+          <span className="text-brand-smoke">
+            {fmtMoneyTotals(totals.vat, currency)}
+          </span>
+        </div>
         <div className="border-t border-white/10 pt-2">
           <Row
             label="Total"

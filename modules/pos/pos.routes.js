@@ -182,6 +182,7 @@ router.post(
   body("lines").isArray({ min: 1 }),
   body("payments").isArray({ min: 1 }),
   body("change_handling").optional().isIn(["return", "keep"]),
+  body("apply_vat").optional().isBoolean(),
   validate,
   can("pos", "create"),
   async (req, res, next) => {

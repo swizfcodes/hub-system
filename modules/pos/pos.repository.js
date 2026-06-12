@@ -268,6 +268,7 @@ async function insertTransaction(
     offline_id,
     currency,
     exchange_rate,
+    vat_exempt,
   },
 ) {
   const {
@@ -277,8 +278,8 @@ async function insertTransaction(
        (transaction_number, session_id, contact_id, served_by,
         subtotal, discount_total, vat_amount, total_amount, amount_paid,
         change_given, fulfilment_type, status, currency, exchange_rate,
-        offline_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed',$12,$13,$14)
+        offline_id, vat_exempt)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed',$12,$13,$14,$15)
      RETURNING *`,
     [
       txNumber,
@@ -295,6 +296,7 @@ async function insertTransaction(
       currency || "NGN",
       exchange_rate || null,
       offline_id || null,
+      vat_exempt || false,
     ],
   );
   return tx;

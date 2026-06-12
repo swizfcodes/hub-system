@@ -158,6 +158,7 @@ export interface PendingTransaction {
   session_id: string;
   contact_id?: string;
   change_handling?: "return" | "keep";
+  apply_vat?: boolean;
   lines: OfflineTransactionLine[];
   payments: OfflinePaymentSplit[];
   created_at_offline: string;
