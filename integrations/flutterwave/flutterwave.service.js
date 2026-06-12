@@ -27,7 +27,9 @@ async function initializePayment({
       currency,
       redirect_url: callbackUrl,
       customer: { email, name, phonenumber: phone },
-      customizations: { title: "Orika Hub Payment" },
+      customizations: {
+        title: `${(await require("../../lib/branding").getPlatformBrand()).product_name} Payment`,
+      },
     },
     { headers: HEADERS },
   );

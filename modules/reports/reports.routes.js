@@ -191,8 +191,12 @@ router.get(
   can("reports", "approve"),
   async (req, res, next) => {
     try {
-      const businessList = ["jewelry", "diffusers"];
-      const labels = { jewelry: "Bejewelled", diffusers: "Orika Living" };
+      const { getActiveBusinesses, getBusinessConfig } =
+        require("../../config/businesses");
+      const businessList = getActiveBusinesses();
+      const labels = Object.fromEntries(
+        businessList.map((b) => [b, getBusinessConfig(b)?.display_name || b]),
+      );
       const results = await Promise.all(
         businessList.map((biz) =>
           service.generate({

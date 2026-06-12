@@ -229,7 +229,8 @@ async function submitLead(business, slug, data, req) {
 
     // ── Welcome email (QR scan leads only — and only if email provided) ───
     if (leadType === "qr_scan" && data.email) {
-      const shopUrl = campaign.redirect_url || "https://orikaliving.com/products";
+      const shopUrl =
+        campaign.redirect_url || config.app.hubBaseUrl;
       try {
         const { subject, html } = renderEmail("walkin_welcome", business, {
           first_name:     firstName || fullName,

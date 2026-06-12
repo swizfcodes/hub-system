@@ -800,7 +800,9 @@ async function updatePlatformSettings(fields, user) {
       before,
       after,
     });
-    // Every open session re-themes instantly (ThemeProvider listens).
+    // Every open session re-themes instantly (ThemeProvider listens),
+    // and backend consumers (PDFs, payment labels) drop their cache.
+    require("../../lib/branding").invalidate();
     emitToAll("branding:updated", { updated_at: after.updated_at });
     return after;
   });

@@ -805,7 +805,7 @@ async function generateQrCode(business, campaignId, user) {
       throw Object.assign(new Error("Campaign not found"), { status: 404 });
 
     // The QR code points to the public join page (frontend SPA route)
-    const baseUrl  = config.appBaseUrl || "https://app.orikaliving.com";
+    const baseUrl  = config.app.hubBaseUrl;
     const joinUrl  = `${baseUrl}/join/${business}/${campaign.slug}`;
 
     // Render as a data URL (PNG) — store the SVG string for download later

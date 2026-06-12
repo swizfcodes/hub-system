@@ -126,7 +126,8 @@ async function openVirtualAccount({
   const nameOnAccount =
     accountName ||
     [firstname, surname].filter(Boolean).join(" ").trim() ||
-    "Orika Living";
+    (await require("../../lib/branding").getPlatformBrand()).company_name ||
+    "Account";
 
   const body = {
     request_ref: requestRef,

@@ -43,7 +43,7 @@ router.get(
         return res.status(400).json({ error: "Unknown business" });
       }
 
-      const baseUrl = config.appBaseUrl || "https://app.orikaliving.com";
+      const baseUrl = config.app.hubBaseUrl;
       const joinUrl = `${baseUrl}/register/${biz}`;
 
       const svgString = await QRCode.toString(joinUrl, {
@@ -168,7 +168,7 @@ router.post(
             const bizConfig = businesses.getBusinessConfig(biz);
             const { subject, html } = renderEmail("walkin_welcome", biz, {
               first_name,
-              shop_url: bizConfig?.website || "https://orikaliving.com/products",
+              shop_url: bizConfig?.website || config.app.hubBaseUrl,
               wants_birthday: !!(wants_birthday && birthday_month && birthday_day),
               birthday_month: birthday_month || null,
               birthday_day:   birthday_day   || null,
