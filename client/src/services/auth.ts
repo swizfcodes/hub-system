@@ -62,6 +62,30 @@ export function getUser(): AuthResponse["user"] | null {
   }
 }
 
+// ── Self-service password reset (public endpoints) ──────────────────────────
+
+export async function forgotPassword(
+  email: string,
+): Promise<{ message: string }> {
+  const { data } = await axios.post<{ message: string }>(
+    `${API_BASE}/auth/forgot-password`,
+    { email },
+  );
+  return data;
+}
+
+export async function resetPassword(payload: {
+  email: string;
+  otp: string;
+  newPassword: string;
+}): Promise<{ message: string }> {
+  const { data } = await axios.post<{ message: string }>(
+    `${API_BASE}/auth/reset-password`,
+    payload,
+  );
+  return data;
+}
+
 export async function changePassword(
   currentPassword: string,
   newPassword: string,

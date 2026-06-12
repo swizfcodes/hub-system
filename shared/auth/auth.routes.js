@@ -9,6 +9,7 @@ const { can, canAny } = require("../../middleware/permissions");
 const { loginRateLimiter } = require("../../middleware/auth");
 const authService = require("./auth.service");
 const inviteService = require("./invite.service");
+const passwordResetService = require("./passwordReset.service");
 
 // POST /api/auth/login
 router.post(
@@ -25,6 +26,48 @@ router.post(
         req.ip,
       );
       res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Self-service password reset (public, rate-limited) ──────
+// POST /api/auth/forgot-password — ALWAYS returns the same generic
+// message so account existence can't be probed.
+router.post(
+  "/forgot-password",
+  loginRateLimiter,
+  body("email").isEmail().trim().toLowerCase(),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(await passwordResetService.requestReset(req.body.email, req.ip));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/auth/reset-password — verify OTP + set new password.
+// 12-char minimum matches /change-password.
+router.post(
+  "/reset-password",
+  loginRateLimiter,
+  body("email").isEmail().trim().toLowerCase(),
+  body("otp").isLength({ min: 6, max: 6 }).isNumeric(),
+  body("newPassword").isLength({ min: 12 }),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(
+        await passwordResetService.resetPassword(
+          req.body.email,
+          req.body.otp,
+          req.body.newPassword,
+          req.ip,
+        ),
+      );
     } catch (err) {
       next(err);
     }
