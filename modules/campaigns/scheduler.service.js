@@ -26,8 +26,10 @@ const builder = require("./builder.service");
 //   5. Finalise the campaign — set sent_at and the delivered_count.
 //
 // This file is called both from the API (sendNow) and the cron job
-// (jobs/sendScheduledCampaigns) — both paths go through processSend
-// so the behaviour is identical.
+// (jobs/runScheduledCampaigns → runScheduledSweep) — both paths go
+// through processSend so the behaviour is identical. The sweep also
+// resumes campaigns abandoned mid-send (crash/restart/outage) — see
+// recoverStaleSends.
 // ─────────────────────────────────────────────────────────────
 
 // ─── Batch configuration ──────────────────────────────────────────────────────
@@ -37,6 +39,23 @@ const builder = require("./builder.service");
 const DEFAULT_BATCH_SIZE     = parseInt(process.env.CAMPAIGN_BATCH_SIZE     || "100", 10);
 const DEFAULT_BATCH_DELAY_MS = parseInt(process.env.CAMPAIGN_BATCH_DELAY_MS || "180000", 10); // 3 minutes
 const MAX_RETRIES_PER_RECIPIENT = 2;
+
+// A campaign left in 'sending' whose row hasn't been touched for this long
+// is considered abandoned (process crashed/restarted mid-send, or the send
+// loop aborted during a provider outage) and is resumed by the sweep.
+// Must comfortably exceed BATCH_DELAY_MS: processSend heartbeats
+// campaigns.updated_at after every batch, so a live send never looks stale.
+const STALE_SENDING_MINUTES = parseInt(
+  process.env.CAMPAIGN_STALE_SENDING_MINUTES || "15",
+  10,
+);
+
+// Campaign ids with a send loop alive in THIS process. Guards against the
+// stale-recovery sweep (or a second sendNow) re-driving an in-flight send.
+// In-memory is sufficient — the API runs as a single fork-mode instance
+// (ecosystem.config.js); cross-process safety comes from the row-level
+// 'pending' → 'sending' recipient claim in pullBatch.
+const activeSends = new Set();
 
 /**
  * Schedule a campaign to send at a future time. Validates the campaign
@@ -206,7 +225,22 @@ async function cancel(business, campaignId, user) {
 //   - the sendScheduledCampaigns cron job (passes campaignId directly)
 // ─────────────────────────────────────────────────────────────
 
-async function processSend(
+async function processSend(business, campaignId, opts = {}) {
+  if (activeSends.has(campaignId)) {
+    logger.warn(
+      `Campaign ${campaignId} send already in progress — skipping duplicate run`,
+    );
+    return { sent: 0, failed: 0, skipped: true };
+  }
+  activeSends.add(campaignId);
+  try {
+    return await runSendLoop(business, campaignId, opts);
+  } finally {
+    activeSends.delete(campaignId);
+  }
+}
+
+async function runSendLoop(
   business,
   campaignId,
   {
@@ -216,6 +250,7 @@ async function processSend(
 ) {
   let totalSent = 0;
   let totalFailed = 0;
+  let aborted = false;
   let campaignContent;
 
   // Load campaign content once (small payload — single row).
@@ -237,21 +272,35 @@ async function processSend(
       recipients.map((r) => sendToRecipient(campaignContent, r)),
     );
 
-    await markBatchResults(business, recipients, results);
+    await markBatchResults(business, campaignId, recipients, results);
 
-    totalSent += results.filter(
+    const batchSent = results.filter(
       (r) => r.status === "fulfilled" && r.value?.success,
     ).length;
-    totalFailed += results.filter(
-      (r) => r.status === "rejected" || !r.value?.success,
+    const batchBounced = results.filter(
+      (r) => r.status === "fulfilled" && !r.value?.success && r.value?.bounced,
     ).length;
+    // Soft failures were flipped back to 'pending' and will be re-claimed.
+    const batchRequeued = recipients.length - batchSent - batchBounced;
 
-    // Small pause to be polite to provider rate limits.
-    if (batchDelayMs > 0) {
-      await sleep(batchDelayMs);
+    totalSent += batchSent;
+    totalFailed += recipients.length - batchSent;
+
+    // Every send in the batch failed transiently (SMTP outage, network
+    // down): stop instead of re-claiming the same recipients forever.
+    // The campaign stays 'sending'; the stale-recovery sweep resumes it
+    // once STALE_SENDING_MINUTES have passed.
+    if (batchSent === 0 && batchBounced === 0 && batchRequeued > 0) {
+      aborted = true;
+      logger.error(
+        `Campaign ${campaignId}: entire batch of ${recipients.length} failed — ` +
+          `pausing send; sweep retries in ~${STALE_SENDING_MINUTES}m`,
+      );
+      break;
     }
 
     // Check the cancel flag — if someone cancelled mid-send, stop here.
+    // (Finalise below only touches campaigns still in 'sending'.)
     const cancelled = await isCancelled(business, campaignId);
     if (cancelled) {
       logger.info(
@@ -259,11 +308,26 @@ async function processSend(
       );
       break;
     }
+
+    // Small pause to be polite to provider rate limits. A short batch with
+    // nothing requeued means the audience is drained — skip the pause
+    // rather than sleeping before an empty pull.
+    if (
+      batchDelayMs > 0 &&
+      !(recipients.length < batchSize && batchRequeued === 0)
+    ) {
+      await sleep(batchDelayMs);
+    }
   }
 
-  // Finalise.
+  if (aborted) {
+    return { sent: totalSent, failed: totalFailed, aborted };
+  }
+
+  // Finalise — flips 'sending' → 'sent' and derives delivered_count from
+  // recipient rows, so resuming a partial send never erases progress.
   await withBusinessContext(business, async (client) => {
-    await repo.setSentTotals(client, campaignId, totalSent);
+    await repo.setSentTotals(client, campaignId);
   });
 
   logger.info(
@@ -309,7 +373,9 @@ async function sendToRecipient(campaign, recipient) {
     try {
       if (campaign.campaign_type === "email") {
         if (!recipient.email) {
-          return { success: false, reason: "no_email" };
+          // bounced=true → terminal status. Without it the recipient flips
+          // back to 'pending' and is re-claimed on every pass forever.
+          return { success: false, reason: "no_email", bounced: true };
         }
         const trackingPixel = buildTrackingPixel(recipient.tracking_token);
         await sendEmail({
@@ -322,18 +388,19 @@ async function sendToRecipient(campaign, recipient) {
         return { success: true };
       }
       // EXTERNAL-COMMS-DISABLED: WhatsApp campaigns require Meta API access.
-      // Recipients are marked failed (not retried) so campaigns drain cleanly.
+      // bounced=true marks recipients terminally so campaigns drain cleanly
+      // instead of re-claiming the same recipients on every pass.
       if (campaign.campaign_type === "whatsapp") {
-        return { success: false, reason: "whatsapp_disabled" };
+        return { success: false, reason: "whatsapp_disabled", bounced: true };
         // if (!recipient.whatsapp_number) {
-        //   return { success: false, reason: "no_whatsapp_number" };
+        //   return { success: false, reason: "no_whatsapp_number", bounced: true };
         // }
         // // Strip HTML — WhatsApp is plain text.
         // const text = personalised.replace(/<[^>]*>/g, "").trim();
         // await whatsapp.sendMessage({ to: recipient.whatsapp_number, text });
         // return { success: true };
       }
-      return { success: false, reason: "unknown_campaign_type" };
+      return { success: false, reason: "unknown_campaign_type", bounced: true };
     } catch (err) {
       lastError = err;
       // Retry on transient errors only — not on validation/permanent failures.
@@ -350,7 +417,7 @@ async function sendToRecipient(campaign, recipient) {
   };
 }
 
-async function markBatchResults(business, recipients, results) {
+async function markBatchResults(business, campaignId, recipients, results) {
   return withBusinessContext(business, async (client) => {
     for (let i = 0; i < recipients.length; i++) {
       const r = recipients[i];
@@ -368,6 +435,12 @@ async function markBatchResults(business, recipients, results) {
         );
       }
     }
+    // Heartbeat: a live send touches the campaign row every batch, so only
+    // crashed/aborted sends ever look stale to the recovery sweep.
+    await client.query(
+      `UPDATE campaigns SET updated_at = now() WHERE campaign_id = $1`,
+      [campaignId],
+    );
   });
 }
 
@@ -385,8 +458,9 @@ async function isCancelled(business, campaignId) {
 
 // ─────────────────────────────────────────────────────────────
 // CRON ENTRY POINT
-// Called by jobs/sendScheduledCampaigns. Picks up any 'queued'
-// campaign whose scheduled_at has passed and runs the send.
+// Called every minute by jobs/runScheduledCampaigns. Picks up any
+// 'queued' campaign whose scheduled_at has passed and runs the send,
+// then resumes campaigns abandoned mid-send.
 // ─────────────────────────────────────────────────────────────
 
 async function runScheduledSweep() {
@@ -430,6 +504,68 @@ async function runScheduledSweep() {
           `[scheduler] Campaign ${c.campaign_id} failed: ${err.message}`,
         );
       }
+    }
+
+    try {
+      await recoverStaleSends(business);
+    } catch (err) {
+      logger.error(
+        `[scheduler] Stale-send recovery failed for ${business}: ${err.message}`,
+      );
+    }
+  }
+}
+
+/**
+ * Resume campaigns abandoned mid-send. A campaign sits in 'sending' with a
+ * stale updated_at when the process crashed or restarted between the status
+ * flip and finalise, or when a previous run aborted on an all-fail batch
+ * (provider outage). Without this, such campaigns are stuck forever — the
+ * due-campaign sweep above only looks at 'queued'.
+ *
+ * Recipients claimed by a dead worker (stuck in 'sending') are returned to
+ * 'pending' first; pullBatch only ever claims 'pending' rows, so recipients
+ * that were already dispatched are never re-sent.
+ */
+async function recoverStaleSends(business) {
+  const stale = await withBusinessContext(business, async (client) => {
+    const { rows } = await client.query(
+      `SELECT campaign_id, campaign_name
+       FROM campaigns
+       WHERE status = 'sending'
+         AND updated_at < now() - make_interval(mins => $1)`,
+      [STALE_SENDING_MINUTES],
+    );
+    return rows;
+  });
+
+  for (const c of stale) {
+    // A live send loop heartbeats updated_at every batch, so a stale row
+    // should never be in-flight — this guards the edge cases anyway.
+    if (activeSends.has(c.campaign_id)) continue;
+    try {
+      await withBusinessContext(business, async (client) => {
+        await client.query(
+          `UPDATE campaign_recipients SET status = 'pending'
+           WHERE campaign_id = $1 AND status = 'sending'`,
+          [c.campaign_id],
+        );
+        // Touch the campaign so a resume that crashes early doesn't get
+        // re-attempted by every sweep tick — retries stay paced at
+        // STALE_SENDING_MINUTES intervals.
+        await client.query(
+          `UPDATE campaigns SET updated_at = now() WHERE campaign_id = $1`,
+          [c.campaign_id],
+        );
+      });
+      logger.warn(
+        `[scheduler] Resuming campaign stuck in 'sending': ${c.campaign_name} (${c.campaign_id}) [${business}]`,
+      );
+      await processSend(business, c.campaign_id);
+    } catch (err) {
+      logger.error(
+        `[scheduler] Resume of campaign ${c.campaign_id} failed: ${err.message}`,
+      );
     }
   }
 }
