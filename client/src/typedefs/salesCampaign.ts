@@ -8,7 +8,7 @@ export type CampaignStatus =
   | "archived";
 export type CampaignTemplate = "minimal" | "editorial" | "bold";
 export type DiscountType = "percentage" | "fixed_amount" | "none";
-export type PaymentMethod = "paystack" | "bank_transfer";
+export type PaymentMethod = "paystack" | "bank_transfer" | "optimus_pay";
 export type FulfilmentType = "delivery" | "pickup";
 
 export interface CampaignSections {
@@ -114,6 +114,12 @@ export interface CampaignOrderResult {
   total_amount: number;
   payment_method: PaymentMethod;
   paystack_url?: string | null;
+  // Optimus Pay — dedicated virtual account for this order. The account is
+  // time-boxed: the customer must transfer within optimus_expires_in_minutes.
+  optimus_virtual_account?: string | null;
+  optimus_bank_name?: string | null;
+  optimus_transaction_ref?: string | null;
+  optimus_expires_in_minutes?: number | null;
   status: string;
 }
 

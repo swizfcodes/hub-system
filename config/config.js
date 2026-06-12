@@ -92,6 +92,12 @@ const config = {
     notificationUrl:
       process.env.OPTIMUS_PAY_NOTIFICATION_URL ||
       `${process.env.HUB_BASE_URL || "http://localhost:7000"}/api/webhooks/optimus`,
+    // Webhook authenticity: Transaction Notifications carry no verifiable
+    // signature (pending confirmation from Optimus IT) and our transaction
+    // refs are guessable (store-{id}, inv-{id}), so by default the webhook
+    // re-queries /v2/transact/query server-to-server before fulfilling
+    // anything. Set OPTIMUS_PAY_WEBHOOK_VERIFY=off ONLY for mock testing.
+    verifyWebhookViaQuery: process.env.OPTIMUS_PAY_WEBHOOK_VERIFY !== "off",
   },
 
   flutterwave: {

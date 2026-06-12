@@ -130,7 +130,7 @@ export const checkoutSchema = z.object({
       landmark: z.string().optional().or(z.literal("")),
     })
     .optional(),
-  payment_method: z.enum(["paystack", "bank_transfer"]),
+  payment_method: z.enum(["paystack", "bank_transfer", "optimus_pay"]),
   bank_account_id: z.string().uuid().optional(),
 });
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>;

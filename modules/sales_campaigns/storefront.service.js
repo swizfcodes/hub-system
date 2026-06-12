@@ -378,6 +378,7 @@ async function placeOrder(business, slug, data, req) {
     let optimusVirtualAccount = null;
     let optimusBankName = null;
     let optimusTransactionRef = null;
+    let optimusExpiresInMinutes = null;
     if (data.payment_method === "optimus_pay") {
       try {
         const vaResult = await optimusService.openVirtualAccount({
@@ -393,6 +394,7 @@ async function placeOrder(business, slug, data, req) {
         optimusVirtualAccount = vaResult.accountNumber;
         optimusBankName = vaResult.bankName;
         optimusTransactionRef = vaResult.transactionRef;
+        optimusExpiresInMinutes = vaResult.expiresInMinutes;
 
         // Persist virtual account details on the order row
         await client.query(
@@ -514,6 +516,8 @@ async function placeOrder(business, slug, data, req) {
       optimus_virtual_account: optimusVirtualAccount,
       optimus_bank_name: optimusBankName,
       optimus_transaction_ref: optimusTransactionRef,
+      // Time-boxed account: customer must transfer within this window
+      optimus_expires_in_minutes: optimusExpiresInMinutes,
       status: order.status,
     };
   });

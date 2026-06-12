@@ -10,7 +10,11 @@ import {
   MessageCircle,
   AlertCircle,
 } from "lucide-react";
-import { placeOrder, submitProofOfPayment } from "@services/salesCampaign";
+import {
+  placeOrder,
+  submitProofOfPayment,
+  getOrderTracking,
+} from "@services/salesCampaign";
 import {
   checkoutSchema,
   type CheckoutFormValues,
@@ -441,6 +445,14 @@ export default function Checkout() {
                         desc="Pay securely online — instant confirmation"
                         icon="💳"
                       />
+                      <PaymentOption
+                        value="optimus_pay"
+                        current={field.value}
+                        onChange={field.onChange}
+                        label="Instant Bank Transfer"
+                        desc="We give you a dedicated account number — your order confirms automatically, no receipt needed"
+                        icon="⚡"
+                      />
                       {bankAccounts.length > 0 && (
                         <PaymentOption
                           value="bank_transfer"
@@ -454,6 +466,15 @@ export default function Checkout() {
                     </>
                   )}
                 />
+
+                {paymentMethod === "optimus_pay" && (
+                  <div className="rounded-lg acc-soft border acc-border-soft px-3 py-2 text-xs acc-text mt-2">
+                    ⚡ On the next screen you'll get a dedicated account number
+                    for exactly <strong>{fmtMoney(subtotal)}</strong>. Transfer
+                    within <strong>30 minutes</strong> and your order confirms
+                    automatically.
+                  </div>
+                )}
 
                 {paymentMethod === "bank_transfer" &&
                   bankAccounts.length > 0 && (
@@ -528,7 +549,9 @@ export default function Checkout() {
                 ? "Placing Order…"
                 : paymentMethod === "paystack"
                   ? `Pay ${fmtMoney(subtotal)} with Paystack`
-                  : `Place Order — ${fmtMoney(subtotal)}`}
+                  : paymentMethod === "optimus_pay"
+                    ? `Get Account Number — ${fmtMoney(subtotal)}`
+                    : `Place Order — ${fmtMoney(subtotal)}`}
             </button>
 
             <p className="text-center text-xs text-gray-600">
@@ -538,8 +561,18 @@ export default function Checkout() {
           </form>
         )}
 
+        {/* ── STEP: PAYMENT (Optimus Pay — dedicated account + countdown) ─────── */}
+        {step === "payment" && order && order.payment_method === "optimus_pay" && (
+          <OptimusPaymentPanel
+            order={order}
+            business={business!}
+            whatsappNumber={campaign?.whatsapp_number}
+            onConfirmed={() => setStep("done")}
+          />
+        )}
+
         {/* ── STEP: PAYMENT (bank transfer instructions) ──────────────────────── */}
-        {step === "payment" && order && (
+        {step === "payment" && order && order.payment_method !== "optimus_pay" && (
           <div className="space-y-6">
             <div className="text-center py-4">
               <p className="text-4xl mb-3">🏦</p>
@@ -686,11 +719,14 @@ export default function Checkout() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Receipt Submitted!
+                {order.payment_method === "optimus_pay"
+                  ? "Payment Confirmed!"
+                  : "Receipt Submitted!"}
               </h2>
               <p className="text-gray-400">
-                Your items are reserved. We'll verify your payment and confirm
-                your order shortly.
+                {order.payment_method === "optimus_pay"
+                  ? "We received your transfer. Your order is confirmed and we're getting it ready."
+                  : "Your items are reserved. We'll verify your payment and confirm your order shortly."}
               </p>
             </div>
 
@@ -704,7 +740,14 @@ export default function Checkout() {
                 }
               />
               <DetailRow label="Total" value={fmtMoney(order.total_amount)} />
-              <DetailRow label="Status" value="Verifying payment" />
+              <DetailRow
+                label="Status"
+                value={
+                  order.payment_method === "optimus_pay"
+                    ? "Confirmed"
+                    : "Verifying payment"
+                }
+              />
             </div>
 
             <p className="text-xs text-gray-500">
@@ -737,6 +780,214 @@ export default function Checkout() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Optimus Pay panel ─────────────────────────────────────────────────────────
+// Dedicated virtual account + live countdown. The account is amount-bound and
+// time-boxed (expires_in_minutes from the API, default 30). Payment confirms
+// AUTOMATICALLY: the bank notifies our server when the transfer lands, so we
+// just poll the public order-tracking endpoint until the status leaves
+// "pending" — the customer never uploads a receipt.
+function OptimusPaymentPanel({
+  order,
+  business,
+  whatsappNumber,
+  onConfirmed,
+}: {
+  order: CampaignOrderResult;
+  business: string;
+  whatsappNumber?: string | null;
+  onConfirmed: () => void;
+}) {
+  const expiresMin = order.optimus_expires_in_minutes ?? 30;
+  // Deadline is fixed at first render of the panel (account provisioning
+  // happened seconds earlier, so this is accurate enough for UX purposes).
+  const [deadline] = useState(() => Date.now() + expiresMin * 60_000);
+  const [now, setNow] = useState(() => Date.now());
+  const [copied, setCopied] = useState(false);
+
+  const remainingMs = Math.max(0, deadline - now);
+  const expired = remainingMs <= 0;
+  const urgent = !expired && remainingMs < 5 * 60_000; // last 5 minutes
+  const mm = String(Math.floor(remainingMs / 60_000)).padStart(2, "0");
+  const ss = String(Math.floor((remainingMs % 60_000) / 1000)).padStart(2, "0");
+
+  // 1-second tick for the countdown
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Poll order status every 8s — the webhook confirms server-side when the
+  // transfer lands. Keep polling even past expiry: late transfers may still
+  // be honoured depending on the bank.
+  useEffect(() => {
+    let stopped = false;
+    const t = setInterval(async () => {
+      const tr = await getOrderTracking(business, order.tracking_token);
+      if (
+        !stopped &&
+        tr?.status &&
+        tr.status !== "pending" &&
+        tr.status !== "cancelled"
+      ) {
+        onConfirmed();
+      }
+    }, 8000);
+    return () => {
+      stopped = true;
+      clearInterval(t);
+    };
+  }, [business, order.tracking_token, onConfirmed]);
+
+  function copyAccount() {
+    if (!order.optimus_virtual_account) return;
+    navigator.clipboard.writeText(order.optimus_virtual_account).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function openWhatsAppHelp() {
+    const waNum = whatsappNumber?.replace(/\D/g, "") ?? "";
+    if (!waNum) return;
+    const msg = encodeURIComponent(
+      `Hi! I'm paying for order ${order.order_number} by bank transfer but the payment window expired. Please help.`,
+    );
+    window.open(`https://wa.me/${waNum}?text=${msg}`, "_blank");
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-4">
+        <p className="text-4xl mb-3">⚡</p>
+        <h2 className="text-xl font-bold text-white mb-1">
+          Transfer to Your Dedicated Account
+        </h2>
+        <p className="text-gray-400 text-sm">
+          Order{" "}
+          <span className="acc-text font-mono">{order.order_number}</span> —
+          confirms automatically once your transfer lands.
+        </p>
+      </div>
+
+      {/* Countdown */}
+      <div
+        className={cn(
+          "rounded-2xl border p-5 text-center",
+          expired
+            ? "border-red-500/40 bg-red-500/10"
+            : urgent
+              ? "border-amber-500/40 bg-amber-500/10"
+              : "border-white/8 bg-white/5",
+        )}
+      >
+        {expired ? (
+          <>
+            <p className="text-sm font-semibold text-red-300 mb-1">
+              Payment window expired
+            </p>
+            <p className="text-xs text-red-300/80">
+              This account number may no longer accept transfers. If you
+              already sent the money, sit tight — we're still watching for it.
+              Otherwise, go back and place the order again
+              {whatsappNumber ? " or message us for help" : ""}.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+              Time remaining to transfer
+            </p>
+            <p
+              className={cn(
+                "font-mono text-4xl font-black tabular-nums",
+                urgent ? "text-amber-300" : "text-white",
+              )}
+            >
+              {mm}:{ss}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              This account number is reserved for your order for{" "}
+              {expiresMin} minutes
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Account details */}
+      <div className="rounded-2xl border border-white/8 bg-white/5 p-5 space-y-3">
+        <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+          Transfer to this account
+        </p>
+        <div className="space-y-2">
+          <DetailRow
+            label="Bank"
+            value={order.optimus_bank_name || "Optimus Bank"}
+          />
+          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div>
+              <p className="text-xs text-gray-500">Account number</p>
+              <p className="font-mono text-white font-bold text-lg">
+                {order.optimus_virtual_account}
+              </p>
+            </div>
+            <button
+              onClick={copyAccount}
+              className="flex items-center gap-1 text-xs acc-text hover:opacity-80 transition-colors"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" /> Copy
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-xl acc-soft border acc-border-soft px-4 py-3">
+          <p className="text-xs acc-text">Transfer exactly</p>
+          <p className="text-xl font-black acc-text">
+            {fmtMoney(order.total_amount)}
+          </p>
+        </div>
+      </div>
+
+      {/* Live status */}
+      {!expired && (
+        <div className="rounded-xl border border-white/8 bg-white/5 p-4 flex items-center gap-3">
+          <span className="relative flex h-3 w-3 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full acc-bg opacity-60" />
+            <span className="relative inline-flex rounded-full h-3 w-3 acc-bg" />
+          </span>
+          <p className="text-sm text-gray-400">
+            Waiting for your transfer… this page updates by itself — no
+            receipt upload needed.
+          </p>
+        </div>
+      )}
+
+      {expired && whatsappNumber && (
+        <button
+          onClick={openWhatsAppHelp}
+          className="w-full border border-green-500/30 text-green-400 hover:bg-green-500/10 font-medium py-3 rounded-full transition-colors text-sm flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Message us on WhatsApp
+        </button>
+      )}
+
+      <a
+        href={`/orders/${business}/${order.tracking_token}`}
+        className="block text-center text-xs text-gray-600 hover:text-gray-400 transition-colors"
+      >
+        Track this order later
+      </a>
     </div>
   );
 }

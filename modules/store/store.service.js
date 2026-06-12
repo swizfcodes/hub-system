@@ -291,6 +291,10 @@ async function createOrder({
         optimus_transaction_ref: transactionRef,
         optimus_virtual_account: vaResult.accountNumber,
         optimus_bank_name: vaResult.bankName,
+        // Amount-bound virtual accounts are time-boxed (observed: 30 min).
+        // The storefront should tell the customer to transfer within this
+        // window or the account may expire.
+        optimus_expires_in_minutes: vaResult.expiresInMinutes,
         amount_kobo: totalKobo,
         email: delivery_address.email,
       };
@@ -649,9 +653,11 @@ async function getOptimusOrderStatus(transactionRef) {
  * Steps mirror verifyAndFulfil exactly (stock → revenue journal → COGS
  * journal → mark paid → ERP sales order → confirmation email) except we
  * load the order by optimus_transaction_ref instead of paystack_ref, and
- * there is no amount re-check (the Optimus webhook already confirmed it).
+ * the amount guard compares the actual inflow (paidKobo, from the verified
+ * Transaction Notification) against order.total_kobo — underpayments throw
+ * and are NEVER auto-fulfilled.
  */
-async function fulfillOptimusOrder(transactionRef) {
+async function fulfillOptimusOrder(transactionRef, { paidKobo = 0 } = {}) {
   // Captured inside the transaction so the concurrent-fulfilment catch
   // below can report which order was already paid.
   let resolvedOrderId = null;
@@ -674,6 +680,28 @@ async function fulfillOptimusOrder(transactionRef) {
         order_id: order.id,
         status: order.status,
       };
+    }
+
+    // Amount guard — the webhook passes the inflow amount (kobo). An
+    // UNDERPAYMENT must never auto-fulfil: throw so the webhook records it
+    // for manual reconciliation. Overpayments fulfil but are logged.
+    const expectedKobo = Number(order.total_kobo) || 0;
+    if (paidKobo > 0 && expectedKobo > 0) {
+      if (paidKobo < expectedKobo) {
+        throw Object.assign(
+          new Error(
+            `store order underpayment: expected ₦${expectedKobo / 100}, ` +
+              `received ₦${paidKobo / 100} (order ${order.id}, ref=${transactionRef})`,
+          ),
+          { status: 409 },
+        );
+      }
+      if (paidKobo > expectedKobo) {
+        logger.warn(
+          `[store/optimus] OVERPAYMENT on order ${order.id}: expected ` +
+            `₦${expectedKobo / 100}, received ₦${paidKobo / 100} — fulfilling, flag for review`,
+        );
+      }
     }
 
     const lines = order.items || [];

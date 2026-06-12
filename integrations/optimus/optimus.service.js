@@ -174,10 +174,14 @@ async function openVirtualAccount({
         city: null,
         state: null,
         country: null,
-        // Not in the documented schema but harmless; the live notification
-        // URL is configured on the Optimus dashboard's Transaction
-        // Notification service. Kept as a fallback for the local mock.
-        notification_url: notificationUrl,
+        // notification_url is NOT part of the documented open_account
+        // schema — the live notification URL is configured on the Optimus
+        // dashboard (Transaction Notification service). Only sent to the
+        // local/mock server, never to the live API, to keep the live
+        // payload exactly spec-shaped.
+        ...(baseUrl.includes("api.onepipe.io")
+          ? {}
+          : { notification_url: notificationUrl }),
       },
     },
   };
@@ -193,13 +197,33 @@ async function openVirtualAccount({
     timeout: 30_000,
   });
 
-  if (data.status === "Failed") {
+  // "Duplicate": Optimus rejects similar requests made within a 5-minute
+  // window. Surface it distinctly so callers can treat the original request
+  // as in-flight rather than failed (e.g. a checkout double-click).
+  if (data.status === "Duplicate") {
+    logger.warn(
+      `[optimus] openVirtualAccount duplicate within 5-min window: txn_ref=${transactionRef}`,
+    );
+    throw Object.assign(
+      new Error(
+        "A virtual account request for this order is already in flight. Please wait a moment and retry.",
+      ),
+      { status: 409, duplicate: true },
+    );
+  }
+
+  if (data.status !== "Successful") {
     const errMsg =
-      data.data?.error ||
+      (typeof data.data?.error === "object"
+        ? data.data?.error?.message
+        : data.data?.error) ||
+      data.data?.errors?.[0]?.message ||
       data.data?.errors?.[0] ||
       data.message ||
       "Optimus Pay request failed";
-    logger.error(`[optimus] openVirtualAccount failed: ${errMsg}`);
+    logger.error(
+      `[optimus] openVirtualAccount failed status=${data.status}: ${errMsg}`,
+    );
     throw Object.assign(new Error(errMsg), { status: 502 });
   }
 
@@ -208,8 +232,27 @@ async function openVirtualAccount({
   const d = data.data || {};
   const acct = d.provider_response || d;
 
+  // A "Successful" envelope with no account number is useless — fail loudly
+  // instead of persisting a null virtual account on the order.
+  if (!acct.account_number) {
+    logger.error(
+      `[optimus] openVirtualAccount returned Successful but no account_number ` +
+        `txn_ref=${transactionRef} payload=${JSON.stringify(d).slice(0, 500)}`,
+    );
+    throw Object.assign(
+      new Error("Optimus Pay did not return a virtual account number"),
+      { status: 502 },
+    );
+  }
+
+  // Amount-bound accounts are time-boxed (per spec: expires_in_minutes,
+  // observed as 30). Surface it so checkout/invoice UIs can warn the payer.
+  const expiresInMinutes =
+    parseInt(acct.meta?.expires_in_minutes, 10) || null;
+
   logger.info(
-    `[optimus] virtual account provisioned: ${acct.account_number} txn_ref=${transactionRef}`,
+    `[optimus] virtual account provisioned: ${acct.account_number} ` +
+      `txn_ref=${transactionRef} expires_in=${expiresInMinutes ?? "n/a"}min`,
   );
 
   return {
@@ -217,9 +260,60 @@ async function openVirtualAccount({
     bankName: acct.bank_name || "Optimus Bank",
     accountName: acct.account_name || `${firstname} ${surname}`,
     bankCode: acct.bank_code || null,
+    expiresInMinutes,
     transactionRef,
     requestRef,
     rawStatus: data.status,
+  };
+}
+
+// ── API: Query Transaction ────────────────────────────────────────────────────
+
+/**
+ * Query the status of a transaction server-to-server.
+ * POST {base}/v2/transact/query
+ *
+ * Used by the webhook handler to verify that a Transaction Notification is
+ * genuine before fulfilling anything: notification payloads carry no
+ * signature we can check, and our transaction refs are guessable
+ * (store-{id}, inv-{id}), so a forged POST to the webhook URL must never be
+ * enough to release goods.
+ *
+ * @param {string} transactionRef - The transaction_ref to look up
+ * @param {string} requestType    - Service name the txn belongs to.
+ *                                  Inflows on virtual accounts are "collect"
+ *                                  per the notification's transaction_type.
+ * @returns {{ status, providerResponse, raw }}
+ */
+async function queryTransaction(transactionRef, requestType = "collect") {
+  const { baseUrl } = config.optimusPay;
+  const requestRef = makeRequestRef("query");
+
+  const body = {
+    request_ref: requestRef,
+    request_type: requestType,
+    auth: {
+      secure: null,
+      auth_provider: "OptimusVirtual",
+    },
+    transaction: {
+      transaction_ref: transactionRef,
+    },
+  };
+
+  const { data } = await axios.post(`${baseUrl}/v2/transact/query`, body, {
+    headers: buildHeaders(requestRef),
+    timeout: 30_000,
+  });
+
+  logger.info(
+    `[optimus] queryTransaction ref=${transactionRef} → status=${data.status}`,
+  );
+
+  return {
+    status: data.status,
+    providerResponse: data.data?.provider_response || null,
+    raw: data,
   };
 }
 
@@ -227,6 +321,7 @@ async function openVirtualAccount({
 
 module.exports = {
   openVirtualAccount,
+  queryTransaction,
   computeSignature,
   encrypt,
   makeRequestRef,
