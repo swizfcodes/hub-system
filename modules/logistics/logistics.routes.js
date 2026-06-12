@@ -55,8 +55,16 @@ router.post(
   body("reference_id")
     .if(body("reference_type").not().equals("manual"))
     .isUUID(),
-  body("contact_id").isUUID(),
-  body("delivery_address").notEmpty(),
+  // Order-linked deliveries inherit contact + address from the source
+  // order (resolved in the service) — only standalone deliveries must
+  // carry their own.
+  body("contact_id")
+    .if(body("reference_type").equals("manual"))
+    .isUUID(),
+  body("contact_id").optional().isUUID(),
+  body("delivery_address")
+    .if(body("reference_type").equals("manual"))
+    .notEmpty(),
   body("courier").isIn(["relay", "chowdeck", "gigl", "manual"]),
   body("items").optional().isArray(),
   validate,

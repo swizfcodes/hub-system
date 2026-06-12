@@ -103,6 +103,41 @@ async function createDelivery(business, data, user) {
         { status: 400 },
       );
     }
+    // Carry the address (and contact) through from the source order so
+    // staff never re-key what the customer already gave at checkout. The
+    // sales order / POS transaction already holds delivery_address; only
+    // fall back to a body-supplied address (manual deliveries, or an
+    // explicit override) when the source has none.
+    let resolvedAddress = data.delivery_address || null;
+    let resolvedContactId = data.contact_id || null;
+    if (data.reference_type === "sales_order" && data.reference_id) {
+      const order = await repo.getOrderForDelivery(client, data.reference_id);
+      if (order) {
+        if (!resolvedAddress) resolvedAddress = order.delivery_address || null;
+        if (!resolvedContactId) resolvedContactId = order.contact_id || null;
+      }
+    } else if (data.reference_type === "pos_transaction" && data.reference_id) {
+      const tx = await repo.getPosTransactionForDelivery(
+        client,
+        data.reference_id,
+      );
+      if (tx && !resolvedContactId) resolvedContactId = tx.contact_id || null;
+    }
+
+    const addressEmpty =
+      !resolvedAddress ||
+      (typeof resolvedAddress === "object" &&
+        Object.keys(resolvedAddress).length === 0);
+    if (data.reference_type !== "manual" && addressEmpty) {
+      throw Object.assign(
+        new Error(
+          "This order has no delivery address on file. Add one to the " +
+            "order first, or supply it with the delivery.",
+        ),
+        { status: 400 },
+      );
+    }
+
     const deliveryNumber = await nextDocumentNumber(
       client,
       business,
@@ -112,8 +147,8 @@ async function createDelivery(business, data, user) {
       deliveryNumber,
       reference_type: data.reference_type,
       reference_id: data.reference_id || null,
-      contact_id: data.contact_id,
-      delivery_address: data.delivery_address,
+      contact_id: resolvedContactId,
+      delivery_address: resolvedAddress,
       courier: data.courier,
       deliveryFee: data.delivery_fee || 0,
       fee_borne_by: data.fee_borne_by,
@@ -431,6 +466,20 @@ async function markDelivered(business, deliveryId, user) {
       source: "manual",
       message: "Marked as delivered by staff",
     });
+
+    // Close the loop on the order: a delivered sales order is fulfilled.
+    // This is what advances paid orders (web, B2B, POS-delivery) out of
+    // "confirmed" once the goods actually reach the customer, instead of
+    // them sitting confirmed forever.
+    if (updated.reference_type === "sales_order" && updated.reference_id) {
+      await client.query(
+        `UPDATE sales_orders
+         SET status = 'fulfilled', updated_at = now()
+         WHERE order_id = $1
+           AND status IN ('confirmed', 'partially_fulfilled')`,
+        [updated.reference_id],
+      );
+    }
 
     emitToBusiness(business, "delivery:delivered", { deliveryId });
     return updated;

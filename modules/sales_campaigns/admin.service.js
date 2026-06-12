@@ -251,10 +251,26 @@ async function confirmOrder(business, orderId, user) {
     );
     if (!order)
       throw Object.assign(new Error("Order not found"), { status: 404 });
-    if (order.status !== "proof_submitted") {
+    // Two roads into confirmation:
+    //   • 'proof_submitted' — bank-transfer order whose proof a manager
+    //     reviews and approves.
+    //   • 'pending' — a card/gateway order the Paystack/Optimus webhook
+    //     auto-confirms the moment the charge succeeds. Previously the
+    //     webhook filtered status='pending' but this required
+    //     'proof_submitted', so every gateway campaign order threw here
+    //     and the failure was swallowed into a log line — card-paid
+    //     campaign orders never confirmed.
+    // Already-confirmed (or further) orders short-circuit so a duplicate
+    // webhook delivery can't double-confirm.
+    if (["confirmed", "dispatched", "ready_for_pickup", "completed"].includes(
+      order.status,
+    )) {
+      return order;
+    }
+    if (!["proof_submitted", "pending"].includes(order.status)) {
       throw Object.assign(
         new Error(
-          `Order must be in proof_submitted status, got: ${order.status}`,
+          `Order cannot be confirmed from status: ${order.status}`,
         ),
         { status: 400 },
       );

@@ -952,23 +952,43 @@ async function createInvoiceFromTransaction(business, transactionId, { due_date 
       due_date ||
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+    // Money already collected at the till. A POS sale books its revenue
+    // journal against the payment account at checkout (cash→Cash,
+    // card/transfer→Bank), so the resulting invoice must be born already
+    // PAID — not a draft with amount_paid 0. A draft POS invoice was a
+    // double-collection trap: it looked unpaid in AR, so a second payment
+    // could be recorded against revenue that was already in the books.
+    //
+    // We set amount_paid/status directly here and post NO payment journal
+    // (checkout already owns the revenue posting). The exception is a
+    // bank-transfer sale awaiting funds: its splits don't yet cover the
+    // total, so it's born unpaid and confirmTransactionPayment settles it.
+    const paidAtTill = (tx.payments || [])
+      .filter((p) => p && p.split_id)
+      .reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+    const isFullyPaid = paidAtTill + 0.01 >= total;
+    const invStatus = isFullyPaid ? "paid" : "draft";
+    const invAmountPaid = isFullyPaid ? total : 0;
+
     const { rows: [inv] } = await client.query(
       `INSERT INTO invoices
          (invoice_number, invoice_type, contact_id, pos_transaction_id,
           status, issue_date, due_date,
-          subtotal, discount_total, vat_amount, total_amount,
-          currency, payment_instructions, created_by)
+          subtotal, discount_total, vat_amount, total_amount, amount_paid,
+          paid_at, currency, payment_instructions, created_by)
        VALUES ($1,'pos_sale',$2,$3,
-               'draft', CURRENT_DATE, $4,
-               $5, 0, $6, $7,
-               'NGN', $8, $9)
+               $4, CURRENT_DATE, $5,
+               $6, 0, $7, $8, $9,
+               CASE WHEN $4 = 'paid' THEN now() ELSE NULL END,
+               'NGN', $10, $11)
        RETURNING *`,
       [
         invoiceNumber,
         tx.contact_id || null,
         transactionId,
+        invStatus,
         resolvedDueDate,
-        subtotal, vatTotal, total,
+        subtotal, vatTotal, total, invAmountPaid,
         paymentInstructions,
         user.user_id,
       ],

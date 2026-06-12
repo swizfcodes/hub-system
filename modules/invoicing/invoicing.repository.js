@@ -170,7 +170,9 @@ async function getInvoiceNumberAndContact(client, invoiceId) {
   const {
     rows: [inv],
   } = await client.query(
-    `SELECT invoice_number, contact_id FROM invoices WHERE invoice_id = $1`,
+    `SELECT invoice_number, contact_id, status,
+            total_amount, amount_paid, amount_outstanding, is_deleted
+     FROM invoices WHERE invoice_id = $1`,
     [invoiceId],
   );
   return inv || null;
