@@ -20,11 +20,22 @@ import {
   shouldPlayPop,
   showChatNotification,
 } from "@lib/notifications/chatAlerts";
+import {
+  registerServiceWorker,
+  ensurePushSubscription,
+} from "@lib/notifications/push";
 
 export function ChatNotificationManager() {
   const navigate = useNavigate();
   const myUserId = useAuthStore((s) => s.user?.user_id);
   const unreadTotal = useUnreadTotal();
+
+  // Register the service worker (installability) and, when notification
+  // permission is already granted, make sure this device holds a live
+  // push subscription. Both no-op cleanly where unsupported.
+  useEffect(() => {
+    void registerServiceWorker().then(() => ensurePushSubscription());
+  }, []);
 
   useEffect(() => {
     void applyTabBadge(unreadTotal);

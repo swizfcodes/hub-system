@@ -1,8 +1,13 @@
 "use strict";
 
 const { withSharedContext } = require("../../config/db");
-const { emitToUser, emitToBusiness } = require("../../config/sockets");
+const {
+  emitToUser,
+  emitToBusiness,
+  isUserOnline,
+} = require("../../config/sockets");
 const logger = require("../../config/logger");
+const push = require("../../lib/push");
 // EXTERNAL-COMMS-DISABLED: the integrations layer dispatched replies to
 // WhatsApp / Instagram / Facebook via the Meta Graph API. Re-enable the
 // require (and the dispatch block in sendMessage) once API access exists.
@@ -540,6 +545,26 @@ async function dispatchMessageAlerts(channel, message, sender) {
   const notifService = require("../notifications/notifications.service");
   await withSharedContext(async (client) => {
     for (const member of recipients) {
+      // True push for members with no open tab — lands on the phone or
+      // desktop even with the browser closed (requires VAPID config).
+      if (push.isConfigured() && !(await isUserOnline(member.user_id))) {
+        await push.sendToUser(member.user_id, {
+          title:
+            channel.channel_type === "group"
+              ? `${sender.display_name} · ${channel.name || "Group"}`
+              : sender.display_name,
+          body:
+            (message.content || "").substring(0, 120) ||
+            (message.message_type === "voice_note"
+              ? "🎤 Voice note"
+              : message.message_type === "image"
+                ? "📷 Photo"
+                : "📎 Attachment"),
+          url: `/messaging?channel=${channel.channel_id}`,
+          tag: `chat-${channel.channel_id}`,
+        });
+      }
+
       const total = await repo.getUnreadCountForUser(client, member.user_id);
       const level = BACKLOG_NUDGE_LEVELS.find((l) => total > l);
       if (!level) continue;

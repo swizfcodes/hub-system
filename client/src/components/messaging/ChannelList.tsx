@@ -26,6 +26,7 @@ import {
   isChatSoundEnabled,
   setChatSoundEnabled,
 } from "@lib/notifications/chatAlerts";
+import { ensurePushSubscription } from "@lib/notifications/push";
 import { showToast } from "@hooks/useToast";
 import { useChannelListUpdates, usePresence } from "@hooks/useMessaging";
 import { isUserOnline } from "@lib/socket";
@@ -76,7 +77,11 @@ export function ChannelList({
     }
     const perm = await requestChatNotifPermission();
     setNotifPerm(perm);
-    if (perm === "granted") showToast.success("Browser notifications are on");
+    if (perm === "granted") {
+      showToast.success("Browser notifications are on");
+      // Upgrade to true push (works with the app closed) where supported.
+      void ensurePushSubscription();
+    }
   }
 
   function handleSoundToggle() {

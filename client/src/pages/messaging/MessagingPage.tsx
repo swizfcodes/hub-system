@@ -20,6 +20,7 @@ import { Button } from "@components/ui/Button";
 import { Input } from "@components/ui/Input";
 import { Select } from "@components/ui/Select";
 import { ChannelList } from "@components/messaging/ChannelList";
+import { IosInstallHint } from "@components/messaging/IosInstallHint";
 import { MessageThread } from "@components/messaging/MessageThread";
 import { CustomerSidebar } from "@components/messaging/CustomerSidebar";
 import { EmailLogPanel } from "@components/messaging/EmailLogPanel";
@@ -88,6 +89,7 @@ export default function MessagingPage() {
   return (
     <>
       <Topbar title="Messaging" subtitle="Team chat · In-house" />
+      <IosInstallHint />
       <div className="flex h-screen overflow-hidden">
         {/* Column 1: Channel list */}
         <div

@@ -36,6 +36,28 @@ async function create(
     action_url: n.action_url,
   });
 
+  // True push for users with no open tab. Best-effort and post-tick so it
+  // never blocks (or rolls back with) the caller's transaction. 'message'
+  // type entries (mentions, backlog nudges) are skipped — the messaging
+  // module already pushes the chat message itself, this would double up.
+  if (n.type !== "message") {
+    setImmediate(async () => {
+      try {
+        const push = require("../../lib/push");
+        const { isUserOnline } = require("../../config/sockets");
+        if (!push.isConfigured() || (await isUserOnline(userId))) return;
+        await push.sendToUser(userId, {
+          title: n.title,
+          body: n.body || "",
+          url: n.action_url || "/",
+          tag: `notif-${n.type}`,
+        });
+      } catch {
+        /* push is best-effort */
+      }
+    });
+  }
+
   return n;
 }
 
