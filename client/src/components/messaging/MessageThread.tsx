@@ -285,10 +285,18 @@ export function MessageThread({
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: recorder.mimeType });
+        // Safari records audio/mp4, Chrome audio/webm, Firefox audio/ogg —
+        // name the file to match so playback works across all of them.
+        const mime = recorder.mimeType || "audio/webm";
+        const blob = new Blob(chunks, { type: mime });
         if (blob.size < 1000) return; // accidental tap
-        const file = new File([blob], `voice-note-${Date.now()}.webm`, {
-          type: recorder.mimeType,
+        const ext = mime.includes("mp4")
+          ? "m4a"
+          : mime.includes("ogg")
+            ? "ogg"
+            : "webm";
+        const file = new File([blob], `voice-note-${Date.now()}.${ext}`, {
+          type: mime,
         });
         setUploading(true);
         try {

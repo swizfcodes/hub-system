@@ -63,6 +63,7 @@ const DOCUMENT_TYPES = {
   amendment: "hr",
   payslip: "hr",
   // general
+  message_attachment: "general", // chat uploads (images, files, voice notes)
   other: "general",
 };
 
