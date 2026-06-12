@@ -24,6 +24,7 @@ const FORWARDED_EVENTS = [
   "presence:online",
   "presence:offline",
   "notification:new",
+  "branding:updated",
 ] as const;
 
 /** Online user ids, kept fresh from presence events. */

@@ -59,6 +59,8 @@ interface BrandingContextValue {
   /** Display name for a business key — replaces hardcoded label maps. */
   businessLabel: (key?: string | null) => string;
   getBusiness: (key?: string | null) => BusinessBranding | undefined;
+  /** Re-fetch and re-apply branding (used after saving Appearance). */
+  refresh: () => Promise<void>;
 }
 
 // ── Defaults (must mirror :root in styles/index.css) ──
@@ -189,6 +191,7 @@ const BrandingContext = createContext<BrandingContextValue>({
   businesses: [],
   businessLabel: (key) => key ?? "",
   getBusiness: () => undefined,
+  refresh: async () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -202,28 +205,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
   const activeBusiness = useBusinessStore((s) => s.active);
 
+  const fetchAndApply = async () => {
+    const { data } = await api.get<BrandingPayload>("/branding");
+    if (!data?.platform) return;
+    setBranding(data);
+    applyPlatform(data.platform);
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch {
+      /* storage full/blocked — branding still applied */
+    }
+  };
+
   // Apply cached branding synchronously, then refresh from the API.
   useEffect(() => {
     if (branding?.platform) applyPlatform(branding.platform);
-    let cancelled = false;
-    api
-      .get<BrandingPayload>("/branding")
-      .then(({ data }) => {
-        if (cancelled || !data?.platform) return;
-        setBranding(data);
-        applyPlatform(data.platform);
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        } catch {
-          /* storage full/blocked — branding still applied */
-        }
-      })
-      .catch(() => {
-        /* offline / backend down — defaults from index.css stand */
-      });
-    return () => {
-      cancelled = true;
-    };
+    fetchAndApply().catch(() => {
+      /* offline / backend down — defaults from index.css stand */
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Live re-theme: the backend emits branding:updated after an
+  // Appearance save; lib/socket.ts forwards it as a window event.
+  useEffect(() => {
+    const onUpdate = () => fetchAndApply().catch(() => {});
+    window.addEventListener("orika:branding:updated", onUpdate);
+    return () => window.removeEventListener("orika:branding:updated", onUpdate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -245,7 +253,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         key ??
         "",
       getBusiness: (key) => businesses.find((b) => b.business_key === key),
+      refresh: fetchAndApply,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branding]);
 
   return (

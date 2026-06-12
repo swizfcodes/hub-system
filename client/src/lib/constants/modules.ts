@@ -1,4 +1,5 @@
 import {
+  Palette,
   LayoutGrid,
   Users,
   ShoppingBag,
@@ -367,6 +368,16 @@ export const HUB_MODULES: AppModule[] = [
 ];
 
 export const SETTINGS_SUBMODULES: AppModule[] = [
+  {
+    key: "appearance",
+    permissionModule: "settings",
+    label: "Appearance",
+    description: "White-label: product name, fonts, colour theme",
+    icon: Palette,
+    route: "/settings/appearance",
+    accent: "gold",
+    group: "system",
+  },
   {
     key: "business-setup",
     permissionModule: "settings",
