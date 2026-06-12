@@ -1,4 +1,6 @@
 "use strict";
+
+const { flattenAddress } = require("../../lib/formatAddress");
 // ── admin.service.js ──────────────────────────────────────────────────────────
 
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
@@ -455,8 +457,9 @@ async function confirmOrder(business, orderId, user) {
         } = await client.query(
           `INSERT INTO sales_orders
              (order_number, contact_id, status, fulfilment_type,
-              total_amount, amount_paid, source, created_by)
-           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
+              total_amount, amount_paid, source, created_by,
+              delivery_address)
+           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5, $6)
            RETURNING order_id, order_number`,
           [
             orderNumber,
@@ -464,6 +467,10 @@ async function confirmOrder(business, orderId, user) {
             order.fulfilment_type || "delivery",
             grossNaira,
             user.user_id,
+            // The address the customer typed at campaign checkout must
+            // ride into the ERP order — Hand-to-Logistics prefills from
+            // it, and dropping it here forced staff to re-key it.
+            flattenAddress(order.delivery_address),
           ],
         );
         salesOrderId = salesOrder.order_id;

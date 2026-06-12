@@ -1,4 +1,6 @@
 "use strict";
+
+const { flattenAddress } = require("../../lib/formatAddress");
 // ── storefront.service.js — PUBLIC, no auth ───────────────────────────────────
 
 const {
@@ -582,15 +584,17 @@ async function submitProof(business, orderId, { proof_image_url, source }) {
         const { rows: [bridgeOrder] } = await client.query(
           `INSERT INTO sales_orders
              (order_number, contact_id, status, fulfilment_type,
-              source, total_amount, amount_paid, created_by)
+              source, total_amount, amount_paid, created_by,
+              delivery_address)
            VALUES ($1, $2, 'pending_proof', $3,
-                   'campaign', $4, 0, NULL)
+                   'campaign', $4, 0, NULL, $5)
            RETURNING order_id`,
           [
             soNumber,
             contactId,
             order.fulfilment_type || "delivery",
             parseFloat(order.total_amount),
+            flattenAddress(order.delivery_address),
           ],
         );
         bridgeOrderId = bridgeOrder.order_id;
