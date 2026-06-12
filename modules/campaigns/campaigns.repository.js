@@ -188,12 +188,23 @@ async function markRecipientBounced(client, recipientId) {
   );
 }
 
-async function setSentTotals(client, campaignId, sentCount) {
+async function setSentTotals(client, campaignId) {
+  // delivered_count is derived from recipient rows rather than passed in, so
+  // finalising a resumed send never erases earlier progress. Recipients move
+  // past 'sent' via tracking (opened/clicked/unsubscribed) — every post-send
+  // status counts as delivered. Guarded on 'sending' so finalise can never
+  // overwrite a cancelled campaign.
   await client.query(
     `UPDATE campaigns
-     SET status='sent', sent_at=now(), delivered_count=$1, updated_at=now()
-     WHERE campaign_id=$2`,
-    [sentCount, campaignId],
+     SET status='sent', sent_at=now(),
+         delivered_count=(
+           SELECT COUNT(*) FROM campaign_recipients
+           WHERE campaign_id=$1
+             AND status IN ('sent','delivered','opened','clicked','unsubscribed')
+         ),
+         updated_at=now()
+     WHERE campaign_id=$1 AND status='sending'`,
+    [campaignId],
   );
 }
 

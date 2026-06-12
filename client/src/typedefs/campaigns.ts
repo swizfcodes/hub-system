@@ -17,6 +17,7 @@ export type CampaignType = "email" | "whatsapp";
 
 export type RecipientStatus =
   | "pending"
+  | "sending"
   | "sent"
   | "delivered"
   | "opened"

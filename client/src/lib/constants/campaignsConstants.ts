@@ -24,6 +24,7 @@ export const RECIPIENT_STATUS_META: Record<
   { label: string; tone: BadgeProps["tone"] }
 > = {
   pending: { label: "Pending", tone: "neutral" },
+  sending: { label: "Sending", tone: "gold" },
   sent: { label: "Sent", tone: "info" },
   delivered: { label: "Delivered", tone: "info" },
   opened: { label: "Opened", tone: "gold" },
