@@ -175,6 +175,7 @@ export default function POSSession() {
     payments: PaymentSplitInput[],
     saleCurrency: string = "NGN",
     exchangeRate: number | null = null,
+    changeHandling: "return" | "keep" = "return",
   ) {
     if (!sessionId) return;
     setIsSubmitting(true);
@@ -184,6 +185,7 @@ export default function POSSession() {
       contact_id: customer?.contact_id,
       currency: saleCurrency,
       exchange_rate: exchangeRate,
+      change_handling: changeHandling,
       lines: lines.map((l) => ({
         product_id: l.product_id,
         description: l.description,
@@ -218,6 +220,7 @@ export default function POSSession() {
         offline_id: offlineId,
         session_id: sessionId,
         contact_id: customer?.contact_id,
+        change_handling: changeHandling,
         lines: lines.map((l) => ({
           product_id: l.product_id,
           description: l.description,

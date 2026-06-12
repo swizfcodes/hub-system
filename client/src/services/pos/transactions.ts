@@ -15,6 +15,7 @@ export interface CreateTransactionPayload {
   contact_id?: string;
   currency?: string;
   exchange_rate?: number | null;
+  change_handling?: "return" | "keep";
   lines: {
     product_id?: string;
     description: string;
@@ -169,6 +170,7 @@ export async function syncOfflineTransactions(
       lines: t.lines,
       payments: t.payments,
       contact_id: t.contact_id,
+      change_handling: t.change_handling,
       created_at_offline: t.created_at_offline,
     })),
   });

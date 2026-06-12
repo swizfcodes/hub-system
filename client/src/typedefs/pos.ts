@@ -157,6 +157,7 @@ export interface PendingTransaction {
   offline_id: string;
   session_id: string;
   contact_id?: string;
+  change_handling?: "return" | "keep";
   lines: OfflineTransactionLine[];
   payments: OfflinePaymentSplit[];
   created_at_offline: string;
