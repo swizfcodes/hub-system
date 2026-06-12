@@ -33,6 +33,7 @@ export function FloatingLauncher() {
   const unreadTotal = useUnreadTotal();
   const tone = unreadTone(unreadTotal);
   const toggleDock = useChatDockStore((s) => s.toggleDock);
+  const dockOpen = useChatDockStore((s) => s.open);
   const [expanded, setExpanded] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +60,8 @@ export function FloatingLauncher() {
     };
   }, [expanded]);
 
+  // The open dock has its own close affordances — keep the corner clear.
+  if (dockOpen) return null;
   if (!showHelp && !showMessages) return null;
 
   const moduleKey = resolveModule(pathname);
