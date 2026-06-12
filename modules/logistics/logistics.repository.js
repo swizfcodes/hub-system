@@ -115,6 +115,31 @@ async function getPOSLines(client, referenceId) {
   return rows;
 }
 
+// Source-of-truth for a delivery's address + contact when the delivery
+// is created against a sales order — so the address flows through from
+// the order the customer placed, no re-entry.
+async function getOrderForDelivery(client, orderId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT order_id, contact_id, delivery_address, fulfilment_type
+     FROM sales_orders WHERE order_id = $1`,
+    [orderId],
+  );
+  return row || null;
+}
+
+async function getPosTransactionForDelivery(client, transactionId) {
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT transaction_id, contact_id
+     FROM pos_transactions WHERE transaction_id = $1`,
+    [transactionId],
+  );
+  return row || null;
+}
+
 async function insertTrackingEntry(
   client,
   { delivery_id, status, source, message },
@@ -253,6 +278,8 @@ module.exports = {
   insertDeliveryItem,
   getOrderLines,
   getPOSLines,
+  getOrderForDelivery,
+  getPosTransactionForDelivery,
   insertTrackingEntry,
   findDispatchable,
   getDeliveryItems,

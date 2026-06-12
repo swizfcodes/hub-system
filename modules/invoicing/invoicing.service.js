@@ -310,6 +310,54 @@ async function recordPayment(business, invoiceId, data, user) {
     const inv = await repo.getInvoiceNumberAndContact(client, invoiceId);
     contactId = inv?.contact_id || null;
 
+    // ── Payment guards ────────────────────────────────────────────────
+    // The single chokepoint every channel's payments flow through —
+    // POS transfer-confirm, B2B order invoices, manual invoices and the
+    // gateway webhooks all call recordPayment. Without these an invoice
+    // could be paid after it was already settled, paid beyond its total
+    // (negative outstanding), or paid after being voided — each one a
+    // real double-collection in the books.
+    if (!inv) {
+      throw Object.assign(new Error("Invoice not found"), { status: 404 });
+    }
+    if (inv.is_deleted) {
+      throw Object.assign(new Error("Invoice has been deleted"), {
+        status: 409,
+      });
+    }
+    if (inv.status === "voided") {
+      throw Object.assign(
+        new Error("Cannot record a payment on a voided invoice"),
+        { status: 409 },
+      );
+    }
+    if (inv.status === "paid") {
+      throw Object.assign(
+        new Error("Invoice is already fully paid"),
+        { status: 409 },
+      );
+    }
+    // Overpayment: a confirmed payment may not exceed what's still owed
+    // (1 kobo tolerance for rounding). Unconfirmed gateway payments
+    // (Optimus pending) skip the cap — the webhook reconciles the real
+    // settled amount and the cap is re-checked when it confirms.
+    const willConfirm =
+      data.payment_method !== "optimus_pay" && data.is_confirmed !== false;
+    const outstanding = parseFloat(inv.amount_outstanding);
+    if (
+      willConfirm &&
+      Number.isFinite(outstanding) &&
+      parseFloat(data.amount) > outstanding + 0.01
+    ) {
+      throw Object.assign(
+        new Error(
+          `Payment of ${data.amount} exceeds the outstanding balance ` +
+            `of ${outstanding.toFixed(2)} on invoice ${inv.invoice_number}.`,
+        ),
+        { status: 422 },
+      );
+    }
+
     // ── Optimus Pay: provision a virtual account before inserting the payment ──
     let optimusTransactionRef = data.optimus_transaction_ref || null;
     let optimusVirtualAccount = data.optimus_virtual_account || null;
@@ -321,8 +369,9 @@ async function recordPayment(business, invoiceId, data, user) {
       const {
         rows: [invDetail],
       } = await client.query(
-        `SELECT i.invoice_id, i.total, i.invoice_number,
-                c.first_name, c.last_name, c.email, c.phone, c.contact_id
+        `SELECT i.invoice_id, i.total_amount, i.invoice_number,
+                c.first_name, c.last_name, c.email,
+                c.primary_phone AS phone, c.contact_id
          FROM invoices i
          LEFT JOIN shared.contacts c ON c.contact_id = i.contact_id
          WHERE i.invoice_id = $1`,
