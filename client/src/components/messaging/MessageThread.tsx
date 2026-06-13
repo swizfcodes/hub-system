@@ -403,6 +403,11 @@ export function MessageThread({
         // name the file to match so playback works across all of them.
         const mime = recorder.mimeType || mimeType || "audio/webm";
         const blob = new Blob(chunks, { type: mime });
+        // Diagnostic: a few hundred bytes after speaking = container-only
+        // (no audio captured); tens of KB = real audio present.
+        console.debug(
+          `[voice note] captured ${blob.size} bytes in ${chunks.length} chunk(s), mime=${mime}`,
+        );
         if (blob.size === 0) {
           showToast.error(
             "No audio was captured — check microphone access and try again.",
