@@ -37,6 +37,7 @@ const repo = require("./store.repository");
 
 const STORE_BUSINESS = "diffusers";
 const { businessLabel } = require("../../lib/branding");
+const { flattenAddress } = require("../../lib/formatAddress");
 const MAX_ORDER_KOBO = 500000000; // ₦5,000,000 cap, mirrors the storefront
 
 // Scents are derived from published products, but the ERP captures no
@@ -569,6 +570,9 @@ async function verifyAndFulfil(reference) {
         orderNumber,
         contactId: contact.contact_id,
         totalNaira: Number(order.total_kobo) / 100,
+        // Carry the checkout address into the ERP order so
+        // Hand-to-Logistics prefills it (no re-keying).
+        deliveryAddress: flattenAddress(order.delivery_address),
       });
       await repo.insertSalesOrderLinesForWeb(client, {
         orderId: salesOrder.order_id,
@@ -849,6 +853,9 @@ async function fulfillOptimusOrder(transactionRef, { paidKobo = 0 } = {}) {
         orderNumber,
         contactId: contact.contact_id,
         totalNaira: grossNaira,
+        // Carry the checkout address into the ERP order so
+        // Hand-to-Logistics prefills it (no re-keying).
+        deliveryAddress: flattenAddress(order.delivery_address),
       });
       await repo.insertSalesOrderLinesForWeb(client, {
         orderId: salesOrder.order_id,
