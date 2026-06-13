@@ -21,6 +21,8 @@ import {
   BellOff,
   Archive,
   Users,
+  Upload,
+  FolderOpen,
   X,
   CheckCircle2,
 } from "lucide-react";
@@ -71,6 +73,8 @@ import { MessageBubble } from "./MessageBubble";
 import { EmojiPicker } from "./EmojiPicker";
 import { ForwardModal } from "./ForwardModal";
 import { GroupInfoModal } from "./GroupInfoModal";
+import { DocumentPickerModal } from "./DocumentPickerModal";
+import type { HubDocument } from "@typedefs/documents";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { showToast } from "@hooks/useToast";
 import { cn } from "@lib/cn";
@@ -104,6 +108,8 @@ export function MessageThread({
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [docPickerOpen, setDocPickerOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -326,6 +332,21 @@ export function MessageThread({
       e.preventDefault();
       void sendFiles(files);
     }
+  }
+
+  // Share an existing vault document by reference — no re-upload, the
+  // message attachment points at the same tamper-proof original.
+  function sendDocumentReference(doc: HubDocument) {
+    setDocPickerOpen(false);
+    sendMutation.mutate({
+      message_type: doc.mime_type?.startsWith("image/") ? "image" : "document",
+      attachments: [
+        {
+          document_id: doc.document_id,
+          display_name: doc.title || doc.document_number,
+        },
+      ],
+    });
   }
 
   // ── Voice notes ─────────────────────────────────────────────────────
@@ -732,16 +753,51 @@ export function MessageThread({
                 style={{ maxHeight: 120 }}
               />
               <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1.5">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke disabled:opacity-40"
-                  title="Attach a file"
-                >
-                  <Paperclip
-                    className={cn("h-4 w-4", uploading && "animate-pulse")}
-                  />
-                </button>
+                <div className="relative">
+                  {attachMenuOpen && (
+                    <>
+                      <button
+                        type="button"
+                        aria-hidden
+                        tabIndex={-1}
+                        onClick={() => setAttachMenuOpen(false)}
+                        className="fixed inset-0 z-10 cursor-default"
+                      />
+                      <div className="absolute bottom-full left-0 z-20 mb-2 w-44 overflow-hidden rounded-xl border border-white/10 bg-brand-charcoal shadow-xl">
+                        <button
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs text-brand-cream transition-colors hover:bg-white/5"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-brand-smoke" />
+                          Upload file
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            setDocPickerOpen(true);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs text-brand-cream transition-colors hover:bg-white/5"
+                        >
+                          <FolderOpen className="h-3.5 w-3.5 text-brand-smoke" />
+                          From Documents
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setAttachMenuOpen((v) => !v)}
+                    disabled={uploading}
+                    className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke disabled:opacity-40"
+                    title="Attach"
+                  >
+                    <Paperclip
+                      className={cn("h-4 w-4", uploading && "animate-pulse")}
+                    />
+                  </button>
+                </div>
                 <button
                   onClick={() => setEmojiOpen((v) => !v)}
                   className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke"
@@ -801,6 +857,11 @@ export function MessageThread({
       )}
 
       {/* Modals */}
+      <DocumentPickerModal
+        open={docPickerOpen}
+        onClose={() => setDocPickerOpen(false)}
+        onPick={sendDocumentReference}
+      />
       <ForwardModal
         message={forwarding}
         onClose={() => setForwarding(null)}
