@@ -1,18 +1,31 @@
 /**
  * PriorityAppGrid — the decongested Command Centre app menu.
  *
- * Top: the user's resolved top-10 (useNavPriority ladder), drag-to-reorder,
- * hover pin-off. Bottom: a "More" tile that inline-expands every other
- * permitted module, grouped by category, each with a "pin to top" action.
- * Pinning when the grid is full auto-drops the last tile (with a toast).
+ * Top: the user's resolved top-10 (useNavPriority ladder), reorderable.
+ * Bottom: a "More" tile that inline-expands every other permitted module,
+ * grouped by category, each with a "pin to top" action. Pinning when the
+ * grid is full auto-drops the last tile (with a toast).
+ *
+ * Reordering works two ways, picked by pointer type:
+ *   • Desktop (fine pointer)  → native HTML5 drag-and-drop, hover pin-off.
+ *   • Mobile (coarse pointer) → iPhone-style "jiggle" edit mode: long-press
+ *     any tile to enter edit mode (all tiles wobble), then drag with your
+ *     finger to reorder. The pin-off button is always visible while editing.
+ *     Tap anywhere outside the grid — or the "Done" button — to finish.
+ *
+ * The two paths never collide: native `draggable` is disabled on coarse
+ * pointers (it was the cause of the "hold = freeze" bug), and the long-press
+ * logic only runs for `pointerType === "touch"`.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LayoutGrid as MoreIcon,
   Pin,
   PinOff,
   RotateCcw,
   ChevronUp,
+  Check,
+  GripVertical,
 } from "lucide-react";
 import { AppTile } from "./AppTile";
 import { useNavPriority } from "@hooks/useNavPriority";
@@ -42,8 +55,26 @@ const GROUP_ORDER: AppModule["group"][] = [
   "system",
 ];
 
+const LONG_PRESS_MS = 420;
+const MOVE_CANCEL_PX = 10;
+
 function labelFor(key: string): string {
   return HUB_MODULES.find((m) => m.key === key)?.label ?? key;
+}
+
+/** Move `key` so it sits where `targetKey` currently is. */
+function moveKeyTo(order: string[], key: string, targetKey: string): string[] {
+  const from = order.indexOf(key);
+  const to = order.indexOf(targetKey);
+  if (from < 0 || to < 0 || from === to) return order;
+  const next = [...order];
+  next.splice(from, 1);
+  next.splice(to, 0, key);
+  return next;
+}
+
+function sameOrder(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((k, i) => k === b[i]);
 }
 
 export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
@@ -58,8 +89,37 @@ export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
   } = useNavPriority();
 
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // ── Desktop native drag-and-drop ──
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [overKey, setOverKey] = useState<string | null>(null);
+
+  // ── Mobile jiggle / touch reorder ──
+  // Coarse pointer == touch-first device. Computed once; the interaction model
+  // never needs to flip mid-session.
+  const [isCoarse] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(pointer: coarse)").matches,
+  );
+  const [editMode, setEditMode] = useState(false);
+  // While dragging by touch we keep a local working order so the grid can
+  // shuffle live without spamming the save mutation (committed on release).
+  const [liveOrder, setLiveOrder] = useState<string[] | null>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ dx: number; dy: number } | null>(null);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const drag = useRef<{
+    key: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    dragging: boolean;
+  } | null>(null);
 
   // Aggregate numeric badges of hidden modules onto the More tile.
   const moreBadge = moreModules.reduce((sum, m) => {
@@ -67,9 +127,165 @@ export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
     return sum + (typeof v === "number" ? v : 0);
   }, 0);
 
+  // The order we actually render: the live working copy while touch-dragging,
+  // otherwise whatever the priority hook resolved.
+  const baseKeys = topModules.map((m) => m.key);
+  const orderKeys = liveOrder ?? baseKeys;
+  const moduleByKey = new Map(topModules.map((m) => [m.key, m]));
+  const orderedTop = orderKeys
+    .map((k) => moduleByKey.get(k))
+    .filter((m): m is AppModule => !!m);
+
+  // Once the persisted order catches up to our live copy, drop the override
+  // so we don't render a stale snapshot.
+  useEffect(() => {
+    if (!liveOrder || activeKey) return;
+    if (sameOrder(baseKeys, liveOrder)) setLiveOrder(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topModules, liveOrder, activeKey]);
+
+  // Leave edit mode on a tap outside the grid (or Escape).
+  useEffect(() => {
+    if (!editMode) return;
+    function onDocPointerDown(e: PointerEvent) {
+      if (drag.current) return; // mid-drag — ignore
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setEditMode(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setEditMode(false);
+    }
+    document.addEventListener("pointerdown", onDocPointerDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDocPointerDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [editMode]);
+
+  function clearLongPress() {
+    if (longPressTimer.current != null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  // Topmost top-grid slot under the point, ignoring the lifted tile itself
+  // (which floats above everything while being dragged).
+  function keyAtPoint(x: number, y: number, exclude: string): string | null {
+    for (const el of document.elementsFromPoint(x, y)) {
+      const slot = (el as Element).closest?.("[data-slot-key]");
+      const k = slot?.getAttribute("data-slot-key");
+      if (k && k !== exclude) return k;
+    }
+    return null;
+  }
+
+  function updateGhost(x: number, y: number, key: string) {
+    const el = gridRef.current?.querySelector<HTMLElement>(
+      `[data-slot-key="${CSS.escape(key)}"]`,
+    );
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setGhost({ dx: x - (r.left + r.width / 2), dy: y - (r.top + r.height / 2) });
+  }
+
+  // `el` and coords are passed explicitly — a long press fires from a timer,
+  // by which point React has already nulled the synthetic event's currentTarget.
+  function beginTouchDrag(
+    el: HTMLElement,
+    pointerId: number,
+    x: number,
+    y: number,
+    key: string,
+  ) {
+    try {
+      el.setPointerCapture(pointerId);
+    } catch {
+      /* capture unsupported — the lifted tile tracks the finger regardless */
+    }
+    drag.current = { key, pointerId, startX: x, startY: y, dragging: true };
+    setActiveKey(key);
+    setLiveOrder(baseKeys);
+    updateGhost(x, y, key);
+  }
+
+  function onTilePointerDown(e: React.PointerEvent, key: string) {
+    if (e.pointerType !== "touch") return; // desktop → native DnD
+    const el = e.currentTarget as HTMLElement;
+    const { pointerId, clientX, clientY } = e;
+    drag.current = {
+      key,
+      pointerId,
+      startX: clientX,
+      startY: clientY,
+      dragging: false,
+    };
+    // Already jiggling? Grabbing a (movable) tile starts a drag immediately.
+    if (editMode) {
+      if (key !== "dashboard") beginTouchDrag(el, pointerId, clientX, clientY, key);
+      return;
+    }
+    // Otherwise a long press arms edit mode (and a drag for movable tiles).
+    clearLongPress();
+    longPressTimer.current = window.setTimeout(() => {
+      navigator.vibrate?.(12);
+      setEditMode(true);
+      if (key !== "dashboard")
+        beginTouchDrag(el, pointerId, clientX, clientY, key);
+    }, LONG_PRESS_MS);
+  }
+
+  function onTilePointerMove(e: React.PointerEvent) {
+    const info = drag.current;
+    if (!info || info.pointerId !== e.pointerId) return;
+    if (!info.dragging) {
+      // Still waiting on the long press — a real move means "scroll", so bail.
+      if (
+        Math.abs(e.clientX - info.startX) > MOVE_CANCEL_PX ||
+        Math.abs(e.clientY - info.startY) > MOVE_CANCEL_PX
+      ) {
+        clearLongPress();
+        drag.current = null;
+      }
+      return;
+    }
+    e.preventDefault();
+    updateGhost(e.clientX, e.clientY, info.key);
+    const over = keyAtPoint(e.clientX, e.clientY, info.key);
+    if (over && over !== "dashboard") {
+      setLiveOrder((prev) => moveKeyTo(prev ?? baseKeys, info.key, over));
+    }
+  }
+
+  function endTouchDrag(commit: boolean) {
+    const info = drag.current;
+    drag.current = null;
+    clearLongPress();
+    if (!info?.dragging) return;
+    if (commit && liveOrder && !sameOrder(liveOrder, baseKeys)) {
+      reorder(liveOrder);
+    } else if (!commit) {
+      setLiveOrder(null);
+    }
+    setActiveKey(null);
+    setGhost(null);
+  }
+
+  function onTilePointerUp(e: React.PointerEvent) {
+    const info = drag.current;
+    if (info?.dragging) e.preventDefault();
+    endTouchDrag(true);
+  }
+
+  function onTilePointerCancel() {
+    endTouchDrag(false);
+  }
+
   function handleDrop(targetKey: string) {
     if (!dragKey || dragKey === targetKey) return;
-    const keys = topModules.map((m) => m.key);
+    const keys = baseKeys.slice();
     const from = keys.indexOf(dragKey);
     const to = keys.indexOf(targetKey);
     if (from < 0 || to < 0) return;
@@ -91,52 +307,107 @@ export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
   }
 
   return (
-    <div>
-      {/* ── Top 10 (drag to reorder, hover to unpin) ── */}
-      <div className="grid gap-4 sm:gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 stagger">
-        {topModules.map((m, i) => (
-          <div
-            key={m.key}
-            className={cn(
-              "relative group/slot",
-              overKey === m.key && dragKey !== m.key && "scale-[1.03]",
-              dragKey === m.key && "opacity-40",
-            )}
-            draggable={m.key !== "dashboard"}
-            onDragStart={() => setDragKey(m.key)}
-            onDragEnd={() => {
-              setDragKey(null);
-              setOverKey(null);
-            }}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOverKey(m.key);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              handleDrop(m.key);
-              setDragKey(null);
-              setOverKey(null);
-            }}
+    <div ref={rootRef}>
+      {/* ── Edit-mode banner (mobile jiggle) ── */}
+      {editMode && (
+        <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 rounded-xl bg-brand-accent/10 border border-brand-accent/30 animate-fade-in">
+          <span className="flex items-center gap-2 text-xs text-brand-cream">
+            <GripVertical className="w-3.5 h-3.5 text-brand-accent shrink-0" />
+            Drag to rearrange — tap the pin to move an app to More.
+          </span>
+          <button
+            onClick={() => setEditMode(false)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-accent text-brand-black text-xs font-semibold hover:brightness-110 transition-all shrink-0"
           >
-            <AppTile
-              module={m}
-              index={i}
-              badge={m.badgeKey ? badges[m.badgeKey] : undefined}
-              tone={m.badgeKey ? badgeTones[m.badgeKey] : undefined}
-            />
-            {m.key !== "dashboard" && (
-              <button
-                onClick={() => unpin(m.key)}
-                title="Move to More"
-                aria-label={`Move ${m.label} to More`}
-                className="absolute top-2 left-2 p-1.5 rounded-lg bg-brand-black/70 text-brand-smoke opacity-0 group-hover/slot:opacity-100 hover:text-brand-accent transition-all z-10"
-              >
-                <PinOff className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        ))}
+            <Check className="w-3.5 h-3.5" />
+            Done
+          </button>
+        </div>
+      )}
+
+      {/* ── Top 10 (drag to reorder, hover/edit to unpin) ── */}
+      <div
+        ref={gridRef}
+        className="grid gap-4 sm:gap-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 stagger"
+      >
+        {orderedTop.map((m, i) => {
+          const isActive = activeKey === m.key;
+          const jiggling = editMode && !isActive && m.key !== "dashboard";
+          return (
+            <div
+              key={m.key}
+              data-slot-key={m.key}
+              className={cn(
+                "relative group/slot select-none",
+                overKey === m.key && dragKey !== m.key && "scale-[1.03]",
+                dragKey === m.key && "opacity-40",
+                jiggling && "animate-jiggle",
+                isActive && "z-30",
+              )}
+              style={
+                isActive && ghost
+                  ? {
+                      transform: `translate(${ghost.dx}px, ${ghost.dy}px) scale(1.06)`,
+                      transition: "none",
+                      touchAction: "none",
+                      filter: "drop-shadow(0 12px 24px rgba(0,0,0,0.55))",
+                    }
+                  : editMode
+                    ? {
+                        animationDelay: `${(i % 4) * 55}ms`,
+                        touchAction: "none",
+                      }
+                    : undefined
+              }
+              draggable={!isCoarse && m.key !== "dashboard"}
+              onDragStart={() => setDragKey(m.key)}
+              onDragEnd={() => {
+                setDragKey(null);
+                setOverKey(null);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverKey(m.key);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(m.key);
+                setDragKey(null);
+                setOverKey(null);
+              }}
+              onPointerDown={(e) => onTilePointerDown(e, m.key)}
+              onPointerMove={onTilePointerMove}
+              onPointerUp={onTilePointerUp}
+              onPointerCancel={onTilePointerCancel}
+              onContextMenu={(e) => {
+                if (isCoarse) e.preventDefault();
+              }}
+            >
+              <AppTile
+                module={m}
+                index={i}
+                badge={m.badgeKey ? badges[m.badgeKey] : undefined}
+                tone={m.badgeKey ? badgeTones[m.badgeKey] : undefined}
+                navDisabled={editMode}
+              />
+              {m.key !== "dashboard" && (
+                <button
+                  onClick={() => unpin(m.key)}
+                  title="Move to More"
+                  aria-label={`Move ${m.label} to More`}
+                  className={cn(
+                    "absolute top-2 left-2 p-1.5 rounded-lg bg-brand-black/70 text-brand-smoke hover:text-brand-accent transition-all z-10",
+                    editMode
+                      ? "opacity-100"
+                      : "opacity-0 group-hover/slot:opacity-100",
+                  )}
+                >
+                  <PinOff className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          );
+        })}
 
         {/* ── "More" tile ── */}
         {moreModules.length > 0 && (
@@ -173,6 +444,13 @@ export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
           </button>
         )}
       </div>
+
+      {/* Discoverability hint for touch users. */}
+      {isCoarse && !editMode && topModules.length > 1 && (
+        <p className="mt-3 text-center text-[0.65rem] text-brand-smoke/70">
+          Press and hold an app to rearrange your grid.
+        </p>
+      )}
 
       {/* ── Inline-expanded "More" section, grouped ── */}
       {moreOpen && moreModules.length > 0 && (

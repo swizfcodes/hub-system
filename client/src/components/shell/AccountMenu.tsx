@@ -238,6 +238,7 @@ export function AccountMenu({ collapsed }: Props) {
         <PinModal
           email={user?.email}
           displayName={user?.display_name}
+          avatarUrl={user?.avatar_url}
           onClose={() => setShowPinModal(false)}
         />
       )}
@@ -692,10 +693,12 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 function PinModal({
   email,
   displayName,
+  avatarUrl,
   onClose,
 }: {
   email?: string;
   displayName?: string;
+  avatarUrl?: string | null;
   onClose: () => void;
 }) {
   const [statusLoading, setStatusLoading] = useState(true);
@@ -724,7 +727,12 @@ function PinModal({
 
   const rememberThisDevice = () => {
     setPinEnabledLocally(true);
-    if (email) rememberAccount({ email, display_name: displayName });
+    if (email)
+      rememberAccount({
+        email,
+        display_name: displayName,
+        avatar_url: avatarUrl ?? null,
+      });
   };
 
   const handleSave = async (e: React.FormEvent) => {

@@ -103,6 +103,8 @@ export async function removePin(): Promise<{ pinSet: boolean }> {
 export interface RememberedAccount {
   email: string;
   display_name?: string;
+  /** Cached profile photo for the quick-login "Welcome back" screen. */
+  avatar_url?: string | null;
 }
 
 export function rememberAccount(acct: RememberedAccount): void {
