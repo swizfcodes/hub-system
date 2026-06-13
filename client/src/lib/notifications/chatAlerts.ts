@@ -13,6 +13,23 @@
 
 import { unreadTone, UNREAD_TONE_HEX, formatUnread } from "@lib/constants/unread";
 
+// Prefer the tenant's configured favicon (cached by ThemeProvider under
+// "hub_branding_cache") over the static PWA asset, so notifications and the
+// tab badge route to the logo set in Settings → Appearance. Falls back to the
+// bundled icon when no branding is cached yet.
+const STATIC_NOTIF_ICON = "/android-chrome-192x192.png";
+const STATIC_FAVICON = "/favicon-32x32.png";
+
+function brandedFavicon(fallback: string): string {
+  try {
+    const cached = localStorage.getItem("hub_branding_cache");
+    const url = cached ? JSON.parse(cached)?.platform?.favicon_url : null;
+    return typeof url === "string" && url ? url : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export interface ChatMessageEvent {
   channelId: string;
   messageId: string;
@@ -162,7 +179,7 @@ export function showChatNotification(
         : (d.senderName ?? "New message");
     const n = new Notification(title, {
       body: previewLine(d),
-      icon: "/android-chrome-192x192.png",
+      icon: brandedFavicon(STATIC_NOTIF_ICON),
       tag: `chat-${d.channelId}`,
     });
     n.onclick = () => {
@@ -179,7 +196,7 @@ export function showChatNotification(
 
 const BASE_TITLE =
   typeof document !== "undefined" && document.title ? document.title : "Hub";
-const FAVICON_HREF = "/favicon-32x32.png";
+const FAVICON_HREF = brandedFavicon(STATIC_FAVICON);
 
 let baseIcon: Promise<HTMLImageElement> | null = null;
 

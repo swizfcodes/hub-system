@@ -9,6 +9,8 @@ interface Props {
   /** Urgency colour override (unread scale) — defaults to the accent pill. */
   tone?: UnreadTone;
   index?: number;
+  /** When true, the tile won't navigate on tap (used during mobile edit/jiggle mode). */
+  navDisabled?: boolean;
 }
 
 const accentBg: Record<AppModule["accent"], string> = {
@@ -39,18 +41,28 @@ const badgeTone: Record<AppModule["accent"], string> = {
   mixed: "bg-brand-cream text-brand-black",
 };
 
-export function AppTile({ module, badge, tone, index = 0 }: Props) {
+export function AppTile({
+  module,
+  badge,
+  tone,
+  index = 0,
+  navDisabled = false,
+}: Props) {
   const navigate = useNavigate();
   const Icon = module.icon;
 
   return (
     <button
-      onClick={() => navigate(module.route)}
+      onClick={() => {
+        if (navDisabled) return;
+        navigate(module.route);
+      }}
       style={{ animationDelay: `${index * 30}ms` }}
       className={cn(
-        "group relative flex flex-col items-center justify-center text-center gap-3 p-5 sm:p-6 rounded-2xl",
+        "group relative flex flex-col items-center justify-center text-center gap-3 p-5 sm:p-6 rounded-2xl w-full",
         "bg-brand-charcoal/60 border border-brand-graphite transition-all duration-300",
-        "hover:-translate-y-1 hover:shadow-card-lg animate-tile-in",
+        "animate-tile-in",
+        !navDisabled && "hover:-translate-y-1 hover:shadow-card-lg",
         accentBg[module.accent],
         accentBorder[module.accent],
       )}

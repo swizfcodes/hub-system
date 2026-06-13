@@ -249,6 +249,28 @@ body {
   animation: tile-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
+/* iOS-style "jiggle" for the app grid's mobile edit / reorder mode. */
+@keyframes jiggle {
+  0% {
+    transform: rotate(-1.1deg);
+  }
+  50% {
+    transform: rotate(1.1deg);
+  }
+  100% {
+    transform: rotate(-1.1deg);
+  }
+}
+.animate-jiggle {
+  animation: jiggle 0.28s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-jiggle {
+    animation: none;
+  }
+}
+
 /* Stagger helper for grid children */
 .stagger > *:nth-child(1) {
   animation-delay: 0.02s;

@@ -30,6 +30,7 @@ import {
 import { useAuthStore } from "@stores/useAuthStore";
 import { errMsg } from "@services/api";
 import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
+import { initialsOf } from "@lib/format";
 
 // ── Quotes ────────────────────────────────────────────────────────────────────
 const QUOTES = [
@@ -282,6 +283,7 @@ export default function Login() {
     rememberAccount({
       email: data.user.email || email,
       display_name: data.user.display_name,
+      avatar_url: data.user.avatar_url ?? null,
     });
     setUser(data.user as never);
     navigate("/");
@@ -625,33 +627,57 @@ export default function Login() {
       {loginModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-brand-black/60 backdrop-blur-xl"
+            className="absolute inset-0 bg-brand-black/70 backdrop-blur-xl"
             onClick={closeLogin}
           />
-          <div className="relative w-full max-w-[420px] bg-brand-cream rounded-3xl p-8 lg:p-10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] animate-app-in border border-white/20">
+          <div className="relative w-full max-w-[420px] bg-brand-black/60 backdrop-blur-2xl rounded-3xl p-8 lg:p-10 shadow-[0_40px_120px_rgba(0,0,0,0.85)] animate-app-in border border-white/10 ring-1 ring-brand-accent/10">
+            {/* Soft accent glow at the top edge for the glassmorphic depth. */}
+            <div className="pointer-events-none absolute -top-px left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-brand-accent/50 to-transparent" />
             <button
               onClick={closeLogin}
-              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
+              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-cream transition-colors p-2 bg-white/5 rounded-full hover:bg-white/10"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="w-[80px] h-[80px] mx-auto rounded-full bg-white border border-brand-cloud/50 flex items-center justify-center mb-6 shadow-sm p-2 overflow-hidden">
-              {platform.logo_dark_url ? (
+            <div className="w-[80px] h-[80px] mx-auto rounded-full border border-brand-graphite bg-brand-charcoal/80 flex items-center justify-center mb-6 shadow-glow-md overflow-hidden">
+              {loginMode === "pin" && remembered ? (
+                remembered.avatar_url ? (
+                  <img
+                    src={remembered.avatar_url}
+                    alt={remembered.display_name || "Profile"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : remembered.display_name ? (
+                  <span className="font-display text-brand-accent text-3xl">
+                    {initialsOf(remembered.display_name)}
+                  </span>
+                ) : platform.logo_light_url ? (
+                  <img
+                    src={platform.logo_light_url}
+                    alt={platform.product_name}
+                    className="w-full h-full object-contain p-2"
+                  />
+                ) : (
+                  <span className="font-display text-brand-accent text-3xl">
+                    {(platform.product_name || "H").charAt(0)}
+                  </span>
+                )
+              ) : platform.logo_light_url ? (
                 <img
-                  src={platform.logo_dark_url}
+                  src={platform.logo_light_url}
                   alt={platform.product_name}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain p-2"
                 />
               ) : (
-                <span className="font-display text-brand-black text-3xl">
+                <span className="font-display text-brand-accent text-3xl">
                   {(platform.product_name || "H").charAt(0)}
                 </span>
               )}
             </div>
 
-            <h2 className="font-display font-light text-3xl text-center text-brand-black mb-1">
+            <h2 className="font-display font-light text-3xl text-center text-brand-cream mb-1">
               {loginMode === "pin" && remembered?.display_name
                 ? `Welcome back, ${remembered.display_name.split(" ")[0]}`
                 : "Welcome back"}
@@ -664,7 +690,7 @@ export default function Login() {
 
             {error && (
               <div
-                className={`flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl mb-5 text-xs text-red-600 ${shake ? "animate-shake" : ""}`}
+                className={`flex items-center gap-2 p-3 bg-state-danger/10 border border-state-danger/30 rounded-xl mb-5 text-xs text-state-danger ${shake ? "animate-shake" : ""}`}
               >
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
@@ -691,7 +717,7 @@ export default function Login() {
                       setPin(next);
                       if (next.length === 6) handlePinLogin(next);
                     }}
-                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-4 text-center text-3xl font-mono tracking-[0.5em] text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm disabled:opacity-60"
+                    className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-4 text-center text-3xl font-mono tracking-[0.5em] text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all disabled:opacity-60"
                     placeholder="••••••"
                     aria-label="6-digit PIN"
                   />
@@ -699,7 +725,7 @@ export default function Login() {
 
                 {isLoading && (
                   <div className="flex justify-center mt-5">
-                    <span className="w-5 h-5 border-2 border-brand-cloud border-t-brand-black rounded-full animate-[spin_0.7s_linear_infinite]" />
+                    <span className="w-5 h-5 border-2 border-brand-graphite border-t-brand-accent rounded-full animate-[spin_0.7s_linear_infinite]" />
                   </div>
                 )}
 
@@ -707,14 +733,14 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={useDifferentAccount}
-                    className="text-xs font-medium text-brand-smoke hover:text-brand-black transition-colors"
+                    className="text-xs font-medium text-brand-smoke hover:text-brand-cream transition-colors"
                   >
                     Not you?
                   </button>
                   <button
                     type="button"
                     onClick={usePasswordInstead}
-                    className="text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
+                    className="text-xs font-medium text-brand-cream hover:text-brand-accent transition-colors"
                   >
                     Use password instead
                   </button>
@@ -735,7 +761,7 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
-                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all placeholder-brand-cloud/70 shadow-sm"
+                    className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all placeholder-brand-smoke/50"
                     placeholder="you@company.com"
                   />
                 </div>
@@ -752,13 +778,13 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="current-password"
-                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all placeholder-brand-cloud/70 shadow-sm"
+                    className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all placeholder-brand-smoke/50"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 hover:text-brand-black transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 hover:text-brand-cream transition-colors"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? (
@@ -772,7 +798,7 @@ export default function Login() {
 
               <div className="flex items-center justify-between mb-8 px-1">
                 <label className="flex items-center gap-2.5 cursor-pointer group">
-                  <div className="relative w-4 h-4 border border-brand-cloud bg-white rounded flex items-center justify-center group-hover:border-brand-black transition-colors">
+                  <div className="relative w-4 h-4 border border-brand-graphite bg-brand-charcoal/60 rounded flex items-center justify-center group-hover:border-brand-accent transition-colors">
                     <input
                       type="checkbox"
                       className="sr-only"
@@ -780,7 +806,7 @@ export default function Login() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                     />
                     {rememberMe && (
-                      <Check className="w-3 h-3 text-brand-black" />
+                      <Check className="w-3 h-3 text-brand-accent" />
                     )}
                   </div>
                   <span className="text-xs font-medium text-brand-smoke">
@@ -790,7 +816,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={openForgot}
-                  className="text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
+                  className="text-xs font-medium text-brand-cream hover:text-brand-accent transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -799,13 +825,13 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="relative w-full py-4 rounded-xl bg-brand-black text-brand-cream font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-brand-charcoal hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none login-btn"
+                className="relative w-full py-4 rounded-xl bg-brand-cream text-brand-black font-semibold text-sm tracking-widest uppercase overflow-hidden hover:bg-white hover:shadow-lg transition-all disabled:opacity-80 disabled:pointer-events-none login-btn"
               >
                 <span className={isLoading ? "invisible" : ""}>Sign In</span>
                 <span className="btn-shimmer" />
                 {isLoading && (
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="w-5 h-5 border-2 border-brand-cream/20 border-t-brand-cream rounded-full animate-[spin_0.7s_linear_infinite]" />
+                    <span className="w-5 h-5 border-2 border-brand-black/20 border-t-brand-black rounded-full animate-[spin_0.7s_linear_infinite]" />
                   </span>
                 )}
               </button>
@@ -820,7 +846,7 @@ export default function Login() {
                     setEmail(remembered.email);
                     setLoginMode("pin");
                   }}
-                  className="w-full mt-4 text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
+                  className="w-full mt-4 text-xs font-medium text-brand-cream hover:text-brand-accent transition-colors"
                 >
                   Use 6-digit PIN instead
                 </button>
@@ -838,18 +864,19 @@ export default function Login() {
           onClick={closeForgot}
         >
           <div
-            className="relative w-full max-w-[420px] bg-brand-cream border border-white/20 rounded-3xl p-8 lg:p-10 shadow-2xl"
+            className="relative w-full max-w-[420px] bg-brand-black/60 backdrop-blur-2xl border border-white/10 ring-1 ring-brand-accent/10 rounded-3xl p-8 lg:p-10 shadow-[0_40px_120px_rgba(0,0,0,0.85)]"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="pointer-events-none absolute -top-px left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-brand-accent/50 to-transparent" />
             <button
               onClick={closeForgot}
-              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-black transition-colors p-2 bg-white/50 rounded-full hover:bg-white"
+              className="absolute top-6 right-6 text-brand-smoke hover:text-brand-cream transition-colors p-2 bg-white/5 rounded-full hover:bg-white/10"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
             {forgotError && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-xl mb-5 text-xs text-red-600">
+              <div className="flex items-center gap-2 p-3 bg-state-danger/10 border border-state-danger/30 rounded-xl mb-5 text-xs text-state-danger">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{forgotError}</span>
               </div>
@@ -857,7 +884,7 @@ export default function Login() {
 
             {forgotStep === "email" && (
               <>
-                <h3 className="font-display font-light text-3xl text-brand-black mb-2">
+                <h3 className="font-display font-light text-3xl text-brand-cream mb-2">
                   Reset access
                 </h3>
                 <p className="text-xs font-light text-brand-smoke mb-8 leading-relaxed">
@@ -873,14 +900,14 @@ export default function Login() {
                       autoComplete="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm"
+                      className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-3.5 pl-11 pr-4 text-sm font-medium text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all placeholder-brand-smoke/50"
                       placeholder="you@company.com"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="relative w-full py-4 rounded-xl bg-brand-black text-brand-cream hover:bg-brand-charcoal transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
+                    className="relative w-full py-4 rounded-xl bg-brand-cream text-brand-black hover:bg-white transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
                   >
                     {isLoading ? "Sending…" : "Send Code"}
                   </button>
@@ -890,12 +917,12 @@ export default function Login() {
 
             {forgotStep === "otp" && (
               <>
-                <h3 className="font-display font-light text-3xl text-brand-black mb-2">
+                <h3 className="font-display font-light text-3xl text-brand-cream mb-2">
                   Enter your code
                 </h3>
                 <p className="text-xs font-light text-brand-smoke mb-8 leading-relaxed">
                   If an account exists for{" "}
-                  <span className="font-medium text-brand-black">
+                  <span className="font-medium text-brand-cream">
                     {forgotEmail}
                   </span>
                   , a 6-digit code is on its way. Enter it below with your new
@@ -915,7 +942,7 @@ export default function Login() {
                       onChange={(e) =>
                         setForgotOtp(e.target.value.replace(/\D/g, ""))
                       }
-                      className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 px-4 text-center text-2xl font-mono tracking-[0.5em] text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm"
+                      className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-3.5 px-4 text-center text-2xl font-mono tracking-[0.5em] text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all placeholder-brand-smoke/50"
                       placeholder="••••••"
                     />
                   </div>
@@ -930,13 +957,13 @@ export default function Login() {
                         autoComplete="new-password"
                         value={forgotNewPassword}
                         onChange={(e) => setForgotNewPassword(e.target.value)}
-                        className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm"
+                        className="w-full bg-brand-charcoal/60 border border-brand-graphite rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-cream focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent/40 transition-all placeholder-brand-smoke/50"
                         placeholder={PASSWORD_RULES_TEXT}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 hover:text-brand-black transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-smoke/70 hover:text-brand-cream transition-colors"
                         aria-label="Toggle password visibility"
                       >
                         {showPassword ? (
@@ -950,7 +977,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="relative w-full py-4 rounded-xl bg-brand-black text-brand-cream hover:bg-brand-charcoal transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
+                    className="relative w-full py-4 rounded-xl bg-brand-cream text-brand-black hover:bg-white transition-all font-semibold text-sm tracking-widest uppercase disabled:opacity-80"
                   >
                     {isLoading ? "Resetting…" : "Reset Password"}
                   </button>
@@ -961,7 +988,7 @@ export default function Login() {
                       setForgotOtp("");
                       setForgotError(null);
                     }}
-                    className="w-full mt-3 text-xs font-medium text-brand-smoke hover:text-brand-black transition-colors"
+                    className="w-full mt-3 text-xs font-medium text-brand-smoke hover:text-brand-cream transition-colors"
                   >
                     Didn&apos;t get a code? Send again
                   </button>
@@ -971,10 +998,10 @@ export default function Login() {
 
             {forgotStep === "done" && (
               <div className="text-center py-6 animate-app-in">
-                <div className="w-16 h-16 rounded-full bg-white border border-accent2/30 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-accent2/10 border border-accent2/30 flex items-center justify-center mx-auto mb-6">
                   <Check className="w-8 h-8 text-accent2" />
                 </div>
-                <h3 className="font-display font-light text-2xl text-brand-black mb-2">
+                <h3 className="font-display font-light text-2xl text-brand-cream mb-2">
                   Password reset
                 </h3>
                 <p className="text-xs text-brand-smoke font-light px-4 mb-6">
@@ -987,7 +1014,7 @@ export default function Login() {
                     closeForgot();
                     openLogin();
                   }}
-                  className="px-8 py-3 rounded-xl bg-brand-black text-brand-cream hover:bg-brand-charcoal transition-all font-semibold text-xs tracking-widest uppercase"
+                  className="px-8 py-3 rounded-xl bg-brand-cream text-brand-black hover:bg-white transition-all font-semibold text-xs tracking-widest uppercase"
                 >
                   Sign In
                 </button>
