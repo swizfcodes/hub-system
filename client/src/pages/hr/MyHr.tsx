@@ -11,7 +11,7 @@ import { Skeleton } from "@components/ui/Skeleton";
 import { EmptyState } from "@components/ui/EmptyState";
 import { getMyHr } from "@services/hr";
 import { WeekScheduleView } from "@components/hr/HrShared";
-import { ClockWidget } from "@components/hr/ClockWidget";
+import { TodayAttendanceCard } from "@components/hr/TodayAttendanceCard";
 import { AttendancePanel } from "@components/hr/AttendancePanel";
 import { PerformancePanel } from "@components/hr/PerformancePanel";
 import { QueriesPanel } from "@components/hr/QueriesPanel";
@@ -52,14 +52,13 @@ export default function MyHr() {
           subtitle="Your attendance, leave, queries and performance — all in one place."
           crumbs={[{ label: "My HR" }]}
           actions={
-            <div className="flex items-center gap-2">
-              <ClockWidget />
-              <Button onClick={() => setLeaveOpen(true)} leftIcon={<Plane className="h-4 w-4" />}>
-                Request leave
-              </Button>
-            </div>
+            <Button onClick={() => setLeaveOpen(true)} leftIcon={<Plane className="h-4 w-4" />}>
+              Request leave
+            </Button>
           }
         />
+
+        <TodayAttendanceCard />
 
         {isLoading || !data ? (
           <Skeleton className="h-32 rounded-2xl" />
