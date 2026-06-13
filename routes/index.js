@@ -126,6 +126,7 @@ router.use(
 );
 router.use("/push", protect, require("../shared/push/push.routes"));
 router.use("/staff", protect, require("../shared/staff/staff.routes"));
+router.use("/hr", protect, require("../shared/staff/hr.routes"));
 router.use(
   "/messaging",
   protect,

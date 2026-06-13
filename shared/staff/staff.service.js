@@ -183,7 +183,40 @@ async function createStaff(data, user) {
       tax_id: data.tax_id,
     });
 
-    // Optional initial contract.
+    // Work schedule — set the weekly on-site / remote / off pattern and
+    // attendance expectations at onboarding so remote & hybrid staff are
+    // handled correctly from day one. Stored on the profile columns added
+    // in migration 000077; only written when the onboarding form supplied
+    // them (defaults otherwise apply: Mon–Fri on-site).
+    if (
+      data.work_schedule ||
+      data.work_location_type ||
+      data.expected_start_time ||
+      data.grace_minutes != null ||
+      data.work_location_id
+    ) {
+      await client.query(
+        `UPDATE shared.staff_profiles SET
+           work_location_type = COALESCE($2, work_location_type),
+           work_schedule = COALESCE($3::jsonb, work_schedule),
+           expected_start_time = COALESCE($4, expected_start_time),
+           grace_minutes = COALESCE($5, grace_minutes),
+           work_location_id = COALESCE($6, work_location_id)
+         WHERE profile_id = $1`,
+        [
+          profile.profile_id,
+          data.work_location_type || null,
+          data.work_schedule ? JSON.stringify(data.work_schedule) : null,
+          data.expected_start_time || null,
+          data.grace_minutes != null ? parseInt(data.grace_minutes) : null,
+          data.work_location_id || null,
+        ],
+      );
+    }
+
+    // Optional initial contract — auto-generated on hire so every employee
+    // has a contract record from the start (the PDF is then one click away
+    // via /staff/:id/contracts/:contractId/pdf).
     if (data.base_salary && data.start_date) {
       await repo.insertContract(client, {
         profile_id: profile.profile_id,

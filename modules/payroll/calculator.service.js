@@ -109,10 +109,17 @@ async function calculatePayslip(
 
   // Absent days deduction — daily rate from config so 6-day-week
   // businesses (26 working days) calculate correctly.
+  //
+  // Two sources of unpaid absence feed the deduction:
+  //   1. Approved UNPAID leave taken in the period (long-standing rule).
+  //   2. Unexcused attendance absences — days the schedule expected the
+  //      employee to work, recorded as 'absent', not covered by approved
+  //      leave, and whose lateness/absence justification was NOT approved.
+  // Paid leave (annual/sick/etc.) is intentionally never deducted.
   const {
     rows: [absRow],
   } = await client.query(
-    `SELECT COALESCE(SUM(days_requested), 0) AS absent_days
+    `SELECT COALESCE(SUM(days_requested), 0) AS unpaid_leave_days
      FROM shared.leave_requests
      WHERE profile_id=$1
        AND leave_type='unpaid'
@@ -121,7 +128,44 @@ async function calculatePayslip(
        AND EXTRACT(YEAR  FROM start_date)=$3`,
     [profileId, periodMonth, periodYear],
   );
-  const daysAbsent = parseInt(absRow.absent_days);
+  const unpaidLeaveDays = parseInt(absRow.unpaid_leave_days);
+
+  const {
+    rows: [unexcusedRow],
+  } = await client.query(
+    `SELECT COUNT(*)::int AS days
+     FROM shared.attendance_records ar
+     WHERE ar.profile_id=$1
+       AND ar.status='absent'
+       AND EXTRACT(MONTH FROM ar.work_date)=$2
+       AND EXTRACT(YEAR  FROM ar.work_date)=$3
+       AND (ar.justification_status IS DISTINCT FROM 'approved')
+       AND NOT EXISTS (
+         SELECT 1 FROM shared.leave_requests lr
+         WHERE lr.profile_id = ar.profile_id
+           AND lr.status='approved'
+           AND ar.work_date BETWEEN lr.start_date AND lr.end_date
+       )`,
+    [profileId, periodMonth, periodYear],
+  );
+  const unexcusedAbsentDays = parseInt(unexcusedRow.days);
+
+  // Total approved leave days taken in the period (paid + unpaid) — shown
+  // on the payslip for transparency, not deducted beyond the unpaid slice.
+  const {
+    rows: [leaveTakenRow],
+  } = await client.query(
+    `SELECT COALESCE(SUM(days_requested), 0) AS leave_days
+     FROM shared.leave_requests
+     WHERE profile_id=$1
+       AND status='approved'
+       AND EXTRACT(MONTH FROM start_date)=$2
+       AND EXTRACT(YEAR  FROM start_date)=$3`,
+    [profileId, periodMonth, periodYear],
+  );
+  const leaveDaysTaken = parseInt(leaveTakenRow.leave_days);
+
+  const daysAbsent = unpaidLeaveDays + unexcusedAbsentDays;
   const dailyRate = basicSalary / cfg.WORKING_DAYS_PER_MONTH;
   const absentDeduct = parseFloat((daysAbsent * dailyRate).toFixed(2));
 
@@ -141,6 +185,7 @@ async function calculatePayslip(
     commissionAmount,
     grossSalary,
     daysAbsent,
+    leaveDaysTaken,
     ...deductions,
   };
 }

@@ -44,7 +44,7 @@ async function getActiveStaff(client, business) {
 
 async function insertPayslip(client, { run_id, calc }) {
   await client.query(
-    `INSERT INTO payslips (run_id, profile_id, basic_salary, housing_allowance, transport_allowance, commission_amount, gross_salary, paye_deduction, pension_employee, pension_employer, nhf_deduction, advance_recovery, other_deductions, total_deductions, net_salary, days_absent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+    `INSERT INTO payslips (run_id, profile_id, basic_salary, housing_allowance, transport_allowance, commission_amount, gross_salary, paye_deduction, pension_employee, pension_employer, nhf_deduction, advance_recovery, other_deductions, total_deductions, net_salary, days_absent, leave_days_taken) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
     [
       run_id,
       calc.profileId,
@@ -62,6 +62,7 @@ async function insertPayslip(client, { run_id, calc }) {
       calc.totalDeductions,
       calc.netSalary,
       calc.daysAbsent,
+      calc.leaveDaysTaken || 0,
     ],
   );
 }
