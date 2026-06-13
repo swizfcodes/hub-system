@@ -11,6 +11,26 @@ const authService = require("./auth.service");
 const inviteService = require("./invite.service");
 const passwordResetService = require("./passwordReset.service");
 
+// ── Password policy ───────────────────────────────────────
+// Minimum 8 characters, at least one uppercase letter and one number.
+// Applied wherever a NEW password is chosen (change / reset / invite-accept).
+// Login itself only length-sanity-checks — it just compares against the hash.
+const passwordPolicy = (field) =>
+  body(field)
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .matches(/[A-Z]/)
+    .withMessage("Password must contain an uppercase letter")
+    .matches(/[0-9]/)
+    .withMessage("Password must contain a number");
+
+// A 6-digit numeric PIN.
+const pinRule = (field) =>
+  body(field)
+    .matches(/^\d{6}$/)
+    .withMessage("PIN must be exactly 6 digits");
+
 // POST /api/auth/login
 router.post(
   "/login",
@@ -23,6 +43,29 @@ router.post(
       const result = await authService.login(
         req.body.email,
         req.body.password,
+        req.ip,
+      );
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/auth/login-pin — quick login with a 6-digit PIN.
+// Same IP rate limiter as password login; the service also enforces a
+// per-account PIN lockout.
+router.post(
+  "/login-pin",
+  loginRateLimiter,
+  body("email").isEmail().trim().toLowerCase(),
+  pinRule("pin"),
+  validate,
+  async (req, res, next) => {
+    try {
+      const result = await authService.loginWithPin(
+        req.body.email,
+        req.body.pin,
         req.ip,
       );
       res.json(result);
@@ -50,13 +93,13 @@ router.post(
 );
 
 // POST /api/auth/reset-password — verify OTP + set new password.
-// 12-char minimum matches /change-password.
+// Password policy matches /change-password and /invite-accept.
 router.post(
   "/reset-password",
   loginRateLimiter,
   body("email").isEmail().trim().toLowerCase(),
   body("otp").isLength({ min: 6, max: 6 }).isNumeric(),
-  body("newPassword").isLength({ min: 12 }),
+  passwordPolicy("newPassword"),
   validate,
   async (req, res, next) => {
     try {
@@ -191,7 +234,7 @@ router.post(
   "/change-password",
   verifyToken,
   body("currentPassword").notEmpty(),
-  body("newPassword").isLength({ min: 12 }),
+  passwordPolicy("newPassword"),
   validate,
   async (req, res, next) => {
     try {
@@ -206,6 +249,47 @@ router.post(
     }
   },
 );
+
+// ── Quick-login PIN management (self-service) ──────────────
+// GET    /api/auth/pin — { pinSet: boolean, pinSetAt }
+// POST   /api/auth/pin — set/replace PIN; body { currentPassword, pin }
+// DELETE /api/auth/pin — remove the PIN
+router.get("/pin", verifyToken, async (req, res, next) => {
+  try {
+    res.json(await authService.getPinStatus(req.user.user_id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  "/pin",
+  verifyToken,
+  body("currentPassword").notEmpty(),
+  pinRule("pin"),
+  validate,
+  async (req, res, next) => {
+    try {
+      res.json(
+        await authService.setPin(
+          req.user.user_id,
+          req.body.currentPassword,
+          req.body.pin,
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete("/pin", verifyToken, async (req, res, next) => {
+  try {
+    res.json(await authService.removePin(req.user.user_id));
+  } catch (err) {
+    next(err);
+  }
+});
 
 // POST /api/auth/invite — generate + email an invite (admin only)
 router.post(
@@ -246,7 +330,7 @@ router.get("/invite/:token", async (req, res, next) => {
 router.post(
   "/invite/:token/accept",
   loginRateLimiter,
-  body("password").isLength({ min: 12 }),
+  passwordPolicy("password"),
   body("display_name").isString().notEmpty(),
   validate,
   async (req, res, next) => {

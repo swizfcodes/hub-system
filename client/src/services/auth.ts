@@ -4,6 +4,10 @@ import { api } from "./api";
 const API_BASE = "/api";
 const TOKEN_KEY = "orika_token";
 const USER_KEY = "orika_user";
+// Remembered account + local "PIN enabled on this device" flag. These power the
+// quick-login PIN screen — they only describe THIS browser, never a credential.
+const REMEMBERED_KEY = "orika_remembered_account";
+const PIN_ENABLED_KEY = "orika_pin_enabled";
 
 export interface LoginPayload {
   email: string;
@@ -50,6 +54,85 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
     payload,
   );
   return data;
+}
+
+export async function loginWithPin(
+  email: string,
+  pin: string,
+): Promise<AuthResponse> {
+  const { data } = await axios.post<AuthResponse>(
+    `${API_BASE}/auth/login-pin`,
+    { email, pin },
+  );
+  return data;
+}
+
+// ── Quick-login PIN management ──────────────────────────────────────────────
+
+export async function getPinStatus(): Promise<{
+  pinSet: boolean;
+  pinSetAt: string | null;
+}> {
+  const { data } = await axios.get(`${API_BASE}/auth/pin`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  return data;
+}
+
+export async function setPin(
+  currentPassword: string,
+  pin: string,
+): Promise<{ pinSet: boolean }> {
+  const { data } = await axios.post(
+    `${API_BASE}/auth/pin`,
+    { currentPassword, pin },
+    { headers: { Authorization: `Bearer ${getToken()}` } },
+  );
+  return data;
+}
+
+export async function removePin(): Promise<{ pinSet: boolean }> {
+  const { data } = await axios.delete(`${API_BASE}/auth/pin`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  return data;
+}
+
+// ── Remembered account (device-local, for the PIN screen) ───────────────────
+
+export interface RememberedAccount {
+  email: string;
+  display_name?: string;
+}
+
+export function rememberAccount(acct: RememberedAccount): void {
+  localStorage.setItem(REMEMBERED_KEY, JSON.stringify(acct));
+}
+
+export function getRememberedAccount(): RememberedAccount | null {
+  const raw = localStorage.getItem(REMEMBERED_KEY);
+  if (!raw) return null;
+  try {
+    const acct = JSON.parse(raw);
+    return acct?.email ? acct : null;
+  } catch {
+    return null;
+  }
+}
+
+export function forgetAccount(): void {
+  localStorage.removeItem(REMEMBERED_KEY);
+  localStorage.removeItem(PIN_ENABLED_KEY);
+}
+
+/** Whether a PIN has been set up on THIS device (so the login screen offers it). */
+export function isPinEnabledLocally(): boolean {
+  return localStorage.getItem(PIN_ENABLED_KEY) === "1";
+}
+
+export function setPinEnabledLocally(enabled: boolean): void {
+  if (enabled) localStorage.setItem(PIN_ENABLED_KEY, "1");
+  else localStorage.removeItem(PIN_ENABLED_KEY);
 }
 
 export function storeToken(token: string, remember = true): void {

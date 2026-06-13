@@ -14,6 +14,7 @@ async function findUserByEmail(client, email) {
     `SELECT u.user_id, u.email, u.password_hash, u.is_active, u.failed_login_attempts,
             u.locked_until, u.default_business, u.permitted_businesses,
             u.force_password_reset, u.staff_profile_id,
+            u.pin_hash, u.failed_pin_attempts, u.pin_locked_until,
             r.role_id, r.role_name,
             c.display_name, c.avatar_url
     FROM shared.users u
@@ -181,6 +182,54 @@ async function revokeAllRefreshTokens(client, userId) {
   );
 }
 
+// ── Quick-login PIN ───────────────────────────────────────
+// Mirrors the password lockout columns but on a separate counter so a
+// mistyped PIN never locks the account out of password login.
+
+async function setPinHash(client, { userId, hash }) {
+  await client.query(
+    `UPDATE shared.users
+       SET pin_hash = $1, pin_set_at = now(),
+           failed_pin_attempts = 0, pin_locked_until = NULL,
+           updated_at = now()
+     WHERE user_id = $2`,
+    [hash, userId],
+  );
+}
+
+async function clearPin(client, userId) {
+  await client.query(
+    `UPDATE shared.users
+       SET pin_hash = NULL, pin_set_at = NULL,
+           failed_pin_attempts = 0, pin_locked_until = NULL,
+           updated_at = now()
+     WHERE user_id = $1`,
+    [userId],
+  );
+}
+
+async function incrementFailedPin(client, { userId, attempts, lockUntil }) {
+  await client.query(
+    `UPDATE shared.users SET failed_pin_attempts = $1, pin_locked_until = $2 WHERE user_id = $3`,
+    [attempts, lockUntil, userId],
+  );
+}
+
+async function resetFailedPin(client, userId) {
+  await client.query(
+    `UPDATE shared.users SET failed_pin_attempts = 0, pin_locked_until = NULL WHERE user_id = $1`,
+    [userId],
+  );
+}
+
+async function findPinStatus(client, userId) {
+  const { rows } = await client.query(
+    `SELECT (pin_hash IS NOT NULL) AS pin_set, pin_set_at FROM shared.users WHERE user_id = $1`,
+    [userId],
+  );
+  return rows[0] || null;
+}
+
 async function findUserRole(client, userId) {
   const { rows } = await client.query(
     `SELECT role_id FROM shared.user_roles WHERE user_id = $1 LIMIT 1`,
@@ -251,6 +300,11 @@ module.exports = {
   findPasswordHash,
   updatePasswordHash,
   revokeAllRefreshTokens,
+  setPinHash,
+  clearPin,
+  incrementFailedPin,
+  resetFailedPin,
+  findPinStatus,
   findUserRole,
   findNavPrefs,
   upsertNavPrefs,
