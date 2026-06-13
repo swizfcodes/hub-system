@@ -225,6 +225,10 @@ export default function POSSession() {
         contact_id: customer?.contact_id,
         change_handling: changeHandling,
         apply_vat: applyVat,
+        // Capture the currency + rate at sale time so an offline foreign
+        // sale replays at the rate the cashier saw, not the rate at sync.
+        currency: saleCurrency,
+        exchange_rate: exchangeRate,
         lines: lines.map((l) => ({
           product_id: l.product_id,
           description: l.description,

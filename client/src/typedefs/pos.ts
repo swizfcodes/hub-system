@@ -159,6 +159,8 @@ export interface PendingTransaction {
   contact_id?: string;
   change_handling?: "return" | "keep";
   apply_vat?: boolean;
+  currency?: string;
+  exchange_rate?: number | null;
   lines: OfflineTransactionLine[];
   payments: OfflinePaymentSplit[];
   created_at_offline: string;

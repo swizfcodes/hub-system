@@ -208,7 +208,11 @@ router.post(
   async (req, res, next) => {
     try {
       res.json(
-        await service.syncOfflineTransactions(req.business, req.body, req.user),
+        await service.syncOfflineTransactions(
+          req.business,
+          req.body.transactions,
+          req.user,
+        ),
       );
     } catch (e) {
       next(e);

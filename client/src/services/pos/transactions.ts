@@ -173,6 +173,8 @@ export async function syncOfflineTransactions(
       contact_id: t.contact_id,
       change_handling: t.change_handling,
       apply_vat: t.apply_vat,
+      currency: t.currency,
+      exchange_rate: t.exchange_rate,
       created_at_offline: t.created_at_offline,
     })),
   });
