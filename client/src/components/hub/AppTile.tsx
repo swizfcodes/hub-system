@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import type { AppModule } from "@lib/constants/modules";
+import { UNREAD_TONE_CLASS, type UnreadTone } from "@lib/constants/unread";
 import { cn } from "@lib/cn";
 
 interface Props {
   module: AppModule;
   badge?: number | string;
+  /** Urgency colour override (unread scale) — defaults to the accent pill. */
+  tone?: UnreadTone;
   index?: number;
 }
 
@@ -36,7 +39,7 @@ const badgeTone: Record<AppModule["accent"], string> = {
   mixed: "bg-brand-cream text-brand-black",
 };
 
-export function AppTile({ module, badge, index = 0 }: Props) {
+export function AppTile({ module, badge, tone, index = 0 }: Props) {
   const navigate = useNavigate();
   const Icon = module.icon;
 
@@ -56,7 +59,7 @@ export function AppTile({ module, badge, index = 0 }: Props) {
         <span
           className={cn(
             "absolute -top-2 -right-2 min-w-[24px] h-6 px-2 rounded-full text-[0.65rem] font-bold flex items-center justify-center border-2 border-brand-charcoal",
-            badgeTone[module.accent],
+            tone ? UNREAD_TONE_CLASS[tone] : badgeTone[module.accent],
           )}
         >
           {badge}

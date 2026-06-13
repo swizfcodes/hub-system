@@ -3,6 +3,12 @@ import { LayoutGrid } from "lucide-react";
 import { HUB_MODULES, SETTINGS_SUBMODULES } from "@lib/constants/modules";
 import { useVisibleModules } from "@hooks/useVisibleModules";
 import { useNavPriority } from "@hooks/useNavPriority";
+import { useUnreadTotal } from "@hooks/useUnreadTotal";
+import {
+  unreadTone,
+  formatUnread,
+  UNREAD_TONE_CLASS,
+} from "@lib/constants/unread";
 import { cn } from "@lib/cn";
 
 /**
@@ -128,6 +134,8 @@ export function MobileBottomNav() {
   const { pathname } = useLocation();
   const { visibleKeys } = useVisibleModules();
   const { topModules } = useNavPriority();
+  const unreadTotal = useUnreadTotal();
+  const tone = unreadTone(unreadTotal);
   const items = bottomItemsForRoute(
     pathname,
     visibleKeys,
@@ -157,7 +165,19 @@ export function MobileBottomNav() {
                   : "text-brand-smoke hover:text-brand-cream",
               )}
             >
-              <Icon className="w-5 h-5" />
+              <span className="relative">
+                <Icon className="w-5 h-5" />
+                {it.key === "messaging" && tone && (
+                  <span
+                    className={cn(
+                      "absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none",
+                      UNREAD_TONE_CLASS[tone],
+                    )}
+                  >
+                    {formatUnread(unreadTotal)}
+                  </span>
+                )}
+              </span>
               <span className="text-[0.6rem] font-semibold tracking-wide uppercase">
                 {it.label}
               </span>

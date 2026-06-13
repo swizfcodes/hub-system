@@ -256,6 +256,60 @@ router.post(
   },
 );
 
+// POST /api/pos/transactions/:id/invoice — formal invoice from a
+// completed sale. The frontend has always called this; the route was
+// never mounted (service createInvoiceFromTransaction existed unused).
+// Idempotent — repeat calls return the existing invoice. A fully paid
+// till sale produces an invoice born 'paid' (no second collection).
+router.post(
+  "/transactions/:id/invoice",
+  param("id").isUUID(),
+  body("due_date").optional().isISO8601(),
+  validate,
+  can("pos", "create"),
+  async (req, res, next) => {
+    try {
+      res.status(201).json(
+        await service.createInvoiceFromTransaction(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// POST /api/pos/transactions/:id/confirm-payment — staff confirms a
+// bank transfer landed (checked in the banking app). Settles the
+// linked invoice via recordPayment, which now guards against double
+// settlement. Also previously unmounted while the frontend called it.
+router.post(
+  "/transactions/:id/confirm-payment",
+  param("id").isUUID(),
+  body("reference").optional().isString(),
+  body("notes").optional().isString(),
+  validate,
+  can("pos", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.confirmTransactionPayment(
+          req.business,
+          req.params.id,
+          req.body,
+          req.user,
+        ),
+      );
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
 // ─── RECEIPTS ──────────────────────────────────────────────
 
 router.post(

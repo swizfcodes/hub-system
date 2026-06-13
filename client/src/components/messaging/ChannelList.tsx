@@ -6,9 +6,28 @@
  */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, Check, CheckCheck, Pin, BellOff } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Check,
+  CheckCheck,
+  Pin,
+  Bell,
+  BellRing,
+  BellOff,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { Skeleton } from "@components/ui/Skeleton";
 import { listChannels } from "@services/messaging";
+import {
+  chatNotifPermission,
+  requestChatNotifPermission,
+  isChatSoundEnabled,
+  setChatSoundEnabled,
+} from "@lib/notifications/chatAlerts";
+import { ensurePushSubscription } from "@lib/notifications/push";
+import { showToast } from "@hooks/useToast";
 import { useChannelListUpdates, usePresence } from "@hooks/useMessaging";
 import { isUserOnline } from "@lib/socket";
 import {
@@ -43,9 +62,33 @@ export function ChannelList({
 }: ChannelListProps) {
   const { active: business } = useActiveBusiness();
   const [search, setSearch] = useState("");
+  const [notifPerm, setNotifPerm] = useState(chatNotifPermission());
+  const [soundOn, setSoundOn] = useState(isChatSoundEnabled());
 
   useChannelListUpdates(business);
   usePresence();
+
+  async function handleNotifToggle() {
+    if (notifPerm === "denied") {
+      showToast.info(
+        "Notifications are blocked — allow them for this site in your browser settings",
+      );
+      return;
+    }
+    const perm = await requestChatNotifPermission();
+    setNotifPerm(perm);
+    if (perm === "granted") {
+      showToast.success("Browser notifications are on");
+      // Upgrade to true push (works with the app closed) where supported.
+      void ensurePushSubscription();
+    }
+  }
+
+  function handleSoundToggle() {
+    const next = !soundOn;
+    setChatSoundEnabled(next);
+    setSoundOn(next);
+  }
 
   const tab = INBOX_TABS.find((t) => t.key === activeTab) ?? INBOX_TABS[0];
 
@@ -82,13 +125,53 @@ export function ChannelList({
             </span>
           )}
         </div>
-        <button
-          onClick={onNewChannel}
-          className="text-brand-smoke transition-colors hover:text-brand-accent"
-          title="New conversation"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleNotifToggle}
+            className={cn(
+              "transition-colors",
+              notifPerm === "granted"
+                ? "text-brand-accent"
+                : "text-brand-smoke hover:text-brand-accent",
+            )}
+            title={
+              notifPerm === "granted"
+                ? "Browser notifications are on"
+                : notifPerm === "denied"
+                  ? "Notifications blocked in browser settings"
+                  : "Enable browser notifications"
+            }
+          >
+            {notifPerm === "granted" ? (
+              <BellRing className="h-4 w-4" />
+            ) : (
+              <Bell className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            onClick={handleSoundToggle}
+            className={cn(
+              "transition-colors",
+              soundOn
+                ? "text-brand-accent"
+                : "text-brand-smoke hover:text-brand-accent",
+            )}
+            title={soundOn ? "Message sound on" : "Message sound off"}
+          >
+            {soundOn ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            onClick={onNewChannel}
+            className="text-brand-smoke transition-colors hover:text-brand-accent"
+            title="New conversation"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Search */}

@@ -451,6 +451,32 @@ async function getTransactionProductLines(client, transactionId) {
   return rows;
 }
 
+async function findInvoiceByPosTransactionId(client, transactionId) {
+  const {
+    rows: [inv],
+  } = await client.query(
+    `SELECT invoice_id, invoice_number, status, total_amount, amount_paid
+     FROM invoices WHERE pos_transaction_id = $1 AND is_deleted = false`,
+    [transactionId],
+  );
+  return inv || null;
+}
+
+// Primary bank account for payment instructions on transfer invoices.
+async function findPrimaryBankAccount(client, business) {
+  const {
+    rows: [acct],
+  } = await client.query(
+    `SELECT bank_name, account_name, account_number
+     FROM shared.bank_accounts
+     WHERE (business = $1 OR business = '*') AND is_active = true
+     ORDER BY is_primary DESC NULLS LAST, created_at ASC
+     LIMIT 1`,
+    [business],
+  );
+  return acct || null;
+}
+
 module.exports = {
   getTerminals,
   findTerminalById,
@@ -478,4 +504,6 @@ module.exports = {
   findTransactionById,
   voidTransaction,
   getTransactionProductLines,
+  findInvoiceByPosTransactionId,
+  findPrimaryBankAccount,
 };

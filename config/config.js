@@ -193,6 +193,15 @@ const config = {
     baseUrl: process.env.GIGL_BASE_URL || "https://api.gigl.com",
   },
 
+  push: {
+    // Web Push (VAPID). Generate a key pair once with
+    //   node scripts/generateVapidKeys.js
+    // and set the env vars — push stays silently disabled until then.
+    vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
+    vapidPrivateKey: process.env.VAPID_PRIVATE_KEY,
+    vapidSubject: process.env.VAPID_SUBJECT || "mailto:admin@orikahub.com",
+  },
+
   smtp: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || "587"),
