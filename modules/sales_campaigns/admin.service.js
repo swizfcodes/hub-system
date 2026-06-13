@@ -1,4 +1,6 @@
 "use strict";
+
+const { flattenAddress } = require("../../lib/formatAddress");
 // ── admin.service.js ──────────────────────────────────────────────────────────
 
 const { withBusinessContext, nextDocumentNumber } = require("../../config/db");
@@ -251,10 +253,26 @@ async function confirmOrder(business, orderId, user) {
     );
     if (!order)
       throw Object.assign(new Error("Order not found"), { status: 404 });
-    if (order.status !== "proof_submitted") {
+    // Two roads into confirmation:
+    //   • 'proof_submitted' — bank-transfer order whose proof a manager
+    //     reviews and approves.
+    //   • 'pending' — a card/gateway order the Paystack/Optimus webhook
+    //     auto-confirms the moment the charge succeeds. Previously the
+    //     webhook filtered status='pending' but this required
+    //     'proof_submitted', so every gateway campaign order threw here
+    //     and the failure was swallowed into a log line — card-paid
+    //     campaign orders never confirmed.
+    // Already-confirmed (or further) orders short-circuit so a duplicate
+    // webhook delivery can't double-confirm.
+    if (["confirmed", "dispatched", "ready_for_pickup", "completed"].includes(
+      order.status,
+    )) {
+      return order;
+    }
+    if (!["proof_submitted", "pending"].includes(order.status)) {
       throw Object.assign(
         new Error(
-          `Order must be in proof_submitted status, got: ${order.status}`,
+          `Order cannot be confirmed from status: ${order.status}`,
         ),
         { status: 400 },
       );
@@ -439,8 +457,9 @@ async function confirmOrder(business, orderId, user) {
         } = await client.query(
           `INSERT INTO sales_orders
              (order_number, contact_id, status, fulfilment_type,
-              total_amount, amount_paid, source, created_by)
-           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5)
+              total_amount, amount_paid, source, created_by,
+              delivery_address)
+           VALUES ($1, $2, 'confirmed', $3, $4, $4, 'campaign', $5, $6)
            RETURNING order_id, order_number`,
           [
             orderNumber,
@@ -448,6 +467,10 @@ async function confirmOrder(business, orderId, user) {
             order.fulfilment_type || "delivery",
             grossNaira,
             user.user_id,
+            // The address the customer typed at campaign checkout must
+            // ride into the ERP order — Hand-to-Logistics prefills from
+            // it, and dropping it here forced staff to re-key it.
+            flattenAddress(order.delivery_address),
           ],
         );
         salesOrderId = salesOrder.order_id;

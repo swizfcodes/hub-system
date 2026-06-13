@@ -64,6 +64,7 @@ import type {
   XReport,
   ZReport,
   ParkedTransaction,
+  ForeignTenderLine,
 } from "@typedefs/pos";
 
 // ── ReceiptModal ───────────────────────────────────────────────────────────────
@@ -1096,6 +1097,72 @@ export function XZReportView({ report, currency = "NGN" }: XZReportProps) {
           </>
         )}
       </div>
+
+      {/* Foreign tender drill-down — all totals above are in NGN; this
+          shows what was actually tendered in other currencies and the
+          rate/date the system converted it at. */}
+      <ForeignTenderSection lines={report.foreign_tender ?? []} />
+    </div>
+  );
+}
+
+// ── Foreign tender (collapsible drill-down) ────────────────────────────────────
+
+function ForeignTenderSection({ lines }: { lines: ForeignTenderLine[] }) {
+  const [open, setOpen] = useState(false);
+  if (!lines.length) return null;
+
+  const totalNgn = lines.reduce((s, l) => s + l.ngn_amount, 0);
+  // Short summary of distinct currencies, e.g. "USD, GBP".
+  const currencies = [...new Set(lines.map((l) => l.currency))].join(", ");
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-amber-900/5 p-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2"
+      >
+        <span className="text-xs font-semibold uppercase tracking-widest text-amber-300/90">
+          Foreign Tender ({currencies})
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-brand-cream tabular-nums">
+            {fmtMoney(totalNgn, "NGN")}
+          </span>
+          <span className="text-amber-300/70 text-xs">
+            {open ? "Hide" : "Details"}
+          </span>
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-2">
+          {lines.map((l, i) => (
+            <div
+              key={`${l.currency}-${l.payment_method}-${l.tender_date}-${i}`}
+              className="rounded-lg border border-white/5 bg-brand-charcoal px-3 py-2"
+            >
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="text-brand-cream tabular-nums">
+                  {fmtMoney(l.original_amount, l.currency)}
+                </span>
+                <span className="text-brand-cream tabular-nums">
+                  {fmtMoney(l.ngn_amount, "NGN")}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-brand-smoke">
+                {l.payment_method.replace(/_/g, " ")} ·{" "}
+                {new Date(l.tender_date).toLocaleDateString()} · 1 {l.currency} ={" "}
+                ₦
+                {l.exchange_rate.toLocaleString("en-NG", {
+                  maximumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

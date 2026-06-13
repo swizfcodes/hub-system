@@ -25,7 +25,16 @@ async function listRuns(business, { page = 1, limit = 24, status } = {}) {
   });
 }
 
-async function initiateRun(business, { period_month, period_year }, user) {
+async function initiateRun(
+  business,
+  { period_month, period_year, mode = "full_paye" },
+  user,
+) {
+  // Normalise the mode up front — anything other than the explicit
+  // "simplified" opt-in defaults to full PAYE, so a malformed value can
+  // never silently drop statutory deductions.
+  const runMode = mode === "simplified" ? "simplified" : "full_paye";
+
   return withBusinessContext(business, async (client) => {
     const existing = await repo.findExistingRun(client, {
       period_month,
@@ -44,6 +53,7 @@ async function initiateRun(business, { period_month, period_year }, user) {
       runNumber,
       period_month,
       period_year,
+      mode: runMode,
       userId: user.user_id,
     });
 
@@ -66,6 +76,7 @@ async function initiateRun(business, { period_month, period_year }, user) {
           period_month,
           period_year,
           client,
+          runMode,
         );
         await repo.insertPayslip(client, { run_id: run.run_id, calc });
         totalGross += calc.grossSalary;

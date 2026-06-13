@@ -72,34 +72,33 @@ export const COMPLIANCE_OUTPUTS = [
 ] as const;
 
 // ── Nigerian PAYE client-side preview ─────────────────────────────────────────
-// Mirrors paye.js and deductions.js logic exactly.
-// Used in the payslip preview before the run is initiated.
+// Mirrors modules/payroll/paye.js and deductions.js exactly — Nigeria Tax
+// Act 2025 (effective 1 Jan 2026). No CRA: the first ₦800k of annual
+// adjusted income is tax-free. Used in the payslip preview before a run.
 
 const PAYE_BANDS = [
-  { limit: 300_000, rate: 0.07 },
-  { limit: 300_000, rate: 0.11 },
-  { limit: 500_000, rate: 0.15 },
-  { limit: 500_000, rate: 0.19 },
-  { limit: 1_600_000, rate: 0.21 },
-  { limit: Infinity, rate: 0.24 },
+  { width: 800_000, rate: 0.0 }, // first 800k tax-free
+  { width: 2_200_000, rate: 0.15 }, // 800k → 3m
+  { width: 9_000_000, rate: 0.18 }, // 3m → 12m
+  { width: 13_000_000, rate: 0.21 }, // 12m → 25m
+  { width: 25_000_000, rate: 0.23 }, // 25m → 50m
+  { width: Infinity, rate: 0.25 }, // above 50m
 ];
 
-function calcAnnualPAYE(annualGross: number) {
-  const craBase = Math.max(200_000, annualGross * 0.01);
-  const craAdditional = annualGross * 0.2;
-  const totalCRA = craBase + craAdditional;
-  const taxableIncome = Math.max(0, annualGross - totalCRA);
+const RENT_RELIEF_RATE = 0.2;
+const RENT_RELIEF_CAP = 500_000;
 
+// Annual PAYE on an annual adjusted (taxable) income.
+function calcAnnualPAYE(annualTaxableIncome: number): number {
   let tax = 0;
-  let rem = taxableIncome;
+  let rem = Math.max(0, annualTaxableIncome);
   for (const band of PAYE_BANDS) {
     if (rem <= 0) break;
-    const taxable = Math.min(rem, band.limit);
-    tax += taxable * band.rate;
-    rem -= taxable;
+    const slice = Math.min(rem, band.width);
+    tax += slice * band.rate;
+    rem -= slice;
   }
-
-  return { totalCRA, taxableIncome, annualPAYE: tax };
+  return tax;
 }
 
 export function previewPayslip(params: {
@@ -107,12 +106,14 @@ export function previewPayslip(params: {
   housingRatio?: number; // default 0.20
   transportRatio?: number; // default 0.10
   commissionAmount?: number;
+  annualRent?: number; // documented annual rent for rent relief
 }) {
   const {
     basicSalary,
     housingRatio = 0.2,
     transportRatio = 0.1,
     commissionAmount = 0,
+    annualRent = 0,
   } = params;
 
   const housingAllowance = +(basicSalary * housingRatio).toFixed(2);
@@ -127,11 +128,24 @@ export function previewPayslip(params: {
   const pensionEmployee = +(grossSalary * 0.08).toFixed(2);
   const nhf = +(basicSalary * 0.025).toFixed(2);
 
-  const taxableGross = Math.max(0, grossSalary - pensionEmployee - nhf);
-  const { totalCRA, taxableIncome, annualPAYE } = calcAnnualPAYE(
-    taxableGross * 12,
-  );
-  const monthlyPAYE = +(annualPAYE / 12).toFixed(2);
+  // Adjusted annual income from recurring pay, less allowable reliefs.
+  const regularGross = Math.max(0, grossSalary - commissionAmount);
+  const recurringPension = +(regularGross * 0.08).toFixed(2);
+  const rentRelief = Math.min(annualRent * RENT_RELIEF_RATE, RENT_RELIEF_CAP);
+  const annualRegularReliefs = (recurringPension + nhf) * 12 + rentRelief;
+  const adjustedRegular = Math.max(0, regularGross * 12 - annualRegularReliefs);
+  const annualRegularPAYE = calcAnnualPAYE(adjustedRegular);
+
+  // Commission taxed marginally (baseline method), not annualised.
+  let payeOnCommission = 0;
+  if (commissionAmount > 0) {
+    const commissionPension = +(commissionAmount * 0.08).toFixed(2);
+    const commissionTaxable = Math.max(0, commissionAmount - commissionPension);
+    payeOnCommission =
+      calcAnnualPAYE(adjustedRegular + commissionTaxable) - annualRegularPAYE;
+  }
+
+  const monthlyPAYE = +(annualRegularPAYE / 12 + payeOnCommission).toFixed(2);
 
   const totalDeductions = +(monthlyPAYE + pensionEmployee + nhf).toFixed(2);
   const netSalary = +(grossSalary - totalDeductions).toFixed(2);
@@ -141,8 +155,8 @@ export function previewPayslip(params: {
     housingAllowance,
     transportAllowance,
     grossSalary,
-    totalCRA: +(totalCRA / 12).toFixed(2),
-    taxableIncome: +(taxableIncome / 12).toFixed(2),
+    rentRelief: +rentRelief.toFixed(2),
+    taxableIncome: +(adjustedRegular / 12).toFixed(2),
     monthlyPAYE,
     pensionEmployee,
     nhf,

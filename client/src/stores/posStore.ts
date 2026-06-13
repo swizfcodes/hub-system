@@ -76,6 +76,7 @@ interface PosState {
   loyaltyDisc: number; // Naira value of redeemed points
   lines: CartLine[];
   orderDiscount: OrderDiscount | null;
+  applyVat: boolean; // VAT toggle for the current sale
 
   // Parked
   parked: ParkedTransaction[];
@@ -104,6 +105,7 @@ interface PosState {
   removeLine: (id: string) => void;
   clearCart: () => void;
   setOrderDiscount: (d: OrderDiscount | null) => void;
+  setApplyVat: (v: boolean) => void;
   parkCart: (label?: string) => Promise<void>;
   resumeParked: (parkId: string) => void;
   discardParked: (parkId: string) => Promise<void>;
@@ -122,6 +124,7 @@ export const usePOSStore = create<PosState>((set, get) => ({
   loyaltyDisc: 0,
   lines: [],
   orderDiscount: null,
+  applyVat: true,
   parked: [],
   pendingCount: 0,
   isOnline: navigator.onLine,
@@ -221,9 +224,11 @@ export const usePOSStore = create<PosState>((set, get) => ({
       loyaltyInfo: null,
       loyaltyDisc: 0,
       orderDiscount: null,
+      applyVat: true,
     }),
 
   setOrderDiscount: (d) => set({ orderDiscount: d }),
+  setApplyVat: (v) => set({ applyVat: v }),
 
   parkCart: async (label) => {
     // M6 fix: preserve loyalty state when parking
@@ -247,6 +252,7 @@ export const usePOSStore = create<PosState>((set, get) => ({
       loyaltyInfo: null,
       loyaltyDisc: 0,
       orderDiscount: null,
+      applyVat: true,
     }));
   },
 

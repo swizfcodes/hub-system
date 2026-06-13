@@ -58,7 +58,10 @@ export interface StaffUser {
   is_deleted: boolean;
   // from joined users table
   user_id?: string | null;
-  is_active?: boolean;
+  // Backend (/staff → staff.repository listProfiles) aliases the login
+  // flag as `user_is_active` — must match or every account reads as
+  // "Deactivated" (undefined → !undefined === true).
+  user_is_active?: boolean;
   last_login_at?: string | null;
   failed_login_attempts?: number;
   totp_enabled?: boolean;

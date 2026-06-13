@@ -2,7 +2,7 @@
 
 async function listRuns(client, { status, limit, offset }) {
   const { rows } = await client.query(
-    `SELECT run_id, run_number, period_month, period_year, status,
+    `SELECT run_id, run_number, period_month, period_year, status, mode,
             total_gross, total_net, total_paye, created_at
      FROM payroll_runs
      WHERE ($1::TEXT IS NULL OR status = $1)
@@ -23,13 +23,13 @@ async function findExistingRun(client, { period_month, period_year }) {
 
 async function insertRun(
   client,
-  { runNumber, period_month, period_year, userId },
+  { runNumber, period_month, period_year, mode = "full_paye", userId },
 ) {
   const {
     rows: [run],
   } = await client.query(
-    `INSERT INTO payroll_runs (run_number, period_month, period_year, status, created_by) VALUES ($1,$2,$3,'draft',$4) RETURNING *`,
-    [runNumber, period_month, period_year, userId],
+    `INSERT INTO payroll_runs (run_number, period_month, period_year, mode, status, created_by) VALUES ($1,$2,$3,$4,'draft',$5) RETURNING *`,
+    [runNumber, period_month, period_year, mode, userId],
   );
   return run;
 }

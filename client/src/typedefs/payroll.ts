@@ -12,6 +12,7 @@ export interface PayrollRun {
   period_month: number; // 1–12
   period_year: number;
   status: PayrollRunStatus;
+  mode: PayrollMode;
   total_gross: number;
   total_net: number;
   total_paye: number;
@@ -90,7 +91,7 @@ export interface PAYEPreview {
   basicSalary: number;
   housingAllowance: number;
   transportAllowance: number;
-  totalCRA: number;
+  rentRelief: number; // Nigeria Tax Act 2025 — replaces the abolished CRA
   taxableIncome: number;
   monthlyPAYE: number;
   pensionEmployee: number;

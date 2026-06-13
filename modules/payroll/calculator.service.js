@@ -14,6 +14,7 @@ async function calculatePayslip(
   periodMonth,
   periodYear,
   client,
+  mode = "full_paye",
 ) {
   // Resolve per-business payroll config (allowance ratios, working days,
   // advance recovery cap). Today this returns Nigerian defaults; future
@@ -128,8 +129,16 @@ async function calculatePayslip(
   const deductions = calculateDeductions({
     basicSalary,
     grossSalary,
+    commissionAmount,
     advanceOutstanding,
     otherDeductions: absentDeduct,
+    // Rent relief and NHIS reduce PAYE under the Nigeria Tax Act 2025 but
+    // need per-employee data the schema does not yet capture. Default to
+    // no relief / not enrolled; wire to staff_contracts once those fields
+    // exist so the calculator picks them up without further changes.
+    annualRent: 0,
+    nhisEnrolled: false,
+    mode,
   });
 
   return {

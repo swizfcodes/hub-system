@@ -5,7 +5,7 @@ async function getSalesRevenue(client, { startDate, endDate }) {
     rows: [row],
   } = await client.query(
     `SELECT
-       COALESCE(SUM(i.total_amount),0)                                    AS total_revenue,
+       COALESCE(SUM(i.total_amount),0)                                    AS total_amount,
        COALESCE(SUM(i.amount_paid),0)                                     AS total_collected,
        COALESCE(SUM(i.amount_outstanding),0)                              AS total_outstanding,
        COUNT(i.invoice_id)                                                 AS invoice_count,
@@ -45,11 +45,11 @@ async function getQuoteConversion(client, { startDate, endDate }) {
     rows: [row],
   } = await client.query(
     `SELECT
-       COUNT(*) FILTER (WHERE status='confirmed')          AS confirmed,
+       COUNT(*) FILTER (WHERE status='confirmed')          AS converted,
        COUNT(*) FILTER (WHERE status IN ('sent','viewed')) AS pending,
        COUNT(*) FILTER (WHERE status='expired')            AS expired,
        COUNT(*) FILTER (WHERE status='cancelled')          AS cancelled,
-       COUNT(*)                                            AS total,
+       COUNT(*)                                            AS total_quotes,
        ROUND(COUNT(*) FILTER (WHERE status='confirmed')::NUMERIC / NULLIF(COUNT(*),0)*100,1) AS conversion_rate
      FROM quotations WHERE created_at::DATE BETWEEN $1 AND $2 AND is_deleted=false`,
     [startDate, endDate],
@@ -73,10 +73,10 @@ async function getIncomeVsExpense(client, { startDate, endDate }) {
     rows: [row],
   } = await client.query(
     `SELECT
-       COALESCE(SUM(jl.credit) FILTER (WHERE coa.account_type='income'),0)  AS total_income,
-       COALESCE(SUM(jl.debit)  FILTER (WHERE coa.account_type='expense'),0) AS total_expenses,
+       COALESCE(SUM(jl.credit) FILTER (WHERE coa.account_type='income'),0)  AS income,
+       COALESCE(SUM(jl.debit)  FILTER (WHERE coa.account_type='expense'),0) AS expenses,
        COALESCE(SUM(jl.credit) FILTER (WHERE coa.account_type='income'),0) -
-       COALESCE(SUM(jl.debit)  FILTER (WHERE coa.account_type='expense'),0) AS net_profit
+       COALESCE(SUM(jl.debit)  FILTER (WHERE coa.account_type='expense'),0) AS net
      FROM journal_lines jl JOIN journal_entries je ON je.entry_id=jl.entry_id
      JOIN chart_of_accounts coa ON coa.account_id=jl.account_id
      WHERE je.entry_date BETWEEN $1 AND $2`,

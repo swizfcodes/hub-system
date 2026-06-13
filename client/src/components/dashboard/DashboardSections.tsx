@@ -74,7 +74,6 @@ export function SalesSection({
   if (!data && !isLoading) return null;
 
   const rev = data?.revenue;
-  const quotes = data?.quotations;
   const top5 = data?.top_products?.slice(0, 5) ?? [];
 
   return (
@@ -104,13 +103,10 @@ export function SalesSection({
           currency={currency}
         />
         <KpiCard
-          label="Quote Conversion"
-          value={
-            quotes
-              ? `${((quotes.converted / Math.max(quotes.total_quotes, 1)) * 100).toFixed(0)}%`
-              : "—"
-          }
-          type="text"
+          label="Collected"
+          value={rev?.total_collected ?? 0}
+          type="currency"
+          currency={currency}
         />
       </div>
 

@@ -161,6 +161,7 @@ async function getXReport(client, sessionId) {
 
   const totals = await repo.getSessionTotals(client, sessionId);
   const txCount = await repo.getSessionTxCount(client, sessionId);
+  const foreignTender = await repo.getSessionForeignTender(client, sessionId);
   const openingFloat = parseFloat(session.opening_float || 0);
   const expectedCashOnHand = openingFloat + parseFloat(totals.cash_total || 0);
 
@@ -187,6 +188,9 @@ async function getXReport(client, sessionId) {
       cash_sales: parseFloat(totals.cash_total || 0),
       expected_cash_on_hand: parseFloat(expectedCashOnHand.toFixed(2)),
     },
+    // Non-NGN tender booked at the day's rate; all totals above are the
+    // NGN value. Empty for NGN-only sessions.
+    foreign_tender: foreignTender,
   };
 }
 
@@ -217,6 +221,7 @@ async function getZReport(client, sessionId) {
   // H7 fix: query actual cash total from payment splits (additive) instead
   // of subtracting card+transfer from revenue (fragile — breaks with new methods)
   const totals = await repo.getSessionTotals(client, sessionId);
+  const foreignTender = await repo.getSessionForeignTender(client, sessionId);
 
   return {
     report_type: "Z",
@@ -242,6 +247,7 @@ async function getZReport(client, sessionId) {
       variance_pct: variance.variance_pct,
       status: variance.status,
     },
+    foreign_tender: foreignTender,
     reconciliation_notes: session.reconciliation_notes || null,
   };
 }

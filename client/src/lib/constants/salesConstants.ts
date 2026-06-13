@@ -216,22 +216,5 @@ export const FULFILMENT_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "delivery", label: "Delivery" },
 ];
 
-// ── Courier options for logistics hand-off ────────────────────────────────────
-
-export const COURIER_OPTIONS: {
-  value: string;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: "chowdeck",
-    label: "Chowdeck",
-    description: "Lagos — same-day / next-day",
-  },
-  { value: "gigl", label: "GIGL", description: "Nationwide courier" },
-  {
-    value: "manual",
-    label: "Manual",
-    description: "Enter tracking details manually",
-  },
-];
+// Courier selection lives in the Logistics module, not Sales — sales hands a
+// delivery off as pending and Logistics assigns the 3PL on dispatch.
