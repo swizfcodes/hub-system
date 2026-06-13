@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LogOut,
   KeyRound,
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export function AccountMenu({ collapsed }: Props) {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const signOut = useAuthStore((s) => s.signOut);
