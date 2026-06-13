@@ -9,6 +9,7 @@ import { CrmQuickActionsFab } from "@components/crm/fab/CrmQuickActionsFab";
 import { PermissionGate } from "@components/shared/PermissionGate";
 import { SessionExpiredOverlay } from "@components/shared/SessionExpiredOverlay";
 import { FloatingLauncher } from "./FloatingLauncher";
+import { InstallAppBanner } from "./InstallAppBanner";
 import { ChatDock } from "@components/messaging/ChatDock";
 import { ChatNotificationManager } from "@components/notifications/ChatNotificationManager";
 import { useUiStore } from "@stores/useUiStore";
@@ -98,6 +99,7 @@ export function AppShell() {
           isDesktop ? (sidebarCollapsed ? "pl-[72px]" : "pl-[260px]") : "pl-0",
         )}
       >
+        <InstallAppBanner />
         <main className="flex-1 pb-24 lg:pb-8">
           <PermissionGate>
             <Outlet />

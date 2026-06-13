@@ -18,6 +18,7 @@ import {
   Shield,
   Check,
   Pencil,
+  Download,
 } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
 import {
@@ -35,6 +36,7 @@ import {
 import { uploadAvatar } from "@services/uploads";
 import { initialsOf } from "@lib/format";
 import { showToast } from "@hooks/useToast";
+import { useInstallPrompt } from "@hooks/useInstallPrompt";
 import { errMsg } from "@services/api";
 import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
 import { cn } from "@lib/cn";
@@ -48,6 +50,9 @@ export function AccountMenu({ collapsed }: Props) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const signOut = useAuthStore((s) => s.signOut);
+
+  const { canPrompt, isIos, installed, promptInstall } = useInstallPrompt();
+  const canInstall = !installed && (canPrompt || isIos);
 
   const [open, setOpen] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
@@ -200,6 +205,23 @@ export function AccountMenu({ collapsed }: Props) {
                 navigate("/me/hr");
               }}
             />
+            {canInstall && (
+              <MenuItem
+                icon={<Download className="w-3.5 h-3.5" />}
+                label="Install app"
+                onClick={() => {
+                  setOpen(false);
+                  if (canPrompt) {
+                    void promptInstall();
+                  } else {
+                    showToast.info(
+                      "Install on your iPhone",
+                      "Tap Share → Add to Home Screen.",
+                    );
+                  }
+                }}
+              />
+            )}
             <div className="border-t border-brand-graphite/50 my-1" />
             <MenuItem
               icon={<LogOut className="w-3.5 h-3.5" />}
