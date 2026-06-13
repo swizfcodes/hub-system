@@ -2,7 +2,7 @@
 
 async function list(
   client,
-  { status, contactId, scope, userId, limit, offset },
+  { status, contactId, scope, userId, search, limit, offset },
 ) {
   const { rows } = await client.query(
     `SELECT i.invoice_id, i.invoice_number, i.invoice_type, i.status,
@@ -15,9 +15,19 @@ async function list(
        AND ($1::TEXT IS NULL OR i.status = $1)
        AND ($2::UUID IS NULL OR i.contact_id = $2)
        AND ($3::TEXT = 'all' OR i.created_by = $4)
+       AND ($7::TEXT IS NULL OR i.invoice_number ILIKE $7
+            OR c.display_name ILIKE $7)
      ORDER BY i.created_at DESC
      LIMIT $5 OFFSET $6`,
-    [status || null, contactId || null, scope, userId, limit, offset],
+    [
+      status || null,
+      contactId || null,
+      scope,
+      userId,
+      limit,
+      offset,
+      search ? `%${search}%` : null,
+    ],
   );
   return rows;
 }

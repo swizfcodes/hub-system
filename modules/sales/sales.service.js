@@ -872,7 +872,7 @@ function paymentMethodLabel(method) {
 
 async function listOrders(
   business,
-  { page = 1, limit = 50, status, source, fulfilment_type } = {},
+  { page = 1, limit = 50, status, source, fulfilment_type, search } = {},
 ) {
   return withBusinessContext(business, async (client) => {
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -880,6 +880,7 @@ async function listOrders(
       status,
       source: source || null,
       fulfilment_type: fulfilment_type || null,
+      search: search?.trim() || null,
       limit: parseInt(limit),
       offset,
     });
