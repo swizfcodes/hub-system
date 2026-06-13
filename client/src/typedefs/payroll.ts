@@ -91,7 +91,7 @@ export interface PAYEPreview {
   basicSalary: number;
   housingAllowance: number;
   transportAllowance: number;
-  totalCRA: number;
+  rentRelief: number; // Nigeria Tax Act 2025 — replaces the abolished CRA
   taxableIncome: number;
   monthlyPAYE: number;
   pensionEmployee: number;
