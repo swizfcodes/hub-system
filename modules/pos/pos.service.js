@@ -926,7 +926,25 @@ async function downloadReceiptPDF(business, transactionId) {
 // rather than double-posting.
 // ─────────────────────────────────────────────────────────────
 
+// Map a failed-replay error to one of the conflict_type values the POS
+// client understands, so the cashier sees a meaningful reason rather than
+// a generic failure. Anything unrecognised falls back to "validation".
+function classifySyncError(err) {
+  const msg = (err && err.message ? err.message : "").toLowerCase();
+  if (msg.includes("stock") || msg.includes("out of stock")) {
+    return "out_of_stock";
+  }
+  if (msg.includes("session")) {
+    return "session_closed";
+  }
+  return "validation";
+}
+
 async function syncOfflineTransactions(business, transactions, user) {
+  // Result shape matches the client SyncResponse contract
+  // (offline_id, success, conflict_type?, error?, transaction_*). The hook
+  // keys off `success`/`conflict_type`, so the backend must speak the same
+  // language or every synced item is mis-read as a conflict.
   const results = [];
 
   for (const txData of transactions) {
@@ -943,8 +961,9 @@ async function syncOfflineTransactions(business, transactions, user) {
         if (exists) {
           results.push({
             offline_id: txData.offline_id,
-            status: "duplicate",
-            message: "Already synced",
+            success: false,
+            conflict_type: "duplicate",
+            error: "Already synced",
           });
           continue;
         }
@@ -953,19 +972,27 @@ async function syncOfflineTransactions(business, transactions, user) {
       const tx = await createTransaction(business, txData, user);
       results.push({
         offline_id: txData.offline_id,
-        status: "synced",
+        success: true,
         transaction_id: tx.transaction_id,
+        transaction_number: tx.transaction_number,
       });
     } catch (err) {
       results.push({
         offline_id: txData.offline_id,
-        status: "failed",
+        success: false,
+        conflict_type: classifySyncError(err),
         error: err.message,
       });
     }
   }
 
-  return { results, synced: results.filter((r) => r.status === "synced").length };
+  const succeeded = results.filter((r) => r.success).length;
+  return {
+    results,
+    total: results.length,
+    succeeded,
+    failed: results.length - succeeded,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────
