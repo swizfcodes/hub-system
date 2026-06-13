@@ -2,6 +2,7 @@
 
 export interface SalesRevenue {
   total_amount: number;
+  total_collected: number;
   invoice_count: number;
   avg_order_value: number;
   prev_period_amount?: number;
