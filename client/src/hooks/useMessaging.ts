@@ -30,11 +30,10 @@ export function dispatchSocketEvent(
   window.dispatchEvent(new CustomEvent(eventName(type), { detail }));
 }
 
-function useSocketEvent(
+export function useSocketEvent(
   types: MessagingSocketEvent[],
   handler: (type: MessagingSocketEvent, detail: unknown) => void,
-) {
-  const handlerRef = useRef(handler);
+) {  const handlerRef = useRef(handler);
   handlerRef.current = handler;
   // Key the effect on the (stable) list of event names, not the array
   // identity, so callers can pass inline arrays.

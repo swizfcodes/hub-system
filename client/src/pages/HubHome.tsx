@@ -12,6 +12,12 @@ import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { useBusinessStore } from "@stores/useBusinessStore";
 import { PriorityAppGrid } from "@components/hub/PriorityAppGrid";
 import { Topbar } from "@components/shell/Topbar";
+import { useUnreadTotal } from "@hooks/useUnreadTotal";
+import {
+  unreadTone,
+  formatUnread,
+  type UnreadTone,
+} from "@lib/constants/unread";
 
 export default function HubHome() {
   const { time, greeting } = useGreeting();
@@ -52,17 +58,23 @@ export default function HubHome() {
   const overdueCount = financeData?.ar_ageing?.invoice_count;
   const overdueAmount = financeData?.ar_ageing?.total;
 
-  // TODO: replace with a single dashboard endpoint that returns all live counts in one call.
-  // For now: stub badges to demonstrate the UI; backend will fill these in once dashboards module ships.
+  // Live unread chat total — real-time via socket, urgency-coloured
+  // (green 1-10 / amber 11-30 / red 31+).
+  // TODO: the remaining counts come from a single dashboard endpoint once
+  // the dashboards module ships.
+  const unreadTotal = useUnreadTotal();
   const badges: Record<string, number | string | undefined> = {
     new_leads: undefined,
     in_transit: undefined,
     pending_pos: undefined,
     overdue: undefined,
     awaiting_approval: undefined,
-    unread: undefined,
+    unread: unreadTotal > 0 ? formatUnread(unreadTotal) : undefined,
     today: undefined,
     open: undefined,
+  };
+  const badgeTones: Record<string, UnreadTone | undefined> = {
+    unread: unreadTone(unreadTotal) ?? undefined,
   };
 
   return (
@@ -197,7 +209,7 @@ export default function HubHome() {
             </div>
             <div className="flex-1 h-px bg-gradient-to-r from-brand-accent/30 to-transparent" />
           </div>
-          <PriorityAppGrid badges={badges} />
+          <PriorityAppGrid badges={badges} badgeTones={badgeTones} />
         </section>
 
         {/* Recent activity strip */}

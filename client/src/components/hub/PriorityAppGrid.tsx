@@ -17,11 +17,14 @@ import {
 import { AppTile } from "./AppTile";
 import { useNavPriority } from "@hooks/useNavPriority";
 import { HUB_MODULES, type AppModule } from "@lib/constants/modules";
+import type { UnreadTone } from "@lib/constants/unread";
 import { showToast } from "@hooks/useToast";
 import { cn } from "@lib/cn";
 
 interface Props {
   badges?: Record<string, number | string | undefined>;
+  /** Optional urgency colour per badgeKey (unread scale). */
+  badgeTones?: Record<string, UnreadTone | undefined>;
 }
 
 const GROUP_LABELS: Record<AppModule["group"], string> = {
@@ -43,7 +46,7 @@ function labelFor(key: string): string {
   return HUB_MODULES.find((m) => m.key === key)?.label ?? key;
 }
 
-export function PriorityAppGrid({ badges = {} }: Props) {
+export function PriorityAppGrid({ badges = {}, badgeTones = {} }: Props) {
   const {
     topModules,
     moreModules,
@@ -120,6 +123,7 @@ export function PriorityAppGrid({ badges = {} }: Props) {
               module={m}
               index={i}
               badge={m.badgeKey ? badges[m.badgeKey] : undefined}
+              tone={m.badgeKey ? badgeTones[m.badgeKey] : undefined}
             />
             {m.key !== "dashboard" && (
               <button
@@ -191,6 +195,7 @@ export function PriorityAppGrid({ badges = {} }: Props) {
                         module={m}
                         index={i}
                         badge={m.badgeKey ? badges[m.badgeKey] : undefined}
+                        tone={m.badgeKey ? badgeTones[m.badgeKey] : undefined}
                       />
                       <button
                         onClick={() => handlePin(m.key)}

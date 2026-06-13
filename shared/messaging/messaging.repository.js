@@ -156,6 +156,7 @@ async function findChannelById(client, channelId) {
                                  cm_contact.display_name),
                       'joined_at', cm.joined_at,
                       'last_read_at', cm.last_read_at,
+                      'is_muted', cm.is_muted,
                       'last_seen_at', cm_user.last_seen_at
                     ))
              FROM shared.channel_members cm

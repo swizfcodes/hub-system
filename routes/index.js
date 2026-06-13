@@ -124,6 +124,7 @@ router.use(
   protect,
   require("../shared/notifications/notifications.routes"),
 );
+router.use("/push", protect, require("../shared/push/push.routes"));
 router.use("/staff", protect, require("../shared/staff/staff.routes"));
 router.use(
   "/messaging",

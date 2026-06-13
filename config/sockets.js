@@ -168,4 +168,23 @@ function emitToAll(event, data) {
   io?.emit(event, data);
 }
 
-module.exports = { init, emitToUser, emitToBusiness, emitToChannel, emitToAll };
+// Any socket open for this user (any device)? Used to decide whether a
+// web push is needed (offline) or the in-tab layer already covers them.
+async function isUserOnline(userId) {
+  if (!io || !userId) return false;
+  try {
+    const sockets = await io.in(`user:${userId}`).fetchSockets();
+    return sockets.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+module.exports = {
+  init,
+  emitToUser,
+  emitToBusiness,
+  emitToChannel,
+  emitToAll,
+  isUserOnline,
+};

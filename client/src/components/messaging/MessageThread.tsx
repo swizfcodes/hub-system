@@ -21,6 +21,8 @@ import {
   BellOff,
   Archive,
   Users,
+  Upload,
+  FolderOpen,
   X,
   CheckCircle2,
 } from "lucide-react";
@@ -54,6 +56,10 @@ import {
   isUserOnline,
 } from "@lib/socket";
 import {
+  registerActiveChannel,
+  unregisterActiveChannel,
+} from "@lib/notifications/chatAlerts";
+import {
   getChannelDisplayName,
   getDirectPeer,
   getAvatarColour,
@@ -67,6 +73,8 @@ import { MessageBubble } from "./MessageBubble";
 import { EmojiPicker } from "./EmojiPicker";
 import { ForwardModal } from "./ForwardModal";
 import { GroupInfoModal } from "./GroupInfoModal";
+import { DocumentPickerModal } from "./DocumentPickerModal";
+import type { HubDocument } from "@typedefs/documents";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { showToast } from "@hooks/useToast";
 import { cn } from "@lib/cn";
@@ -100,6 +108,8 @@ export function MessageThread({
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [docPickerOpen, setDocPickerOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -114,10 +124,15 @@ export function MessageThread({
   usePresence();
   useChannelMessages(channel.channel_id);
 
-  // Join the channel's socket room for typing indicators.
+  // Join the channel's socket room for typing indicators, and register as
+  // the on-screen conversation so the alert layer stays quiet for it.
   useEffect(() => {
     joinChannelRoom(channel.channel_id);
-    return () => leaveChannelRoom(channel.channel_id);
+    registerActiveChannel(channel.channel_id);
+    return () => {
+      leaveChannelRoom(channel.channel_id);
+      unregisterActiveChannel(channel.channel_id);
+    };
   }, [channel.channel_id]);
 
   const { data: messages = [], isLoading } = useQuery({
@@ -125,6 +140,50 @@ export function MessageThread({
     queryFn: () => listMessages(channel.channel_id, { limit: 50 }),
     refetchOnWindowFocus: false,
   });
+
+  // "N unread" divider — anchored once per conversation open, to the
+  // oldest message that was unread at that moment. Anchoring to a
+  // message_id keeps the line fixed while mark-read fires and new
+  // messages arrive underneath it.
+  const [unreadDivider, setUnreadDivider] = useState<{
+    channelId: string;
+    messageId: string;
+    count: number;
+  } | null>(null);
+  useEffect(() => {
+    if (isLoading || unreadDivider?.channelId === channel.channel_id) return;
+    const count = channel.unread_count ?? 0;
+    let anchor: { channelId: string; messageId: string; count: number } = {
+      channelId: channel.channel_id,
+      messageId: "",
+      count: 0,
+    };
+    let remaining = count;
+    if (count > 0) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (m.sender_user_id !== userId && m.sender_kind !== "system") {
+          remaining -= 1;
+          if (remaining === 0) {
+            anchor = {
+              channelId: channel.channel_id,
+              messageId: m.message_id,
+              count,
+            };
+            break;
+          }
+        }
+      }
+    }
+    setUnreadDivider(anchor);
+  }, [
+    isLoading,
+    messages,
+    channel.channel_id,
+    channel.unread_count,
+    userId,
+    unreadDivider?.channelId,
+  ]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -275,6 +334,21 @@ export function MessageThread({
     }
   }
 
+  // Share an existing vault document by reference — no re-upload, the
+  // message attachment points at the same tamper-proof original.
+  function sendDocumentReference(doc: HubDocument) {
+    setDocPickerOpen(false);
+    sendMutation.mutate({
+      message_type: doc.mime_type?.startsWith("image/") ? "image" : "document",
+      attachments: [
+        {
+          document_id: doc.document_id,
+          display_name: doc.title || doc.document_number,
+        },
+      ],
+    });
+  }
+
   // ── Voice notes ─────────────────────────────────────────────────────
 
   async function startRecording() {
@@ -285,10 +359,18 @@ export function MessageThread({
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: recorder.mimeType });
+        // Safari records audio/mp4, Chrome audio/webm, Firefox audio/ogg —
+        // name the file to match so playback works across all of them.
+        const mime = recorder.mimeType || "audio/webm";
+        const blob = new Blob(chunks, { type: mime });
         if (blob.size < 1000) return; // accidental tap
-        const file = new File([blob], `voice-note-${Date.now()}.webm`, {
-          type: recorder.mimeType,
+        const ext = mime.includes("mp4")
+          ? "m4a"
+          : mime.includes("ogg")
+            ? "ogg"
+            : "webm";
+        const file = new File([blob], `voice-note-${Date.now()}.${ext}`, {
+          type: mime,
         });
         setUploading(true);
         try {
@@ -583,6 +665,15 @@ export function MessageThread({
                     </span>
                   </div>
                 )}
+                {unreadDivider?.messageId === msg.message_id && (
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="h-px flex-1 bg-brand-accent/25" />
+                    <span className="rounded-full bg-brand-accent/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-brand-accent">
+                      {unreadDivider.count} unread
+                    </span>
+                    <div className="h-px flex-1 bg-brand-accent/25" />
+                  </div>
+                )}
                 <MessageBubble
                   message={msg}
                   isOwn={isOwn}
@@ -662,16 +753,51 @@ export function MessageThread({
                 style={{ maxHeight: 120 }}
               />
               <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1.5">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke disabled:opacity-40"
-                  title="Attach a file"
-                >
-                  <Paperclip
-                    className={cn("h-4 w-4", uploading && "animate-pulse")}
-                  />
-                </button>
+                <div className="relative">
+                  {attachMenuOpen && (
+                    <>
+                      <button
+                        type="button"
+                        aria-hidden
+                        tabIndex={-1}
+                        onClick={() => setAttachMenuOpen(false)}
+                        className="fixed inset-0 z-10 cursor-default"
+                      />
+                      <div className="absolute bottom-full left-0 z-20 mb-2 w-44 overflow-hidden rounded-xl border border-white/10 bg-brand-charcoal shadow-xl">
+                        <button
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs text-brand-cream transition-colors hover:bg-white/5"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-brand-smoke" />
+                          Upload file
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            setDocPickerOpen(true);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-xs text-brand-cream transition-colors hover:bg-white/5"
+                        >
+                          <FolderOpen className="h-3.5 w-3.5 text-brand-smoke" />
+                          From Documents
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setAttachMenuOpen((v) => !v)}
+                    disabled={uploading}
+                    className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke disabled:opacity-40"
+                    title="Attach"
+                  >
+                    <Paperclip
+                      className={cn("h-4 w-4", uploading && "animate-pulse")}
+                    />
+                  </button>
+                </div>
                 <button
                   onClick={() => setEmojiOpen((v) => !v)}
                   className="p-1 text-brand-smoke/60 transition-colors hover:text-brand-smoke"
@@ -731,6 +857,11 @@ export function MessageThread({
       )}
 
       {/* Modals */}
+      <DocumentPickerModal
+        open={docPickerOpen}
+        onClose={() => setDocPickerOpen(false)}
+        onPick={sendDocumentReference}
+      />
       <ForwardModal
         message={forwarding}
         onClose={() => setForwarding(null)}
