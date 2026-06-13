@@ -24,10 +24,26 @@ async function listProfiles(
             sp.is_deleted, sp.created_at, sp.updated_at,
             c.display_name, c.first_name, c.last_name,
             c.primary_phone, c.email,
-            u.user_id, u.is_active AS user_is_active, u.last_login_at
+            u.user_id, u.is_active AS user_is_active, u.last_login_at,
+            u.failed_login_attempts,
+            role.role_name
      FROM shared.staff_profiles sp
      JOIN shared.contacts c ON c.contact_id = sp.contact_id
      LEFT JOIN shared.users u ON u.staff_profile_id = sp.profile_id
+     -- Surface a single representative role for the Users & Access list:
+     -- prefer a grant scoped to the staff member's own business over a
+     -- global ('*') grant, then the most recently granted. Expired
+     -- grants are ignored.
+     LEFT JOIN LATERAL (
+       SELECT r.role_name
+       FROM shared.user_roles ur
+       JOIN shared.roles r ON r.role_id = ur.role_id
+       WHERE ur.user_id = u.user_id
+         AND (ur.expires_at IS NULL OR ur.expires_at > now())
+         AND (ur.business = sp.business OR ur.business = '*')
+       ORDER BY (ur.business = sp.business) DESC, ur.granted_at DESC
+       LIMIT 1
+     ) role ON true
      WHERE sp.is_deleted = false
        AND ($1::TEXT IS NULL OR
             c.display_name ILIKE $1 OR
