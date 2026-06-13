@@ -1071,7 +1071,9 @@ async function handToLogistics(business, orderId, data, user) {
       reference_id: orderId,
       contact_id: result.order.contact_id,
       delivery_address: data.delivery_address,
-      courier: data.courier_preference,
+      // Logistics assigns the 3PL on dispatch — sales never picks one, so a
+      // missing preference lands as "manual" (pending) rather than null.
+      courier: data.courier_preference || "manual",
       delivery_fee: data.delivery_fee || 0,
     },
     user,

@@ -245,7 +245,7 @@ router.post(
   "/orders/:id/dispatch",
   param("id").isUUID(),
   body("delivery_address").notEmpty(),
-  body("courier_preference").isIn(["chowdeck", "gigl", "manual"]),
+  body("courier_preference").optional().isIn(["chowdeck", "gigl", "manual"]),
   validate,
   can("sales", "edit"),
   async (req, res, next) => {
