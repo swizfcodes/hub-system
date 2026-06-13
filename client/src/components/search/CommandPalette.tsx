@@ -5,33 +5,73 @@
  *   - Clicking the search bar in the Topbar
  *   - Pressing ⌘K (Mac) or Ctrl+K (Windows/Linux) anywhere in the app
  *
- * Searches in parallel across:
- *   - Contacts  (GET /api/contacts?search=q&limit=6)
- *   - Products   (GET /api/catalogue/products?search=q&limit=6)
+ * Searches across three tiers:
+ *   1. Pages & actions — jump to any module/page the user can see
+ *      (client-side, instant, permission-aware via useVisibleModules).
+ *   2. Records — Contacts, Products, Invoices and Sales orders
+ *      (parallel API calls; each is permission-gated server-side, so a
+ *      403 simply yields no results for that category).
+ *   3. Help — guides & FAQs from the Help Center (client-side over the
+ *      cached article list), deep-linking into /help.
  *
  * Keyboard navigation:
  *   - ArrowUp / ArrowDown  — move between results
- *   - Enter                — navigate to highlighted result
+ *   - Enter                — open the highlighted result
  *   - Escape               — close
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, User, Package, X, ArrowRight, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Search,
+  User,
+  Package,
+  FileText,
+  ShoppingBag,
+  Compass,
+  HelpCircle,
+  X,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 import { api } from "@services/api";
+import { listArticles, type HelpArticle } from "@services/help";
+import { useVisibleModules } from "@hooks/useVisibleModules";
+import { HUB_MODULES } from "@lib/constants/modules";
+import { MODULE_KEYWORDS } from "@lib/constants/help";
 import { cn } from "@lib/cn";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+type Category = "command" | "contact" | "product" | "invoice" | "order" | "help";
 
 interface SearchResult {
   id: string;
   label: string;
   sublabel?: string;
-  category: "contact" | "product";
+  category: Category;
   href: string;
+  /** Per-result icon (overrides the category icon — used for nav items). */
+  Icon?: typeof User;
 }
 
-// ── Search helpers ────────────────────────────────────────────────────────────
+// ── Module label / icon / keyword lookups ─────────────────────────────────────
+
+const MODULE_LABELS: Record<string, string> = Object.fromEntries(
+  HUB_MODULES.map((m) => [m.key, m.label]),
+);
+const labelFor = (mod: string) => MODULE_LABELS[mod] || mod;
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ── Tier 2: record searches (server-side, permission-gated) ───────────────────
 
 async function searchContacts(q: string): Promise<SearchResult[]> {
   try {
@@ -42,7 +82,7 @@ async function searchContacts(q: string): Promise<SearchResult[]> {
         primary_phone?: string;
         company_name?: string;
       }>;
-    }>("/contacts", { params: { search: q, limit: 6 } });
+    }>("/contacts", { params: { search: q, limit: 5 } });
     return (data.data ?? []).map((c) => ({
       id: c.contact_id,
       label: c.display_name,
@@ -58,13 +98,8 @@ async function searchContacts(q: string): Promise<SearchResult[]> {
 async function searchProducts(q: string): Promise<SearchResult[]> {
   try {
     const { data } = await api.get<{
-      data: Array<{
-        product_id: string;
-        name: string;
-        sku?: string;
-        selling_price?: number;
-      }>;
-    }>("/catalogue/products", { params: { search: q, limit: 6 } });
+      data: Array<{ product_id: string; name: string; sku?: string }>;
+    }>("/catalogue/products", { params: { search: q, limit: 5 } });
     return (data.data ?? []).map((p) => ({
       id: p.product_id,
       label: p.name,
@@ -77,12 +112,63 @@ async function searchProducts(q: string): Promise<SearchResult[]> {
   }
 }
 
-// ── Category label + icon ─────────────────────────────────────────────────────
+async function searchInvoices(q: string): Promise<SearchResult[]> {
+  try {
+    const { data } = await api.get<{
+      data: Array<{
+        invoice_id: string;
+        invoice_number: string;
+        contact_name?: string;
+        status?: string;
+      }>;
+    }>("/invoicing", { params: { search: q, limit: 5 } });
+    return (data.data ?? []).map((i) => ({
+      id: i.invoice_id,
+      label: i.invoice_number,
+      sublabel: [i.contact_name, i.status].filter(Boolean).join(" · "),
+      category: "invoice" as const,
+      href: `/invoicing/${i.invoice_id}`,
+    }));
+  } catch {
+    return [];
+  }
+}
 
-const CATEGORY_META = {
-  contact: { label: "Contacts", Icon: User },
-  product: { label: "Products", Icon: Package },
-} as const;
+async function searchOrders(q: string): Promise<SearchResult[]> {
+  try {
+    const { data } = await api.get<{
+      data: Array<{
+        order_id: string;
+        order_number: string;
+        contact_name?: string;
+        status?: string;
+      }>;
+    }>("/sales/orders", { params: { search: q, limit: 5 } });
+    return (data.data ?? []).map((o) => ({
+      id: o.order_id,
+      label: o.order_number,
+      sublabel: [o.contact_name, o.status].filter(Boolean).join(" · "),
+      category: "order" as const,
+      href: `/sales/orders/${o.order_id}`,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ── Category metadata (header label + fallback icon + display order) ───────────
+
+const CATEGORY_META: Record<
+  Category,
+  { label: string; Icon: typeof User; order: number }
+> = {
+  command: { label: "Go to", Icon: Compass, order: 0 },
+  contact: { label: "Contacts", Icon: User, order: 1 },
+  product: { label: "Products", Icon: Package, order: 2 },
+  invoice: { label: "Invoices", Icon: FileText, order: 3 },
+  order: { label: "Sales orders", Icon: ShoppingBag, order: 4 },
+  help: { label: "Help & guides", Icon: HelpCircle, order: 5 },
+};
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -95,52 +181,170 @@ export function CommandPalette({ open, onClose }: Props) {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [records, setRecords] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Global ⌘K / Ctrl+K shortcut ──────────────────────────────────────────
+  const { visibleModules, visibleSettingsSubmodules } = useVisibleModules();
+
+  // Help articles — fetched lazily (only once the palette is opened) and
+  // shared with the Help Center's cache.
+  const { data: articles = [] } = useQuery({
+    queryKey: ["help", "articles"],
+    queryFn: () => listArticles(),
+    staleTime: 5 * 60_000,
+    enabled: open,
+  });
+
+  // ── Tier 1: navigable pages/actions (client-side, permission-aware) ───────
+  const navItems = useMemo(() => {
+    const seen = new Set<string>();
+    const items: Array<{
+      label: string;
+      description: string;
+      key: string;
+      route: string;
+      Icon: typeof User;
+    }> = [];
+    for (const m of [...visibleModules, ...visibleSettingsSubmodules]) {
+      if (seen.has(m.route)) continue;
+      seen.add(m.route);
+      items.push({
+        label: m.label,
+        description: m.description,
+        key: m.key,
+        route: m.route,
+        Icon: m.icon,
+      });
+    }
+    return items;
+  }, [visibleModules, visibleSettingsSubmodules]);
+
+  // ── Tier 3: help article search index ─────────────────────────────────────
+  const helpIndex = useMemo(
+    () =>
+      articles.map((a: HelpArticle) => {
+        const kw = (MODULE_KEYWORDS[a.module] || []).join(" ");
+        return {
+          article: a,
+          haystack:
+            `${a.title} ${labelFor(a.module)} ${kw} ${stripHtml(a.content)}`.toLowerCase(),
+        };
+      }),
+    [articles],
+  );
+
+  // ── Client-side matches (instant) ─────────────────────────────────────────
+  const clientResults = useMemo<SearchResult[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const terms = q.split(/\s+/).filter(Boolean);
+
+    // Pages / actions
+    const commands = navItems
+      .flatMap((n) => {
+        const label = n.label.toLowerCase();
+        const hay = `${label} ${n.description} ${n.key} ${(MODULE_KEYWORDS[n.key] || []).join(" ")}`.toLowerCase();
+        if (!terms.every((t) => hay.includes(t))) return [];
+        let score = 0;
+        if (label.startsWith(q)) score += 20;
+        else if (label.includes(q)) score += 12;
+        terms.forEach((t) => {
+          if (label.includes(t)) score += 4;
+        });
+        const result: SearchResult = {
+          id: `cmd-${n.route}`,
+          label: n.label,
+          sublabel: n.description,
+          category: "command",
+          href: n.route,
+          Icon: n.Icon,
+        };
+        return [{ score, result }];
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .map((x) => x.result);
+
+    // Help articles
+    const help = helpIndex
+      .flatMap((h) => {
+        const title = h.article.title.toLowerCase();
+        if (!terms.every((t) => h.haystack.includes(t))) return [];
+        let score = 0;
+        if (title.includes(q)) score += 15;
+        terms.forEach((t) => {
+          if (title.includes(t)) score += 5;
+        });
+        const result: SearchResult = {
+          id: `help-${h.article.article_id}`,
+          label: h.article.title,
+          sublabel: `${labelFor(h.article.module)} · ${h.article.article_type}`,
+          category: "help",
+          href: `/help?module=${h.article.module}&article=${h.article.article_id}`,
+        };
+        return [{ score, result }];
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map((x) => x.result);
+
+    return [...commands, ...help];
+  }, [query, navItems, helpIndex]);
+
+  // ── Combined, section-ordered result list ─────────────────────────────────
+  const results = useMemo<SearchResult[]>(() => {
+    const all = [...clientResults, ...records];
+    return all.sort(
+      (a, b) => CATEGORY_META[a.category].order - CATEGORY_META[b.category].order,
+    );
+  }, [clientResults, records]);
+
+  // ── Global ⌘K / Ctrl+K shortcut ───────────────────────────────────────────
   useEffect(() => {
     function onKeydown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         if (open) onClose();
-        else {
-          /* parent opens it */
-        }
       }
     }
     document.addEventListener("keydown", onKeydown);
     return () => document.removeEventListener("keydown", onKeydown);
   }, [open, onClose]);
 
-  // Focus input when opened
+  // Reset + focus when opened
   useEffect(() => {
     if (open) {
       setQuery("");
-      setResults([]);
+      setRecords([]);
       setActiveIdx(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
-  // ── Debounced search ──────────────────────────────────────────────────────
-  const runSearch = useCallback(async (q: string) => {
+  // Keep the active row in range as results change.
+  useEffect(() => {
+    setActiveIdx((i) => Math.min(i, Math.max(0, results.length - 1)));
+  }, [results.length]);
+
+  // ── Debounced record search (tier 2) ──────────────────────────────────────
+  const runRecordSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
     if (trimmed.length < 2) {
-      setResults([]);
+      setRecords([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const [contacts, products] = await Promise.all([
+      const groups = await Promise.all([
         searchContacts(trimmed),
         searchProducts(trimmed),
+        searchInvoices(trimmed),
+        searchOrders(trimmed),
       ]);
-      setResults([...contacts, ...products]);
-      setActiveIdx(0);
+      setRecords(groups.flat());
     } finally {
       setLoading(false);
     }
@@ -149,8 +353,9 @@ export function CommandPalette({ open, onClose }: Props) {
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setQuery(val);
+    setActiveIdx(0);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => runSearch(val), 250);
+    debounceRef.current = setTimeout(() => runRecordSearch(val), 250);
   }
 
   // ── Keyboard navigation ───────────────────────────────────────────────────
@@ -168,8 +373,7 @@ export function CommandPalette({ open, onClose }: Props) {
       setActiveIdx((i) => Math.max(i - 1, 0));
     }
     if (e.key === "Enter" && results[activeIdx]) {
-      navigate(results[activeIdx].href);
-      onClose();
+      handleSelect(results[activeIdx]);
     }
   }
 
@@ -178,13 +382,21 @@ export function CommandPalette({ open, onClose }: Props) {
     onClose();
   }
 
-  // Group results by category
-  const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
-    (acc[r.category] ??= []).push(r);
-    return acc;
-  }, {});
+  // Group results by category, preserving section order.
+  const grouped = useMemo(() => {
+    const map = new Map<Category, SearchResult[]>();
+    for (const r of results) {
+      if (!map.has(r.category)) map.set(r.category, []);
+      map.get(r.category)!.push(r);
+    }
+    return Array.from(map.entries());
+  }, [results]);
 
   if (!open) return null;
+
+  const hasQuery = query.trim().length > 0;
+  const showNoResults =
+    hasQuery && results.length === 0 && !loading && query.trim().length >= 2;
 
   return (
     /* Backdrop */
@@ -209,14 +421,15 @@ export function CommandPalette({ open, onClose }: Props) {
             value={query}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Search contacts, products…"
+            placeholder="Search pages, contacts, products, invoices, help…"
             className="flex-1 bg-transparent text-sm text-brand-cream placeholder-brand-smoke/40 focus:outline-none"
           />
           {query && (
             <button
               onClick={() => {
                 setQuery("");
-                setResults([]);
+                setRecords([]);
+                inputRef.current?.focus();
               }}
               className="text-brand-smoke hover:text-brand-cream transition-colors"
             >
@@ -230,12 +443,13 @@ export function CommandPalette({ open, onClose }: Props) {
 
         {/* Results */}
         <div className="max-h-[55vh] overflow-y-auto">
-          {query.trim().length === 0 ? (
-            /* Empty state — shortcuts hint */
+          {!hasQuery ? (
+            /* Empty state — what you can search */
             <div className="px-4 py-8 text-center space-y-4">
               <Search className="h-8 w-8 text-brand-smoke/20 mx-auto" />
               <p className="text-sm text-brand-smoke/50">
-                Type to search across contacts and products
+                Search across pages, contacts, products, invoices, orders and
+                help guides
               </p>
               <div className="flex items-center justify-center gap-4 text-xs text-brand-smoke/30">
                 <span className="flex items-center gap-1">
@@ -248,7 +462,7 @@ export function CommandPalette({ open, onClose }: Props) {
                   <kbd className="px-1.5 py-0.5 bg-brand-graphite rounded border border-white/10 font-mono">
                     ↵
                   </kbd>
-                  select
+                  open
                 </span>
                 <span className="flex items-center gap-1">
                   <kbd className="px-1.5 py-0.5 bg-brand-graphite rounded border border-white/10 font-mono">
@@ -258,29 +472,29 @@ export function CommandPalette({ open, onClose }: Props) {
                 </span>
               </div>
             </div>
-          ) : query.trim().length < 2 ? (
-            <div className="px-4 py-6 text-center">
-              <p className="text-sm text-brand-smoke/40">
-                Keep typing to search…
-              </p>
-            </div>
-          ) : results.length === 0 && !loading ? (
+          ) : showNoResults ? (
             <div className="px-4 py-8 text-center">
               <p className="text-sm text-brand-smoke/50">
                 No results for{" "}
-                <span className="text-brand-cream">"{query}"</span>
+                <span className="text-brand-cream">"{query.trim()}"</span>
               </p>
+              <p className="text-[11px] text-brand-smoke/35 mt-1">
+                Try a page name, a customer, an invoice number, or a keyword.
+              </p>
+            </div>
+          ) : results.length === 0 && loading ? (
+            <div className="px-4 py-8 text-center">
+              <Loader2 className="h-5 w-5 text-brand-smoke/40 mx-auto animate-spin" />
             </div>
           ) : (
             /* Grouped results */
-            Object.entries(grouped).map(([category, items]) => {
-              const { label, Icon } =
-                CATEGORY_META[category as keyof typeof CATEGORY_META];
+            grouped.map(([category, items]) => {
+              const { label, Icon: CatIcon } = CATEGORY_META[category];
               return (
                 <div key={category}>
                   {/* Group header */}
                   <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-brand-charcoal/40">
-                    <Icon className="h-3.5 w-3.5 text-brand-smoke/50" />
+                    <CatIcon className="h-3.5 w-3.5 text-brand-smoke/50" />
                     <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-smoke/50">
                       {label}
                     </span>
@@ -293,6 +507,7 @@ export function CommandPalette({ open, onClose }: Props) {
                   {items.map((result) => {
                     const globalIdx = results.indexOf(result);
                     const isActive = globalIdx === activeIdx;
+                    const RowIcon = result.Icon || CatIcon;
                     return (
                       <button
                         key={result.id}
@@ -311,7 +526,7 @@ export function CommandPalette({ open, onClose }: Props) {
                             isActive ? "bg-brand-accent/20" : "bg-brand-graphite",
                           )}
                         >
-                          <Icon
+                          <RowIcon
                             className={cn(
                               "h-3.5 w-3.5",
                               isActive ? "text-brand-accent" : "text-brand-smoke",

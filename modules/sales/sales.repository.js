@@ -232,7 +232,7 @@ async function getOrderProductLines(client, orderId) {
 
 async function listOrders(
   client,
-  { status, source, fulfilment_type, limit, offset },
+  { status, source, fulfilment_type, search, limit, offset },
 ) {
   const { rows } = await client.query(
     `SELECT o.order_id, o.order_number, o.status, o.total_amount,
@@ -247,6 +247,8 @@ async function listOrders(
      WHERE ($1::TEXT IS NULL OR o.status = $1)
        AND ($4::TEXT IS NULL OR o.source = $4)
        AND ($5::TEXT IS NULL OR o.fulfilment_type = $5)
+       AND ($6::TEXT IS NULL OR o.order_number ILIKE $6
+            OR c.display_name ILIKE $6)
      ORDER BY o.created_at DESC LIMIT $2 OFFSET $3`,
     [
       status || null,
@@ -254,6 +256,7 @@ async function listOrders(
       offset,
       source || null,
       fulfilment_type || null,
+      search ? `%${search}%` : null,
     ],
   );
   return rows;

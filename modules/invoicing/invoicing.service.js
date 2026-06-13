@@ -18,7 +18,7 @@ const optimusService = require("../../integrations/optimus/optimus.service");
 
 async function list(
   business,
-  { page = 1, limit = 50, status, contactId },
+  { page = 1, limit = 50, status, contactId, search },
   scope,
   user,
 ) {
@@ -29,6 +29,7 @@ async function list(
       contactId,
       scope,
       userId: user.user_id,
+      search: search?.trim() || null,
       limit: parseInt(limit),
       offset,
     });
