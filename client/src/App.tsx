@@ -44,6 +44,8 @@ const ContactsHome = lazy(() => import("@pages/contacts/ContactsHome"));
 const ContactDetail = lazy(() => import("@pages/contacts/ContactDetail"));
 const ContactNew = lazy(() => import("@pages/contacts/ContactNew"));
 const StaffOnboard = lazy(() => import("@pages/contacts/StaffOnboard"));
+const HrHub = lazy(() => import("@pages/hr/HrHub"));
+const MyHr = lazy(() => import("@pages/hr/MyHr"));
 
 // CRM module
 const CrmHome = lazy(() => import("@pages/crm/CrmHome"));
@@ -352,10 +354,8 @@ export default function App() {
           <Route path="/contacts/new" element={<ContactNew />} />
           <Route path="/contacts/staff/new" element={<StaffOnboard />} />
           <Route path="/contacts/:id" element={<ContactDetail />} />
-          <Route
-            path="/staff"
-            element={<Navigate to="/contacts?tab=staff" replace />}
-          />
+          <Route path="/staff" element={<HrHub />} />
+          <Route path="/me/hr" element={<MyHr />} />
 
           {/* CRM */}
           <Route path="/crm" element={<CrmHome />} />

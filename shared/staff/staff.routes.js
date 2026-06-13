@@ -83,7 +83,9 @@ router.post(
   can("staff", "create"),
   async (req, res, next) => {
     try {
-      res.status(201).json(await service.createStaff(req.body, req.user));
+      res
+        .status(201)
+        .json(await service.createStaffWithContract(req.body, req.user));
     } catch (e) {
       next(e);
     }

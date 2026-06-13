@@ -4,6 +4,7 @@ import {
   KeyRound,
   Camera,
   User,
+  CalendarClock,
   ChevronUp,
   X,
   Eye,
@@ -172,6 +173,14 @@ export function AccountMenu({ collapsed }: Props) {
               onClick={() => {
                 setOpen(false);
                 setShowProfile(true);
+              }}
+            />
+            <MenuItem
+              icon={<CalendarClock className="w-3.5 h-3.5" />}
+              label="My HR"
+              onClick={() => {
+                setOpen(false);
+                navigate("/me/hr");
               }}
             />
             <div className="border-t border-brand-graphite/50 my-1" />
