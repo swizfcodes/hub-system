@@ -271,7 +271,6 @@ export default function OrderDetail() {
           orderNumber={order.order_number}
           contactPhone={order.primary_phone ?? ""}
           deliveryAddress={order.delivery_address ?? ""}
-          courierPreference={order.courier_preference ?? ""}
           onDispatched={() => setShowLogistics(false)}
         />
       )}

@@ -525,7 +525,6 @@ import {
   handToLogisticsSchema,
   type HandToLogisticsValues,
 } from "@lib/schemas/sales";
-import { COURIER_OPTIONS } from "@lib/constants/salesConstants";
 import { Textarea as TextareaLog } from "@components/ui/Textarea";
 
 interface HandToLogisticsModalProps {
@@ -535,7 +534,6 @@ interface HandToLogisticsModalProps {
   orderNumber: string;
   contactPhone?: string;
   deliveryAddress?: string;
-  courierPreference?: string;
   onDispatched: () => void;
 }
 
@@ -546,7 +544,6 @@ export function HandToLogisticsModal({
   orderNumber,
   contactPhone = "",
   deliveryAddress = "",
-  courierPreference = "",
   onDispatched,
 }: HandToLogisticsModalProps) {
   const qc = useQueryClient();
@@ -556,9 +553,9 @@ export function HandToLogisticsModal({
     defaultValues: {
       delivery_address: deliveryAddress,
       delivery_notes: "",
-      courier_preference: (["chowdeck", "gigl", "manual"].includes(courierPreference)
-        ? courierPreference
-        : "chowdeck") as HandToLogisticsValues["courier_preference"],
+      // Sales never picks the 3PL — the delivery lands in Logistics as
+      // pending (manual) and they assign the courier on dispatch.
+      courier_preference: "manual",
       contact_phone: contactPhone,
       delivery_fee: 0,
     },
@@ -609,35 +606,12 @@ export function HandToLogisticsModal({
       </p>
 
       <div className="space-y-4">
-        <ControllerLogistics
-          name="courier_preference"
-          control={form.control}
-          render={({ field }) => (
-            <div>
-              <label className="mb-2 block text-xs font-medium text-brand-smoke">
-                Courier *
-              </label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {COURIER_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => field.onChange(opt.value)}
-                    className={cn(
-                      "rounded-lg border px-3 py-3 text-left transition-all",
-                      field.value === opt.value
-                        ? "border-brand-accent/60 bg-brand-accent/5 text-brand-accent"
-                        : "border-black/10 text-brand-smoke hover:border-black/20",
-                    )}
-                  >
-                    <p className="text-sm font-medium">{opt.label}</p>
-                    <p className="text-[10px] mt-0.5">{opt.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        />
+        <div className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-2.5">
+          <p className="text-[11px] text-brand-smoke">
+            Logistics assigns the courier (3PL) when they dispatch — this order
+            lands in their queue as pending.
+          </p>
+        </div>
 
         <ControllerLogistics
           name="contact_phone"

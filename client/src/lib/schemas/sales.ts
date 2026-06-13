@@ -86,7 +86,12 @@ export type RecordPaymentValues = z.infer<typeof recordPaymentSchema>;
 export const handToLogisticsSchema = z.object({
   delivery_address: z.string().min(5, "Enter a delivery address"),
   delivery_notes: z.string().max(500).optional().or(z.literal("")),
-  courier_preference: z.enum(["chowdeck", "gigl", "manual"]),
+  // Sales hands off without choosing a 3PL — Logistics assigns the courier
+  // on dispatch, so this always lands as "manual" (pending).
+  courier_preference: z
+    .enum(["chowdeck", "gigl", "manual"])
+    .optional()
+    .default("manual"),
   contact_phone: z.string().min(7, "Phone number required"),
   delivery_fee: z.coerce.number().min(0).optional().default(0),
 });

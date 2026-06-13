@@ -36,7 +36,6 @@ import {
   type DirectOrderPaymentInput,
 } from "@services/sales/orders";
 import { getLatestRate } from "@services/settings/currencyRates";
-import { COURIER_OPTIONS } from "@lib/constants/salesConstants";
 import type { Contact } from "@services/contacts";
 import type { PaymentMethod } from "@typedefs/sales";
 import { showToast } from "@hooks/useToast";
@@ -93,7 +92,6 @@ export default function QuickSaleForm() {
   const [foreignCurrency, setForeignCurrency] = useState("");
   const [isDelivery, setIsDelivery] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [courierPreference, setCourierPreference] = useState("chowdeck");
 
   // ── Currency rate ────────────────────────────────────────────────────────
   const { data: rateData } = useQuery({
@@ -189,7 +187,8 @@ export default function QuickSaleForm() {
         exchange_rate: foreignCurrency && exchangeRate ? exchangeRate : undefined,
         apply_vat: applyVat || undefined,
         delivery_address: isDelivery ? deliveryAddress : undefined,
-        courier_preference: isDelivery ? courierPreference : undefined,
+        // Courier is chosen by Logistics, not Sales — the delivery lands in
+        // the logistics queue as pending and staff assign the 3PL on dispatch.
       });
     },
     onSuccess: (order) => {
@@ -386,22 +385,10 @@ export default function QuickSaleForm() {
                   placeholder="Street address, city, state..."
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
-                  Courier
-                </label>
-                <select
-                  value={courierPreference}
-                  onChange={(e) => setCourierPreference(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-brand-graphite py-2 px-3 text-sm text-brand-cream focus:border-brand-accent/50 focus:outline-none"
-                >
-                  {COURIER_OPTIONS.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label} — {c.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <p className="text-[11px] text-brand-smoke/70">
+                Logistics assigns the courier when they dispatch — this delivery
+                lands in their queue as pending.
+              </p>
             </div>
           )}
         </Card>
