@@ -14,6 +14,7 @@ async function calculatePayslip(
   periodMonth,
   periodYear,
   client,
+  mode = "full_paye",
 ) {
   // Resolve per-business payroll config (allowance ratios, working days,
   // advance recovery cap). Today this returns Nigerian defaults; future
@@ -130,6 +131,7 @@ async function calculatePayslip(
     grossSalary,
     advanceOutstanding,
     otherDeductions: absentDeduct,
+    mode,
   });
 
   return {

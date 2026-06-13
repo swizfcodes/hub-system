@@ -23,17 +23,13 @@ import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { fmtMoney } from "@lib/format";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
-import type { PayrollMode, PaymentMethod } from "@typedefs/payroll";
+import type { PaymentMethod } from "@typedefs/payroll";
 
 export default function PayrollRunDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { currency } = useActiveBusiness();
-
-  const mode =
-    (localStorage.getItem("payrollMode") as PayrollMode) || "full_paye";
-  const isFull = mode === "full_paye";
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bulk");
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -43,6 +39,13 @@ export default function PayrollRunDetail() {
     queryFn: () => getRun(id!),
     enabled: !!id,
   });
+
+  // Mode is a persisted property of the run itself — not the global
+  // localStorage toggle — so a simplified run always renders as
+  // simplified (PAYE/pension/NHF hidden, no compliance outputs) even
+  // when the picker on the home page is currently set to full PAYE.
+  const mode = run?.mode ?? "full_paye";
+  const isFull = mode === "full_paye";
 
   const { data: payslipsData, isLoading: slipsLoading } = useQuery({
     queryKey: ["payroll-payslips", id],

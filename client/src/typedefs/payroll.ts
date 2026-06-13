@@ -12,6 +12,7 @@ export interface PayrollRun {
   period_month: number; // 1–12
   period_year: number;
   status: PayrollRunStatus;
+  mode: PayrollMode;
   total_gross: number;
   total_net: number;
   total_paye: number;
