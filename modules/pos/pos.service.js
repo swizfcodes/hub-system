@@ -350,19 +350,35 @@ async function createTransaction(business, data, user) {
     let subtotal = 0,
       discountTotal = 0,
       vatTotal = 0;
+    // VAT toggle: when the cashier turns VAT off for this sale we record
+    // it zero-rated. The flag is persisted on the transaction so any
+    // document generated from it later (e.g. an invoice) stays consistent.
+    const vatExempt = data.apply_vat === false || data.vat_exempt === true;
     // VAT rate from business_config (cached) — see config/businesses.
-    const vatRate = getVatRate(business);
+    const vatRate = vatExempt ? 0 : getVatRate(business);
     for (const l of data.lines) {
       const net = Math.round((l.unit_price * l.quantity - (l.discount_amount || 0)) * 100) / 100;
       discountTotal = Math.round((discountTotal + (l.discount_amount || 0)) * 100) / 100;
       subtotal = Math.round((subtotal + net) * 100) / 100;
       vatTotal = Math.round((vatTotal + Math.round(net * vatRate * 100) / 100) * 100) / 100;
     }
-    const totalAmount = Math.round((subtotal + vatTotal) * 100) / 100;
+    const totalAmount = Math.round((subtotal + vatTotal) * 100) / 100; // NGN
     const totalPaid = Math.round(
       data.payments.reduce((s, p) => s + parseFloat(p.amount), 0) * 100
-    ) / 100;
-    const change = Math.round(Math.max(0, totalPaid - totalAmount) * 100) / 100;
+    ) / 100; // tendered, in the sale currency
+
+    // Change handling toggle:
+    //   "return" (default) — overpayment is handed back to the customer.
+    //   "keep"             — overpayment is retained as Other Income.
+    // Express change in the tender currency (what the customer paid in,
+    // matching the receipt) by converting the NGN sale total back via the
+    // rate. For NGN sales exchangeRate is 1, so this is unchanged.
+    const changeHandling = data.change_handling === "keep" ? "keep" : "return";
+    const saleTotalInTender =
+      Math.round((totalAmount / exchangeRate) * 100) / 100;
+    const overpayment =
+      Math.round(Math.max(0, totalPaid - saleTotalInTender) * 100) / 100;
+    const change = changeHandling === "keep" ? 0 : overpayment;
 
     const txNumber = await nextDocumentNumber(client, business, "receipt");
     const tx = await repo.insertTransaction(client, {
@@ -380,6 +396,7 @@ async function createTransaction(business, data, user) {
       offline_id: data.offline_id, // set only by offline-sync replay
       currency,
       exchange_rate: currency !== "NGN" ? exchangeRate : null,
+      vat_exempt: vatExempt,
     });
 
     for (let i = 0; i < data.lines.length; i++) {
@@ -412,22 +429,33 @@ async function createTransaction(business, data, user) {
       }
     }
 
+    // Persist each split with both the original tender and its NGN value.
+    // Session totals, cash-drawer reconciliation and Z-reports are all in
+    // NGN; the original amount + currency + rate are kept for the receipt
+    // and the report drill-down. For NGN sales exchangeRate is 1.
+    const toNGN = (amt) =>
+      Math.round(parseFloat(amt) * exchangeRate * 100) / 100;
     for (const p of data.payments) {
       await repo.insertPaymentSplit(client, {
         transaction_id: tx.transaction_id,
         payment_method: p.payment_method,
         amount: p.amount,
+        amount_ngn: toNGN(p.amount),
+        currency,
+        exchange_rate: currency !== "NGN" ? exchangeRate : null,
         reference: p.reference,
         paystack_reference: p.paystack_reference,
       });
     }
 
+    // Accumulate session method totals in NGN so the running figures and
+    // the close-of-day reconciliation never mix currencies.
     const transferAmt = data.payments
       .filter((p) => p.payment_method === "bank_transfer")
-      .reduce((s, p) => s + parseFloat(p.amount), 0);
+      .reduce((s, p) => s + toNGN(p.amount), 0);
     const cardAmt = data.payments
       .filter((p) => p.payment_method === "pos_card")
-      .reduce((s, p) => s + parseFloat(p.amount), 0);
+      .reduce((s, p) => s + toNGN(p.amount), 0);
     await repo.updateSessionTotals(client, {
       totalAmount,
       transferAmt,
@@ -450,6 +478,8 @@ async function createTransaction(business, data, user) {
       data.payments,
       data.lines,
       exchangeRate,
+      changeHandling,
+      vatExempt,
     );
     await postPosCOGSJournal(client, business, tx, data.lines);
 
@@ -667,7 +697,16 @@ function paymentMethodToCOA(method) {
   }
 }
 
-async function postPosRevenueJournal(client, business, tx, payments, lines, exchangeRate = 1) {
+async function postPosRevenueJournal(
+  client,
+  business,
+  tx,
+  payments,
+  lines,
+  exchangeRate = 1,
+  changeHandling = "return",
+  vatExempt = false,
+) {
   // Sum subtotal and VAT across the sale lines. We recompute here rather
   // than relying on the transaction header so the journal numbers match
   // exactly what was posted to transaction_lines.
@@ -681,7 +720,9 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
   // double-counts the rate and throws "Journal out of balance".
   let subtotal = 0;
   let vatTotal = 0;
-  const vatRate = getVatRate(business);
+  // Honour the per-sale VAT toggle so the journal's VAT matches what was
+  // booked to the transaction (zero when the sale is VAT-exempt).
+  const vatRate = vatExempt ? 0 : getVatRate(business);
   for (const l of lines) {
     const net =
       parseFloat(l.unit_price) * parseInt(l.quantity) -
@@ -711,18 +752,11 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
     debitsByAccount.set(accId, (debitsByAccount.get(accId) || 0) + amtNGN);
   }
 
-  // Reconcile the debit side to the NGN sale value. The customer tenders
-  // the NGN-equivalent of the sale and any change is returned, so the
-  // recognised receipt equals subtotal + VAT. Converting a foreign tender
-  // and rounding to 2dp leaves a sub-unit residual (rate × 0.005 ≈ several
-  // naira) that would otherwise break the DR=CR balance check; fold that
-  // residual (and any change) into the largest debit — conventionally the
-  // cash drawer, which is where change is given from.
-  const debitSum = parseFloat(
-    [...debitsByAccount.values()].reduce((s, v) => s + v, 0).toFixed(2),
-  );
-  const residual = parseFloat((saleTotalNGN - debitSum).toFixed(2));
-  if (Math.abs(residual) >= 0.01 && debitsByAccount.size > 0) {
+  // Fold an NGN amount into the largest debit (conventionally the cash
+  // drawer — where change is given from). Used to absorb sub-unit forex
+  // rounding and returned change so the entry always balances.
+  const addToLargestDebit = (delta) => {
+    if (Math.abs(delta) < 0.01 || debitsByAccount.size === 0) return;
     let largestAcc = null;
     let largestAmt = -Infinity;
     for (const [accId, amt] of debitsByAccount.entries()) {
@@ -733,8 +767,34 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
     }
     debitsByAccount.set(
       largestAcc,
-      parseFloat((largestAmt + residual).toFixed(2)),
+      parseFloat((largestAmt + delta).toFixed(2)),
     );
+  };
+
+  // Reconcile the debit (tender) side against the NGN sale value.
+  //   • "return" (default): the customer is handed any overpayment back,
+  //     so the recognised cash receipt equals subtotal + VAT. Pull the
+  //     debit side down to the sale total — this also absorbs the sub-unit
+  //     residual left by converting a 2dp foreign tender (rate × 0.005 ≈
+  //     a few naira), which would otherwise trip the DR=CR balance check.
+  //   • "keep": the customer leaves the overpayment with us. Keep the full
+  //     converted tender on the debit side and book the surplus to Other
+  //     Income, so DR (cash) = CR (revenue + VAT + other income).
+  const debitSum = parseFloat(
+    [...debitsByAccount.values()].reduce((s, v) => s + v, 0).toFixed(2),
+  );
+  let otherIncomeNGN = 0;
+  if (changeHandling === "keep") {
+    const overage = parseFloat((debitSum - saleTotalNGN).toFixed(2));
+    if (overage > 0) {
+      otherIncomeNGN = overage;
+    } else if (overage < 0) {
+      // Tender rounded a hair under the sale value — treat as forex
+      // rounding rather than negative income.
+      addToLargestDebit(-overage);
+    }
+  } else {
+    addToLargestDebit(parseFloat((saleTotalNGN - debitSum).toFixed(2)));
   }
 
   const revAcc = await journalService.getAccountId(client, "4100");
@@ -768,6 +828,27 @@ async function postPosRevenueJournal(client, business, tx, payments, lines, exch
   journalLines.push({ account_id: revAcc, debit: 0, credit: subtotalNGN });
   if (vatAcc && vatTotalNGN > 0) {
     journalLines.push({ account_id: vatAcc, debit: 0, credit: vatTotalNGN });
+  }
+
+  // Retained change → Other Income (4400). This is NOT a forex gain (which
+  // would come from a rate movement) — it is an overpayment the customer
+  // chose to leave, so it is booked as miscellaneous income.
+  if (otherIncomeNGN > 0) {
+    const otherIncAcc = await journalService.getAccountId(client, "4400");
+    if (!otherIncAcc) {
+      throw Object.assign(
+        new Error(
+          `COA account 4400 (Other Income) not found for ${business}. ` +
+            `It is required to retain change as income — seed the Chart of Accounts.`,
+        ),
+        { status: 500 },
+      );
+    }
+    journalLines.push({
+      account_id: otherIncAcc,
+      debit: 0,
+      credit: otherIncomeNGN,
+    });
   }
 
   await journalService.postEntry(client, {
@@ -934,7 +1015,9 @@ async function createInvoiceFromTransaction(business, transactionId, { due_date 
 
     // 4. Create the invoice record
     const invoiceNumber = await nextDocumentNumber(client, business, "invoice");
-    const vatRate = getVatRate(business);
+    // Mirror the sale's VAT treatment — a VAT-exempt POS sale must not have
+    // VAT re-added on its invoice.
+    const vatRate = tx.vat_exempt ? 0 : getVatRate(business);
     let subtotal = 0, vatTotal = 0;
     for (const l of tx.lines || []) {
       const net =

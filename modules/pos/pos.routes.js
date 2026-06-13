@@ -181,6 +181,8 @@ router.post(
   body("session_id").isUUID(),
   body("lines").isArray({ min: 1 }),
   body("payments").isArray({ min: 1 }),
+  body("change_handling").optional().isIn(["return", "keep"]),
+  body("apply_vat").optional().isBoolean(),
   validate,
   can("pos", "create"),
   async (req, res, next) => {
@@ -206,7 +208,11 @@ router.post(
   async (req, res, next) => {
     try {
       res.json(
-        await service.syncOfflineTransactions(req.business, req.body, req.user),
+        await service.syncOfflineTransactions(
+          req.business,
+          req.body.transactions,
+          req.user,
+        ),
       );
     } catch (e) {
       next(e);

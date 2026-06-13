@@ -32,6 +32,7 @@ interface PaymentSheetProps {
     payments: PaymentSplitInput[],
     saleCurrency: string,
     exchangeRate: number | null,
+    changeHandling: "return" | "keep",
   ) => void;
   isLoading?: boolean;
 }
@@ -55,6 +56,9 @@ export function PaymentSheet({
   const [saleCurrency, setSaleCurrency] = useState("NGN");
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [rateLoading, setRateLoading] = useState(false);
+  const [changeHandling, setChangeHandling] = useState<"return" | "keep">(
+    "return",
+  );
 
   // Fetch rate when a foreign currency is selected
   useEffect(() => {
@@ -134,7 +138,13 @@ export function PaymentSheet({
             </Button>
             <Button
               onClick={() =>
-                isReady && onConfirm(splits, saleCurrency, exchangeRate)
+                isReady &&
+                onConfirm(
+                  splits,
+                  saleCurrency,
+                  exchangeRate,
+                  change > 0 ? changeHandling : "return",
+                )
               }
               disabled={
                 !isReady ||
@@ -307,14 +317,50 @@ export function PaymentSheet({
           </button>
         )}
 
-        {/* Cash change */}
+        {/* Overpayment handling */}
         {change > 0 && (
-          <div className="rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3 flex justify-between">
-            <span className="text-sm text-green-300">Give change</span>
-            <span className="font-semibold text-green-300">
-              {symbol}
-              {change.toLocaleString("en-NG", { minimumFractionDigits: 2 })}
-            </span>
+          <div className="space-y-2 rounded-lg border border-green-500/30 bg-green-900/10 px-4 py-3">
+            <div className="flex justify-between">
+              <span className="text-sm text-green-300">
+                Overpayment ({symbol}
+                {change.toLocaleString("en-NG", { minimumFractionDigits: 2 })})
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setChangeHandling("return")}
+                className={cn(
+                  "rounded-md px-3 py-2 text-xs font-medium transition-all",
+                  changeHandling === "return"
+                    ? "border border-green-500/60 bg-green-500/10 text-green-300"
+                    : "border border-black/10 text-brand-smoke hover:border-black/20",
+                )}
+              >
+                Return change
+              </button>
+              <button
+                type="button"
+                onClick={() => setChangeHandling("keep")}
+                className={cn(
+                  "rounded-md px-3 py-2 text-xs font-medium transition-all",
+                  changeHandling === "keep"
+                    ? "border border-green-500/60 bg-green-500/10 text-green-300"
+                    : "border border-black/10 text-brand-smoke hover:border-black/20",
+                )}
+              >
+                Keep (other income)
+              </button>
+            </div>
+            <p className="text-xs text-brand-smoke/70">
+              {changeHandling === "return"
+                ? saleCurrency === "NGN"
+                  ? `Give ${symbol}${change.toLocaleString("en-NG", { minimumFractionDigits: 2 })} back to the customer.`
+                  : `Give change back — recorded as ₦${(
+                      change * (exchangeRate || 1)
+                    ).toLocaleString("en-NG", { minimumFractionDigits: 2 })} equivalent.`
+                : "Overpayment is retained and booked as other income."}
+            </p>
           </div>
         )}
       </div>

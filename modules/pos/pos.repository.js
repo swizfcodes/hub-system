@@ -123,16 +123,50 @@ async function getSessionTotals(client, sessionId) {
     rows: [totals],
   } = await client.query(
     `SELECT
-       COALESCE(SUM(ps.amount) FILTER (WHERE ps.payment_method='cash'),0)         AS cash_total,
-       COALESCE(SUM(ps.amount) FILTER (WHERE ps.payment_method='bank_transfer'),0) AS transfer_total,
-       COALESCE(SUM(ps.amount) FILTER (WHERE ps.payment_method='pos_card'),0)      AS card_total,
-       COALESCE(SUM(ps.amount),0)                                                  AS total_revenue
+       COALESCE(SUM(ps.amount_ngn) FILTER (WHERE ps.payment_method='cash'),0)          AS cash_total,
+       COALESCE(SUM(ps.amount_ngn) FILTER (WHERE ps.payment_method='bank_transfer'),0) AS transfer_total,
+       COALESCE(SUM(ps.amount_ngn) FILTER (WHERE ps.payment_method='pos_card'),0)      AS card_total,
+       COALESCE(SUM(ps.amount_ngn),0)                                                  AS total_revenue
      FROM pos_transactions pt
      JOIN pos_payment_splits ps ON ps.transaction_id = pt.transaction_id
      WHERE pt.session_id=$1 AND pt.status='completed'`,
     [sessionId],
   );
   return totals;
+}
+
+// Per-currency breakdown of any non-NGN tender taken during a session.
+// Drives the report drill-down: shows the original foreign amount, the
+// exchange rate the system applied, the sale date, and the NGN value it
+// was reconciled at — so a "$1,000 cash" line can be traced to the rate
+// and day it was booked.
+async function getSessionForeignTender(client, sessionId) {
+  const { rows } = await client.query(
+    `SELECT ps.currency,
+            ps.payment_method,
+            ps.exchange_rate,
+            pt.created_at::date                  AS tender_date,
+            SUM(ps.amount)                       AS original_amount,
+            SUM(ps.amount_ngn)                   AS ngn_amount,
+            COUNT(*)                             AS split_count
+     FROM pos_transactions pt
+     JOIN pos_payment_splits ps ON ps.transaction_id = pt.transaction_id
+     WHERE pt.session_id=$1 AND pt.status='completed'
+       AND ps.currency IS NOT NULL AND ps.currency <> 'NGN'
+     GROUP BY ps.currency, ps.payment_method, ps.exchange_rate,
+              pt.created_at::date
+     ORDER BY ps.currency, tender_date`,
+    [sessionId],
+  );
+  return rows.map((r) => ({
+    currency: r.currency,
+    payment_method: r.payment_method,
+    exchange_rate: parseFloat(r.exchange_rate || 0),
+    tender_date: r.tender_date,
+    original_amount: parseFloat(r.original_amount || 0),
+    ngn_amount: parseFloat(r.ngn_amount || 0),
+    split_count: parseInt(r.split_count, 10),
+  }));
 }
 
 async function closeSession(
@@ -268,6 +302,7 @@ async function insertTransaction(
     offline_id,
     currency,
     exchange_rate,
+    vat_exempt,
   },
 ) {
   const {
@@ -277,8 +312,8 @@ async function insertTransaction(
        (transaction_number, session_id, contact_id, served_by,
         subtotal, discount_total, vat_amount, total_amount, amount_paid,
         change_given, fulfilment_type, status, currency, exchange_rate,
-        offline_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed',$12,$13,$14)
+        offline_id, vat_exempt)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'completed',$12,$13,$14,$15)
      RETURNING *`,
     [
       txNumber,
@@ -295,6 +330,7 @@ async function insertTransaction(
       currency || "NGN",
       exchange_rate || null,
       offline_id || null,
+      vat_exempt || false,
     ],
   );
   return tx;
@@ -345,14 +381,31 @@ async function insertTransactionLine(
 
 async function insertPaymentSplit(
   client,
-  { transaction_id, payment_method, amount, reference, paystack_reference },
+  {
+    transaction_id,
+    payment_method,
+    amount,
+    amount_ngn,
+    currency,
+    exchange_rate,
+    reference,
+    paystack_reference,
+  },
 ) {
   await client.query(
-    `INSERT INTO pos_payment_splits (transaction_id, payment_method, amount, reference, paystack_reference, confirmed) VALUES ($1,$2,$3,$4,$5,$6)`,
+    `INSERT INTO pos_payment_splits
+       (transaction_id, payment_method, amount, amount_ngn, currency,
+        exchange_rate, reference, paystack_reference, confirmed)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
     [
       transaction_id,
       payment_method,
       amount,
+      // Fall back to the tendered amount when no NGN-equivalent is given
+      // (NGN sales) so the column is always populated.
+      amount_ngn != null ? amount_ngn : amount,
+      currency || "NGN",
+      exchange_rate || null,
       reference || null,
       paystack_reference || null,
       payment_method !== "bank_transfer",
@@ -378,6 +431,24 @@ async function findTransactionById(client, transactionId) {
     [transactionId],
   );
   return tx || null;
+}
+
+async function voidTransaction(client, { transactionId, userId, void_reason }) {
+  const {
+    rows: [tx],
+  } = await client.query(
+    `UPDATE pos_transactions SET status='voided', voided_by=$1, void_reason=$2 WHERE transaction_id=$3 AND status='completed' RETURNING *`,
+    [userId, void_reason, transactionId],
+  );
+  return tx || null;
+}
+
+async function getTransactionProductLines(client, transactionId) {
+  const { rows } = await client.query(
+    `SELECT product_id, quantity FROM pos_transaction_lines WHERE transaction_id=$1 AND product_id IS NOT NULL`,
+    [transactionId],
+  );
+  return rows;
 }
 
 async function findInvoiceByPosTransactionId(client, transactionId) {
@@ -406,24 +477,6 @@ async function findPrimaryBankAccount(client, business) {
   return acct || null;
 }
 
-async function voidTransaction(client, { transactionId, userId, void_reason }) {
-  const {
-    rows: [tx],
-  } = await client.query(
-    `UPDATE pos_transactions SET status='voided', voided_by=$1, void_reason=$2 WHERE transaction_id=$3 AND status='completed' RETURNING *`,
-    [userId, void_reason, transactionId],
-  );
-  return tx || null;
-}
-
-async function getTransactionProductLines(client, transactionId) {
-  const { rows } = await client.query(
-    `SELECT product_id, quantity FROM pos_transaction_lines WHERE transaction_id=$1 AND product_id IS NOT NULL`,
-    [transactionId],
-  );
-  return rows;
-}
-
 module.exports = {
   getTerminals,
   findTerminalById,
@@ -435,6 +488,7 @@ module.exports = {
   insertSession,
   findSessionById,
   getSessionTotals,
+  getSessionForeignTender,
   closeSession,
   getSessionTxCount,
   insertSessionSummary,
@@ -448,8 +502,8 @@ module.exports = {
   insertPaymentSplit,
   updateSessionTotals,
   findTransactionById,
-  findInvoiceByPosTransactionId,
-  findPrimaryBankAccount,
   voidTransaction,
   getTransactionProductLines,
+  findInvoiceByPosTransactionId,
+  findPrimaryBankAccount,
 };
