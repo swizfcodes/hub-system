@@ -16,12 +16,16 @@ const q = (prompt) => new Promise((resolve) => rl.question(prompt, resolve));
   console.log("\n── Create Hub Admin User ──\n");
 
   const email = await q("Email: ");
-  const password = await q("Password (min 12 chars): ");
+  const password = await q(
+    "Password (min 8 chars, incl. an uppercase letter and a number): ",
+  );
   const business =
     (await q("Default business [jewelry/diffusers]: ")) || "jewelry";
 
-  if (password.length < 12) {
-    console.error("Password too short (min 12 characters)");
+  if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+    console.error(
+      "Password must be at least 8 characters and include an uppercase letter and a number",
+    );
     process.exit(1);
   }
 

@@ -17,13 +17,19 @@ import {
 } from "lucide-react";
 import {
   login,
+  loginWithPin,
   storeToken,
   storeUser,
   forgotPassword,
   resetPassword,
+  rememberAccount,
+  getRememberedAccount,
+  forgetAccount,
+  isPinEnabledLocally,
 } from "@services/auth";
 import { useAuthStore } from "@stores/useAuthStore";
 import { errMsg } from "@services/api";
+import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
 
 // ── Quotes ────────────────────────────────────────────────────────────────────
 const QUOTES = [
@@ -241,8 +247,21 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
 
+  // ── Quick-login PIN ──
+  // "pin" mode shows a 6-digit pad for the remembered account; "password" is
+  // the classic email + password form.
+  const [remembered, setRemembered] = useState(() => getRememberedAccount());
+  const [loginMode, setLoginMode] = useState<"password" | "pin">("password");
+  const [pin, setPin] = useState("");
+
   function openLogin() {
     setError(null);
+    setPin("");
+    const acct = getRememberedAccount();
+    setRemembered(acct);
+    // Offer the PIN pad only when a PIN was set up on this device.
+    setLoginMode(acct && isPinEnabledLocally() ? "pin" : "password");
+    if (acct?.email) setEmail(acct.email);
     setLoginModalOpen(true);
   }
   function closeLogin() {
@@ -250,8 +269,22 @@ export default function Login() {
     // BUG FIX: clear credentials + error so they don't persist across sessions
     setEmail("");
     setPassword("");
+    setPin("");
     setError(false as unknown as null);
     setShowPassword(false);
+  }
+
+  // Persist tokens/user, remember this device's account, and enter the app.
+  // Shared by both password and PIN sign-in.
+  function finishLogin(data: Awaited<ReturnType<typeof login>>) {
+    storeToken(data.accessToken, rememberMe);
+    storeUser(data.user);
+    rememberAccount({
+      email: data.user.email || email,
+      display_name: data.user.display_name,
+    });
+    setUser(data.user as never);
+    navigate("/");
   }
   function openForgot() {
     setLoginModalOpen(false);
@@ -286,16 +319,49 @@ export default function Login() {
     setIsLoading(true);
     try {
       const data = await login({ email, password });
-      storeToken(data.accessToken, rememberMe);
-      storeUser(data.user);
-      setUser(data.user as never);
-      navigate("/");
+      finishLogin(data);
     } catch (err) {
       triggerShake();
       setError(errMsg(err, "Invalid credentials. Please try again."));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // PIN sign-in for the remembered account. Auto-submitted once 6 digits are in.
+  const handlePinLogin = async (rawPin: string) => {
+    const acct = remembered;
+    if (!acct?.email || rawPin.length !== 6 || isLoading) return;
+    setError(null);
+    setIsLoading(true);
+    try {
+      const data = await loginWithPin(acct.email, rawPin);
+      finishLogin(data);
+    } catch (err) {
+      triggerShake();
+      setPin("");
+      setError(errMsg(err, "Incorrect PIN. Please try again."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Switch from the PIN pad to the full password form (PIN stays set up).
+  const usePasswordInstead = () => {
+    setLoginMode("password");
+    setPin("");
+    setPassword("");
+    setError(null);
+  };
+
+  // "Not you?" — forget this device's account and clear the PIN shortcut.
+  const useDifferentAccount = () => {
+    forgetAccount();
+    setRemembered(null);
+    setEmail("");
+    setLoginMode("password");
+    setPin("");
+    setError(null);
   };
 
   // Track mounted state so async handlers never setState after unmount
@@ -334,8 +400,9 @@ export default function Login() {
       setForgotError("Enter the 6-digit code from your email.");
       return;
     }
-    if (forgotNewPassword.length < 12) {
-      setForgotError("New password must be at least 12 characters.");
+    const pwCheck = checkPassword(forgotNewPassword);
+    if (!pwCheck.ok) {
+      setForgotError(pwCheck.error || PASSWORD_RULES_TEXT);
       return;
     }
     setIsLoading(true);
@@ -585,10 +652,14 @@ export default function Login() {
             </div>
 
             <h2 className="font-display font-light text-3xl text-center text-brand-black mb-1">
-              Welcome back
+              {loginMode === "pin" && remembered?.display_name
+                ? `Welcome back, ${remembered.display_name.split(" ")[0]}`
+                : "Welcome back"}
             </h2>
             <p className="font-light text-xs text-center text-brand-smoke mb-8">
-              Secure access to {platform.product_name}
+              {loginMode === "pin"
+                ? "Enter your 6-digit PIN to continue"
+                : `Secure access to ${platform.product_name}`}
             </p>
 
             {error && (
@@ -600,6 +671,58 @@ export default function Login() {
               </div>
             )}
 
+            {/* ── PIN pad (quick login) ── */}
+            {loginMode === "pin" && (
+              <div>
+                <div className={shake ? "animate-shake" : ""}>
+                  <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-2 ml-1 text-center">
+                    Quick login PIN
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    value={pin}
+                    disabled={isLoading}
+                    maxLength={6}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setPin(next);
+                      if (next.length === 6) handlePinLogin(next);
+                    }}
+                    className="w-full bg-white border border-brand-cloud/40 rounded-xl py-4 text-center text-3xl font-mono tracking-[0.5em] text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm disabled:opacity-60"
+                    placeholder="••••••"
+                    aria-label="6-digit PIN"
+                  />
+                </div>
+
+                {isLoading && (
+                  <div className="flex justify-center mt-5">
+                    <span className="w-5 h-5 border-2 border-brand-cloud border-t-brand-black rounded-full animate-[spin_0.7s_linear_infinite]" />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mt-8 px-1">
+                  <button
+                    type="button"
+                    onClick={useDifferentAccount}
+                    className="text-xs font-medium text-brand-smoke hover:text-brand-black transition-colors"
+                  >
+                    Not you?
+                  </button>
+                  <button
+                    type="button"
+                    onClick={usePasswordInstead}
+                    className="text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
+                  >
+                    Use password instead
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {loginMode === "password" && (
             <form onSubmit={handleLogin} noValidate>
               <div className="mb-5">
                 <label className="block font-medium text-[0.65rem] tracking-widest uppercase text-brand-smoke mb-2 ml-1">
@@ -686,7 +809,24 @@ export default function Login() {
                   </span>
                 )}
               </button>
+
+              {/* Offer the PIN shortcut when one is set up on this device. */}
+              {remembered && isPinEnabledLocally() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setPin("");
+                    setEmail(remembered.email);
+                    setLoginMode("pin");
+                  }}
+                  className="w-full mt-4 text-xs font-medium text-brand-black hover:text-brand-accent transition-colors"
+                >
+                  Use 6-digit PIN instead
+                </button>
+              )}
             </form>
+            )}
           </div>
         </div>
       )}

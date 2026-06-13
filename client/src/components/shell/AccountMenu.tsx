@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import {
   LogOut,
   KeyRound,
+  Hash,
   Camera,
   User,
   CalendarClock,
@@ -10,7 +11,6 @@ import {
   Eye,
   EyeOff,
   Mail,
-  Hash,
   Phone,
   Briefcase,
   Building2,
@@ -25,11 +25,17 @@ import {
   fetchMe,
   updateMyProfile,
   type MyProfile,
+  getPinStatus,
+  setPin as setPinApi,
+  removePin as removePinApi,
+  setPinEnabledLocally,
+  rememberAccount,
 } from "@services/auth";
 import { uploadAvatar } from "@services/uploads";
 import { initialsOf } from "@lib/format";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
+import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
 import { cn } from "@lib/cn";
 
 interface Props {
@@ -44,6 +50,7 @@ export function AccountMenu({ collapsed }: Props) {
   const [open, setOpen] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -168,6 +175,14 @@ export function AccountMenu({ collapsed }: Props) {
               }}
             />
             <MenuItem
+              icon={<Hash className="w-3.5 h-3.5" />}
+              label="Quick login PIN"
+              onClick={() => {
+                setOpen(false);
+                setShowPinModal(true);
+              }}
+            />
+            <MenuItem
               icon={<User className="w-3.5 h-3.5" />}
               label="My profile"
               onClick={() => {
@@ -213,6 +228,15 @@ export function AccountMenu({ collapsed }: Props) {
         <ProfileModal
           onClose={() => setShowProfile(false)}
           onPickPhoto={() => fileRef.current?.click()}
+        />
+      )}
+
+      {/* Quick-login PIN modal */}
+      {showPinModal && (
+        <PinModal
+          email={user?.email}
+          displayName={user?.display_name}
+          onClose={() => setShowPinModal(false)}
         />
       )}
     </div>
@@ -521,9 +545,10 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
 
+  const pwCheck = checkPassword(newPw);
   const mismatch = confirm.length > 0 && newPw !== confirm;
-  const tooShort = newPw.length > 0 && newPw.length < 12;
-  const canSubmit = current && newPw.length >= 12 && newPw === confirm && !loading;
+  const weak = newPw.length > 0 && !pwCheck.ok;
+  const canSubmit = !!current && pwCheck.ok && newPw === confirm && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -595,7 +620,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 value={newPw}
                 onChange={(e) => setNewPw(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 pr-10"
-                placeholder="Minimum 12 characters"
+                placeholder={PASSWORD_RULES_TEXT}
               />
               <button
                 type="button"
@@ -605,9 +630,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {tooShort && (
+            {weak && (
               <p className="text-xs text-state-danger mt-1 ml-0.5">
-                Must be at least 12 characters
+                {pwCheck.error}
               </p>
             )}
           </div>
@@ -651,6 +676,212 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             )}
           >
             {loading ? "Changing…" : "Change password"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// ── Quick-login PIN modal ─────────────────────────────────────────────────────
+// Set, replace, or remove the 6-digit PIN. Setting requires the current
+// password (the backend enforces this too). On success we flag this device so
+// the login screen offers the PIN shortcut for this account.
+function PinModal({
+  email,
+  displayName,
+  onClose,
+}: {
+  email?: string;
+  displayName?: string;
+  onClose: () => void;
+}) {
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [pinSet, setPinSet] = useState(false);
+  const [current, setCurrent] = useState("");
+  const [pin, setPin] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    getPinStatus()
+      .then((s) => alive && setPinSet(s.pinSet))
+      .catch(() => {})
+      .finally(() => alive && setStatusLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const onlyDigits = (v: string) => v.replace(/\D/g, "").slice(0, 6);
+  const pinValid = /^\d{6}$/.test(pin);
+  const mismatch = confirm.length > 0 && pin !== confirm;
+  const canSubmit = !!current && pinValid && pin === confirm && !busy;
+
+  const rememberThisDevice = () => {
+    setPinEnabledLocally(true);
+    if (email) rememberAccount({ email, display_name: displayName });
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setBusy(true);
+    try {
+      await setPinApi(current, pin);
+      rememberThisDevice();
+      showToast.success(
+        pinSet ? "PIN updated" : "PIN created",
+        "Use it for quick sign-in on this device.",
+      );
+      onClose();
+    } catch (err) {
+      showToast.error("Failed", errMsg(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setBusy(true);
+    try {
+      await removePinApi();
+      setPinEnabledLocally(false);
+      showToast.success("PIN removed");
+      onClose();
+    } catch (err) {
+      showToast.error("Failed", errMsg(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-brand-black/70 backdrop-blur-sm animate-fade-in">
+      <form
+        onSubmit={handleSave}
+        className="w-full max-w-md mx-4 bg-brand-charcoal border border-brand-graphite rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-graphite/50">
+          <h2 className="font-display text-xl text-brand-cream">
+            {pinSet ? "Update quick-login PIN" : "Set up quick-login PIN"}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-brand-smoke hover:text-brand-cream transition-colors rounded-lg"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-5 space-y-4">
+          <p className="text-xs text-brand-smoke leading-relaxed">
+            A 6-digit PIN lets you sign in quickly on this device without typing
+            your full password. You&apos;ll still need your password on new
+            devices.
+          </p>
+
+          {/* Current password */}
+          <div>
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
+              Current password
+            </label>
+            <div className="relative">
+              <input
+                type={showCurrent ? "text" : "password"}
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40 pr-10"
+                placeholder="Confirm it's you"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-smoke hover:text-brand-cream"
+              >
+                {showCurrent ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* New PIN */}
+          <div>
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
+              {pinSet ? "New 6-digit PIN" : "6-digit PIN"}
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={pin}
+              onChange={(e) => setPin(onlyDigits(e.target.value))}
+              maxLength={6}
+              className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
+              placeholder="••••••"
+            />
+          </div>
+
+          {/* Confirm PIN */}
+          <div>
+            <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
+              Confirm PIN
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={confirm}
+              onChange={(e) => setConfirm(onlyDigits(e.target.value))}
+              maxLength={6}
+              className="w-full px-3 py-2.5 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
+              placeholder="••••••"
+            />
+            {mismatch && (
+              <p className="text-xs text-state-danger mt-1 ml-0.5">
+                PINs do not match
+              </p>
+            )}
+          </div>
+
+          {pinSet && !statusLoading && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={busy}
+              className="text-xs font-medium text-state-danger hover:underline disabled:opacity-50"
+            >
+              Remove PIN from my account
+            </button>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 px-5 py-4 border-t border-brand-graphite/50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-brand-smoke hover:text-brand-cream transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className={cn(
+              "px-5 py-2 rounded-xl text-sm font-semibold transition-all",
+              canSubmit
+                ? "bg-brand-accent text-brand-black hover:brightness-110"
+                : "bg-brand-graphite text-brand-smoke cursor-not-allowed",
+            )}
+          >
+            {busy ? "Saving…" : pinSet ? "Update PIN" : "Set PIN"}
           </button>
         </div>
       </form>
