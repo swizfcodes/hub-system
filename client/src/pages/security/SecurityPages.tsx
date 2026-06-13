@@ -895,11 +895,16 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { verifyInviteToken, acceptInvite } from "@services/security";
+import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
 
 const acceptSchema = z
   .object({
     display_name: z.string().min(2, "Your name is required"),
-    password: z.string().min(12, "Password must be at least 12 characters"),
+    password: z
+      .string()
+      .refine((pw) => checkPassword(pw).ok, {
+        message: PASSWORD_RULES_TEXT,
+      }),
     confirm_password: z.string(),
   })
   .refine((d) => d.password === d.confirm_password, {
@@ -1054,7 +1059,7 @@ export function AcceptInvitePage() {
                   label="Password *"
                   type={showPassword ? "text" : "password"}
                   surface="dark"
-                  hint="Minimum 12 characters"
+                  hint={PASSWORD_RULES_TEXT}
                   rightSlot={
                     <button
                       type="button"

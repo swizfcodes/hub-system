@@ -103,6 +103,26 @@ async function createDelivery(business, data, user) {
         { status: 400 },
       );
     }
+    // Idempotency guard — a single sale must never spawn two deliveries.
+    // Both the sales auto-push (on order creation) and a manual "hand to
+    // logistics" call this with the same order reference; if a delivery
+    // already exists for that order (and hasn't failed/returned), reuse it
+    // instead of creating a duplicate.
+    if (data.reference_type !== "manual" && data.reference_id) {
+      const existing = await repo.findActiveDeliveryByReference(
+        client,
+        data.reference_type,
+        data.reference_id,
+      );
+      if (existing) {
+        logger.info(
+          `[logistics] delivery ${existing.delivery_number} already exists for ` +
+            `${data.reference_type} ${data.reference_id} — reusing instead of creating a duplicate`,
+        );
+        return existing;
+      }
+    }
+
     // Carry the address (and contact) through from the source order so
     // staff never re-key what the customer already gave at checkout. The
     // sales order / POS transaction already holds delivery_address; only

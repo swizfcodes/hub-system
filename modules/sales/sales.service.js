@@ -770,6 +770,15 @@ async function createDirectOrder(business, data, user) {
         },
         user,
       );
+      // The order is now in the logistics queue. Move it past 'confirmed'
+      // so the order screen no longer offers a "Hand to Logistics" action —
+      // doing so created a SECOND delivery for the same sale.
+      await require("../../config/db").pool.query(
+        `UPDATE ${business}.sales_orders
+            SET status = 'awaiting_dispatch', updated_at = now()
+          WHERE order_id = $1 AND status = 'confirmed'`,
+        [result.order_id],
+      );
     } catch (err) {
       logger.error(`[logistics] auto-create delivery failed for order ${result.order_id}: ${err.message}`);
     }
