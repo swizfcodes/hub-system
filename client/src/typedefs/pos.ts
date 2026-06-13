@@ -227,6 +227,19 @@ export interface XReport {
     cash_sales: number;
     expected_cash_on_hand: number;
   };
+  foreign_tender: ForeignTenderLine[];
+}
+
+// A non-NGN tender taken during the session, with the rate and date the
+// system used to convert it to the NGN value shown in the report totals.
+export interface ForeignTenderLine {
+  currency: string;
+  payment_method: string;
+  exchange_rate: number;
+  tender_date: string;
+  original_amount: number;
+  ngn_amount: number;
+  split_count: number;
 }
 
 export interface ZReport extends Omit<

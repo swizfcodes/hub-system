@@ -429,22 +429,33 @@ async function createTransaction(business, data, user) {
       }
     }
 
+    // Persist each split with both the original tender and its NGN value.
+    // Session totals, cash-drawer reconciliation and Z-reports are all in
+    // NGN; the original amount + currency + rate are kept for the receipt
+    // and the report drill-down. For NGN sales exchangeRate is 1.
+    const toNGN = (amt) =>
+      Math.round(parseFloat(amt) * exchangeRate * 100) / 100;
     for (const p of data.payments) {
       await repo.insertPaymentSplit(client, {
         transaction_id: tx.transaction_id,
         payment_method: p.payment_method,
         amount: p.amount,
+        amount_ngn: toNGN(p.amount),
+        currency,
+        exchange_rate: currency !== "NGN" ? exchangeRate : null,
         reference: p.reference,
         paystack_reference: p.paystack_reference,
       });
     }
 
+    // Accumulate session method totals in NGN so the running figures and
+    // the close-of-day reconciliation never mix currencies.
     const transferAmt = data.payments
       .filter((p) => p.payment_method === "bank_transfer")
-      .reduce((s, p) => s + parseFloat(p.amount), 0);
+      .reduce((s, p) => s + toNGN(p.amount), 0);
     const cardAmt = data.payments
       .filter((p) => p.payment_method === "pos_card")
-      .reduce((s, p) => s + parseFloat(p.amount), 0);
+      .reduce((s, p) => s + toNGN(p.amount), 0);
     await repo.updateSessionTotals(client, {
       totalAmount,
       transferAmt,
