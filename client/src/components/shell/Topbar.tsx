@@ -8,6 +8,7 @@ import {
   useUnreadCount,
 } from "@components/notifications/NotificationsPanel";
 import { CommandPalette } from "@components/search/CommandPalette";
+import { ClockWidget } from "@components/hr/ClockWidget";
 import { cn } from "@lib/cn";
 
 export interface TopbarProps {
@@ -78,6 +79,9 @@ export function Topbar({ title, subtitle }: TopbarProps) {
         </div>
 
         {!isDesktop && <BusinessSwitcher variant="compact" />}
+
+        {/* Clock in / out — only renders for linked staff accounts */}
+        <ClockWidget compact={!isDesktop} />
 
         {/* Search bar — hidden on mobile */}
         <button

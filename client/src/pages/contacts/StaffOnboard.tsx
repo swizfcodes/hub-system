@@ -27,6 +27,8 @@ import {
 } from "@lib/schemas/staff";
 import { createStaff } from "@services/contacts/staff";
 import { getContact } from "@services/contacts/contacts";
+import { WEEK_DAYS } from "@components/hr/HrShared";
+import type { DayMode, WorkSchedule } from "@services/hr";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
 import type { Contact } from "@typedefs/contacts";
 import { listStaff } from "@services/contacts/staff";
@@ -57,12 +59,34 @@ const DEPARTMENTS = [
   { value: "customer_service", label: "Customer Service" },
 ];
 
+// Derive the overall arrangement from the weekly day pattern: all working
+// days remote → remote, all on-site → on_site, otherwise hybrid.
+function deriveArrangement(ws: WorkSchedule): "on_site" | "remote" | "hybrid" {
+  const modes = Object.values(ws).filter((m) => m && m !== "off") as DayMode[];
+  if (!modes.length) return "on_site";
+  if (modes.every((m) => m === "remote")) return "remote";
+  if (modes.every((m) => m === "on_site")) return "on_site";
+  return "hybrid";
+}
+
 export default function StaffOnboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [params] = useSearchParams();
   const active = useBusinessStore((s) => s.active);
   const [stepIndex, setStepIndex] = useState(0);
+  // Work schedule set at onboarding — defaults to Mon–Fri on-site.
+  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>({
+    mon: "on_site",
+    tue: "on_site",
+    wed: "on_site",
+    thu: "on_site",
+    fri: "on_site",
+    sat: "off",
+    sun: "off",
+  });
+  const [expectedStart, setExpectedStart] = useState("09:00");
+  const [graceMinutes, setGraceMinutes] = useState("15");
   const [credentials, setCredentials] =
     useState<StaffOnboardResult["credentials"]>(null);
   // Onboarding an existing directory contact (e.g. from their profile's
@@ -152,6 +176,11 @@ export default function StaffOnboard() {
         pension_pin: v.pension_pin || undefined,
         nhf_number: v.nhf_number || undefined,
         tax_id: v.tax_id || undefined,
+        // Work schedule — derive the arrangement from the picked days.
+        work_schedule: workSchedule,
+        work_location_type: deriveArrangement(workSchedule),
+        expected_start_time: expectedStart || undefined,
+        grace_minutes: Number(graceMinutes) || 0,
       }) as Promise<StaffOnboardResult>,
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["contacts"] });
@@ -383,6 +412,69 @@ export default function StaffOnboard() {
                       }))}
                     className="sm:col-span-2"
                   />
+                </div>
+
+                {/* Work schedule — set where they work each day on hire */}
+                <div className="rounded-2xl border border-white/5 bg-brand-charcoal/40 p-4">
+                  <h4 className="text-sm font-semibold text-brand-cream">
+                    Work schedule
+                  </h4>
+                  <p className="mb-3 text-xs text-brand-smoke">
+                    Set on-site / remote / off days. Attendance only expects a
+                    clock-in on working days; office days are geofence-checked.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                    {WEEK_DAYS.map(({ key, label }) => (
+                      <div key={key} className="rounded-xl border border-white/5 p-2">
+                        <div className="mb-1 text-center text-xs font-semibold text-brand-cream">
+                          {label}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {(
+                            [
+                              { value: "on_site", label: "Office" },
+                              { value: "remote", label: "Remote" },
+                              { value: "off", label: "Off" },
+                            ] as { value: DayMode; label: string }[]
+                          ).map((m) => {
+                            const selected = (workSchedule[key] || "off") === m.value;
+                            return (
+                              <button
+                                key={m.value}
+                                type="button"
+                                onClick={() =>
+                                  setWorkSchedule((s) => ({ ...s, [key]: m.value }))
+                                }
+                                className={
+                                  "rounded-md px-1.5 py-1 text-[0.65rem] transition-colors " +
+                                  (selected
+                                    ? "bg-accent3 text-brand-black font-semibold"
+                                    : "bg-brand-graphite/50 text-brand-smoke hover:bg-brand-graphite")
+                                }
+                              >
+                                {m.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-xs">
+                    <Input
+                      type="time"
+                      label="Expected start"
+                      value={expectedStart}
+                      onChange={(e) => setExpectedStart(e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      label="Grace (min)"
+                      value={graceMinutes}
+                      onChange={(e) => setGraceMinutes(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             )}

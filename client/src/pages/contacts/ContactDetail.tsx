@@ -12,6 +12,10 @@ import { EmploymentTab } from "@components/contacts/employment/EmploymentTab";
 import { ContractsTab } from "@components/contacts/employment/ContractsTab";
 import { AssetsTab } from "@components/contacts/employment/AssetsTab";
 import { AccessTab } from "@components/contacts/employment/AccessTab";
+import { ScheduleEditor } from "@components/hr/ScheduleEditor";
+import { AttendancePanel } from "@components/hr/AttendancePanel";
+import { PerformancePanel } from "@components/hr/PerformancePanel";
+import { QueriesPanel } from "@components/hr/QueriesPanel";
 import { useStaffByContact } from "@components/contacts/employment/useStaffByContact";
 import { getContact } from "@services/contacts/contacts";
 import { UserX } from "lucide-react";
@@ -79,6 +83,10 @@ export default function ContactDetail() {
                   isStaff
                     ? [
                         { key: "employment", label: "Employment" },
+                        { key: "schedule", label: "Schedule" },
+                        { key: "attendance", label: "Attendance" },
+                        { key: "performance", label: "Performance" },
+                        { key: "queries", label: "Queries" },
                         { key: "contracts", label: "Contracts" },
                         { key: "assets", label: "Assets" },
                         { key: "access", label: "Access" },
@@ -89,6 +97,18 @@ export default function ContactDetail() {
                   isStaff && staff
                     ? {
                         employment: () => <EmploymentTab staff={staff} />,
+                        schedule: () => (
+                          <ScheduleEditor profileId={staff.profile_id} />
+                        ),
+                        attendance: () => (
+                          <AttendancePanel mode="manage" profileId={staff.profile_id} />
+                        ),
+                        performance: () => (
+                          <PerformancePanel profileId={staff.profile_id} />
+                        ),
+                        queries: () => (
+                          <QueriesPanel mode="manage" profileId={staff.profile_id} />
+                        ),
                         contracts: () => (
                           <ContractsTab profileId={staff.profile_id} />
                         ),
