@@ -20,10 +20,11 @@ import { cn } from "@lib/cn";
 export function AppShell() {
   const { sidebarCollapsed } = useUiStore();
   const isDesktop = useIsDesktop();
-  const { user, isHydrated, hydrate } = useAuthStore((s) => ({
+  const { user, isHydrated, hydrate, refreshFromServer } = useAuthStore((s) => ({
     user: s.user,
     isHydrated: s.isHydrated,
     hydrate: s.hydrate,
+    refreshFromServer: s.refreshFromServer,
   }));
 
   const { pathname } = useLocation();
@@ -38,6 +39,13 @@ export function AppShell() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Once a cached user is in place, pull the canonical name/avatar from the
+  // server so the sidebar and greeting reflect the DB rather than a stale
+  // login snapshot.
+  useEffect(() => {
+    if (isHydrated && user) refreshFromServer();
+  }, [isHydrated, user?.user_id, refreshFromServer]); // eslint-disable-line react-hooks/exhaustive-deps
   useActiveBusiness();
 
   // Real-time socket — connect once the user is known, drop on sign-out.
