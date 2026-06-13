@@ -89,6 +89,8 @@ CREATE TABLE {{BUSINESS}}.payroll_runs (
   period_year           SMALLINT    NOT NULL CHECK (period_year >= 2020),
   status                TEXT        NOT NULL DEFAULT 'draft'
                         CHECK (status IN ('draft','under_review','approved','paid')),
+  mode                  TEXT        NOT NULL DEFAULT 'full_paye'
+                        CHECK (mode IN ('full_paye','simplified')),
   total_gross           NUMERIC(14,2) NOT NULL DEFAULT 0,
   total_paye            NUMERIC(12,2) NOT NULL DEFAULT 0,
   total_pension_employee NUMERIC(12,2) NOT NULL DEFAULT 0,

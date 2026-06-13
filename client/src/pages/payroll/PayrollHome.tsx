@@ -65,6 +65,7 @@ export default function PayrollHome() {
       initiateRun({
         period_month: parseInt(month),
         period_year: parseInt(year),
+        mode,
       }),
     onSuccess: (run) => {
       showToast.success(`Payroll run ${run.run_number} initiated`);
@@ -162,9 +163,9 @@ export default function PayrollHome() {
                         {fmtMoney(run.total_net, currency)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-brand-smoke">
-                        {mode === "full_paye"
-                          ? fmtMoney(run.total_paye, currency)
-                          : "—"}
+                        {run.mode === "simplified"
+                          ? "—"
+                          : fmtMoney(run.total_paye, currency)}
                       </td>
                       <td className="px-4 py-3">
                         <RunStatusBadge status={run.status} size="xs" />
@@ -228,7 +229,7 @@ export default function PayrollHome() {
               <p className="text-xs text-text-on-light-muted mt-0.5">
                 {mode === "full_paye"
                   ? "PAYE, pension, and NHF will be calculated automatically."
-                  : "Net salary = Gross salary. No statutory deductions."}
+                  : "No PAYE, pension, or NHF. Outstanding advances and unpaid leave are still recovered."}
               </p>
             </div>
 

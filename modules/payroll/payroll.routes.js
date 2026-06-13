@@ -28,6 +28,7 @@ router.post(
   "/runs",
   body("period_month").isInt({ min: 1, max: 12 }),
   body("period_year").isInt({ min: MIN_YEAR, max: MAX_YEAR }),
+  body("mode").optional().isIn(["full_paye", "simplified"]),
   validate,
   can("payroll", "create"),
   async (req, res, next) => {

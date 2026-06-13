@@ -2,7 +2,7 @@
 // API wrappers for the Payroll module — runs, payslips, compliance outputs.
 
 import { api } from "@services/api";
-import type { PayrollRun, Payslip } from "@typedefs/payroll";
+import type { PayrollRun, Payslip, PayrollMode } from "@typedefs/payroll";
 
 
 export interface PayrollRunListResponse {
@@ -31,6 +31,7 @@ export async function getRun(id: string): Promise<PayrollRun | null> {
 export async function initiateRun(payload: {
   period_month: number;
   period_year: number;
+  mode: PayrollMode;
 }): Promise<PayrollRun> {
   const { data } = await api.post<PayrollRun>("/payroll/runs", payload);
   return data;
