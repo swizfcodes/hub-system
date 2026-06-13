@@ -6,6 +6,7 @@ const { renderToPDF } = require("../../lib/pdf/generator");
 const { withSharedContext } = require("../../config/db");
 const logger = require("../../config/logger");
 const contactsService = require("../contacts/contacts.service");
+const documentsService = require("../documents/documents.service");
 const auditService = require("../audit/audit.service");
 const notifService = require("../notifications/notifications.service");
 const repo = require("./staff.repository");
@@ -215,10 +216,12 @@ async function createStaff(data, user) {
     }
 
     // Optional initial contract — auto-generated on hire so every employee
-    // has a contract record from the start (the PDF is then one click away
-    // via /staff/:id/contracts/:contractId/pdf).
+    // has a contract record from the start. The signed contract PDF is
+    // rendered and archived as a document immediately after this
+    // transaction commits (see below).
+    let createdContractId = null;
     if (data.base_salary && data.start_date) {
-      await repo.insertContract(client, {
+      const contract = await repo.insertContract(client, {
         profile_id: profile.profile_id,
         contract_type: data.employment_type,
         effective_from: data.start_date,
@@ -226,6 +229,7 @@ async function createStaff(data, user) {
         notes: "Initial contract on hire",
         created_by: user.user_id,
       });
+      createdContractId = contract.contract_id;
     }
 
     // Optional login provisioning.
@@ -278,8 +282,33 @@ async function createStaff(data, user) {
       metadata: { onboarded_login: !!credentials },
     });
 
-    return { profile, credentials };
+    return { profile, credentials, contractId: createdContractId };
   });
+}
+
+// Wrapper around the createStaff transaction so the contract PDF can be
+// rendered and archived as a document AFTER the row is committed — PDF
+// rendering and blob storage are slow/external and must not hold open
+// (or roll back) the onboarding transaction.
+async function createStaffWithContract(data, user) {
+  const result = await createStaff(data, user);
+  if (result.contractId) {
+    try {
+      await generateAndArchiveContract(
+        result.profile.profile_id,
+        result.contractId,
+        user,
+      );
+    } catch (err) {
+      // Non-fatal: the contract record exists and the PDF is still
+      // available on demand; just log so HR can regenerate if needed.
+      logger.error(
+        `Auto-archive of contract ${result.contractId} failed during onboarding`,
+        err,
+      );
+    }
+  }
+  return { profile: result.profile, credentials: result.credentials };
 }
 
 async function updateStaff(profileId, fields, user) {
@@ -537,6 +566,13 @@ async function generateContractPDF(profileId, contractId, requestingUser) {
     return { profile, contract };
   });
 
+  return renderToPDF("employment-contract", buildContractTemplateData(profile, contract));
+}
+
+// Shared mapping from a profile + contract to the employment-contract
+// PDF template data, used both by the on-demand download and the
+// auto-archive-on-hire flow.
+function buildContractTemplateData(profile, contract) {
   const fmtAmt = (n) =>
     `NGN ${Number(n || 0).toLocaleString("en-NG", {
       minimumFractionDigits: 2,
@@ -550,7 +586,7 @@ async function generateContractPDF(profileId, contractId, requestingUser) {
 
   const gross = parseFloat(contract.gross_salary) || 0;
 
-  return renderToPDF("employment-contract", {
+  return {
     contract_ref: `${profile.employee_number}/CT-${String(contract.contract_id).slice(0, 8).toUpperCase()}`,
     generated_date: new Date().toISOString().slice(0, 10),
     business_label: label(profile.business),
@@ -567,6 +603,44 @@ async function generateContractPDF(profileId, contractId, requestingUser) {
     gross_salary: fmtAmt(gross),
     annual_gross: fmtAmt(gross * 12),
     notes: contract.notes || "",
+  };
+}
+
+// Generate the contract PDF and archive it as an `employment_contract`
+// document, then link it back onto the contract row (document_id). Used
+// at onboarding so every hire's contract document exists automatically.
+// Best-effort: callers wrap this so a PDF/storage hiccup never fails the
+// onboarding transaction itself.
+async function generateAndArchiveContract(profileId, contractId, user) {
+  return withSharedContext(async (client) => {
+    const profile = await repo.findProfileById(client, profileId);
+    const contract = await repo.findContractById(client, contractId);
+    if (!profile || !contract) return null;
+    // Already archived — don't duplicate.
+    if (contract.document_id) return contract.document_id;
+
+    const buffer = await renderToPDF(
+      "employment-contract",
+      buildContractTemplateData(profile, contract),
+    );
+
+    const doc = await documentsService.archiveGeneratedDocument({
+      buffer,
+      business: profile.business,
+      documentType: "employment_contract",
+      title: `Employment contract — ${profile.display_name || profile.employee_number}`,
+      referenceType: "staff_contract",
+      referenceId: contractId,
+      tags: ["contract", "onboarding"],
+      user,
+    });
+
+    await client.query(
+      `UPDATE shared.staff_contracts SET document_id = $1 WHERE contract_id = $2`,
+      [doc.document_id, contractId],
+    );
+
+    return doc.document_id;
   });
 }
 
@@ -1352,6 +1426,7 @@ module.exports = {
   listStaff,
   getStaff,
   createStaff,
+  createStaffWithContract,
   updateStaff,
   offboardStaff,
   // org chart
@@ -1361,6 +1436,7 @@ module.exports = {
   listContracts,
   addContract,
   generateContractPDF,
+  generateAndArchiveContract,
   // assets
   listAssets,
   issueAsset,
