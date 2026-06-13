@@ -15,7 +15,7 @@ async function findUserByEmail(client, email) {
             u.locked_until, u.default_business, u.permitted_businesses,
             u.force_password_reset, u.staff_profile_id,
             r.role_id, r.role_name,
-            c.display_name
+            c.display_name, c.avatar_url
     FROM shared.users u
     LEFT JOIN LATERAL (
       SELECT x.role_id FROM shared.user_roles x
@@ -25,7 +25,12 @@ async function findUserByEmail(client, email) {
       LIMIT 1
     ) ur ON true
     LEFT JOIN shared.roles r ON r.role_id = ur.role_id
-    LEFT JOIN shared.contacts c ON c.contact_id = u.staff_profile_id
+    -- staff_profile_id references staff_profiles.profile_id, so reach the
+    -- contact (display_name / avatar) THROUGH staff_profiles. Joining
+    -- contacts directly on staff_profile_id never matched and left every
+    -- logged-in user with a null display_name and no avatar.
+    LEFT JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
+    LEFT JOIN shared.contacts c ON c.contact_id = sp.contact_id
     WHERE u.email = $1 LIMIT 1`,
     [email],
   );
@@ -115,8 +120,9 @@ async function findRoleForBusiness(client, { userId, business }) {
 async function findUserProfile(client, userId) {
   const { rows } = await client.query(
     `SELECT u.user_id, u.email, u.default_business, u.permitted_businesses,
-            sp.profile_id, sp.job_title, sp.department,
-            c.display_name, c.primary_phone, c.avatar_url, c.contact_id,
+            sp.profile_id, sp.job_title, sp.department, sp.employee_number,
+            c.display_name, c.first_name, c.last_name,
+            c.primary_phone, c.avatar_url, c.contact_id,
             r.role_name
      FROM shared.users u
      LEFT JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
@@ -131,6 +137,24 @@ async function findUserProfile(client, userId) {
      LEFT JOIN shared.roles r ON r.role_id = ur.role_id
      WHERE u.user_id = $1`,
     [userId],
+  );
+  return rows[0] || null;
+}
+
+// Update the display_name on the contact linked to a user's staff profile.
+// Returns the updated display_name, or null when the user has no linked contact.
+async function updateMyDisplayName(client, { userId, displayName }) {
+  const { rows } = await client.query(
+    `UPDATE shared.contacts
+        SET display_name = $1, updated_at = now()
+      WHERE contact_id = (
+        SELECT c.contact_id FROM shared.users u
+        JOIN shared.staff_profiles sp ON sp.profile_id = u.staff_profile_id
+        JOIN shared.contacts c ON c.contact_id = sp.contact_id
+        WHERE u.user_id = $2
+      )
+      RETURNING display_name`,
+    [displayName, userId],
   );
   return rows[0] || null;
 }
@@ -223,6 +247,7 @@ module.exports = {
   findUserPermissions,
   findRoleForBusiness,
   findUserProfile,
+  updateMyDisplayName,
   findPasswordHash,
   updatePasswordHash,
   revokeAllRefreshTokens,

@@ -57,6 +57,7 @@ async function login(email, password, ip = "") {
         role_id: user.role_id,
         email: user.email,
         display_name: user.display_name,
+        avatar_url: user.avatar_url,
         current_business: user.default_business,
         permitted_businesses: user.permitted_businesses,
         default_business: user.default_business,
@@ -169,6 +170,26 @@ async function getMe(userId) {
     if (!profile)
       throw Object.assign(new Error("User not found"), { status: 404 });
     return profile;
+  });
+}
+
+async function updateMyProfile(userId, { display_name }) {
+  const name = typeof display_name === "string" ? display_name.trim() : "";
+  if (!name)
+    throw Object.assign(new Error("Display name is required"), { status: 400 });
+  if (name.length > 120)
+    throw Object.assign(new Error("Display name is too long"), { status: 400 });
+
+  return withSharedContext(async (client) => {
+    const updated = await repo.updateMyDisplayName(client, {
+      userId,
+      displayName: name,
+    });
+    if (!updated)
+      throw Object.assign(new Error("No profile linked to this account"), {
+        status: 404,
+      });
+    return repo.findUserProfile(client, userId);
   });
 }
 
@@ -326,6 +347,7 @@ module.exports = {
   logout,
   switchBusiness,
   getMe,
+  updateMyProfile,
   getMyNav,
   setMyNav,
   resetMyNav,

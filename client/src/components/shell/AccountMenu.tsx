@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   LogOut,
   KeyRound,
@@ -9,9 +8,23 @@ import {
   X,
   Eye,
   EyeOff,
+  Mail,
+  Hash,
+  Phone,
+  Briefcase,
+  Building2,
+  Shield,
+  Check,
+  Pencil,
 } from "lucide-react";
 import { useAuthStore } from "@stores/useAuthStore";
-import { changePassword, storeUser } from "@services/auth";
+import {
+  changePassword,
+  storeUser,
+  fetchMe,
+  updateMyProfile,
+  type MyProfile,
+} from "@services/auth";
 import { uploadAvatar } from "@services/uploads";
 import { initialsOf } from "@lib/format";
 import { showToast } from "@hooks/useToast";
@@ -26,10 +39,10 @@ export function AccountMenu({ collapsed }: Props) {
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
   const signOut = useAuthStore((s) => s.signOut);
-  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -158,7 +171,7 @@ export function AccountMenu({ collapsed }: Props) {
               label="My profile"
               onClick={() => {
                 setOpen(false);
-                navigate("/contacts?tab=staff");
+                setShowProfile(true);
               }}
             />
             <div className="border-t border-brand-graphite/50 my-1" />
@@ -184,6 +197,14 @@ export function AccountMenu({ collapsed }: Props) {
       {/* Change password modal */}
       {showPwModal && (
         <ChangePasswordModal onClose={() => setShowPwModal(false)} />
+      )}
+
+      {/* Quick profile modal */}
+      {showProfile && (
+        <ProfileModal
+          onClose={() => setShowProfile(false)}
+          onPickPhoto={() => fileRef.current?.click()}
+        />
       )}
     </div>
   );
@@ -213,6 +234,273 @@ function MenuItem({
       {icon}
       {label}
     </button>
+  );
+}
+
+function ProfileModal({
+  onClose,
+  onPickPhoto,
+}: {
+  onClose: () => void;
+  onPickPhoto: () => void;
+}) {
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetchMe()
+      .then((p) => {
+        if (!alive) return;
+        setProfile(p);
+        setName(p.display_name ?? "");
+      })
+      .catch((err) => showToast.error("Couldn't load profile", errMsg(err)))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Prefer the store value so a photo uploaded from the menu shows at once;
+  // fall back to the freshly fetched profile.
+  const avatarUrl = user?.avatar_url ?? profile?.avatar_url ?? null;
+
+  const trimmed = name.trim();
+  const canSave =
+    !!trimmed && trimmed !== (profile?.display_name ?? "") && !saving;
+
+  const handleSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      const updated = await updateMyProfile(trimmed);
+      setProfile(updated);
+      setName(updated.display_name ?? "");
+      // Reflect the new name everywhere (sidebar, greeting) immediately.
+      if (user) {
+        const merged = { ...user, display_name: updated.display_name ?? "" };
+        setUser(merged);
+        storeUser(merged);
+      }
+      setEditing(false);
+      showToast.success("Profile updated");
+    } catch (err) {
+      showToast.error("Update failed", errMsg(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-brand-black/70 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md mx-4 bg-brand-charcoal border border-brand-graphite rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-graphite/50">
+          <h2 className="font-display text-xl text-brand-cream">My profile</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-brand-smoke hover:text-brand-cream transition-colors rounded-lg"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="px-5 py-12 text-center text-sm text-brand-smoke">
+            Loading…
+          </div>
+        ) : (
+          <div className="px-5 py-5">
+            {/* Identity header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative shrink-0">
+                <div className="w-16 h-16 rounded-full bg-brand-accent text-brand-black font-bold flex items-center justify-center text-lg overflow-hidden">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    initialsOf(profile?.display_name || profile?.email || "U")
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={onPickPhoto}
+                  title="Change photo"
+                  className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-brand-graphite border border-brand-charcoal text-brand-cream hover:bg-brand-accent hover:text-brand-black transition-colors"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-medium text-brand-cream truncate">
+                  {profile?.display_name || "—"}
+                </p>
+                {profile?.job_title && (
+                  <p className="text-xs text-brand-smoke truncate">
+                    {profile.job_title}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Editable display name */}
+            <div className="mb-5">
+              <label className="block text-[0.7rem] tracking-widest uppercase text-brand-smoke mb-1.5 ml-0.5">
+                Display name
+              </label>
+              {editing ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoFocus
+                    maxLength={120}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSave();
+                      if (e.key === "Escape") {
+                        setEditing(false);
+                        setName(profile?.display_name ?? "");
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 rounded-xl border border-brand-graphite bg-brand-black text-brand-cream text-sm placeholder-brand-smoke/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
+                    placeholder="Your name"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={!canSave}
+                    className={cn(
+                      "p-2 rounded-xl transition-colors",
+                      canSave
+                        ? "bg-brand-accent text-brand-black hover:brightness-110"
+                        : "bg-brand-graphite text-brand-smoke cursor-not-allowed",
+                    )}
+                    title="Save"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(false);
+                      setName(profile?.display_name ?? "");
+                    }}
+                    className="p-2 rounded-xl text-brand-smoke hover:text-brand-cream transition-colors"
+                    title="Cancel"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-brand-graphite bg-brand-black">
+                  <span className="text-sm text-brand-cream truncate">
+                    {profile?.display_name || "—"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(true)}
+                    className="flex items-center gap-1 text-xs text-brand-accent hover:brightness-110 transition-colors shrink-0 ml-2"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Read-only details */}
+            <div className="space-y-3">
+              <ProfileRow
+                icon={<Mail className="w-3.5 h-3.5" />}
+                label="Email"
+                value={profile?.email}
+              />
+              <ProfileRow
+                icon={<Hash className="w-3.5 h-3.5" />}
+                label="Employee code"
+                value={profile?.employee_number}
+                mono
+              />
+              <ProfileRow
+                icon={<Shield className="w-3.5 h-3.5" />}
+                label="Role"
+                value={profile?.role_name}
+                capitalize
+              />
+              <ProfileRow
+                icon={<Briefcase className="w-3.5 h-3.5" />}
+                label="Job title"
+                value={profile?.job_title}
+              />
+              <ProfileRow
+                icon={<Building2 className="w-3.5 h-3.5" />}
+                label="Department"
+                value={profile?.department}
+                capitalize
+              />
+              <ProfileRow
+                icon={<Phone className="w-3.5 h-3.5" />}
+                label="Phone"
+                value={profile?.primary_phone}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end px-5 py-4 border-t border-brand-graphite/50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-brand-smoke hover:text-brand-cream transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileRow({
+  icon,
+  label,
+  value,
+  mono,
+  capitalize,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string | null;
+  mono?: boolean;
+  capitalize?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-brand-smoke shrink-0">{icon}</span>
+      <span className="text-[0.7rem] tracking-widest uppercase text-brand-smoke w-28 shrink-0">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "text-sm text-brand-cream truncate",
+          mono && "font-mono",
+          capitalize && "capitalize",
+          !value && "text-brand-smoke/60",
+        )}
+      >
+        {value || "—"}
+      </span>
+    </div>
   );
 }
 

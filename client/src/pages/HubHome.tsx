@@ -24,9 +24,18 @@ export default function HubHome() {
   const user = useAuthStore((s) => s.user);
   const active = useBusinessStore((s) => s.active);
 
-  const firstName =
-    (user?.display_name || user?.email || "").split(" ")[0]?.split("@")[0] ??
-    "";
+  // Prefer the first token of the real display name. Only fall back to the
+  // email local-part (capitalised) when no name is set, so we never greet
+  // someone as "orikaliving".
+  const rawFirst =
+    (user?.display_name?.trim()?.split(/\s+/)[0] ||
+      user?.email?.split("@")[0] ||
+      "") ?? "";
+  const firstName = user?.display_name?.trim()
+    ? rawFirst
+    : rawFirst
+      ? rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1)
+      : "";
   const { active: business } = useActiveBusiness();
 
   // Live KPIs from the dashboards module — current month range

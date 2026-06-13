@@ -1,4 +1,5 @@
 import axios from "axios";
+import { api } from "./api";
 
 const API_BASE = "/api";
 const TOKEN_KEY = "orika_token";
@@ -21,8 +22,26 @@ export interface AuthResponse {
     permitted_businesses: string[];
     default_business: string;
     display_name?: string;
+    avatar_url?: string;
     email?: string;
   };
+}
+
+/** Shape returned by GET /api/auth/me and PATCH /api/auth/me/profile. */
+export interface MyProfile {
+  user_id: string;
+  email?: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  primary_phone?: string | null;
+  employee_number?: string | null;
+  job_title?: string | null;
+  department?: string | null;
+  role_name?: string | null;
+  default_business?: string;
+  permitted_businesses?: string[];
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResponse> {
@@ -98,9 +117,15 @@ export async function changePassword(
   return data;
 }
 
-export async function fetchMe(): Promise<AuthResponse["user"] & { avatar_url?: string }> {
-  const { data } = await axios.get(`${API_BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
+export async function fetchMe(): Promise<MyProfile> {
+  const { data } = await api.get<MyProfile>("/auth/me");
+  return data;
+}
+
+/** Update the signed-in user's own display name. Returns the refreshed profile. */
+export async function updateMyProfile(displayName: string): Promise<MyProfile> {
+  const { data } = await api.patch<MyProfile>("/auth/me/profile", {
+    display_name: displayName,
   });
   return data;
 }
