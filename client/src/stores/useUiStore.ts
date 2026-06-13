@@ -11,6 +11,11 @@ interface UiState {
 
   fabMenuOpen: boolean;
   setFabMenuOpen: (v: boolean) => void;
+
+  // Pixel offset applied to the draggable "App Menu" button so users can
+  // shift it out of the way (e.g. when Smart Comm covers the message input).
+  appMenuFabOffset: { x: number; y: number };
+  setAppMenuFabOffset: (offset: { x: number; y: number }) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -26,10 +31,16 @@ export const useUiStore = create<UiState>()(
 
       fabMenuOpen: false,
       setFabMenuOpen: (v) => set({ fabMenuOpen: v }),
+
+      appMenuFabOffset: { x: 0, y: 0 },
+      setAppMenuFabOffset: (offset) => set({ appMenuFabOffset: offset }),
     }),
     {
       name: "orika_ui",
-      partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed }),
+      partialize: (s) => ({
+        sidebarCollapsed: s.sidebarCollapsed,
+        appMenuFabOffset: s.appMenuFabOffset,
+      }),
     },
   ),
 );
