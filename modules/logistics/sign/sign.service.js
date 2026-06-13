@@ -1,7 +1,10 @@
 "use strict";
 
 const { pool } = require("../../../config/db");
-const { getActiveBusinesses } = require("../../../config/businesses");
+const {
+  getActiveBusinesses,
+  getBusinessConfig,
+} = require("../../../config/businesses");
 const { renderToPDF } = require("../../../lib/pdf/generator");
 const logger = require("../../../config/logger");
 
@@ -213,11 +216,54 @@ async function generateDeliveryNotePDF({
       }
     }
 
+    // Build the "Delivery Details" block from whatever was actually entered —
+    // only fields with a value are rendered, mirroring the in-app delivery
+    // detail view. The `courier` column is just the integration type (e.g.
+    // "manual"); the human-meaningful provider is `courier_company` (e.g.
+    // "Uber"), so prefer that and fall back to a friendly courier-type label.
+    const COURIER_LABELS = {
+      relay: "Relay",
+      chowdeck: "Chowdeck",
+      gigl: "GIG Logistics",
+      manual: "Manual / Ride-hail",
+    };
+    const courierLabel =
+      delivery.courier_company ||
+      COURIER_LABELS[delivery.courier] ||
+      delivery.courier ||
+      "—";
+    const driverLine = [delivery.driver_name, delivery.driver_phone]
+      .filter(Boolean)
+      .join(" · ");
+    const feeNum = Number(delivery.delivery_fee || 0);
+    const detailLines = [`<div class="meta-value">${esc(courierLabel)}</div>`];
+    if (driverLine)
+      detailLines.push(`<div class="meta-sub">${esc(driverLine)}</div>`);
+    if (delivery.waybill_number)
+      detailLines.push(
+        `<div class="meta-sub">Waybill / ref: ${esc(delivery.waybill_number)}</div>`,
+      );
+    if (feeNum > 0) {
+      const currency = getBusinessConfig(business)?.default_currency || "NGN";
+      let feeStr;
+      try {
+        feeStr = new Intl.NumberFormat("en-NG", {
+          style: "currency",
+          currency,
+        }).format(feeNum);
+      } catch {
+        feeStr = `${currency} ${feeNum.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      detailLines.push(
+        `<div class="meta-sub">Delivery fee: ${esc(feeStr)}</div>`,
+      );
+    }
+
     const noteTemplateData = {
       delivery_number: esc(delivery.delivery_number || "—"),
       contact_name: esc(delivery.contact_name || "—"),
       delivery_address: esc(addressStr),
-      courier: esc(delivery.courier || "—"),
+      delivery_details_html: detailLines.join("\n          "),
       signed_at: fmtDate(delivery.signed_at || new Date()),
       items_html: itemsHtml,
       customer_name: esc(customer_name || "—"),

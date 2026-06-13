@@ -89,6 +89,25 @@ async function insertDelivery(
   return delivery;
 }
 
+// Guards against creating two deliveries for the same source order/sale.
+// An order's delivery can legitimately be re-created only after a prior
+// attempt ended terminally (failed / returned), so those are excluded.
+async function findActiveDeliveryByReference(client, referenceType, referenceId) {
+  if (!referenceType || !referenceId) return null;
+  const {
+    rows: [row],
+  } = await client.query(
+    `SELECT * FROM deliveries
+      WHERE reference_type = $1
+        AND reference_id   = $2
+        AND status NOT IN ('failed', 'returned')
+      ORDER BY created_at ASC
+      LIMIT 1`,
+    [referenceType, referenceId],
+  );
+  return row || null;
+}
+
 async function insertDeliveryItem(
   client,
   { delivery_id, product_id, description, quantity },
@@ -275,6 +294,7 @@ module.exports = {
   listDeliveries,
   findDeliveryById,
   insertDelivery,
+  findActiveDeliveryByReference,
   insertDeliveryItem,
   getOrderLines,
   getPOSLines,

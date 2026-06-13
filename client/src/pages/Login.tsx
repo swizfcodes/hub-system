@@ -931,7 +931,7 @@ export default function Login() {
                         value={forgotNewPassword}
                         onChange={(e) => setForgotNewPassword(e.target.value)}
                         className="w-full bg-white border border-brand-cloud/40 rounded-xl py-3.5 pl-11 pr-11 text-sm font-medium text-brand-black focus:outline-none focus:border-brand-black focus:ring-1 focus:ring-brand-black transition-all shadow-sm"
-                        placeholder="At least 12 characters"
+                        placeholder={PASSWORD_RULES_TEXT}
                       />
                       <button
                         type="button"
