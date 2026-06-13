@@ -351,19 +351,65 @@ export function MessageThread({
 
   // ── Voice notes ─────────────────────────────────────────────────────
 
+  // Pick a container/codec the browser will actually produce. Relying on
+  // the default mimeType yields empty output on some builds.
+  function pickAudioMime(): string | undefined {
+    if (typeof MediaRecorder === "undefined") return undefined;
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4", // Safari / iOS
+      "audio/ogg;codecs=opus",
+    ];
+    for (const c of candidates) {
+      if (MediaRecorder.isTypeSupported?.(c)) return c;
+    }
+    return undefined; // let the browser choose as a last resort
+  }
+
   async function startRecording() {
+    // Mic capture needs a secure context (https or localhost) AND the
+    // MediaRecorder API. Tell the user exactly which is missing instead
+    // of a blanket "unavailable".
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      showToast.error(
+        "Voice notes need a secure connection — open Hub over https (or localhost).",
+      );
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      showToast.error("This browser can't record audio. Try Chrome or Safari.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = pickAudioMime();
+      const recorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType } : undefined,
+      );
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+      recorder.onerror = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        showToast.error("Recording failed — please try again");
+      };
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         // Safari records audio/mp4, Chrome audio/webm, Firefox audio/ogg —
         // name the file to match so playback works across all of them.
-        const mime = recorder.mimeType || "audio/webm";
+        const mime = recorder.mimeType || mimeType || "audio/webm";
         const blob = new Blob(chunks, { type: mime });
-        if (blob.size < 1000) return; // accidental tap
+        if (blob.size === 0) {
+          showToast.error(
+            "No audio was captured — check microphone access and try again.",
+          );
+          return;
+        }
+        if (blob.size < 600) return; // genuine accidental tap
         const ext = mime.includes("mp4")
           ? "m4a"
           : mime.includes("ogg")
@@ -383,22 +429,40 @@ export function MessageThread({
             attachments: [att],
           });
           invalidateMessages();
-        } catch {
+        } catch (err) {
+          console.error("[voice note] send failed:", err);
           showToast.error("Could not send voice note");
         } finally {
           setUploading(false);
         }
       };
-      recorder.start();
+      // Timeslice: request data every second so chunks accumulate during
+      // recording — without it some browsers emit nothing at stop.
+      recorder.start(1000);
       recorderRef.current = recorder;
       setRecording(true);
-    } catch {
-      showToast.error("Microphone unavailable");
+    } catch (err) {
+      console.error("[voice note] mic/recorder error:", err);
+      const name = (err as Error)?.name;
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        showToast.error(
+          "Microphone permission denied — allow it for this site and retry.",
+        );
+      } else if (name === "NotFoundError") {
+        showToast.error("No microphone found on this device.");
+      } else {
+        showToast.error("Microphone unavailable");
+      }
     }
   }
 
   function stopRecording() {
-    recorderRef.current?.stop();
+    try {
+      recorderRef.current?.requestData?.();
+      recorderRef.current?.stop();
+    } catch (err) {
+      console.error("[voice note] stop failed:", err);
+    }
     recorderRef.current = null;
     setRecording(false);
   }
