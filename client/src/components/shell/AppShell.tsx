@@ -7,6 +7,7 @@ import { AppMenuFab } from "./AppMenuFab";
 import { BusinessSwitchManager } from "./BusinessSwitchManager";
 import { CrmQuickActionsFab } from "@components/crm/fab/CrmQuickActionsFab";
 import { PermissionGate } from "@components/shared/PermissionGate";
+import { SessionExpiredOverlay } from "@components/shared/SessionExpiredOverlay";
 import { FloatingLauncher } from "./FloatingLauncher";
 import { ChatDock } from "@components/messaging/ChatDock";
 import { ChatNotificationManager } from "@components/notifications/ChatNotificationManager";
@@ -14,6 +15,7 @@ import { useUiStore } from "@stores/useUiStore";
 import { useAuthStore } from "@stores/useAuthStore";
 import { useIsDesktop } from "@hooks/useMediaQuery";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
+import { useSessionWatch } from "@hooks/useSessionWatch";
 import { connectSocket, disconnectSocket } from "@lib/socket";
 import { cn } from "@lib/cn";
 
@@ -25,6 +27,11 @@ export function AppShell() {
     isHydrated: s.isHydrated,
     hydrate: s.hydrate,
   }));
+
+  // Proactively detect an expired session (e.g. after the laptop slept past the
+  // token's 24h life) so we can show a friendly "logged out" screen with a
+  // login link instead of a dead/dark page that only a refresh recovers.
+  const sessionExpired = useSessionWatch();
 
   const { pathname } = useLocation();
   // Only show the global CRM FAB on the pipeline/list view.
@@ -99,6 +106,10 @@ export function AppShell() {
 
       {/* Guarded business-context switch: confirm → blurred 5s reload overlay */}
       <BusinessSwitchManager />
+
+      {/* Session timed out (idle / woke from sleep past token life) → friendly
+          "log in again" screen instead of a dead, dark page. */}
+      {sessionExpired && <SessionExpiredOverlay />}
 
       <Toaster
         position="bottom-right"
