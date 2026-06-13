@@ -128,6 +128,25 @@ router.get("/me", verifyToken, async (req, res, next) => {
   }
 });
 
+// PATCH /api/auth/me/profile — update the caller's own display name.
+// Returns the refreshed profile (same shape as GET /me).
+router.patch(
+  "/me/profile",
+  verifyToken,
+  body("display_name").isString().trim().notEmpty().isLength({ max: 120 }),
+  validate,
+  async (req, res, next) => {
+    try {
+      const user = await authService.updateMyProfile(req.user.user_id, {
+        display_name: req.body.display_name,
+      });
+      res.json(user);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── Navigation preferences ────────────────────────────────
 // GET    /api/auth/me/nav — { pinned: string[]|null, role_default: string[]|null }
 // PUT    /api/auth/me/nav — body { pinned: string[] } (max 10) → saves user pins
