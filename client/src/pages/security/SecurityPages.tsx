@@ -329,7 +329,7 @@ export function UsersPage() {
                         No login
                       </Badge>
                     )}
-                    {user.user_id && !user.is_active && (
+                    {user.user_id && !user.user_is_active && (
                       <Badge tone="danger" size="xs">
                         Deactivated
                       </Badge>
@@ -388,7 +388,7 @@ export function UsersPage() {
                     >
                       <RefreshCw className="h-4 w-4" />
                     </button>
-                    {user.is_active && (
+                    {user.user_is_active && (
                       <button
                         onClick={() => {
                           if (
