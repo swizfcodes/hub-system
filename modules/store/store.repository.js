@@ -524,18 +524,19 @@ async function settleSalesOrderForWeb(client, salesOrderId) {
 
 async function insertOrder(
   client,
-  { customerId, totalKobo, deliveryAddress, items },
+  { customerId, totalKobo, deliveryFeeKobo = 0, deliveryAddress, items },
 ) {
   const {
     rows: [row],
   } = await client.query(
     `INSERT INTO store.orders
-       (customer_id, status, total_kobo, delivery_address, items)
-     VALUES ($1, 'pending', $2, $3::jsonb, $4::jsonb)
+       (customer_id, status, total_kobo, delivery_fee_kobo, delivery_address, items)
+     VALUES ($1, 'pending', $2, $3, $4::jsonb, $5::jsonb)
      RETURNING *`,
     [
       customerId,
       totalKobo,
+      deliveryFeeKobo,
       JSON.stringify(deliveryAddress),
       JSON.stringify(items),
     ],

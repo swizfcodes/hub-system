@@ -127,6 +127,15 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
+// Public delivery rate card — lets the checkout preview the delivery fee.
+router.get("/delivery-rate-card", async (req, res, next) => {
+  try {
+    res.json(await service.getDeliveryRateCard());
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ── Orders / checkout ────────────────────────────────────────
 
 router.post(

@@ -73,6 +73,8 @@ export interface SalesCampaign {
   qr_code_url?: string | null;
   products?: CampaignProduct[];
   bank_accounts?: CampaignBankAccount[];
+  // Delivery rate card (managed in logistics, served by the backend).
+  delivery_rate_card?: import("@lib/deliveryFee").DeliveryRateCard | null;
   // admin stats
   order_count?: number;
   confirmed_revenue?: number;

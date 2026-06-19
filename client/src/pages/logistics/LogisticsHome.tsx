@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Rocket, Package, Search } from "lucide-react";
+import { Plus, Eye, Rocket, Package, Search, MapPin } from "lucide-react";
 import { PageHeader } from "@components/ui/PageHeader";
 import { Tabs } from "@components/ui/Tabs";
 import { Button } from "@components/ui/Button";
@@ -83,10 +83,19 @@ export default function LogisticsHome() {
           subtitle="Dispatch queue, tracking, and proof of delivery."
           crumbs={[{ label: "Hub", to: "/" }, { label: "Logistics" }]}
           actions={
-            <Button onClick={() => setShowCreate(true)}>
-              <Plus className="h-4 w-4" />
-              New Delivery
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/logistics/delivery-zones")}
+              >
+                <MapPin className="h-4 w-4" />
+                Delivery Zones
+              </Button>
+              <Button onClick={() => setShowCreate(true)}>
+                <Plus className="h-4 w-4" />
+                New Delivery
+              </Button>
+            </div>
           }
         />
 

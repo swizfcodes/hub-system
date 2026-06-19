@@ -32,6 +32,137 @@ router.post(
   },
 );
 
+// ── DELIVERY ZONES / RATE CARD ───────────────────────────────
+// Literal paths — declared before "/:id" so they aren't parsed as a UUID.
+
+router.get(
+  "/delivery-zones",
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.listZones(req.business));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/delivery-zones",
+  body("name").isString().notEmpty(),
+  body("scope").isIn(["lagos", "nationwide"]),
+  body("rate").isFloat({ min: 0 }),
+  body("match_terms").optional().isArray(),
+  body("is_default").optional().isBoolean(),
+  body("display_order").optional().isInt({ min: 0 }),
+  body("is_active").optional().isBoolean(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.status(201).json(await service.createZone(req.business, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.patch(
+  "/delivery-zones/:id",
+  param("id").isUUID(),
+  body("scope").optional().isIn(["lagos", "nationwide"]),
+  body("rate").optional().isFloat({ min: 0 }),
+  body("match_terms").optional().isArray(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.updateZone(req.business, req.params.id, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete(
+  "/delivery-zones/:id",
+  param("id").isUUID(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.deleteZone(req.business, req.params.id));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  "/delivery-settings",
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getDeliverySettings(req.business));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.put(
+  "/delivery-settings",
+  body("bulk_threshold").optional().isInt({ min: 1 }),
+  body("bulk_fee_lagos").optional().isFloat({ min: 0 }),
+  body("bulk_fee_nationwide").optional().isFloat({ min: 0 }),
+  body("lagos_state_name").optional().isString(),
+  body("pickup_free").optional().isBoolean(),
+  validate,
+  can("logistics", "edit"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.updateDeliverySettings(req.business, req.body));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Full rate card (active zones + settings) — used by admin previews and as
+// the shape the storefront consumes.
+router.get(
+  "/delivery-rate-card",
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(await service.getRateCard(req.business));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Quote a fee for a destination + cart (admin/internal preview).
+router.post(
+  "/delivery-quote",
+  validate,
+  can("logistics", "view"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await service.quoteDelivery(req.business, {
+          fulfilmentType: req.body.fulfilment_type,
+          state: req.body.state,
+          city: req.body.city,
+          itemCount: req.body.item_count,
+        }),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // GET /api/logistics/:id
 router.get(
   "/:id",

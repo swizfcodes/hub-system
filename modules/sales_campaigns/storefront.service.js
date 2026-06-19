@@ -12,6 +12,8 @@ const notifService = require("../../shared/notifications/notifications.service")
 const loyaltyService = require("../loyalty/loyalty.service");
 const repo = require("./campaigns.repository");
 const logger = require("../../config/logger");
+const { computeDeliveryFee } = require("../../config/deliveryFee");
+const logisticsRepo = require("../logistics/logistics.repository");
 const crypto = require("crypto");
 const config = require("../../config/config");
 const axios = require("axios");
@@ -61,6 +63,9 @@ async function getPage(business, slug) {
       );
     }
 
+    // Attach the delivery rate card so the checkout can price delivery
+    // without hardcoding rates (managed in the logistics module).
+    campaign.delivery_rate_card = await logisticsRepo.getRateCard(client);
     return campaign;
   });
 }
@@ -336,7 +341,21 @@ async function placeOrder(business, slug, data, req) {
       });
     }
 
-    const totalAmount = subtotal - discountAmount;
+    // Delivery fee — derived server-side from destination + cart size
+    // (policy POL-062026). Authoritative: never trust a client-sent fee.
+    const itemCount = data.items.reduce(
+      (s, i) => s + (parseInt(i.quantity) || 0),
+      0,
+    );
+    const rateCard = await logisticsRepo.getRateCard(client);
+    const { fee: deliveryFee } = computeDeliveryFee(rateCard, {
+      fulfilmentType: data.fulfilment_type,
+      state: data.delivery_address?.state,
+      city: data.delivery_address?.city,
+      itemCount,
+    });
+
+    const totalAmount = subtotal - discountAmount + deliveryFee;
     const orderNumber = await nextDocumentNumber(
       client,
       business,
@@ -355,6 +374,7 @@ async function placeOrder(business, slug, data, req) {
       payment_method: data.payment_method,
       subtotal,
       discount_amount: discountAmount,
+      delivery_fee: deliveryFee,
       total_amount: totalAmount,
       source: data.source || null,
       bank_account_id: data.bank_account_id || null,

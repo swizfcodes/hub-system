@@ -101,6 +101,9 @@ const TaxCenter = lazy(() => import("@pages/tax/TaxCenter"));
 // Logistics
 const LogisticsHome = lazy(() => import("@pages/logistics/LogisticsHome"));
 const DeliveryDetail = lazy(() => import("@pages/logistics/DeliveryDetail"));
+const DeliveryZonesPage = lazy(
+  () => import("@pages/logistics/DeliveryZonesPage"),
+);
 
 // Dashboard
 const DashboardPage = lazy(() => import("@pages/dashboard/DashboardPage"));
@@ -424,6 +427,11 @@ export default function App() {
 
           {/* Logistics */}
           <Route path="/logistics" element={<LogisticsHome />} />
+          {/* Literal path before "/:id" so it isn't parsed as a delivery id */}
+          <Route
+            path="/logistics/delivery-zones"
+            element={<DeliveryZonesPage />}
+          />
           <Route path="/logistics/:id" element={<DeliveryDetail />} />
 
           {/* Dashboard */}
