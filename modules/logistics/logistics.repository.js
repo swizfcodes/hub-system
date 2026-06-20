@@ -290,10 +290,150 @@ async function updateDelivery(client, deliveryId, fields) {
   return updated || null;
 }
 
+// ── DELIVERY ZONES / RATE CARD ───────────────────────────────
+
+async function getDeliverySettings(client) {
+  const {
+    rows: [s],
+  } = await client.query(
+    `SELECT lagos_state_name, bulk_threshold,
+            bulk_fee_lagos::float8      AS bulk_fee_lagos,
+            bulk_fee_nationwide::float8 AS bulk_fee_nationwide,
+            pickup_free
+     FROM delivery_settings WHERE id = 1`,
+  );
+  return s || null;
+}
+
+async function updateDeliverySettings(client, f) {
+  const {
+    rows: [s],
+  } = await client.query(
+    `UPDATE delivery_settings SET
+       lagos_state_name    = COALESCE($1, lagos_state_name),
+       bulk_threshold      = COALESCE($2, bulk_threshold),
+       bulk_fee_lagos      = COALESCE($3, bulk_fee_lagos),
+       bulk_fee_nationwide = COALESCE($4, bulk_fee_nationwide),
+       pickup_free         = COALESCE($5, pickup_free),
+       updated_at          = now()
+     WHERE id = 1
+     RETURNING lagos_state_name, bulk_threshold,
+               bulk_fee_lagos::float8 AS bulk_fee_lagos,
+               bulk_fee_nationwide::float8 AS bulk_fee_nationwide, pickup_free`,
+    [
+      f.lagos_state_name ?? null,
+      f.bulk_threshold ?? null,
+      f.bulk_fee_lagos ?? null,
+      f.bulk_fee_nationwide ?? null,
+      f.pickup_free ?? null,
+    ],
+  );
+  return s || null;
+}
+
+const ZONE_COLS = `zone_id, name, scope, match_terms, rate::float8 AS rate,
+                   is_default, display_order, is_active`;
+
+async function listZones(client) {
+  const { rows } = await client.query(
+    `SELECT ${ZONE_COLS} FROM delivery_zones ORDER BY display_order, name`,
+  );
+  return rows;
+}
+
+async function getZoneById(client, id) {
+  const {
+    rows: [z],
+  } = await client.query(
+    `SELECT ${ZONE_COLS} FROM delivery_zones WHERE zone_id = $1`,
+    [id],
+  );
+  return z || null;
+}
+
+async function insertZone(client, f) {
+  const {
+    rows: [z],
+  } = await client.query(
+    `INSERT INTO delivery_zones
+       (name, scope, match_terms, rate, is_default, display_order, is_active)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     RETURNING ${ZONE_COLS}`,
+    [
+      f.name,
+      f.scope,
+      f.match_terms || [],
+      f.rate,
+      f.is_default || false,
+      f.display_order || 0,
+      f.is_active !== false,
+    ],
+  );
+  return z;
+}
+
+async function updateZone(client, id, f) {
+  const {
+    rows: [z],
+  } = await client.query(
+    `UPDATE delivery_zones SET
+       name          = COALESCE($2, name),
+       scope         = COALESCE($3, scope),
+       match_terms   = COALESCE($4, match_terms),
+       rate          = COALESCE($5, rate),
+       is_default    = COALESCE($6, is_default),
+       display_order = COALESCE($7, display_order),
+       is_active     = COALESCE($8, is_active),
+       updated_at    = now()
+     WHERE zone_id = $1
+     RETURNING ${ZONE_COLS}`,
+    [
+      id,
+      f.name ?? null,
+      f.scope ?? null,
+      f.match_terms ?? null,
+      f.rate ?? null,
+      f.is_default ?? null,
+      f.display_order ?? null,
+      f.is_active ?? null,
+    ],
+  );
+  return z || null;
+}
+
+async function deleteZone(client, id) {
+  const {
+    rows: [z],
+  } = await client.query(
+    `DELETE FROM delivery_zones WHERE zone_id = $1 RETURNING zone_id`,
+    [id],
+  );
+  return z || null;
+}
+
+// The rate card consumed by the fee calculator + storefront: active zones
+// + settings. Shared between admin reads and order-total computation.
+async function getRateCard(client) {
+  const { rows: zones } = await client.query(
+    `SELECT ${ZONE_COLS} FROM delivery_zones
+     WHERE is_active = true ORDER BY display_order, name`,
+  );
+  const settings = await getDeliverySettings(client);
+  return { zones, settings: settings || {} };
+}
+
 module.exports = {
   listDeliveries,
   findDeliveryById,
   insertDelivery,
+  getDeliverySettings,
+  updateDeliverySettings,
+  listZones,
+  getZoneById,
+  insertZone,
+  updateZone,
+  deleteZone,
+  getRateCard,
   findActiveDeliveryByReference,
   insertDeliveryItem,
   getOrderLines,

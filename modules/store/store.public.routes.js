@@ -127,6 +127,15 @@ router.get("/settings", async (req, res, next) => {
   }
 });
 
+// Public delivery rate card — lets the checkout preview the delivery fee.
+router.get("/delivery-rate-card", async (req, res, next) => {
+  try {
+    res.json(await service.getDeliveryRateCard());
+  } catch (e) {
+    next(e);
+  }
+});
+
 // ── Orders / checkout ────────────────────────────────────────
 
 router.post(
@@ -135,9 +144,13 @@ router.post(
   body("delivery_address.full_name").isString().notEmpty(),
   body("delivery_address.phone").isString().notEmpty(),
   body("delivery_address.email").isEmail(),
-  body("delivery_address.street").isString().notEmpty(),
-  body("delivery_address.city").isString().notEmpty(),
-  body("delivery_address.state").isString().notEmpty(),
+  // Address lines are optional — store-pickup orders don't carry one.
+  body("delivery_address.street").optional({ checkFalsy: true }).isString(),
+  body("delivery_address.city").optional({ checkFalsy: true }).isString(),
+  body("delivery_address.state").optional({ checkFalsy: true }).isString(),
+  body("delivery_address.fulfilment_type")
+    .optional()
+    .isIn(["delivery", "pickup"]),
   body("items").isArray({ min: 1 }),
   body("items.*.product_id").isUUID(),
   body("items.*.quantity").isInt({ min: 1 }),

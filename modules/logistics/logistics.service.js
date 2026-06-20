@@ -12,6 +12,7 @@ const { renderToPDF } = require("../../lib/pdf/generator");
 const logger = require("../../config/logger");
 const repo = require("./logistics.repository");
 const { v4: uuidv4 } = require("uuid");
+const { computeDeliveryFee } = require("../../config/deliveryFee");
 
 async function listDeliveries(
   business,
@@ -780,6 +781,56 @@ async function generatePackingSlip(business, deliveryId) {
   return renderToPDF("packing-slip", templateData);
 }
 
+// ── Delivery zones / rate card (storefront delivery pricing) ─────────────────
+
+async function getRateCard(business) {
+  return withBusinessContext(business, (client) => repo.getRateCard(client));
+}
+
+async function listZones(business) {
+  return withBusinessContext(business, async (client) => ({
+    data: await repo.listZones(client),
+  }));
+}
+
+async function createZone(business, data) {
+  return withBusinessContext(business, (client) => repo.insertZone(client, data));
+}
+
+async function updateZone(business, id, data) {
+  return withBusinessContext(business, async (client) => {
+    const z = await repo.updateZone(client, id, data);
+    if (!z) throw Object.assign(new Error("Delivery zone not found"), { status: 404 });
+    return z;
+  });
+}
+
+async function deleteZone(business, id) {
+  return withBusinessContext(business, async (client) => {
+    const z = await repo.deleteZone(client, id);
+    if (!z) throw Object.assign(new Error("Delivery zone not found"), { status: 404 });
+    return { deleted: true };
+  });
+}
+
+async function getDeliverySettings(business) {
+  return withBusinessContext(business, (client) => repo.getDeliverySettings(client));
+}
+
+async function updateDeliverySettings(business, data) {
+  return withBusinessContext(business, (client) =>
+    repo.updateDeliverySettings(client, data),
+  );
+}
+
+// Quote a delivery fee for a destination + cart size, from the DB rate card.
+async function quoteDelivery(business, input) {
+  return withBusinessContext(business, async (client) => {
+    const rateCard = await repo.getRateCard(client);
+    return computeDeliveryFee(rateCard, input);
+  });
+}
+
 module.exports = {
   listDeliveries,
   getDelivery,
@@ -794,4 +845,13 @@ module.exports = {
   suggestCouriers,
   markReturned,
   generatePackingSlip,
+  // delivery zones / rate card
+  getRateCard,
+  listZones,
+  createZone,
+  updateZone,
+  deleteZone,
+  getDeliverySettings,
+  updateDeliverySettings,
+  quoteDelivery,
 };

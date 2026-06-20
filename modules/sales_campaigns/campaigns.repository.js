@@ -351,8 +351,8 @@ async function insertOrder(client, data) {
     `INSERT INTO campaign_orders
        (campaign_id, order_number, customer_name, customer_phone, customer_email,
         fulfilment_type, delivery_address, pickup_location, payment_method,
-        subtotal, discount_amount, total_amount, source, bank_account_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+        subtotal, discount_amount, delivery_fee, total_amount, source, bank_account_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [
       data.campaign_id,
@@ -366,6 +366,7 @@ async function insertOrder(client, data) {
       data.payment_method,
       data.subtotal,
       data.discount_amount || 0,
+      data.delivery_fee || 0,
       data.total_amount,
       data.source || null,
       data.bank_account_id || null,

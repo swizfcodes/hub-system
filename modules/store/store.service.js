@@ -16,6 +16,8 @@ const stockService = require("../stock/stock.service");
 const config = require("../../config/config");
 const logger = require("../../config/logger");
 const repo = require("./store.repository");
+const { computeDeliveryFeeKobo } = require("../../config/deliveryFee");
+const logisticsRepo = require("../logistics/logistics.repository");
 
 // ─────────────────────────────────────────────────────────────
 // modules/store/store.service
@@ -168,6 +170,13 @@ async function createOrder({
     });
   }
 
+  // Delivery zones live in the diffusers (business) schema, but order
+  // creation runs under the `store` schema — load the rate card from the
+  // business schema first.
+  const deliveryRateCard = await withBusinessContext(STORE_BUSINESS, (client) =>
+    logisticsRepo.getRateCard(client),
+  );
+
   return withStoreContext(async (client) => {
     const ids = items.map((i) => i.product_id);
     const products = await repo.findStoreProductsByIds(client, ids);
@@ -213,6 +222,21 @@ async function createOrder({
       });
     }
 
+    // Delivery fee — derived server-side from the destination + cart size
+    // (policy POL-062026), in kobo. Pickup and unmatched areas are handled
+    // by the rate card. Authoritative: this is what the customer is charged.
+    const itemCount = items.reduce(
+      (s, i) => s + (parseInt(i.quantity) || 0),
+      0,
+    );
+    const deliveryFeeKobo = computeDeliveryFeeKobo(deliveryRateCard, {
+      fulfilmentType: delivery_address.fulfilment_type,
+      state: delivery_address.state,
+      city: delivery_address.city,
+      itemCount,
+    });
+    totalKobo += deliveryFeeKobo;
+
     if (totalKobo > MAX_ORDER_KOBO) {
       throw Object.assign(new Error("Order total exceeds the allowed limit"), {
         status: 400,
@@ -248,6 +272,7 @@ async function createOrder({
     const order = await repo.insertOrder(client, {
       customerId: customer.id,
       totalKobo,
+      deliveryFeeKobo,
       deliveryAddress: delivery_address,
       items: lineItems,
     });
@@ -1264,9 +1289,19 @@ async function replyToEnquiry(enquiryId, message, user) {
   return { ok: true, channel_id: channelId };
 }
 
+// Public: the delivery rate card (diffusers zones/settings) so the
+// storefront can preview the delivery fee at checkout. The backend still
+// re-computes the authoritative fee at order creation.
+async function getDeliveryRateCard() {
+  return withBusinessContext(STORE_BUSINESS, (client) =>
+    logisticsRepo.getRateCard(client),
+  );
+}
+
 module.exports = {
   // public reads
   getActiveProducts,
+  getDeliveryRateCard,
   getFeaturedProducts,
   getProductBySlug,
   getRelatedProducts,

@@ -21,6 +21,7 @@ import {
   NIGERIAN_STATES,
 } from "@lib/constants/salesCampaignConstants";
 import { fmtMoney } from "@lib/format";
+import { computeDeliveryFee } from "@lib/deliveryFee";
 import type {
   SalesCampaign,
   CartItem,
@@ -66,6 +67,7 @@ export default function Checkout() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const subtotal = cart.reduce((s, i) => s + i.line_total, 0);
+  const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
   const totalSave = cart.reduce(
     (s, i) =>
       s +
@@ -87,6 +89,17 @@ export default function Checkout() {
 
   const fulfilmentType = watch("fulfilment_type");
   const paymentMethod = watch("payment_method");
+  const deliveryCity = watch("delivery_address.city");
+  const deliveryState = watch("delivery_address.state");
+  // Delivery fee is derived from the destination + cart size (policy POL-062026).
+  // The backend re-derives the authoritative charge from the same inputs.
+  const delivery = computeDeliveryFee(campaign?.delivery_rate_card, {
+    fulfilmentType,
+    state: deliveryState,
+    city: deliveryCity,
+    itemCount,
+  });
+  const total = subtotal + delivery.fee;
   // The account the customer actually picked — fall back to the first
   // (or the primary) so the transfer screen never renders the wrong details.
   const selectedBankId = watch("bank_account_id");
@@ -279,11 +292,26 @@ export default function Checkout() {
                   <span className="text-gray-400">{fmtMoney(totalSave)}</span>
                 </div>
               )}
-              <div className="border-t border-white/8 pt-3 flex justify-between">
-                <span className="text-gray-400 text-sm">Total</span>
-                <span className="text-xl font-bold text-white">
-                  {fmtMoney(subtotal)}
-                </span>
+              <div className="border-t border-white/8 pt-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Subtotal</span>
+                  <span className="text-gray-200">{fmtMoney(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">
+                    Delivery
+                    <span className="text-gray-600"> · {delivery.zoneLabel}</span>
+                  </span>
+                  <span className="text-gray-200">
+                    {delivery.fee === 0 ? "Free" : fmtMoney(delivery.fee)}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-white/8">
+                  <span className="text-gray-400 text-sm">Total</span>
+                  <span className="text-xl font-bold text-white">
+                    {fmtMoney(total)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -470,7 +498,7 @@ export default function Checkout() {
                 {paymentMethod === "optimus_pay" && (
                   <div className="rounded-lg acc-soft border acc-border-soft px-3 py-2 text-xs acc-text mt-2">
                     ⚡ On the next screen you'll get a dedicated account number
-                    for exactly <strong>{fmtMoney(subtotal)}</strong>. Transfer
+                    for exactly <strong>{fmtMoney(total)}</strong>. Transfer
                     within <strong>30 minutes</strong> and your order confirms
                     automatically.
                   </div>
@@ -524,7 +552,7 @@ export default function Checkout() {
                         />
                       ))}
                       <div className="rounded-lg acc-soft border acc-border-soft px-3 py-2 text-xs acc-text">
-                        ⚠ Transfer exactly <strong>{fmtMoney(subtotal)}</strong>{" "}
+                        ⚠ Transfer exactly <strong>{fmtMoney(total)}</strong>{" "}
                         and upload your receipt on the next screen. Your items
                         will be reserved immediately.
                       </div>
@@ -548,10 +576,10 @@ export default function Checkout() {
               {placing
                 ? "Placing Order…"
                 : paymentMethod === "paystack"
-                  ? `Pay ${fmtMoney(subtotal)} with Paystack`
+                  ? `Pay ${fmtMoney(total)} with Paystack`
                   : paymentMethod === "optimus_pay"
-                    ? `Get Account Number — ${fmtMoney(subtotal)}`
-                    : `Place Order — ${fmtMoney(subtotal)}`}
+                    ? `Get Account Number — ${fmtMoney(total)}`
+                    : `Place Order — ${fmtMoney(total)}`}
             </button>
 
             <p className="text-center text-xs text-gray-600">
