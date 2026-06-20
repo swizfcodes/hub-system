@@ -13,8 +13,6 @@
 -- orders read as zero).
 -- ============================================================
 
-BEGIN;
-
 ALTER TABLE store.orders
   ADD COLUMN IF NOT EXISTS delivery_fee_kobo INTEGER NOT NULL DEFAULT 0;
 
@@ -23,5 +21,3 @@ ALTER TABLE jewelry.campaign_orders
 
 ALTER TABLE diffusers.campaign_orders
   ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC(14,2) NOT NULL DEFAULT 0;
-
-COMMIT;

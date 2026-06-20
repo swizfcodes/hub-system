@@ -15,8 +15,6 @@
 -- Idempotent: IF NOT EXISTS + ON CONFLICT DO NOTHING.
 -- ============================================================
 
-BEGIN;
-
 -- ── helper: create the pair of tables in a schema ──────────────
 -- (Written out per-schema since Postgres has no parametric DDL.)
 
@@ -92,5 +90,3 @@ INSERT INTO diffusers.delivery_zones (name, scope, match_terms, rate, is_default
   ('Tier 2: Nationwide (South-East & South-South)','nationwide', ARRAY['abia','anambra','ebonyi','enugu','imo','akwa ibom','bayelsa','cross river','delta','edo','rivers'], 9000, false, 6),
   ('Tier 3: Nationwide (Northern)',              'nationwide', ARRAY[]::TEXT[],                                                    11500, true, 7)
 ON CONFLICT (name) DO NOTHING;
-
-COMMIT;
