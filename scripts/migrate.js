@@ -214,7 +214,20 @@ const command = process.argv[2] || "run";
       process.exit(1);
     }
   } catch (err) {
-    console.error("\nMigrator error:", err.message);
+    // Surface the full error — an empty `err.message` (e.g. a connection
+    // failure) was hiding the real cause.
+    console.error("\nMigrator error:");
+    console.error("  message:", err && err.message ? err.message : "(none)");
+    if (err && err.code) console.error("  code:", err.code);
+    if (err && err.detail) console.error("  detail:", err.detail);
+    if (err && err.hint) console.error("  hint:", err.hint);
+    if (err && err.address)
+      console.error("  address:", `${err.address}:${err.port ?? ""}`);
+    console.error(
+      "  DB target:",
+      `${DB_CONFIG.host}:${DB_CONFIG.port}/${DB_CONFIG.database} (user: ${DB_CONFIG.user})`,
+    );
+    if (err && err.stack) console.error("\n", err.stack);
     process.exit(1);
   }
 })();
