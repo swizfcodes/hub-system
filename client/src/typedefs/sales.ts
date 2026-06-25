@@ -140,6 +140,7 @@ export interface SalesOrder {
   subtotal?: number;
   discount_total?: number;
   vat_amount?: number;
+  delivery_fee?: number;
   total_amount: number;
   amount_paid: number;
   amount_outstanding: number; // GENERATED ALWAYS AS STORED — never write

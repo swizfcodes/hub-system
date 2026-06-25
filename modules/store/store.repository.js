@@ -463,17 +463,27 @@ async function insertContact(client, { displayName, email, phone }) {
 
 async function insertSalesOrderForWeb(
   client,
-  { orderNumber, contactId, totalNaira, deliveryAddress = null },
+  {
+    orderNumber,
+    contactId,
+    totalNaira,
+    deliveryFeeNaira = 0,
+    // Product subtotal (lines only). Falls back to total - delivery so the
+    // stored breakdown always reconciles to total_amount.
+    subtotalNaira = totalNaira - deliveryFeeNaira,
+    deliveryAddress = null,
+  },
 ) {
   const {
     rows: [row],
   } = await client.query(
     `INSERT INTO diffusers.sales_orders
        (order_number, contact_id, status, fulfilment_type,
-        total_amount, amount_paid, source, created_by, delivery_address)
-     VALUES ($1, $2, 'confirmed', 'delivery', $3, 0, 'web', NULL, $4)
+        subtotal, delivery_fee, total_amount, amount_paid,
+        source, created_by, delivery_address)
+     VALUES ($1, $2, 'confirmed', 'delivery', $3, $4, $5, 0, 'web', NULL, $6)
      RETURNING order_id, order_number`,
-    [orderNumber, contactId, totalNaira, deliveryAddress],
+    [orderNumber, contactId, subtotalNaira, deliveryFeeNaira, totalNaira, deliveryAddress],
   );
   return row;
 }
