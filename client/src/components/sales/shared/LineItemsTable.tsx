@@ -8,6 +8,7 @@ interface Totals {
   subtotal: number;
   discount_total: number;
   vat_amount: number;
+  delivery_fee?: number;
   total_amount: number;
 }
 
@@ -142,6 +143,14 @@ export function LineItemsTable({
             <TotalsRow
               label="VAT (7.5%)"
               value={fmtMoney(totals.vat_amount, currency)}
+              currency={currency}
+              muted
+            />
+          )}
+          {(totals.delivery_fee ?? 0) > 0 && (
+            <TotalsRow
+              label="Delivery"
+              value={fmtMoney(totals.delivery_fee ?? 0, currency)}
               currency={currency}
               muted
             />

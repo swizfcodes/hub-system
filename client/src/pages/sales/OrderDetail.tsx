@@ -134,9 +134,12 @@ export default function OrderDetail() {
               <LineItemsTable
                 lines={order.lines}
                 totals={{
-                  subtotal: order.subtotal ?? order.total_amount,
+                  subtotal:
+                    order.subtotal ??
+                    order.total_amount - (order.delivery_fee ?? 0),
                   discount_total: order.discount_total ?? 0,
                   vat_amount: order.vat_amount ?? 0,
+                  delivery_fee: order.delivery_fee ?? 0,
                   total_amount: order.total_amount,
                 }}
                 currency={currency}

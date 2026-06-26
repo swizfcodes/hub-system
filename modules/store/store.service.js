@@ -507,7 +507,7 @@ async function verifyAndFulfil(reference) {
         description: `Web Sale ${order.id} (${businessLabel(STORE_BUSINESS)})`,
         referenceType: "store_order",
         referenceId: order.id,
-        postedBy: order.customerId,
+        postedBy: config.systemUserId,
         lines: revLines,
       });
     } else {
@@ -536,7 +536,7 @@ async function verifyAndFulfil(reference) {
             description: `COGS for Web Sale ${order.id}`,
             referenceType: "store_order_cogs",
             referenceId: order.id,
-            postedBy: order.customerId,
+            postedBy: config.systemUserId,
             lines: [
               { account_id: cogsAcc, debit: total_cost, credit: 0 },
               { account_id: invAcc, debit: 0, credit: total_cost },
@@ -591,10 +591,16 @@ async function verifyAndFulfil(reference) {
         STORE_BUSINESS,
         "sales_order",
       );
+      const totalNaira = Number(order.total_kobo) / 100;
+      const deliveryFeeNaira = Number(order.delivery_fee_kobo || 0) / 100;
       const salesOrder = await repo.insertSalesOrderForWeb(client, {
         orderNumber,
         contactId: contact.contact_id,
-        totalNaira: Number(order.total_kobo) / 100,
+        totalNaira,
+        deliveryFeeNaira,
+        // Product subtotal = grand total minus delivery, so the ERP order
+        // shows Subtotal + Delivery + Total instead of folding the fee in.
+        subtotalNaira: totalNaira - deliveryFeeNaira,
         // Carry the checkout address into the ERP order so
         // Hand-to-Logistics prefills it (no re-keying).
         deliveryAddress: flattenAddress(order.delivery_address),
