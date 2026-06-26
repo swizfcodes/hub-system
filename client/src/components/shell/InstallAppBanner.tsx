@@ -2,9 +2,10 @@
  * InstallAppBanner — a slim, dismissible "add to home screen" prompt.
  *
  * Android / desktop Chromium get a real [Install] button (we replay the
- * captured beforeinstallprompt). iOS Safari has no programmatic install, so we
- * show the Share → "Add to Home Screen" instructions instead. Hidden once the
- * app is installed (standalone) or the user dismisses it.
+ * captured beforeinstallprompt). Safari has no programmatic install, so we show
+ * the manual steps instead: iOS/iPadOS → Share → "Add to Home Screen", macOS →
+ * File → "Add to Dock". Hidden once the app is installed (standalone) or the
+ * user dismisses it.
  */
 import { useState } from "react";
 import { Download, Share, X } from "lucide-react";
@@ -14,7 +15,8 @@ import { useBranding } from "@/providers/ThemeProvider";
 const DISMISS_KEY = "orika_install_banner_dismissed";
 
 export function InstallAppBanner() {
-  const { canPrompt, installed, isIos, promptInstall } = useInstallPrompt();
+  const { canPrompt, installed, isIos, isMacSafari, promptInstall } =
+    useInstallPrompt();
   const { platform } = useBranding();
   const name = platform.product_name || "Hub";
 
@@ -27,8 +29,9 @@ export function InstallAppBanner() {
   });
 
   // Nothing to offer: already installed, dismissed, or a browser with neither
-  // a deferred prompt nor the iOS manual path.
-  if (installed || dismissed || (!canPrompt && !isIos)) return null;
+  // a deferred prompt nor a manual path we can guide (iOS / macOS Safari).
+  const hasManualPath = isIos || isMacSafari;
+  if (installed || dismissed || (!canPrompt && !hasManualPath)) return null;
 
   const close = () => {
     try {
@@ -41,19 +44,26 @@ export function InstallAppBanner() {
 
   return (
     <div className="flex items-center gap-3 border-b border-brand-accent/20 bg-brand-accent/10 px-4 py-2.5">
-      {canPrompt ? (
-        <Download className="h-4 w-4 shrink-0 text-brand-accent" />
-      ) : (
+      {!canPrompt && isIos ? (
         <Share className="h-4 w-4 shrink-0 text-brand-accent" />
+      ) : (
+        <Download className="h-4 w-4 shrink-0 text-brand-accent" />
       )}
       <p className="flex-1 text-[11px] leading-snug text-brand-cloud sm:text-xs">
         {canPrompt ? (
           <>
             Install {name} for a faster, full-screen experience with alerts.
           </>
+        ) : isMacSafari ? (
+          <>
+            Install {name}: open the{" "}
+            <span className="font-semibold text-brand-cream">File</span> menu in
+            Safari and choose{" "}
+            <span className="font-semibold text-brand-cream">Add to Dock</span>.
+          </>
         ) : (
           <>
-            Install {name} on your iPhone: tap{" "}
+            Install {name}: tap{" "}
             <span className="font-semibold text-brand-cream">Share</span> →{" "}
             <span className="font-semibold text-brand-cream">
               Add to Home Screen

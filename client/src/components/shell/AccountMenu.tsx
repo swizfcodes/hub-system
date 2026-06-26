@@ -51,8 +51,9 @@ export function AccountMenu({ collapsed }: Props) {
   const setUser = useAuthStore((s) => s.setUser);
   const signOut = useAuthStore((s) => s.signOut);
 
-  const { canPrompt, isIos, installed, promptInstall } = useInstallPrompt();
-  const canInstall = !installed && (canPrompt || isIos);
+  const { canPrompt, isIos, isMacSafari, installed, promptInstall } =
+    useInstallPrompt();
+  const canInstall = !installed && (canPrompt || isIos || isMacSafari);
 
   const [open, setOpen] = useState(false);
   const [showPwModal, setShowPwModal] = useState(false);
@@ -213,9 +214,14 @@ export function AccountMenu({ collapsed }: Props) {
                   setOpen(false);
                   if (canPrompt) {
                     void promptInstall();
+                  } else if (isMacSafari) {
+                    showToast.info(
+                      "Install on your Mac",
+                      "In Safari, open File → Add to Dock.",
+                    );
                   } else {
                     showToast.info(
-                      "Install on your iPhone",
+                      "Install on your iPhone or iPad",
                       "Tap Share → Add to Home Screen.",
                     );
                   }
