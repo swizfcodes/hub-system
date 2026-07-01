@@ -149,7 +149,13 @@ async function createStaff(data, user) {
           email: data.email,
           gender: data.gender,
           date_of_birth: data.date_of_birth,
-          visible_to: data.visible_to || getActiveBusinesses(),
+          // Guard against an empty array (the onboarding form sends []):
+          // `[] || x` keeps the empty array, which would make the new
+          // employee's contact invisible in every business directory.
+          visible_to:
+            data.visible_to && data.visible_to.length
+              ? data.visible_to
+              : getActiveBusinesses(),
         },
         user,
       );
