@@ -176,6 +176,10 @@ export default function StaffOnboard() {
         pension_pin: v.pension_pin || undefined,
         nhf_number: v.nhf_number || undefined,
         tax_id: v.tax_id || undefined,
+        // Don't send an empty visible_to — the server defaults a missing
+        // value to all active businesses, but an empty array would store the
+        // contact as visible to none (never surfaces in the directory).
+        visible_to: v.visible_to?.length ? v.visible_to : undefined,
         // Work schedule — derive the arrangement from the picked days.
         work_schedule: workSchedule,
         work_location_type: deriveArrangement(workSchedule),
