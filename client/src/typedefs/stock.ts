@@ -1,21 +1,27 @@
 // Types mirror per-business stock schema (000008_business_stock.sql)
 // + planned backend additions documented in STOCK_PATCH_NOTES.md.
 
+// These string values MUST match the movement_type values written to the
+// stock_movements table by the backend (movements.service.recordMovement and
+// its callers). A mismatch silently breaks the Movement Log type filter — the
+// dropdown would query a value that never exists in the ledger.
 export type MovementType =
-  | "received" // GRN
-  | "sold" // invoice issue
-  | "pos_sale" // POS terminal
-  | "returned_from_customer"
-  | "returned_to_supplier"
+  | "received_from_supplier" // GRN / purchase receipt
+  | "sold" // invoice + POS issue
+  | "return_from_customer"
   | "transferred_out"
   | "transferred_in"
-  | "consigned_out"
-  | "consigned_returned"
-  | "reserved" // bookkeeping for crm deal
+  | "sent_to_consignment"
+  | "returned_from_consignment"
+  | "consignment_sale"
+  | "wholesale_out"
+  | "reserved"
   | "reservation_released"
-  | "written_off"
+  | "write_off"
+  | "sample"
+  | "gift"
   | "damaged"
-  | "sample" // marketing / gift / try-on
+  | "returned_to_supplier"
   | "adjustment";
 
 export type ReservationStatus = "active" | "released" | "converted_to_sale";

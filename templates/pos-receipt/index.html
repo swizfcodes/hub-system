@@ -168,12 +168,14 @@
         color: #777;
         line-height: 1.6;
       }
+    .brand-logo { max-height: 46px; max-width: 70%; margin: 0 auto 6px; display: block; object-fit: contain; }
     </style>
   </head>
   <body>
     <div class="receipt">
       <!-- ── Store header ── -->
       <div class="store-header">
+        {{brand_logo_img}}
         <div class="store-name">{{business}}</div>
         <div class="store-sub">Powered by {{brand_name}}</div>
       </div>

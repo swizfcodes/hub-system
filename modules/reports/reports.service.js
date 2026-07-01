@@ -181,40 +181,81 @@ function csvEscape(value) {
 // ─────────────────────────────────────────────────────────────
 // EXCEL FORMATTER
 //
-// SheetJS (xlsx) is in the dependency tree. We assemble an array of
-// arrays, plus a small metadata header, and write as an XLSX buffer.
-// ─────────────────────────────────────────────────────────────
+// Uses ExcelJS — the spreadsheet library already in the dependency tree and
+// used elsewhere (catalogue import template). The previous implementation
+// required SheetJS ('xlsx'), which is NOT installed, so every Excel export
+// threw and returned a 501. We build a metadata header block, a styled header
+// row, and one row per record.
+// ──────────────────────────────────────────────────────────────
 
 async function renderExcel({ meta, columns, rows }) {
-  let XLSX;
-  try {
-    XLSX = require("xlsx");
-  } catch {
-    throw Object.assign(
-      new Error(
-        "xlsx module not installed — cannot render Excel. Install 'xlsx' to enable.",
-      ),
-      { status: 501 },
-    );
-  }
+  const ExcelJS = require("exceljs");
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Hub Platform";
+  wb.created = new Date();
+  const ws = wb.addWorksheet("Report");
 
-  const sheetData = [];
-  sheetData.push([meta.title]);
-  if (meta.subtitle) sheetData.push([meta.subtitle]);
-  sheetData.push([`Generated: ${meta.generatedAt}`]);
-  sheetData.push([]); // blank row separator
+  // Metadata header block.
+  ws.addRow([meta.title]).font = { bold: true, size: 14 };
+  if (meta.subtitle) ws.addRow([meta.subtitle]);
+  ws.addRow([`Generated: ${meta.generatedAt}`]).font = {
+    italic: true,
+    color: { argb: "FF888888" },
+  };
+  ws.addRow([]); // blank row separator
 
-  sheetData.push(columns.map((c) => c.label));
+  // Column header row.
+  const headerRow = ws.addRow(columns.map((c) => c.label));
+  headerRow.font = { bold: true };
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF2F2F2" },
+    };
+    cell.border = { bottom: { style: "thin", color: { argb: "FFCCCCCC" } } };
+  });
+
+  // Data rows. Numeric column types are written as real numbers so the values
+  // stay sortable / sum-able in Excel; text and date types use the shared
+  // string formatter.
+  const numericTypes = new Set(["int", "decimal", "currency", "percent"]);
   for (const row of rows) {
-    sheetData.push(
-      columns.map((c) => formatValueForExport(row[c.key], c.type)),
-    );
+    const values = columns.map((c) => {
+      const raw = row[c.key];
+      if (numericTypes.has(c.type)) {
+        if (raw === null || raw === undefined || raw === "") return null;
+        const n = parseFloat(raw);
+        return Number.isNaN(n) ? formatValueForExport(raw, c.type) : n;
+      }
+      return formatValueForExport(raw, c.type);
+    });
+    const r = ws.addRow(values);
+    columns.forEach((c, i) => {
+      if (!numericTypes.has(c.type)) return;
+      const cell = r.getCell(i + 1);
+      if (typeof cell.value !== "number") return;
+      cell.numFmt =
+        c.type === "currency"
+          ? "#,##0.00"
+          : c.type === "percent"
+            ? '0.00"%"'
+            : c.type === "int"
+              ? "#,##0"
+              : "#,##0.00";
+    });
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Report");
-  return Buffer.from(XLSX.write(wb, { type: "buffer", bookType: "xlsx" }));
+  // Reasonable column widths.
+  columns.forEach((c, i) => {
+    ws.getColumn(i + 1).width = Math.min(
+      40,
+      Math.max(12, String(c.label).length + 2),
+    );
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
 }
 
 // ─────────────────────────────────────────────────────────────

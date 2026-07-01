@@ -23,11 +23,11 @@ import {
 } from "@components/logistics/shared/DeliveryStatusBadge";
 import { MarkFailedModal } from "@/components/logistics/modals/MarkFailedModal";
 import { DispatchModal } from "@/components/logistics/modals/DispatchModal";
+import { PackingSlipModal } from "@components/logistics/PackingSlipModal";
 import {
   getDelivery,
   markDelivered,
   getTracking,
-  packingSlipUrl,
   updateDeliveryDetails,
   resendSigningLink,
 } from "@services/logistics";
@@ -45,6 +45,7 @@ export default function DeliveryDetail() {
   const [showFailed, setShowFailed] = useState(false);
   const [showReturned, setShowReturned] = useState(false);
   const [showDispatch, setShowDispatch] = useState(false);
+  const [showSlip, setShowSlip] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [waybill, setWaybill] = useState("");
   const [courierCompany, setCourierCompany] = useState("");
@@ -207,16 +208,14 @@ export default function DeliveryDetail() {
                 Mark Delivered
               </Button>
             )}
-            <a
-              href={packingSlipUrl(delivery.delivery_id)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowSlip(true)}
             >
-              <Button variant="secondary" size="sm">
-                <Package className="h-4 w-4" />
-                Packing Slip
-              </Button>
-            </a>
+              <Package className="h-4 w-4" />
+              Packing Slip
+            </Button>
           </div>
         }
       />
@@ -553,6 +552,12 @@ export default function DeliveryDetail() {
       )}
 
       {/* Modals */}
+      <PackingSlipModal
+        open={showSlip}
+        onClose={() => setShowSlip(false)}
+        deliveryId={delivery.delivery_id}
+      />
+
       <DispatchModal
         open={showDispatch}
         onClose={() => setShowDispatch(false)}

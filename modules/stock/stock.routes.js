@@ -416,6 +416,36 @@ router.get("/movements", can("stock", "view"), async (req, res, next) => {
   }
 });
 
+// Manual stock exit — gift/sample, damage, write-off, consignment-out, or
+// return-to-supplier. Literal path segment "manual-exit" so it never collides
+// with the parametric "/:productId/movements" catch-all below.
+router.post(
+  "/movements/manual-exit",
+  body("product_id").isUUID(),
+  body("from_location_id").isUUID(),
+  body("quantity").isInt({ min: 1 }),
+  body("movement_type").isIn([
+    "sample",
+    "gift",
+    "sent_to_consignment",
+    "write_off",
+    "damaged",
+    "returned_to_supplier",
+  ]),
+  body("reason").isString().isLength({ min: 5 }),
+  validate,
+  can("stock", "create"),
+  async (req, res, next) => {
+    try {
+      res
+        .status(201)
+        .json(await service.recordManualExit(req.business, req.body, req.user));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // ── MOVEMENTS (parametric catch-all — MUST be last) ─────────────────────────
 
 router.get(

@@ -41,6 +41,12 @@ const VALID_MOVEMENT_TYPES = [
   "adjustment",
   "write_off",
   "return_from_customer",
+  // Manual-exit reasons (recorded via service.recordManualExit). Each removes
+  // stock from a location for a non-sale reason, always outbound (direction -1).
+  "sample", // marketing / try-on give-away
+  "gift", // customer gift / goodwill give-away
+  "damaged", // spoiled / broken in handling — a loss, journalled like a write-off
+  "returned_to_supplier", // goods sent back to the supplier (purchase return)
 ];
 
 /**
@@ -88,12 +94,19 @@ async function recordMovement(client, input) {
   // Accounting for VALUE-CHANGING movements. Sales/receipts/consignment are
   // journalled by their own modules; here we only handle adjustments and
   // write-offs, which otherwise never touch the ledger.
-  //   adjustment (+): DR Inventory (1410)        / CR Adjustment Income (4900)
+  //   adjustment (+): DR Inventory (1410)          / CR Adjustment Income (4900)
   //   adjustment (−): DR Inventory Write-off (6900) / CR Inventory (1410)
   //   write_off:      DR Inventory Write-off (6900) / CR Inventory (1410)
+  //   damaged:        DR Inventory Write-off (6900) / CR Inventory (1410)
+  //   sample / gift:  DR Marketing & Advertising (6400) / CR Inventory (1410)
+  // returned_to_supplier is intentionally NOT journalled here — a supplier
+  // credit note settles the value separately.
   if (
     input.movementType === "adjustment" ||
-    input.movementType === "write_off"
+    input.movementType === "write_off" ||
+    input.movementType === "damaged" ||
+    input.movementType === "sample" ||
+    input.movementType === "gift"
   ) {
     await postStockValueJournal(client, movement, input);
   }
@@ -140,13 +153,25 @@ async function postStockValueJournal(client, movement, input) {
     debitCode = "1410"; // Inventory
     creditCode = "4900"; // Stock Adjustment Income
     description = `Stock adjustment +${input.quantity} units`;
+  } else if (
+    input.movementType === "sample" ||
+    input.movementType === "gift"
+  ) {
+    // Samples and customer gifts are a promotional cost, not a write-off.
+    debitCode = "6400"; // Marketing & Advertising
+    creditCode = "1410"; // Inventory
+    description = `${
+      input.movementType === "gift" ? "Gift" : "Sample"
+    } give-away — ${input.quantity} units`;
   } else {
     debitCode = "6900"; // Inventory Write-off
     creditCode = "1410"; // Inventory
     description =
       input.movementType === "write_off"
         ? `Stock write-off — ${input.quantity} units`
-        : `Stock adjustment −${input.quantity} units`;
+        : input.movementType === "damaged"
+          ? `Damaged stock write-off — ${input.quantity} units`
+          : `Stock adjustment −${input.quantity} units`;
   }
 
   const [debitAcc, creditAcc] = await Promise.all([

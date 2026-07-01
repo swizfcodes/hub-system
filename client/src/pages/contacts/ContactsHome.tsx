@@ -76,11 +76,15 @@ export default function ContactsHome() {
 
   // All filtering is server-side — type, search, priority, source.
   const { data, isLoading } = useQuery({
-    queryKey: ["contacts", { search: filters.search, type: activeTab, page }],
+    queryKey: [
+      "contacts",
+      { search: filters.search, type: activeTab, location: filters.location, page },
+    ],
     queryFn: () =>
       listContacts({
         search: filters.search || undefined,
         type: activeTab !== "all" ? activeTab : undefined,
+        location: filters.location || undefined,
         page,
         limit: PAGE_SIZE,
       }),

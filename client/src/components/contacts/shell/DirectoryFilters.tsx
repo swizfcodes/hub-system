@@ -13,6 +13,7 @@ export interface DirectoryFilterValues {
   search: string;
   priority?: PriorityLevel | "";
   source?: ContactSource | "";
+  location?: string; // free-text city/state filter, e.g. "Abuja"
   business?: string; // single-business filter (defaults to active)
   showAllBusinesses?: boolean;
 }
@@ -29,6 +30,7 @@ export function DirectoryFilters({ value, onChange }: Props) {
   const hasAdvanced = !!(
     value.priority ||
     value.source ||
+    value.location ||
     value.showAllBusinesses
   );
 
@@ -94,6 +96,24 @@ export function DirectoryFilters({ value, onChange }: Props) {
                 label: m.label,
               })),
             ]}
+          />
+          <Input
+            surface="dark"
+            label="Location"
+            placeholder="City or state, e.g. Abuja"
+            value={value.location || ""}
+            onChange={(e) => update({ location: e.target.value })}
+            rightSlot={
+              value.location ? (
+                <button
+                  onClick={() => update({ location: "" })}
+                  className="text-brand-smoke hover:text-brand-cream"
+                  aria-label="Clear location"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : undefined
+            }
           />
           <Select
             surface="dark"

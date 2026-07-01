@@ -17,19 +17,43 @@ async function ensureContactType(client, contactId, type) {
   );
 }
 
-async function list(client, { business, search, type, limit, offset }) {
+async function list(
+  client,
+  { business, search, type, location, limit, offset },
+) {
+  // location matches either the contact's denormalised address_city/state OR
+  // any of their saved addresses (area/city/state) — so "Abuja" finds people
+  // tagged Abuja at the contact level and anyone with an Abuja address on file.
   const { rows } = await client.query(
     `SELECT contact_id, contact_type, display_name, first_name, last_name,
             primary_phone, whatsapp_number, email, priority_level, source,
+            address_city, address_state,
             created_at, updated_at
-     FROM shared.contacts
+     FROM shared.contacts c
      WHERE is_deleted = false
        AND ($1 = ANY(visible_to) OR visible_to IS NULL)
        AND ($2::TEXT IS NULL OR display_name ILIKE $2 OR primary_phone ILIKE $2 OR email ILIKE $2)
        AND ($3::TEXT IS NULL OR $3 = ANY(contact_type))
+       AND (
+         $4::TEXT IS NULL
+         OR c.address_city  ILIKE $4
+         OR c.address_state ILIKE $4
+         OR EXISTS (
+           SELECT 1 FROM shared.contact_addresses a
+           WHERE a.contact_id = c.contact_id
+             AND (a.city ILIKE $4 OR a.state ILIKE $4 OR a.area ILIKE $4)
+         )
+       )
      ORDER BY display_name ASC
-     LIMIT $4 OFFSET $5`,
-    [business, search ? `%${search}%` : null, type || null, limit, offset],
+     LIMIT $5 OFFSET $6`,
+    [
+      business,
+      search ? `%${search}%` : null,
+      type || null,
+      location ? `%${location}%` : null,
+      limit,
+      offset,
+    ],
   );
   return rows;
 }
@@ -48,16 +72,35 @@ async function count(client, business) {
  * countFiltered — mirrors the WHERE clause in list() so pagination
  * totals are correct when search/type filters are active.
  */
-async function countFiltered(client, business, { search = "", type } = {}) {
+async function countFiltered(
+  client,
+  business,
+  { search = "", type, location } = {},
+) {
   const {
     rows: [{ count }],
   } = await client.query(
-    `SELECT COUNT(*) FROM shared.contacts
+    `SELECT COUNT(*) FROM shared.contacts c
      WHERE is_deleted = false
        AND ($1 = ANY(visible_to) OR visible_to IS NULL)
        AND ($2::TEXT IS NULL OR display_name ILIKE $2 OR primary_phone ILIKE $2 OR email ILIKE $2)
-       AND ($3::TEXT IS NULL OR $3 = ANY(contact_type))`,
-    [business, search ? `%${search}%` : null, type || null],
+       AND ($3::TEXT IS NULL OR $3 = ANY(contact_type))
+       AND (
+         $4::TEXT IS NULL
+         OR c.address_city  ILIKE $4
+         OR c.address_state ILIKE $4
+         OR EXISTS (
+           SELECT 1 FROM shared.contact_addresses a
+           WHERE a.contact_id = c.contact_id
+             AND (a.city ILIKE $4 OR a.state ILIKE $4 OR a.area ILIKE $4)
+         )
+       )`,
+    [
+      business,
+      search ? `%${search}%` : null,
+      type || null,
+      location ? `%${location}%` : null,
+    ],
   );
   return parseInt(count);
 }

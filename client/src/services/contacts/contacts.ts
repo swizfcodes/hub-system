@@ -10,6 +10,7 @@ import type {
 export interface ListParams {
   search?: string;
   type?: string; // single backend filter; we filter multi-types client-side
+  location?: string; // city/state filter (matches contact + saved addresses)
   page?: number;
   limit?: number;
 }

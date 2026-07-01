@@ -647,6 +647,26 @@ async function voidTransaction(business, transactionId, { void_reason }, user) {
       [transactionId],
     );
 
+    // Reverse the accounting journals so the sale is fully unwound, not just
+    // flagged voided. createTransaction posts two entries against this
+    // transaction — the revenue journal (referenceType 'pos_transaction') and
+    // the COGS journal (referenceType 'pos_transaction_cogs'). We reverse both
+    // by swapping DR/CR via journalService.reverseEntry. Already-reversed
+    // entries are skipped so a double-void can't double-post.
+    const { rows: journalEntries } = await client.query(
+      `SELECT entry_id FROM journal_entries
+       WHERE reference_id = $1
+         AND reference_type IN ('pos_transaction', 'pos_transaction_cogs')
+         AND is_reversed = false`,
+      [transactionId],
+    );
+    for (const je of journalEntries) {
+      await journalService.reverseEntry(client, {
+        entryId: je.entry_id,
+        postedBy: user.user_id,
+      });
+    }
+
     await auditService.log(client, {
       userId: user.user_id,
       userName: user.display_name || "staff",

@@ -12,7 +12,8 @@ import {
 } from "@components/logistics/shared/DeliveryStatusBadge";
 import { CreateDeliveryModal } from "@/components/logistics/modals/CreateDeliveryModal";
 import { DispatchModal } from "@/components/logistics/modals/DispatchModal";
-import { listDeliveries, packingSlipUrl } from "@services/logistics";
+import { listDeliveries } from "@services/logistics";
+import { PackingSlipModal } from "@components/logistics/PackingSlipModal";
 import { LOGISTICS_TABS } from "@lib/constants/logisticsConstants";
 import { useActiveBusiness } from "@hooks/useActiveBusiness";
 import { fmtDateTime } from "@lib/format";
@@ -42,6 +43,7 @@ export default function LogisticsHome() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [dispatching, setDispatching] = useState<Delivery | null>(null);
+  const [slipDeliveryId, setSlipDeliveryId] = useState<string | null>(null);
 
   // ONE query for all statuses — tabs and badges filter client-side.
   // (Per-tab queries made the badge counts wrong: each tab only saw its
@@ -242,15 +244,14 @@ export default function LogisticsHome() {
                         {["pending_dispatch", "dispatched"].includes(
                           delivery.status,
                         ) && (
-                          <a
-                            href={packingSlipUrl(delivery.delivery_id)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => setSlipDeliveryId(delivery.delivery_id)}
                             title="Packing Slip"
                             className="text-brand-smoke hover:text-brand-accent transition-colors"
                           >
                             <Package className="h-4 w-4" />
-                          </a>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -270,6 +271,12 @@ export default function LogisticsHome() {
             navigate(`/logistics/${id}`);
           }}
           currency={currency}
+        />
+
+        <PackingSlipModal
+          open={!!slipDeliveryId}
+          onClose={() => setSlipDeliveryId(null)}
+          deliveryId={slipDeliveryId}
         />
 
         {/* Dispatch — enter the booked ride's driver details */}
