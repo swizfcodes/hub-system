@@ -11,6 +11,7 @@ import {
   ClipboardCheck,
   BellRing,
   MapPin,
+  PackageMinus,
 } from "lucide-react";
 import { Topbar } from "@components/shell/Topbar";
 import { PageHeader } from "@components/ui/PageHeader";
@@ -24,6 +25,7 @@ import { ByLocationView } from "@components/stock/views/ByLocationView";
 import { MovementLogView } from "@components/stock/views/MovementLogView";
 import { StockKpiStrip } from "@components/stock/shared/StockKpiStrip";
 import { AdjustmentModal } from "@components/stock/modals/AdjustmentModal";
+import { ManualExitModal } from "@components/stock/modals/ManualExitModal";
 import { listOnHand } from "@services/stock/onHand";
 import { listLocations } from "@services/catalogue/locations";
 import { listCategories } from "@services/catalogue/categories";
@@ -56,6 +58,7 @@ export default function StockHome() {
   const [movTo, setMovTo] = useState("");
 
   // Modals
+  const [manualExitOpen, setManualExitOpen] = useState(false);
   const [adjustingProductId, setAdjustingProductId] = useState<string | null>(
     null,
   );
@@ -152,6 +155,14 @@ export default function StockHome() {
                 onClick={() => navigate("/stock/reservations")}
               >
                 Reservations
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<PackageMinus className="w-4 h-4" />}
+                onClick={() => setManualExitOpen(true)}
+              >
+                Manual exit
               </Button>
               <Button
                 variant="gold"
@@ -307,6 +318,11 @@ export default function StockHome() {
           />
         )}
       </div>
+
+      <ManualExitModal
+        open={manualExitOpen}
+        onClose={() => setManualExitOpen(false)}
+      />
 
       <AdjustmentModal
         open={!!adjustingProductId}

@@ -6,7 +6,7 @@ const auditService = require("../audit/audit.service");
 const repo = require("./contacts.repository");
 
 async function list(
-  { business, search = "", type, page = 1, limit = 50 },
+  { business, search = "", type, location, page = 1, limit = 50 },
   user,
 ) {
   return withSharedContext(async (client) => {
@@ -26,13 +26,18 @@ async function list(
       business: biz,
       search,
       type,
+      location,
       limit: parseInt(limit),
       offset,
     });
     // Use countFiltered so the total reflects the same search/type filter
     // as the list query — raw count() returns the unfiltered total which
     // produces incorrect pagination when filtering is active.
-    const total = await repo.countFiltered(client, biz, { search, type });
+    const total = await repo.countFiltered(client, biz, {
+      search,
+      type,
+      location,
+    });
     return { data: rows, total, page: parseInt(page), limit: parseInt(limit) };
   });
 }

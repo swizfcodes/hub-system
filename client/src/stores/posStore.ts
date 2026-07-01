@@ -19,9 +19,20 @@ import {
 
 // ── Computed totals helper ────────────────────────────────────────────────────
 
+// Coerce any value to a finite number. Money columns (selling_price,
+// min_selling_price, …) arrive from the pg driver as STRINGS for NUMERIC
+// types. Seeding line_total straight from such a string made computeTotals'
+// `s + l.line_total` reduce do string concatenation once a second line was
+// added ("5000.00" + "3000.00" → "5000.003000.00" → NaN). Always normalise
+// numeric input through this helper so arithmetic stays numeric.
+function num(n: unknown): number {
+  const v = typeof n === "string" ? parseFloat(n) : (n as number);
+  return Number.isFinite(v) ? v : 0;
+}
+
 // C2 fix: round all money calculations to 2 decimal places
 function r2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return Math.round(num(n) * 100) / 100;
 }
 
 export function computeTotals(
@@ -30,19 +41,19 @@ export function computeTotals(
   loyaltyDiscAmt: number,
   vatRate: number,
 ): CartTotals {
-  const lineSubtotal = r2(lines.reduce((s, l) => s + l.line_total, 0));
+  const lineSubtotal = r2(lines.reduce((s, l) => s + num(l.line_total), 0));
 
   const orderDiscAmt = r2(
     orderDiscount
       ? orderDiscount.type === "percentage"
-        ? lineSubtotal * (orderDiscount.value / 100)
-        : orderDiscount.value
+        ? lineSubtotal * (num(orderDiscount.value) / 100)
+        : num(orderDiscount.value)
       : 0,
   );
 
   const netAfterDisc = r2(Math.max(
     0,
-    lineSubtotal - orderDiscAmt - loyaltyDiscAmt,
+    lineSubtotal - orderDiscAmt - num(loyaltyDiscAmt),
   ));
   const vat = r2(netAfterDisc * vatRate);
   const total = r2(netAfterDisc + vat);
@@ -60,7 +71,12 @@ export function computeTotals(
 function computeLineTotal(
   line: Omit<CartLine, "line_total" | "needs_approval" | "low_stock">,
 ): number {
-  return r2(Math.max(0, line.unit_price * line.quantity - line.discount_amount));
+  return r2(
+    Math.max(
+      0,
+      num(line.unit_price) * num(line.quantity) - num(line.discount_amount),
+    ),
+  );
 }
 
 // ── Store definition ──────────────────────────────────────────────────────────
@@ -159,19 +175,21 @@ export const usePOSStore = create<PosState>((set, get) => ({
       return;
     }
 
+    const sellingPrice = num(product.selling_price);
+    const availableQty = num(product.available_qty);
     const line: CartLine = {
       id: uuid(),
       product_id: product.product_id,
       description: product.name,
-      unit_price: product.selling_price,
-      selling_price: product.selling_price,
-      min_price: product.min_selling_price,
+      unit_price: sellingPrice,
+      selling_price: sellingPrice,
+      min_price: num(product.min_selling_price),
       quantity: 1,
       discount_amount: 0,
-      line_total: product.selling_price,
+      line_total: sellingPrice,
       needs_approval: false,
-      stock_qty: product.available_qty,
-      low_stock: product.available_qty <= 3 && product.available_qty > 0,
+      stock_qty: availableQty,
+      low_stock: availableQty <= 3 && availableQty > 0,
     };
     set({ lines: [...lines, line] });
   },

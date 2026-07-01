@@ -24,9 +24,9 @@ export interface MovementTypeMeta {
 }
 
 export const MOVEMENT_TYPE_META: Record<MovementType, MovementTypeMeta> = {
-  received: {
-    key: "received",
-    label: "Received",
+  received_from_supplier: {
+    key: "received_from_supplier",
+    label: "Received (GRN)",
     icon: ArrowDownToLine,
     color: "#8B9D77",
     direction: 1,
@@ -34,35 +34,19 @@ export const MOVEMENT_TYPE_META: Record<MovementType, MovementTypeMeta> = {
   },
   sold: {
     key: "sold",
-    label: "Sold (invoice)",
+    label: "Sold",
     icon: ShoppingBag,
     color: "#C9A86C",
     direction: -1,
     tone: "gold",
   },
-  pos_sale: {
-    key: "pos_sale",
-    label: "POS sale",
-    icon: Store,
-    color: "#C9A86C",
-    direction: -1,
-    tone: "gold",
-  },
-  returned_from_customer: {
-    key: "returned_from_customer",
+  return_from_customer: {
+    key: "return_from_customer",
     label: "Customer return",
     icon: RotateCcw,
     color: "#8B9D77",
     direction: 1,
     tone: "sage",
-  },
-  returned_to_supplier: {
-    key: "returned_to_supplier",
-    label: "Return to supplier",
-    icon: ArrowUpFromLine,
-    color: "#B76E79",
-    direction: -1,
-    tone: "rose",
   },
   transferred_out: {
     key: "transferred_out",
@@ -80,21 +64,45 @@ export const MOVEMENT_TYPE_META: Record<MovementType, MovementTypeMeta> = {
     direction: 1,
     tone: "info",
   },
-  consigned_out: {
-    key: "consigned_out",
-    label: "Consigned out",
+  sent_to_consignment: {
+    key: "sent_to_consignment",
+    label: "Sent to consignment",
     icon: Box,
     color: "#A855F7",
     direction: -1,
     tone: "rose",
   },
-  consigned_returned: {
-    key: "consigned_returned",
-    label: "Consignment back",
+  returned_from_consignment: {
+    key: "returned_from_consignment",
+    label: "Returned from consignment",
     icon: Box,
     color: "#A855F7",
     direction: 1,
     tone: "rose",
+  },
+  consignment_sale: {
+    key: "consignment_sale",
+    label: "Consignment sale",
+    icon: Store,
+    color: "#C9A86C",
+    direction: -1,
+    tone: "gold",
+  },
+  wholesale_out: {
+    key: "wholesale_out",
+    label: "Wholesale out",
+    icon: ArrowUpFromLine,
+    color: "#7A8FA8",
+    direction: -1,
+    tone: "info",
+  },
+  write_off: {
+    key: "write_off",
+    label: "Write-off / damage",
+    icon: AlertTriangle,
+    color: "#C75B5B",
+    direction: -1,
+    tone: "danger",
   },
   reserved: {
     key: "reserved",
@@ -112,13 +120,21 @@ export const MOVEMENT_TYPE_META: Record<MovementType, MovementTypeMeta> = {
     direction: 1,
     tone: "warn",
   },
-  written_off: {
-    key: "written_off",
-    label: "Written off",
-    icon: AlertTriangle,
-    color: "#C75B5B",
+  sample: {
+    key: "sample",
+    label: "Sample",
+    icon: Gift,
+    color: "#B76E79",
     direction: -1,
-    tone: "danger",
+    tone: "rose",
+  },
+  gift: {
+    key: "gift",
+    label: "Gift",
+    icon: Gift,
+    color: "#B76E79",
+    direction: -1,
+    tone: "rose",
   },
   damaged: {
     key: "damaged",
@@ -128,10 +144,10 @@ export const MOVEMENT_TYPE_META: Record<MovementType, MovementTypeMeta> = {
     direction: -1,
     tone: "danger",
   },
-  sample: {
-    key: "sample",
-    label: "Sample / gift",
-    icon: Gift,
+  returned_to_supplier: {
+    key: "returned_to_supplier",
+    label: "Return to supplier",
+    icon: ArrowUpFromLine,
     color: "#B76E79",
     direction: -1,
     tone: "rose",

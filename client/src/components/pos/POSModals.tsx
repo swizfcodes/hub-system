@@ -27,6 +27,7 @@ import {
   CreditCard,
   Building2,
   Copy,
+  AlertTriangle,
 } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,6 +45,7 @@ import {
   confirmTransactionPayment,
   verifyManager,
   createReturn,
+  voidTransaction,
 } from "@services/pos/transactions";
 import type { PosInvoiceResult } from "@services/pos/transactions";
 import { closeSession } from "@services/pos/sessions";
@@ -73,7 +75,7 @@ import type {
 //   'invoice'  → bank transfer details + Confirm Payment Received button
 //   'confirmed'→ payment confirmed, receipt emailed, ready for new sale
 
-type ReceiptView = "default" | "invoice" | "confirmed";
+type ReceiptView = "default" | "invoice" | "confirmed" | "reverse";
 
 interface ReceiptModalProps {
   open: boolean;
@@ -103,6 +105,8 @@ export function ReceiptModal({
     receipt_error: string | null;
     invoice_number: string;
   } | null>(null);
+  const [reversing, setReversing] = useState(false);
+  const [reverseReason, setReverseReason] = useState("");
 
   // Reset to default view whenever a new transaction comes through
   useEffect(() => {
@@ -110,6 +114,7 @@ export function ReceiptModal({
     setInvoiceData(null);
     setReference("");
     setConfirmResult(null);
+    setReverseReason("");
   }, [transaction.transaction_id]);
 
   // Reset view state when modal closes / reopens
@@ -118,7 +123,31 @@ export function ReceiptModal({
     setInvoiceData(null);
     setReference("");
     setConfirmResult(null);
+    setReverseReason("");
     onNewSale();
+  }
+
+  // Fully reverse a just-completed sale when the cashier realises a mistake.
+  // The backend void marks the transaction voided, returns stock to the
+  // terminal's location, reverses both accounting journals (revenue + COGS),
+  // and cancels any bridge sales order — a complete unwind, not a flag.
+  async function handleReverse() {
+    if (!reverseReason.trim()) {
+      showToast.error("Enter a reason for the reversal");
+      return;
+    }
+    setReversing(true);
+    try {
+      await voidTransaction(transaction.transaction_id, reverseReason.trim());
+      showToast.success(
+        `Sale ${transaction.transaction_number} reversed — stock and ledger restored`,
+      );
+      handleNewSale();
+    } catch (err) {
+      showToast.error(errMsg(err));
+    } finally {
+      setReversing(false);
+    }
   }
 
   async function handleSend(channel: "whatsapp" | "email") {
@@ -240,6 +269,49 @@ export function ReceiptModal({
         <FileText className="h-4 w-4" />
         Generate Invoice (Bank Transfer)
       </Button>
+
+      {/* Reverse this sale — for mistakes caught right after checkout */}
+      <Button
+        variant="ghost"
+        className="w-full justify-start text-red-500 hover:text-red-400"
+        onClick={() => setView("reverse")}
+      >
+        <RotateCcw className="h-4 w-4" />
+        Reverse Sale
+      </Button>
+    </div>
+  );
+
+  // ── View: reverse ─────────────────────────────────────────────────────────────
+  const reverseBody = (
+    <div className="space-y-5">
+      <div className="rounded-xl border border-red-500/30 bg-red-900/10 px-4 py-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-red-300">
+              Reverse {transaction.transaction_number}?
+            </p>
+            <p className="text-xs text-red-300/80">
+              This voids the sale completely: stock is returned, the accounting
+              entries are reversed, and any linked invoice/sales order is
+              cancelled. This cannot be undone.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-brand-smoke">
+          Reason for reversal
+        </label>
+        <Textarea
+          value={reverseReason}
+          onChange={(e) => setReverseReason(e.target.value)}
+          placeholder="e.g. wrong product scanned, duplicate sale, customer cancelled"
+          rows={3}
+        />
+      </div>
     </div>
   );
 
@@ -358,6 +430,7 @@ export function ReceiptModal({
     default: "Transaction Complete",
     invoice: "Bank Transfer Invoice",
     confirmed: "Payment Confirmed",
+    reverse: "Reverse Sale",
   };
 
   // ── Footer ────────────────────────────────────────────────────────────────────
@@ -390,6 +463,27 @@ export function ReceiptModal({
           New Sale
         </Button>
       )}
+      {view === "reverse" && (
+        <>
+          <Button
+            variant="ghost"
+            className="text-brand-smoke"
+            onClick={() => setView("default")}
+            disabled={reversing}
+          >
+            Back
+          </Button>
+          <Button
+            variant="danger"
+            className="flex-1"
+            onClick={handleReverse}
+            loading={reversing}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Confirm Reversal
+          </Button>
+        </>
+      )}
     </div>
   );
 
@@ -405,6 +499,7 @@ export function ReceiptModal({
       {view === "default" && defaultBody}
       {view === "invoice" && invoiceBody}
       {view === "confirmed" && confirmedBody}
+      {view === "reverse" && reverseBody}
     </Modal>
   );
 }

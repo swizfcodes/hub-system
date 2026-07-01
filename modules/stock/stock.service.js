@@ -111,6 +111,45 @@ async function createAdjustment(business, data, user) {
   });
 }
 
+// ── Manual stock exit ────────────────────────────────────────
+// Removes stock from a location for a non-sale reason (gift/sample, damage,
+// write-off, consignment-out, or return-to-supplier), always outbound. Every
+// exit carries a mandatory reason and lands in the append-only stock_movements
+// ledger. Value-changing types (write_off, damaged) auto-post a write-off
+// journal inside recordMovement; the others are quantity-only here.
+const MANUAL_EXIT_TYPES = [
+  "sample",
+  "gift",
+  "sent_to_consignment",
+  "write_off",
+  "damaged",
+  "returned_to_supplier",
+];
+
+async function recordManualExit(business, data, user) {
+  if (!MANUAL_EXIT_TYPES.includes(data.movement_type)) {
+    throw Object.assign(
+      new Error(
+        `movement_type must be one of: ${MANUAL_EXIT_TYPES.join(", ")}`,
+      ),
+      { status: 400 },
+    );
+  }
+  return withBusinessContext(business, async (client) => {
+    return movements.recordMovement(client, {
+      business,
+      productId: data.product_id,
+      movementType: data.movement_type,
+      quantity: data.quantity,
+      direction: -1,
+      fromLocationId: data.from_location_id,
+      referenceType: "manual_exit",
+      notes: data.reason,
+      performedBy: user.user_id,
+    });
+  });
+}
+
 // List adjustments (history), newest first, with product/location/user names.
 async function listAdjustments(business, query = {}) {
   return withBusinessContext(business, async (client) => {
@@ -562,6 +601,7 @@ module.exports = {
   getValuationByProductForBusiness: valuation.getValuationByProductForBusiness,
   // ── Local operations ────────────────────────────────────────
   createAdjustment,
+  recordManualExit,
   listAdjustments,
   createBatchAdjustments,
   approveAdjustment,

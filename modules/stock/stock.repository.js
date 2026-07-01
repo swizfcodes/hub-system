@@ -82,7 +82,10 @@ async function listMovements(
       AND ($4::TEXT IS NULL OR sm.reference_type = $4)
       AND ($5::UUID IS NULL OR sm.reference_id = $5)
       AND ($6::TIMESTAMPTZ IS NULL OR sm.performed_at >= $6)
-      AND ($7::TIMESTAMPTZ IS NULL OR sm.performed_at <= $7)`;
+      AND (
+        $7::DATE IS NULL
+        OR sm.performed_at < (($7::DATE) + INTERVAL '1 day')
+      )`;
 
   const { rows } = await client.query(
     `SELECT sm.*, p.sku AS product_sku, p.name AS product_name,
@@ -671,7 +674,7 @@ async function findTransferById(client, transferId) {
   LEFT JOIN stock_transfer_lines tline ON tline.transfer_id = t.transfer_id
   LEFT JOIN products p             ON p.product_id   = tline.product_id
       WHERE t.transfer_id = $1
-      GROUP BY t.transfer_id, fl.name, tl.name, u1.display_name, u2.display_name`,
+      GROUP BY t.transfer_id, fl.name, tl.name, u1.email, u2.email`,
     [transferId],
   );
   return transfer || null;
