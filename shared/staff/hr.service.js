@@ -20,6 +20,7 @@ const auditService = require("../audit/audit.service");
 const notifService = require("../notifications/notifications.service");
 const repo = require("./hr.repository");
 const staffRepo = require("./staff.repository");
+const { reverseGeocode } = require("../../integrations/geocoding/geoapify");
 
 const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -88,6 +89,18 @@ async function userIdForProfile(client, profileId) {
 // ─────────────────────────────────────────────────────────────
 
 async function clockIn(user, { latitude, longitude, accuracy, locationLabel, ip }) {
+  const lat = latitude != null ? Number(latitude) : null;
+  const lng = longitude != null ? Number(longitude) : null;
+
+  // Reverse-geocode the GPS fix into a readable address BEFORE opening the
+  // transaction: the external HTTP call must never hold a DB connection
+  // open, and a slow/failed lookup must never block clocking in. Falls back
+  // to null (the UI then shows a plain map pin from the raw coordinates).
+  let label = locationLabel || null;
+  if (!label && lat != null && lng != null) {
+    label = await reverseGeocode(lat, lng);
+  }
+
   return withSharedContext(async (client) => {
     const profileId = await resolveOwnProfile(client, user);
     const sched = await repo.getSchedule(client, profileId);
@@ -104,9 +117,6 @@ async function clockIn(user, { latitude, longitude, accuracy, locationLabel, ip 
 
     const dayKey = WEEKDAYS[now.getDay()];
     const expectedMode = (sched.work_schedule || {})[dayKey] || "on_site";
-
-    const lat = latitude != null ? Number(latitude) : null;
-    const lng = longitude != null ? Number(longitude) : null;
 
     let distance = null;
     let isOffsite = false;
@@ -158,7 +168,7 @@ async function clockIn(user, { latitude, longitude, accuracy, locationLabel, ip 
       clock_in_latitude: lat,
       clock_in_longitude: lng,
       clock_in_accuracy_m: accuracy != null ? Number(accuracy) : null,
-      clock_in_location_label: locationLabel || null,
+      clock_in_location_label: label,
       distance_from_office_m: distance,
       is_offsite: isOffsite,
       late_minutes: lateMinutes,
