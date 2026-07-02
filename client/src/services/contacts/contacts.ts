@@ -34,6 +34,25 @@ export async function createContact(
   return data;
 }
 
+// Per-business "Walk-in Customer" placeholder. POS requires a customer on
+// every sale (sales_orders.contact_id is NOT NULL); this gives anonymous
+// walk-ins a single reusable named contact instead of loosening the schema.
+// Found-or-created by display_name so we never spawn duplicates.
+export const WALK_IN_NAME = "Walk-in Customer";
+
+export async function getOrCreateWalkInCustomer(): Promise<Contact> {
+  const matches = await searchContacts(WALK_IN_NAME, 10);
+  const existing = matches.find((c) => c.display_name === WALK_IN_NAME);
+  if (existing) return existing;
+  return createContact({
+    display_name: WALK_IN_NAME,
+    first_name: "Walk-in",
+    last_name: "Customer",
+    primary_phone: "0000000000",
+    contact_type: ["customer"],
+  });
+}
+
 export async function updateContact(
   id: string,
   patch: Partial<Contact>,

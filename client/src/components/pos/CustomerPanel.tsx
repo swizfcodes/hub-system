@@ -1,9 +1,12 @@
 // ── CustomerPanel.tsx ──────────────────────────────────────────────────────────
-import { useEffect } from "react";
-import { Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Star, UserPlus } from "lucide-react";
 import { usePOSStore } from "@stores/posStore";
 import { ContactSearchInput } from "@components/shared/ContactSearchInput";
 import { getLoyaltyInfo } from "@services/pos/transactions";
+import { getOrCreateWalkInCustomer } from "@services/contacts/contacts";
+import { showToast } from "@hooks/useToast";
+import { errMsg } from "@services/api";
 import { fmtMoney } from "@lib/format";
 
 interface CustomerPanelProps {
@@ -20,6 +23,8 @@ export function CustomerPanel({ currency = "NGN" }: CustomerPanelProps) {
     }),
   );
 
+  const [walkinLoading, setWalkinLoading] = useState(false);
+
   useEffect(() => {
     if (!customer) {
       setLoyaltyInfo(null);
@@ -27,6 +32,18 @@ export function CustomerPanel({ currency = "NGN" }: CustomerPanelProps) {
     }
     getLoyaltyInfo(customer.contact_id).then(setLoyaltyInfo);
   }, [customer?.contact_id]);
+
+  async function useWalkIn() {
+    setWalkinLoading(true);
+    try {
+      const walkin = await getOrCreateWalkInCustomer();
+      setCustomer(walkin);
+    } catch (err) {
+      showToast.error("Could not set walk-in customer", errMsg(err));
+    } finally {
+      setWalkinLoading(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -36,6 +53,20 @@ export function CustomerPanel({ currency = "NGN" }: CustomerPanelProps) {
         label="Customer"
         required
       />
+
+      {/* Walk-in fallback — attaches the reusable "Walk-in Customer" contact so
+          anonymous sales still carry a name and can check out. */}
+      {!customer && (
+        <button
+          type="button"
+          onClick={useWalkIn}
+          disabled={walkinLoading}
+          className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 py-2 text-xs text-brand-smoke hover:border-brand-accent/40 hover:text-brand-accent transition-colors disabled:opacity-50"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          {walkinLoading ? "Setting walk-in…" : "Use walk-in customer"}
+        </button>
+      )}
 
       {/* Loyalty info */}
       {customer && loyaltyInfo && (

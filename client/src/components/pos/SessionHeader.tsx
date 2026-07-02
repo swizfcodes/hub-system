@@ -1,5 +1,5 @@
 // ── SessionHeader.tsx ──────────────────────────────────────────────────────────
-import { LogOut, BarChart2 } from "lucide-react";
+import { LogOut, BarChart2, ArrowLeft } from "lucide-react";
 import { usePOSStore } from "@stores/posStore";
 import { Button } from "@components/ui/Button";
 import { fmtMoney } from "@lib/format";
@@ -7,12 +7,14 @@ import { fmtMoney } from "@lib/format";
 interface SessionHeaderProps {
   onClose: () => void;
   onXReport: () => void;
+  onBack: () => void;
   currency?: string;
 }
 
 export function SessionHeader({
   onClose,
   onXReport,
+  onBack,
   currency = "NGN",
 }: SessionHeaderProps) {
   const { session, terminal, pendingCount, parked } = usePOSStore((s) => ({
@@ -27,6 +29,15 @@ export function SessionHeader({
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-brand-charcoal px-4 py-3">
       <div className="flex items-center gap-3 min-w-0">
+        {/* Back — leaves the POS screen but keeps the session OPEN. Use
+            "Close Session" (right) to actually end the session. */}
+        <button
+          onClick={onBack}
+          title="Back — keeps this session open"
+          className="rounded-lg p-1.5 text-brand-smoke hover:text-brand-cream transition-colors shrink-0"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
         <div className="h-2 w-2 rounded-full bg-green-400 shrink-0" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-brand-cream">

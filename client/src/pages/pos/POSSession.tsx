@@ -284,6 +284,7 @@ export default function POSSession() {
       <SessionHeader
         onClose={() => setShowClose(true)}
         onXReport={() => setShowXReport(true)}
+        onBack={() => navigate("/pos")}
         currency={currency}
       />
 
