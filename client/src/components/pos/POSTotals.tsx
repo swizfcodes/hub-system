@@ -19,6 +19,7 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
     setOrderDiscount,
     applyVat,
     setApplyVat,
+    customer,
   } = usePOSStore((s) => ({
     lines: s.lines,
     orderDiscount: s.orderDiscount,
@@ -26,6 +27,7 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
     setOrderDiscount: s.setOrderDiscount,
     applyVat: s.applyVat,
     setApplyVat: s.setApplyVat,
+    customer: s.customer,
   }));
 
   // vatRate comes from /settings/businesses/:key via the active-business
@@ -36,6 +38,9 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
   const effectiveVatRate = applyVat ? vatRate : 0;
   const totals = computeTotals(lines, orderDiscount, loyaltyDisc, effectiveVatRate);
   const hasApproval = lines.some((l) => l.needs_approval);
+  // A customer is mandatory — POS sales must carry a contact. The cashier can
+  // pick a real customer or tap "Use walk-in customer" in the customer panel.
+  const needsCustomer = !customer;
 
   return (
     <div className="space-y-3 border-t border-white/5 pt-3">
@@ -135,13 +140,17 @@ export function POSTotals({ currency = "NGN", onCheckout }: POSTotalsProps) {
       )}
 
       <button
-        onClick={() => !hasApproval && onCheckout(totals)}
-        disabled={!lines.length || hasApproval}
+        onClick={() =>
+          !hasApproval && !needsCustomer && onCheckout(totals)
+        }
+        disabled={!lines.length || hasApproval || needsCustomer}
         className="w-full rounded-lg bg-brand-accent py-3 font-semibold text-brand-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
       >
         {hasApproval
           ? "Awaiting Approval"
-          : `Checkout — ${fmtMoneyTotals(totals.total, currency)}`}
+          : needsCustomer
+            ? "Select a customer to checkout"
+            : `Checkout — ${fmtMoneyTotals(totals.total, currency)}`}
       </button>
     </div>
   );
