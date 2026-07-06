@@ -45,6 +45,11 @@
         margin-bottom: 32px;
       }
 
+      .brand-block {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
       .brand-name {
         font-size: 22px;
         font-weight: 700;
@@ -149,7 +154,7 @@
         display: flex;
         justify-content: space-between;
       }
-    .brand-logo { max-height: 54px; max-width: 200px; margin-bottom: 8px; display: block; object-fit: contain; }
+    .brand-logo { max-height: 56px; max-width: 170px; display: block; object-fit: contain; flex-shrink: 0; }
     </style>
   </head>
   <body>
@@ -157,8 +162,10 @@
       <div class="header">
         <div class="brand-block">
           {{brand_logo_img}}
-          <div class="brand-name">{{brand_name}}</div>
-          <div class="brand-sub">{{brand_tagline}}</div>
+          <div>
+            <div class="brand-name">{{brand_name}}</div>
+            <div class="brand-sub">{{brand_tagline}}</div>
+          </div>
         </div>
         <div class="doc-meta">
           <div class="doc-title">Contract of Employment</div>

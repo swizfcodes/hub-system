@@ -319,7 +319,7 @@ function buildPayslipTemplateData(payslip) {
 
 async function generatePayslipPDF(business, payslipId, user) {
   const payslip = await getPayslip(business, payslipId, user);
-  return renderToPDF("payslips", buildPayslipTemplateData(payslip));
+  return renderToPDF("payslips", buildPayslipTemplateData(payslip), business);
 }
 
 async function listCommissionRules(business) {
@@ -475,7 +475,11 @@ async function generatePaymentSchedule(business, runId) {
 // Deliver a payslip by email and/or WhatsApp.
 async function sendPayslip(business, payslipId, { channel = "email" }, user) {
   const payslip = await getPayslip(business, payslipId, user);
-  const pdf = await renderToPDF("payslips", buildPayslipTemplateData(payslip));
+  const pdf = await renderToPDF(
+    "payslips",
+    buildPayslipTemplateData(payslip),
+    business,
+  );
 
   const results = {};
   if (["email", "both"].includes(channel) && payslip.email) {
