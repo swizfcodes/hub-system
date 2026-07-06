@@ -51,7 +51,7 @@ async function loadActiveBusinesses() {
               address, phone, email, website,
               logo_path, accent_colour, secondary_colour,
               default_currency, vat_rate, wht_rate,
-              fiscal_year_start, is_active,
+              fiscal_year_start, is_active, tin, cac_number,
               brand_fonts, social_links, email_footer_text
        FROM shared.business_config
        WHERE is_active = true

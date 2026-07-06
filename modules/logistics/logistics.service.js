@@ -778,7 +778,7 @@ async function generatePackingSlip(business, deliveryId) {
     waybill_style: delivery.waybill_number ? "" : "display:none",
   };
 
-  return renderToPDF("packing-slip", templateData);
+  return renderToPDF("packing-slip", templateData, business);
 }
 
 // ── Delivery zones / rate card (storefront delivery pricing) ─────────────────

@@ -646,7 +646,7 @@ async function generatePDF(business, invoiceId) {
     payment_instructions_style: showPaymentInstructions ? "" : "display:none",
   };
 
-  return renderToPDF("invoices", templateData);
+  return renderToPDF("invoices", templateData, business);
 }
 
 // ─────────────────────────────────────────────────────────────

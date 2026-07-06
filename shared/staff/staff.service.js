@@ -572,7 +572,11 @@ async function generateContractPDF(profileId, contractId, requestingUser) {
     return { profile, contract };
   });
 
-  return renderToPDF("employment-contract", buildContractTemplateData(profile, contract));
+  return renderToPDF(
+    "employment-contract",
+    buildContractTemplateData(profile, contract),
+    profile.business,
+  );
 }
 
 // Shared mapping from a profile + contract to the employment-contract
@@ -628,6 +632,7 @@ async function generateAndArchiveContract(profileId, contractId, user) {
     const buffer = await renderToPDF(
       "employment-contract",
       buildContractTemplateData(profile, contract),
+      profile.business,
     );
 
     const doc = await documentsService.archiveGeneratedDocument({

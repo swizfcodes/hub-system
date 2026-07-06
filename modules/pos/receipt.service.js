@@ -227,7 +227,7 @@ async function sendViaEmail(business, tx, overrideTo, invoiceNumber) {
 async function generateReceiptPDF(business, tx) {
   try {
     const data = buildTemplateData(business, tx);
-    return await renderToPDF(RECEIPT_TEMPLATE, data);
+    return await renderToPDF(RECEIPT_TEMPLATE, data, business);
   } catch (err) {
     // Template file missing or render failure — fall back to inline HTML.
     logger.warn(
