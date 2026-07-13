@@ -272,7 +272,11 @@ async function generateDeliveryNotePDF({
       driver_signature: driver_signature || "",
     };
 
-    const pdfBuffer = await renderToPDF("delivery-note", noteTemplateData);
+    const pdfBuffer = await renderToPDF(
+      "delivery-note",
+      noteTemplateData,
+      business,
+    );
 
     // Archive the signed note in the document vault and link it to the
     // delivery. Previously the PDF was rendered and thrown away.

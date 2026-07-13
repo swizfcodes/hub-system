@@ -149,7 +149,13 @@ async function createStaff(data, user) {
           email: data.email,
           gender: data.gender,
           date_of_birth: data.date_of_birth,
-          visible_to: data.visible_to || getActiveBusinesses(),
+          // Guard against an empty array (the onboarding form sends []):
+          // `[] || x` keeps the empty array, which would make the new
+          // employee's contact invisible in every business directory.
+          visible_to:
+            data.visible_to && data.visible_to.length
+              ? data.visible_to
+              : getActiveBusinesses(),
         },
         user,
       );
@@ -566,7 +572,11 @@ async function generateContractPDF(profileId, contractId, requestingUser) {
     return { profile, contract };
   });
 
-  return renderToPDF("employment-contract", buildContractTemplateData(profile, contract));
+  return renderToPDF(
+    "employment-contract",
+    buildContractTemplateData(profile, contract),
+    profile.business,
+  );
 }
 
 // Shared mapping from a profile + contract to the employment-contract
@@ -622,6 +632,7 @@ async function generateAndArchiveContract(profileId, contractId, user) {
     const buffer = await renderToPDF(
       "employment-contract",
       buildContractTemplateData(profile, contract),
+      profile.business,
     );
 
     const doc = await documentsService.archiveGeneratedDocument({

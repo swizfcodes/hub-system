@@ -160,7 +160,10 @@ async function insert(
       email || null,
       priority_level || "regular",
       source || null,
-      visible_to || getActiveBusinesses(),
+      // An empty array must fall back to "all active businesses" just like
+      // null/undefined — `[] || x` keeps the [], which would store the
+      // contact as visible to NO business (invisible in every directory).
+      visible_to && visible_to.length ? visible_to : getActiveBusinesses(),
       notes || null,
       birthday_month || null,
       birthday_day || null,

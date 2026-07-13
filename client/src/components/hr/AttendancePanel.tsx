@@ -10,6 +10,7 @@ import { EmptyState } from "@components/ui/EmptyState";
 import { showToast } from "@hooks/useToast";
 import { errMsg } from "@services/api";
 import { fmtDate } from "@lib/format";
+import { cn } from "@lib/cn";
 import {
   getMyAttendance,
   listAttendance,
@@ -118,17 +119,44 @@ export function AttendancePanel({
                   <td className="px-3 py-2 whitespace-nowrap">{timeOf(r.clock_in_at)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">{timeOf(r.clock_out_at)}</td>
                   <td className="px-3 py-2">
-                    {r.is_offsite ? (
+                    {r.clock_in_latitude != null &&
+                    r.clock_in_longitude != null ? (
+                      // Exact GPS fix — link to the precise spot on a map.
+                      // The label is the reverse-geocoded address when
+                      // available, otherwise a plain "View on map" prompt.
+                      <a
+                        href={`https://www.google.com/maps?q=${r.clock_in_latitude},${r.clock_in_longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={
+                          r.is_offsite && r.distance_from_office_m != null
+                            ? `${Math.round(r.distance_from_office_m)}m from the office — open exact location`
+                            : "Open exact clock-in location on a map"
+                        }
+                        className={cn(
+                          "inline-flex items-center gap-1 text-xs hover:underline",
+                          r.is_offsite ? "text-rose-400" : "text-brand-smoke",
+                        )}
+                      >
+                        {r.is_offsite ? (
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                        ) : (
+                          <MapPin className="w-3 h-3 shrink-0" />
+                        )}
+                        <span className="max-w-[13rem] truncate">
+                          {r.clock_in_location_label ||
+                            (r.is_offsite && r.distance_from_office_m != null
+                              ? `${Math.round(r.distance_from_office_m)}m away`
+                              : "View on map")}
+                        </span>
+                      </a>
+                    ) : r.is_offsite ? (
+                      // Flagged off-site but no coordinates captured.
                       <span className="inline-flex items-center gap-1 text-rose-400 text-xs">
                         <AlertTriangle className="w-3 h-3" />
                         {r.distance_from_office_m != null
                           ? `${Math.round(r.distance_from_office_m)}m away`
                           : "Off-site"}
-                      </span>
-                    ) : r.clock_in_latitude != null ? (
-                      <span className="inline-flex items-center gap-1 text-brand-smoke text-xs">
-                        <MapPin className="w-3 h-3" />
-                        {r.clock_in_location_label || "Located"}
                       </span>
                     ) : (
                       <span className="text-brand-smoke/50 text-xs">—</span>

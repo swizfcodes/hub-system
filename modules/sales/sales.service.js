@@ -360,7 +360,7 @@ async function generateQuotationPDF(business, quotationId) {
     terms_section_style: q.terms_conditions ? "" : "display:none",
   };
 
-  return renderToPDF("quotations", templateData);
+  return renderToPDF("quotations", templateData, business);
 }
 
 // ─── Sales KPIs ───────────────────────────────────────────────────────────────
@@ -1038,7 +1038,7 @@ async function generateInvoiceFromOrder(
       paystack_link_style: invoice.paystack_payment_url ? "" : "display:none",
     };
 
-    const pdf = await renderToPDF("invoice", invoiceTemplateData);
+    const pdf = await renderToPDF("invoice", invoiceTemplateData, business);
     await repo.archiveDocument(client, {
       business,
       document_type: "invoice",
@@ -1166,7 +1166,7 @@ async function generateReceiptPDF(business, receiptId) {
     notes_style: r.notes ? "" : "display:none",
   };
 
-  return renderToPDF("receipt", templateData);
+  return renderToPDF("receipt", templateData, business);
 }
 
 // ─── Discount approvals ───────────────────────────────────────────────────────

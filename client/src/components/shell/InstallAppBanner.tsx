@@ -1,61 +1,86 @@
 /**
- * InstallAppBanner — a slim, dismissible "add to home screen" prompt.
+ * InstallAppBanner — a prominent, always-on "install this app" prompt.
  *
- * Android / desktop Chromium get a real [Install] button (we replay the
- * captured beforeinstallprompt). iOS Safari has no programmatic install, so we
- * show the Share → "Add to Home Screen" instructions instead. Hidden once the
- * app is installed (standalone) or the user dismisses it.
+ * It shows on every visit (by force) and the ONLY things that hide it are:
+ *   1. the app is already installed (running standalone), or
+ *   2. the user explicitly taps the ✕.
+ *
+ * Dismissal is per-session (sessionStorage), so re-opening the site brings it
+ * back — there is no permanent "never show again" state by design.
+ *
+ * The call-to-action adapts to the platform, and there is always a path so the
+ * banner is never silently absent:
+ *   - Android / desktop Chromium → a real [Install] button (replays the
+ *     captured beforeinstallprompt).
+ *   - iOS / iPadOS Safari → Share → "Add to Home Screen" instructions.
+ *   - macOS Safari → File → "Add to Dock" instructions.
+ *   - Anything else → generic "use your browser menu" guidance.
  */
 import { useState } from "react";
 import { Download, Share, X } from "lucide-react";
 import { useInstallPrompt } from "@hooks/useInstallPrompt";
 import { useBranding } from "@/providers/ThemeProvider";
 
+// Per-session: only the ✕ hides it, and only until the next visit.
 const DISMISS_KEY = "orika_install_banner_dismissed";
 
 export function InstallAppBanner() {
-  const { canPrompt, installed, isIos, promptInstall } = useInstallPrompt();
+  const { canPrompt, installed, isIos, isMacSafari, promptInstall } =
+    useInstallPrompt();
   const { platform } = useBranding();
   const name = platform.product_name || "Hub";
 
   const [dismissed, setDismissed] = useState(() => {
     try {
-      return localStorage.getItem(DISMISS_KEY) === "1";
+      return sessionStorage.getItem(DISMISS_KEY) === "1";
     } catch {
       return false;
     }
   });
 
-  // Nothing to offer: already installed, dismissed, or a browser with neither
-  // a deferred prompt nor the iOS manual path.
-  if (installed || dismissed || (!canPrompt && !isIos)) return null;
+  // Already running as an installed app, or dismissed this session — nothing to
+  // do. Every other state falls through and renders: the banner is forced on.
+  if (installed || dismissed) return null;
 
   const close = () => {
     try {
-      localStorage.setItem(DISMISS_KEY, "1");
+      sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
-      /* private mode — banner just reappears next session */
+      /* private mode — it simply reappears, which is the intent */
     }
     setDismissed(true);
   };
 
+  // iOS uses the Share sheet; everything else points at a download/install.
+  const Icon = isIos && !canPrompt ? Share : Download;
+
   return (
-    <div className="flex items-center gap-3 border-b border-brand-accent/20 bg-brand-accent/10 px-4 py-2.5">
-      {canPrompt ? (
-        <Download className="h-4 w-4 shrink-0 text-brand-accent" />
-      ) : (
-        <Share className="h-4 w-4 shrink-0 text-brand-accent" />
-      )}
-      <p className="flex-1 text-[11px] leading-snug text-brand-cloud sm:text-xs">
+    <div className="flex items-center gap-3 border-b border-brand-accent/30 bg-brand-accent/15 px-4 py-3">
+      <Icon className="h-5 w-5 shrink-0 text-brand-accent" />
+      <p className="flex-1 text-xs leading-snug text-brand-cream sm:text-sm">
         {canPrompt ? (
+          <>Install {name} for a faster, full-screen app with alerts.</>
+        ) : isIos ? (
           <>
-            Install {name} for a faster, full-screen experience with alerts.
+            Install {name}: tap{" "}
+            <span className="font-semibold text-brand-accent">Share</span> →{" "}
+            <span className="font-semibold text-brand-accent">
+              Add to Home Screen
+            </span>
+            .
+          </>
+        ) : isMacSafari ? (
+          <>
+            Install {name}: open the{" "}
+            <span className="font-semibold text-brand-accent">File</span> menu in
+            Safari →{" "}
+            <span className="font-semibold text-brand-accent">Add to Dock</span>.
           </>
         ) : (
           <>
-            Install {name} on your iPhone: tap{" "}
-            <span className="font-semibold text-brand-cream">Share</span> →{" "}
-            <span className="font-semibold text-brand-cream">
+            Install {name}: open your browser menu and choose{" "}
+            <span className="font-semibold text-brand-accent">Install</span> or{" "}
+            <span className="font-semibold text-brand-accent">
               Add to Home Screen
             </span>
             .
@@ -67,7 +92,7 @@ export function InstallAppBanner() {
           onClick={() => {
             void promptInstall();
           }}
-          className="shrink-0 rounded-lg bg-brand-accent px-3 py-1.5 text-[11px] font-semibold text-brand-black transition-all hover:brightness-110"
+          className="shrink-0 rounded-lg bg-brand-accent px-4 py-1.5 text-xs font-semibold text-brand-black transition-all hover:brightness-110"
         >
           Install
         </button>
@@ -75,7 +100,7 @@ export function InstallAppBanner() {
       <button
         onClick={close}
         className="shrink-0 text-brand-smoke transition-colors hover:text-brand-cream"
-        aria-label="Dismiss"
+        aria-label="Dismiss install prompt"
       >
         <X className="h-4 w-4" />
       </button>

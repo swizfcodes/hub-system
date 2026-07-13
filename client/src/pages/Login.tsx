@@ -28,6 +28,7 @@ import {
   isPinEnabledLocally,
 } from "@services/auth";
 import { useAuthStore } from "@stores/useAuthStore";
+import { InstallAppBanner } from "@components/shell/InstallAppBanner";
 import { errMsg } from "@services/api";
 import { checkPassword, PASSWORD_RULES_TEXT } from "@lib/passwordPolicy";
 import { initialsOf } from "@lib/format";
@@ -457,6 +458,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen relative animate-app-in bg-brand-black font-body text-brand-cream overflow-x-hidden">
+      {/* Always-on install prompt — visible the moment the site opens, before
+          sign-in. relative z-50 keeps it above the fixed z-0 background. */}
+      <div className="relative z-50">
+        <InstallAppBanner />
+      </div>
+
       {/* Ambient canvas particles */}
       <canvas
         ref={canvasRef}
