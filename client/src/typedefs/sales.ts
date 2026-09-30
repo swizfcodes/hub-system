@@ -17,6 +17,7 @@ export type OrderStatus =
   | "fulfilled"
   | "awaiting_dispatch"
   | "pending_proof"
+  | "payment_pending"
   | "cancelled";
 
 export type OrderSource = "manual" | "web" | "pos" | "campaign" | "direct";

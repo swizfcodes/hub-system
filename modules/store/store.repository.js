@@ -472,6 +472,8 @@ async function insertSalesOrderForWeb(
     // stored breakdown always reconciles to total_amount.
     subtotalNaira = totalNaira - deliveryFeeNaira,
     deliveryAddress = null,
+    fulfilmentType = "delivery",
+    status = "confirmed",
   },
 ) {
   const {
@@ -481,9 +483,18 @@ async function insertSalesOrderForWeb(
        (order_number, contact_id, status, fulfilment_type,
         subtotal, delivery_fee, total_amount, amount_paid,
         source, created_by, delivery_address)
-     VALUES ($1, $2, 'confirmed', 'delivery', $3, $4, $5, 0, 'web', NULL, $6)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 'web', NULL, $8)
      RETURNING order_id, order_number`,
-    [orderNumber, contactId, subtotalNaira, deliveryFeeNaira, totalNaira, deliveryAddress],
+    [
+      orderNumber,
+      contactId,
+      status,
+      fulfilmentType,
+      subtotalNaira,
+      deliveryFeeNaira,
+      totalNaira,
+      deliveryAddress,
+    ],
   );
   return row;
 }

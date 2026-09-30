@@ -76,6 +76,7 @@ checkout (optimus_pay) → open_account (dynamic VA, meta.amount = kobo)
   → customer sees account + 30-min countdown, transfers
   → Optimus POSTs /api/webhooks/optimus
   → handler: idempotency check → query-back (/v2/transact/query) → amount guard
+  → website/campaign checkout is visible in Sales → Orders as "Awaiting Payment"
   → confirm: campaign order / store order (stock + journals) / invoice payment
   → client polls (campaign tracking page, /api/store/optimus/verify) → "paid"
 ```
@@ -95,7 +96,8 @@ flagged in the logs.
 | "Could not provision payment account…" | Any open_account failure — the customer-facing wrapper | `grep '\[optimus\]' logs/error.log` for the provider's real message |
 | HTTP 401 from API | Wrong/whitespace-padded key or secret; service not approved for the app | Re-paste keys exactly; confirm service approval on the console |
 | "Optimus Pay is not configured…" (503) | Env vars missing on the server | Set `OPTIMUS_PAY_API_KEY` / `OPTIMUS_PAY_CLIENT_SECRET`, restart PM2 |
-| Paid but order never confirms | Webhook not reaching us, or query-back failing | Check dashboard webhook URL; `SELECT * FROM shared.webhook_log WHERE source='optimus' ORDER BY created_at DESC` — unprocessed rows carry `error_message` |
+| Paid but order never confirms | Webhook not reaching us, query-back failing, or fulfillment errored | Check dashboard webhook URL; `SELECT * FROM shared.webhook_log WHERE source='optimus' ORDER BY received_at DESC` — unprocessed rows carry `error_message` and are retried automatically (up to 5 times) |
+| Staff did not see a new website checkout | Old builds only created ERP Sales orders after payment confirmation; a missed callback hid the order from the app | New website and campaign checkouts appear immediately in Sales → Orders as **Awaiting Payment** and generate an in-app owner/manager notification |
 | `Duplicate` (409) on checkout retry | Same request inside OnePipe's 5-min window | Wait and retry; the first request is still in flight |
 | Accounts opening with wrong name | `OPTIMUS_PAY_ACCOUNT_NAME` unset | Set it (payers see it on name-enquiry) |
 

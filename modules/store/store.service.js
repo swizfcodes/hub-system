@@ -18,17 +18,17 @@ const logger = require("../../config/logger");
 const repo = require("./store.repository");
 const { computeDeliveryFeeKobo } = require("../../config/deliveryFee");
 const logisticsRepo = require("../logistics/logistics.repository");
+const notifService = require("../../shared/notifications/notifications.service");
 
 // ─────────────────────────────────────────────────────────────
 // modules/store/store.service
 //
 // The Orika Living storefront as a SALES CHANNEL of the ERP.
 //
-// The defining rule: every web sale balances with the ERP. On
-// payment, verifyAndFulfil posts a revenue journal and a COGS
-// journal and writes stock_movements rows into the `diffusers`
-// business — exactly the path a POS sale takes — so the books and
-// the stock ledger always reflect web sales.
+// Every web checkout is visible in ERP Sales immediately as
+// `payment_pending`. Only verified payment runs verifyAndFulfil, which
+// posts revenue/COGS journals and stock_movements into `diffusers` —
+// so pending orders are visible without being booked as paid sales.
 //
 // Money: the storefront speaks kobo; the ERP speaks naira. The two
 // are reconciled explicitly at every boundary.
@@ -277,11 +277,33 @@ async function createOrder({
       items: lineItems,
     });
 
-    // NOTE: the ERP sales_order is intentionally NOT created here. A web
-    // order only becomes a real ERP sale once payment succeeds (see
-    // verifyAndFulfil), so ERP Sales never accumulates abandoned/unpaid
-    // orders. The buyer's contact + customer records ARE created above so
-    // they appear in CRM regardless of whether they complete payment.
+    // Create a linked ERP inbox row at checkout so staff can see and track
+    // every website order even if the payment callback is delayed or lost.
+    // It stays `payment_pending` (amount_paid = 0) until a verified payment
+    // webhook settles it; abandoned checkouts are never recorded as sales.
+    const salesOrderNumber = await nextDocumentNumber(
+      client,
+      STORE_BUSINESS,
+      "sales_order",
+    );
+    const totalNaira = totalKobo / 100;
+    const deliveryFeeNaira = deliveryFeeKobo / 100;
+    const salesOrder = await repo.insertSalesOrderForWeb(client, {
+      orderNumber: salesOrderNumber,
+      contactId: contact.contact_id,
+      totalNaira,
+      deliveryFeeNaira,
+      subtotalNaira: totalNaira - deliveryFeeNaira,
+      deliveryAddress: flattenAddress(delivery_address),
+      fulfilmentType:
+        delivery_address.fulfilment_type === "pickup" ? "walk_in" : "delivery",
+      status: "payment_pending",
+    });
+    await repo.insertSalesOrderLinesForWeb(client, {
+      orderId: salesOrder.order_id,
+      lineItems,
+    });
+    await repo.linkStoreOrderToSalesOrder(client, order.id, salesOrder.order_id);
 
     if (payment_method === "optimus_pay") {
       // Provision a virtual account; store its details on the order row.
@@ -326,6 +348,13 @@ async function createOrder({
         virtualAccount: vaResult.accountNumber,
         bankName: vaResult.bankName,
       });
+      await notifyStaffOfStoreOrder(client, {
+        order,
+        salesOrder,
+        paymentMethod: "optimus_pay",
+        items: lineItems,
+        totalNaira,
+      });
 
       return {
         ok: true,
@@ -346,6 +375,13 @@ async function createOrder({
     // Default: Paystack
     const reference = `orika_${order.id}`;
     await repo.setOrderPaystackRef(client, order.id, reference);
+    await notifyStaffOfStoreOrder(client, {
+      order,
+      salesOrder,
+      paymentMethod: "paystack",
+      items: lineItems,
+      totalNaira,
+    });
 
     return {
       ok: true,
@@ -356,6 +392,50 @@ async function createOrder({
       email: delivery_address.email,
     };
   });
+}
+
+async function syncPaidWebSalesOrder(client, order) {
+  // New checkouts already have a payment_pending bridge row and order lines.
+  // A successful, verified payment only settles that record; older orders
+  // without a bridge retain the original create-on-payment path.
+  if (order.sales_order_id) {
+    await repo.settleSalesOrderForWeb(client, order.sales_order_id);
+    return;
+  }
+
+  const addr = order.delivery_address || {};
+  let contact = addr.email
+    ? await repo.findContactByEmail(client, addr.email)
+    : null;
+  if (!contact) {
+    contact = await repo.insertContact(client, {
+      displayName: addr.full_name || addr.email || "Web customer",
+      email: addr.email,
+      phone: addr.phone,
+    });
+  }
+  const orderNumber = await nextDocumentNumber(
+    client,
+    STORE_BUSINESS,
+    "sales_order",
+  );
+  const totalNaira = Number(order.total_kobo) / 100;
+  const deliveryFeeNaira = Number(order.delivery_fee_kobo || 0) / 100;
+  const salesOrder = await repo.insertSalesOrderForWeb(client, {
+    orderNumber,
+    contactId: contact.contact_id,
+    totalNaira,
+    deliveryFeeNaira,
+    subtotalNaira: totalNaira - deliveryFeeNaira,
+    deliveryAddress: flattenAddress(order.delivery_address),
+    fulfilmentType: addr.fulfilment_type === "pickup" ? "walk_in" : "delivery",
+  });
+  await repo.insertSalesOrderLinesForWeb(client, {
+    orderId: salesOrder.order_id,
+    lineItems: order.items || [],
+  });
+  await repo.linkStoreOrderToSalesOrder(client, order.id, salesOrder.order_id);
+  await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
 }
 
 async function getOrder(orderId) {
@@ -565,59 +645,11 @@ async function verifyAndFulfil(reference) {
       });
     }
 
-    // 7b. Create the ERP sales order — now that payment has succeeded.
-    //     Born already paid + fulfilled (source='web'), so ERP Sales only
-    //     ever contains real, completed sales — abandoned/unpaid checkouts
-    //     never reach the ERP. Linked back to store.orders. Same
-    //     transaction: stock, journals, and the sales order all commit
-    //     together or not at all.
+    // 7b. Settle the ERP sales-order inbox row created at checkout. Legacy
+    // orders without a bridge are backfilled by the helper as they are paid.
     try {
-      const addr = order.delivery_address || {};
-      let contact = addr.email
-        ? await repo.findContactByEmail(client, addr.email)
-        : null;
-      if (!contact) {
-        // Fallback — buyer's contact should exist from createOrder, but
-        // create it defensively so a missing contact never blocks a paid
-        // order from reaching Sales.
-        contact = await repo.insertContact(client, {
-          displayName: addr.full_name || addr.email || "Web customer",
-          email: addr.email,
-          phone: addr.phone,
-        });
-      }
-      const orderNumber = await nextDocumentNumber(
-        client,
-        STORE_BUSINESS,
-        "sales_order",
-      );
-      const totalNaira = Number(order.total_kobo) / 100;
-      const deliveryFeeNaira = Number(order.delivery_fee_kobo || 0) / 100;
-      const salesOrder = await repo.insertSalesOrderForWeb(client, {
-        orderNumber,
-        contactId: contact.contact_id,
-        totalNaira,
-        deliveryFeeNaira,
-        // Product subtotal = grand total minus delivery, so the ERP order
-        // shows Subtotal + Delivery + Total instead of folding the fee in.
-        subtotalNaira: totalNaira - deliveryFeeNaira,
-        // Carry the checkout address into the ERP order so
-        // Hand-to-Logistics prefills it (no re-keying).
-        deliveryAddress: flattenAddress(order.delivery_address),
-      });
-      await repo.insertSalesOrderLinesForWeb(client, {
-        orderId: salesOrder.order_id,
-        lineItems: lines,
-      });
-      await repo.linkStoreOrderToSalesOrder(
-        client,
-        order.id,
-        salesOrder.order_id,
-      );
-      await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
+      await syncPaidWebSalesOrder(client, order);
     } catch (err) {
-      // A failure here must abort the whole fulfilment — we never want a
-      // paid order with stock/journals but no sales record.
       logger.error(
         `[store] sales order creation failed for ${order.id}: ${err.message}`,
       );
@@ -862,42 +894,9 @@ async function fulfillOptimusOrder(transactionRef, { paidKobo = 0 } = {}) {
       });
     }
 
-    // 5. Create ERP sales order
+    // 5. Settle the linked ERP sales order, or create one for a legacy order.
     try {
-      const addr = order.delivery_address || {};
-      let contact = addr.email
-        ? await repo.findContactByEmail(client, addr.email)
-        : null;
-      if (!contact) {
-        contact = await repo.insertContact(client, {
-          displayName: addr.full_name || addr.email || "Web customer",
-          email: addr.email,
-          phone: addr.phone,
-        });
-      }
-      const orderNumber = await nextDocumentNumber(
-        client,
-        STORE_BUSINESS,
-        "sales_order",
-      );
-      const salesOrder = await repo.insertSalesOrderForWeb(client, {
-        orderNumber,
-        contactId: contact.contact_id,
-        totalNaira: grossNaira,
-        // Carry the checkout address into the ERP order so
-        // Hand-to-Logistics prefills it (no re-keying).
-        deliveryAddress: flattenAddress(order.delivery_address),
-      });
-      await repo.insertSalesOrderLinesForWeb(client, {
-        orderId: salesOrder.order_id,
-        lineItems: lines,
-      });
-      await repo.linkStoreOrderToSalesOrder(
-        client,
-        order.id,
-        salesOrder.order_id,
-      );
-      await repo.settleSalesOrderForWeb(client, salesOrder.order_id);
+      await syncPaidWebSalesOrder(client, order);
     } catch (err) {
       logger.error(
         `[store/optimus] sales order creation failed for ${order.id}: ${err.message}`,
@@ -1293,6 +1292,33 @@ async function replyToEnquiry(enquiryId, message, user) {
   });
 
   return { ok: true, channel_id: channelId };
+}
+
+async function notifyStaffOfStoreOrder(
+  client,
+  { order, salesOrder, paymentMethod, items, totalNaira },
+) {
+  const { rows: managers } = await client.query(
+    `SELECT u.user_id FROM shared.users u
+     JOIN shared.user_roles ur ON ur.user_id = u.user_id
+     JOIN shared.roles r ON r.role_id = ur.role_id
+     WHERE r.role_name IN ('owner','manager')
+       AND (ur.business = $1 OR ur.business = '*')`,
+    [STORE_BUSINESS],
+  );
+  const summary = items.map((item) => `${item.name} ×${item.quantity}`).join(", ");
+  for (const manager of managers) {
+    await notifService.create(client, {
+      userId: manager.user_id,
+      business: STORE_BUSINESS,
+      type: "web_order",
+      title: `New website order — ₦${totalNaira.toLocaleString()}`,
+      body: `${order.delivery_address?.full_name || "A customer"} ordered ${summary}. Awaiting ${paymentMethod === "optimus_pay" ? "Optimus Pay" : "Paystack"} confirmation.`,
+      referenceType: "sales_order",
+      referenceId: salesOrder.order_id,
+      actionUrl: `/sales/orders/${salesOrder.order_id}`,
+    });
+  }
 }
 
 // Public: the delivery rate card (diffusers zones/settings) so the
