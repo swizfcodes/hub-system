@@ -117,68 +117,81 @@ router.post("/", async (req, res) => {
   //    fulfilment pipeline; failures are retried from webhook_log).
   res.sendStatus(200);
 
-  // 5. Only fulfil on Successful
-  if (eventStatus !== "Successful") {
+  await processWebhookRecord(payload, logged.webhook_id);
+});
+
+/** Process a received webhook or retry an existing failed webhook_log row. */
+async function processWebhookRecord(payload, webhookId) {
+  const details = (payload && (payload.details || payload.data)) || null;
+  const eventStatus = details?.status || payload?.status || null;
+  const transactionRef = details?.transaction_ref || null;
+  const transactionType = details?.transaction_type || "collect";
+  const paidKobo = Number(details?.amount) || 0;
+
+  if (!details) {
+    await recordError(webhookId, "unrecognised notification envelope");
+    return;
+  }
+  if (!eventStatus) {
+    await recordError(webhookId, "notification missing transaction status");
+    return;
+  }
+  if (String(eventStatus).toLowerCase() !== "successful") {
     logger.info(
       `[optimus] webhook non-success status=${eventStatus} ref=${transactionRef}`,
     );
-    await markProcessed(logged.webhook_id);
+    await markProcessed(webhookId);
     return;
   }
-
   if (!transactionRef) {
     logger.warn("[optimus] Successful webhook missing transaction_ref");
-    await recordError(logged.webhook_id, "missing transaction_ref");
+    await recordError(webhookId, "missing transaction_ref");
     return;
   }
 
-  // 6. Query-back verification — never trust the webhook body alone.
   if (config.optimusPay.verifyWebhookViaQuery) {
     try {
       const q = await optimusService.queryTransaction(
         transactionRef,
         transactionType,
       );
-      if (q.status !== "Successful") {
+      if (String(q.status).toLowerCase() !== "successful") {
         logger.warn(
           `[optimus] query-back contradicts webhook: ref=${transactionRef} ` +
             `webhook=Successful query=${q.status} — NOT fulfilling`,
         );
         await recordError(
-          logged.webhook_id,
+          webhookId,
           `query-back returned ${q.status}; possible forged notification`,
         );
         return;
       }
     } catch (err) {
-      // Verification unavailable ≠ verified. Leave unprocessed for replay.
       logger.error(
         `[optimus] query-back failed for ref=${transactionRef}: ${err.message} — NOT fulfilling`,
       );
-      await recordError(
-        logged.webhook_id,
-        `query-back failed: ${err.message}`,
-      );
+      await recordError(webhookId, `query-back failed: ${err.message}`);
       return;
     }
   }
 
   try {
     await handleTransactionSuccess(transactionRef, paidKobo, details);
-    await markProcessed(logged.webhook_id);
+    await markProcessed(webhookId);
   } catch (err) {
     logger.error(
       `[optimus] webhook processing failed for ref=${transactionRef}: ${err.message}`,
     );
-    await recordError(logged.webhook_id, err.message);
+    await recordError(webhookId, err.message);
   }
-});
+}
 
 // ── webhook_log helpers ───────────────────────────────────────────────────────
 
 async function markProcessed(webhookId) {
   await pool.query(
-    `UPDATE shared.webhook_log SET processed = true, processed_at = now()
+    `UPDATE shared.webhook_log
+     SET processed = true, processed_at = now(), error_message = NULL
      WHERE webhook_id = $1`,
     [webhookId],
   );
@@ -214,9 +227,8 @@ async function handleTransactionSuccess(transactionRef, paidKobo, details) {
     let result;
     try {
       result = await pool.query(
-        `SELECT payment_id, amount FROM ${business}.invoice_payments
+        `SELECT payment_id, amount, is_confirmed FROM ${business}.invoice_payments
          WHERE optimus_transaction_ref = $1
-           AND is_confirmed = false
          LIMIT 1`,
         [transactionRef],
       );
@@ -228,7 +240,17 @@ async function handleTransactionSuccess(transactionRef, paidKobo, details) {
     }
 
     if (result.rows.length) {
-      const { payment_id: paymentId, amount: expectedNaira } = result.rows[0];
+      const {
+        payment_id: paymentId,
+        amount: expectedNaira,
+        is_confirmed: alreadyConfirmed,
+      } = result.rows[0];
+      if (alreadyConfirmed) {
+        logger.info(
+          `[optimus] invoice payment already confirmed: ref=${transactionRef} [${business}]`,
+        );
+        return;
+      }
 
       // Amount guard — UNDERPAYMENT is never auto-confirmed. Throwing keeps
       // the webhook_log row unprocessed with an error_message, so it
@@ -295,10 +317,9 @@ async function handleTransactionSuccess(transactionRef, paidKobo, details) {
     let rows;
     try {
       ({ rows } = await pool.query(
-        `SELECT order_id, total_amount FROM ${business}.campaign_orders
+        `SELECT order_id, total_amount, status FROM ${business}.campaign_orders
           WHERE optimus_transaction_ref = $1
             AND payment_method = 'optimus_pay'
-            AND status = 'pending'
           LIMIT 1`,
         [transactionRef],
       ));
@@ -311,6 +332,12 @@ async function handleTransactionSuccess(transactionRef, paidKobo, details) {
 
     if (rows.length) {
       const expectedNaira = Number(rows[0].total_amount);
+      if (rows[0].status === "cancelled") {
+        throw new Error(
+          `payment received for cancelled campaign order ${rows[0].order_id} ` +
+            `(ref=${transactionRef}, business=${business}) — manual reconciliation required`,
+        );
+      }
 
       if (paidKobo > 0 && paidNaira + 0.01 < expectedNaira) {
         throw new Error(
@@ -355,10 +382,14 @@ async function handleTransactionSuccess(transactionRef, paidKobo, details) {
     }
   }
 
-  logger.warn(
-    `[optimus] Successful notification with no matching payment: ` +
-      `ref=${transactionRef} amount=₦${paidNaira} originator=${details?.meta?.originator_account_name || "?"}`,
-  );
+  const message =
+    `successful notification with no matching payment: ref=${transactionRef} ` +
+    `amount=₦${paidNaira} originator=${details?.meta?.originator_account_name || "?"}`;
+  logger.warn(`[optimus] ${message}`);
+  // Keep the row unprocessed so the retry job can reconcile a webhook that
+  // arrived before its order/payment record was committed or became visible.
+  throw new Error(message);
 }
 
 module.exports = router;
+module.exports.processWebhookRecord = processWebhookRecord;

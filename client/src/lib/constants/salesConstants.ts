@@ -85,6 +85,12 @@ export const ORDER_STATUS_META: Record<
     icon: ImageIcon,
     tone: "gold",
   },
+  payment_pending: {
+    label: "Awaiting Payment",
+    color: "#D4A017",
+    icon: Clock,
+    tone: "gold",
+  },
   cancelled: {
     label: "Cancelled",
     color: "#C0392B",
@@ -181,6 +187,7 @@ export const ORDER_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "awaiting_dispatch", label: "Awaiting Dispatch" },
   { value: "fulfilled", label: "Fulfilled" },
   { value: "pending_proof", label: "Pending Proof" },
+  { value: "payment_pending", label: "Awaiting Payment" },
 ];
 
 export const INVOICE_FILTER_OPTIONS: { value: string; label: string }[] = [

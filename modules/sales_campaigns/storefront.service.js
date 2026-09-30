@@ -443,6 +443,7 @@ async function placeOrder(business, slug, data, req) {
     // Every order must have a contact record — match by phone first, then email.
     const orderPhone = data.customer_phone || null;
     const orderEmail = data.customer_email || null;
+    let hubContactId = null;
     if (orderPhone || orderEmail) {
       try {
         const nameParts = (data.customer_name || "").trim().split(/\s+/);
@@ -468,6 +469,7 @@ async function placeOrder(business, slug, data, req) {
         }
 
         if (orderContact) {
+          hubContactId = orderContact.contact_id;
           // Enrich with any new information from this order
           await client.query(
             `UPDATE shared.contacts
@@ -501,9 +503,10 @@ async function placeOrder(business, slug, data, req) {
               business,
             ],
           );
+          hubContactId = newOrderContact.contact_id;
           await client.query(
             `UPDATE campaign_orders SET hub_contact_id = $2 WHERE order_id = $1`,
-            [order.order_id, newOrderContact.contact_id],
+            [order.order_id, hubContactId],
           );
         }
       } catch (contactErr) {
@@ -512,16 +515,63 @@ async function placeOrder(business, slug, data, req) {
       }
     }
 
-    // Notify staff of new order (bank transfer pending proof)
-    if (data.payment_method === "bank_transfer") {
-      await notifyStaffOfPendingOrder(
+    // Put every web checkout into the unified Sales → Orders view immediately;
+    // payment can arrive later via proof upload or a gateway webhook. This avoids
+    // making staff depend on the payment callback just to know an order exists.
+    if (hubContactId) {
+      const salesOrderNumber = await nextDocumentNumber(
         client,
         business,
-        campaign,
-        order,
-        resolvedItems,
+        "sales_order",
       );
+      const salesFulfilment = data.fulfilment_type === "pickup" ? "walk_in" : "delivery";
+      const { rows: [salesOrder] } = await client.query(
+        `INSERT INTO sales_orders
+           (order_number, contact_id, status, fulfilment_type, source,
+            total_amount, amount_paid, created_by, delivery_address,
+            subtotal, discount_total)
+         VALUES ($1, $2, 'payment_pending', $3, 'campaign', $4, 0, NULL, $5, $6, $7)
+         RETURNING order_id`,
+        [
+          salesOrderNumber,
+          hubContactId,
+          salesFulfilment,
+          totalAmount,
+          flattenAddress(data.delivery_address),
+          subtotal,
+          discountAmount,
+        ],
+      );
+      await client.query(
+        `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+        [order.order_id, salesOrder.order_id],
+      );
+      for (const item of resolvedItems) {
+        await client.query(
+          `INSERT INTO order_lines
+             (order_id, product_id, description, quantity, unit_price, line_total, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+          [
+            salesOrder.order_id,
+            item.product_id,
+            item.product_name,
+            item.quantity,
+            item.unit_price,
+            item.line_total,
+          ],
+        );
+      }
     }
+
+    // Notify owners/managers for every payment method, not just manual bank
+    // transfers. An Optimus transfer can otherwise arrive with no staff alert.
+    await notifyStaffOfPendingOrder(
+      client,
+      business,
+      campaign,
+      order,
+      resolvedItems,
+    );
 
     logger.info(
       `[storefront] order ${orderNumber} placed for campaign ${slug}`,
@@ -578,62 +628,78 @@ async function submitProof(business, orderId, { proof_image_url, source }) {
 
     // Stock was reserved at order placement, now stays reserved until staff confirm/cancel.
 
-    // ── Create bridge sales_order with pending_proof status ──────────
-    // This makes the order visible in the unified Sales → Orders view
-    // so staff can approve from either the Campaigns UI or the Orders list.
-    let bridgeOrderId = null;
-    try {
-      // Find or create a contact for this customer
-      let contactId = order.hub_contact_id;
-      if (!contactId) {
-        const { rows: [existing] } = await client.query(
-          `SELECT contact_id FROM shared.contacts
-           WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
-          [order.customer_phone],
-        );
-        if (existing) {
-          contactId = existing.contact_id;
-        } else if (order.customer_email) {
-          const { rows: [byEmail] } = await client.query(
-            `SELECT contact_id FROM shared.contacts
-             WHERE email = $1 AND is_deleted = false LIMIT 1`,
-            [order.customer_email],
-          );
-          contactId = byEmail?.contact_id || null;
-        }
-      }
-
-      if (contactId) {
-        const soNumber = await nextDocumentNumber(client, business, "sales_order");
-        const { rows: [bridgeOrder] } = await client.query(
-          `INSERT INTO sales_orders
-             (order_number, contact_id, status, fulfilment_type,
-              source, total_amount, amount_paid, created_by,
-              delivery_address)
-           VALUES ($1, $2, 'pending_proof', $3,
-                   'campaign', $4, 0, NULL, $5)
-           RETURNING order_id`,
-          [
-            soNumber,
-            contactId,
-            order.fulfilment_type || "delivery",
-            parseFloat(order.total_amount),
-            flattenAddress(order.delivery_address),
-          ],
-        );
-        bridgeOrderId = bridgeOrder.order_id;
-
-        // Link campaign_order → bridge sales_order
-        await client.query(
-          `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
-          [orderId, bridgeOrderId],
-        );
-      }
-    } catch (err) {
-      // Non-fatal — the campaign flow still works without the bridge row.
-      logger.warn(
-        `[storefront] bridge sales_order failed for campaign order ${orderId}: ${err.message}`,
+    // Transition the unified Sales order to proof review. Older campaign orders
+    // may not have a bridge row yet, so retain a compatibility create path.
+    let bridgeOrderId = order.hub_order_id || null;
+    const salesFulfilment = order.fulfilment_type === "pickup" ? "walk_in" : "delivery";
+    if (bridgeOrderId) {
+      await client.query(
+        `UPDATE sales_orders
+         SET status = 'pending_proof', fulfilment_type = $2,
+             delivery_address = $3, updated_at = now()
+         WHERE order_id = $1`,
+        [bridgeOrderId, salesFulfilment, flattenAddress(order.delivery_address)],
       );
+    } else {
+      try {
+        let contactId = order.hub_contact_id;
+        if (!contactId) {
+          const { rows: [existing] } = await client.query(
+            `SELECT contact_id FROM shared.contacts
+             WHERE primary_phone = $1 AND is_deleted = false LIMIT 1`,
+            [order.customer_phone],
+          );
+          if (existing) {
+            contactId = existing.contact_id;
+          } else if (order.customer_email) {
+            const { rows: [byEmail] } = await client.query(
+              `SELECT contact_id FROM shared.contacts
+               WHERE email = $1 AND is_deleted = false LIMIT 1`,
+              [order.customer_email],
+            );
+            contactId = byEmail?.contact_id || null;
+          }
+        }
+
+        if (contactId) {
+          const soNumber = await nextDocumentNumber(client, business, "sales_order");
+          const { rows: [bridgeOrder] } = await client.query(
+            `INSERT INTO sales_orders
+               (order_number, contact_id, status, fulfilment_type,
+                source, total_amount, amount_paid, created_by, delivery_address)
+             VALUES ($1, $2, 'pending_proof', $3,
+                     'campaign', $4, 0, NULL, $5)
+             RETURNING order_id`,
+            [
+              soNumber,
+              contactId,
+              salesFulfilment,
+              parseFloat(order.total_amount),
+              flattenAddress(order.delivery_address),
+            ],
+          );
+          bridgeOrderId = bridgeOrder.order_id;
+          await client.query(
+            `UPDATE campaign_orders SET hub_order_id = $2 WHERE order_id = $1`,
+            [orderId, bridgeOrderId],
+          );
+          for (const item of order.items || []) {
+            if (!item.product_id) continue;
+            await client.query(
+              `INSERT INTO order_lines
+                 (order_id, product_id, description, quantity, unit_price, line_total, status)
+               VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+              [bridgeOrderId, item.product_id, item.product_name, item.quantity,
+                item.unit_price, item.line_total],
+            );
+          }
+        }
+      } catch (err) {
+        // Keep legacy campaign flow available if a CRM contact is not found.
+        logger.warn(
+          `[storefront] bridge sales_order failed for campaign order ${orderId}: ${err.message}`,
+        );
+      }
     }
 
     // Notify staff to verify the payment.
@@ -743,15 +809,8 @@ async function handleOptimusConfirmation(business, orderId) {
     display_name: "Optimus Pay Webhook",
     email: "system",
   };
-  try {
-    await adminSvc.confirmOrder(business, orderId, systemUser);
-    logger.info(`[storefront] Optimus Pay auto-confirmed order ${orderId}`);
-  } catch (err) {
-    logger.error(
-      `[storefront] Optimus Pay confirmation failed for order ${orderId}:`,
-      err.message,
-    );
-  }
+  await adminSvc.confirmOrder(business, orderId, systemUser);
+  logger.info(`[storefront] Optimus Pay auto-confirmed order ${orderId}`);
 }
 
 // ── NOTIFICATION HELPERS ──────────────────────────────────────────────────────
@@ -810,7 +869,11 @@ async function notifyStaffOfPendingOrder(
       business,
       type: "campaign_order",
       title: `New order — ₦${parseFloat(order.total_amount).toLocaleString()}`,
-      body: `${order.customer_name} ordered: ${summary}. Awaiting proof of payment.`,
+      body: `${order.customer_name} ordered: ${summary}. ${
+        order.payment_method === "bank_transfer"
+          ? "Awaiting payment proof."
+          : `Awaiting ${order.payment_method === "optimus_pay" ? "Optimus Pay" : "Paystack"} confirmation.`
+      }`,
       referenceType: "campaign_order",
       referenceId: order.order_id,
       actionUrl: `/sales-campaigns/${order.campaign_id}?tab=orders`,

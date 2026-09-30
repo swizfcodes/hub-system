@@ -16,6 +16,11 @@ const logger = require("../../config/logger");
 const { sendEmail } = require("../../lib/email/sender");
 const { renderEmail } = require("../../lib/email/render");
 
+// Campaigns use `pickup`; the ERP sales schema represents that as `walk_in`.
+function toSalesFulfilmentType(type) {
+  return type === "pickup" ? "walk_in" : "delivery";
+}
+
 // ── CAMPAIGNS ─────────────────────────────────────────────────────────────────
 
 async function listCampaigns(business, query) {
@@ -242,6 +247,11 @@ async function listOrders(business, campaignId, query) {
 
 async function confirmOrder(business, orderId, user) {
   return withBusinessContext(business, async (client) => {
+    // Serialize duplicate gateway notifications before any stock/journal writes.
+    await client.query(
+      `SELECT order_id FROM campaign_orders WHERE order_id = $1 FOR UPDATE`,
+      [orderId],
+    );
     const {
       rows: [order],
     } = await client.query(
@@ -435,7 +445,7 @@ async function confirmOrder(business, orderId, user) {
             contactId,
             grossNaira,
             grossNaira,
-            order.fulfilment_type || "delivery",
+            toSalesFulfilmentType(order.fulfilment_type),
             user.user_id,
           ],
         );
@@ -464,7 +474,7 @@ async function confirmOrder(business, orderId, user) {
           [
             orderNumber,
             contactId,
-            order.fulfilment_type || "delivery",
+            toSalesFulfilmentType(order.fulfilment_type),
             grossNaira,
             user.user_id,
             // The address the customer typed at campaign checkout must
